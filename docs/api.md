@@ -20,11 +20,14 @@ Sesión por cookie (`biodex_session` + `biodex_remember`, `HttpOnly`, `SameSite=
 ## Especies (`Api/species.php`) — requieren sesión
 | Método · ruta | Rol mínimo | Qué hace |
 |---|---|---|
-| `GET /api/species?q=&group=&origin=&scope=&legal=&category=&limit=20&offset=0` | sesión | Buscador. Con `q` (≥ 2): EIDOS en vivo sin acentos + especies de usuario; `group`/`origin`/`scope` (T·M·MT) se filtran en EIDOS. `legal` (`rd139`,`habitats`,`aves`,`rd630`,`ue1143`) y `category` (códigos UICN, lista con comas) sobre la caché, entre los 100 primeros candidatos; como mucho 5 estados legales pedidos por petición, el resto con `detailPending: true`. Sin `q`: solo la caché. → `{total, truncated, items:[{taxonID, source, scientificName, vernacularName, taxonomicGroup, taxonRank, iucnPrimary:{code,scope,year}, thumbnail, eidosUrl}]}` |
+| `GET /api/species?q=&group=&origin=&scope=&legal=&category=&limit=20&offset=0` | sesión | Buscador. Con `q` (≥ 2): EIDOS en vivo sin acentos + especies de usuario; `group`/`origin`/`scope` (T·M·MT) se filtran en EIDOS. `legal` (`rd139`,`habitats`,`aves`,`rd630`,`ue1143`) y `category` (códigos UICN, lista con comas) sobre la caché, entre los 100 primeros candidatos; como mucho 5 estados legales pedidos por petición, el resto con `detailPending: true`. Sin `q`: solo la caché. → `{total, truncated, items:[tarjeta]}` (ver abajo) |
+| `GET /api/species/filters` | sesión | Opciones de los filtros: `shared/eidos-filters.json` (`groups`, `origins`, `scopes`, `legal`, `iucn`, `art17`, cada una `{value, label}`) + `sensitivityLevels [{level, name, approxKm, display, displayText}]` de `shared/sensitivity.json`. `Cache-Control: private, max-age=86400`. El JSON lo genera a mano `bin/build-filters.php` |
 | `GET /api/species/{taxonID}` | sesión | Ficha completa; la trae de EIDOS si falta o tiene > 30 días. Añade clasificación, sinónimos, `iucnAssessments`, `legalStatus {national, other, andalucia}`, descripción, `images` (con `attribution`), `suggestedSensitivity {level, reason}`. 404 si no existe |
 | `POST /api/species` | sesión | `{scientificName (sin autor), scientificNameAuthorship, taxonRank (Species·Subspecies·Variety·Form), vernacularName?}` → 201 `{species}` con `taxonID biodex:<uuid>` y clasificación del género en EIDOS o, si no, GBIF (`classification.source`). 409 `{error, taxonID}` si ya está en la caché o en EIDOS |
 
 UICN principal: la vigente más reciente del ámbito más específico: Península > España > Mundial.
+
+**Tarjeta** (resultados, especies de un catálogo): `{taxonID, source, scientificName, canonicalName, scientificNameAuthorship, vernacularName, taxonomicGroup, family, taxonRank, iucnPrimary:{code,scope,year}, iucnAssessments:[{code,scope,year}] (la principal primero), descriptionExcerpt (≤ ~320 car.), thumbnail, eidosUrl}`. El nombre se pinta con `canonicalName` en cursiva y el autor en redonda. Foto y descripción llegan con la búsqueda (dos peticiones por lotes a EIDOS) y la ficha las completa.
 
 ## Catálogos (`Api/catalogs.php`) — requieren sesión
 Rol mínimo según `CATALOG_PERMISSIONS` (`Lib/authz.php`); sin rol o catálogo borrado → 403.
@@ -32,8 +35,8 @@ Rol mínimo según `CATALOG_PERMISSIONS` (`Lib/authz.php`); sin rol o catálogo 
 | Método · ruta | Rol mínimo | Qué hace |
 |---|---|---|
 | `GET /api/catalogs` | sesión | Mis catálogos y los compartidos: `{catalogs:[{id, name, description, ownerId, role, speciesCount, …}]}` |
-| `POST /api/catalogs` | sesión | `{name, description?}` → 201; me inserta como `owner` (transacción) |
-| `GET /api/catalogs/{id}` | viewer | Datos, mi rol, especies con `sensitivity {level, suggestedLevel, reason, confirmed}` y `summary {total, byTaxonomicGroup, byIucnCategory}` (`none` = sin evaluación) |
+| `POST /api/catalogs` | sesión | `{name, description?, taxonIDs?: []}` → 201 `{catalog}` con `speciesCount`; me inserta como `owner` y da de alta las especies con su nivel sugerido, todo en una transacción (las fichas se traen de EIDOS antes). Repetidos fuera; ≤ 200 por alta (400). Si alguna no existe: 404 `{error, missing:[…]}` y no se crea nada |
+| `GET /api/catalogs/{id}` | viewer | Datos, mi rol, especies (tarjeta) con `sensitivity {level, suggestedLevel, reason, confirmed, setBy, setAt}` (`setBy` = nombre de quien lo fijó a mano, null si es el sugerido) y `summary {total, byTaxonomicGroup, byIucnCategory}` (`none` = sin evaluación) |
 | `GET /api/catalogs/{id}/tree` | viewer | Árbol reino › filo › clase › orden › familia › `species`; cada nodo `{rank, id, name, count}` con `id` de EIDOS (o `name:<nombre>` si no lo hay) |
 | `PATCH /api/catalogs/{id}` | owner | `{name?, description?}` |
 | `DELETE /api/catalogs/{id}` | owner | Borrado lógico |

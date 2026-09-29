@@ -17,9 +17,13 @@ function section(string $title): void {
     echo "\n== {$title}\n";
 }
 
-/** Petición HTTP con un tarro de cookies propio. Devuelve [código, cuerpo JSON decodificado]. */
+/**
+ * Petición HTTP con un tarro de cookies propio. Devuelve [código, cuerpo JSON decodificado, cabeceras]
+ * (cabeceras con el nombre en minúsculas).
+ */
 function http(string $method, string $path, ?array $body, array &$jar): array {
     global $BASE;
+    $headersOut = [];
     $ch = curl_init($BASE . $path);
     $headers = ["Accept: application/json"];
     if ($body !== null) $headers[] = "Content-Type: application/json";
@@ -31,7 +35,8 @@ function http(string $method, string $path, ?array $body, array &$jar): array {
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_HTTPHEADER     => $headers,
         CURLOPT_TIMEOUT        => 60,   // las rutas que consultan EIDOS tardan varios segundos
-        CURLOPT_HEADERFUNCTION => function ($ch, $line) use (&$jar) {
+        CURLOPT_HEADERFUNCTION => function ($ch, $line) use (&$jar, &$headersOut) {
+            if (preg_match("/^([\w-]+):\s*(.*)$/", trim($line), $h)) $headersOut[strtolower($h[1])] = $h[2];
             if (preg_match('/^Set-Cookie:\s*([^=;]+)=([^;]*)(.*)$/i', trim($line), $m)) {
                 $expired = preg_match('/expires=([^;]+)/i', $m[3], $e) && strtotime($e[1]) < time();
                 if ($m[2] === "" || $m[2] === "deleted" || $expired) unset($jar[$m[1]]);
@@ -44,5 +49,5 @@ function http(string $method, string $path, ?array $body, array &$jar): array {
     $raw = curl_exec($ch);
     $code = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
     curl_close($ch);
-    return [$code, json_decode((string) $raw, true)];
+    return [$code, json_decode((string) $raw, true), $headersOut];
 }
