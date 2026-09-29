@@ -56,6 +56,18 @@ Medido el 2026-09-29 desde el contenedor `php` (Docker Desktop, Windows).
   convendrá permitir que el catálogo lo corrija.
 - **Normas de Castilla-La Mancha con ámbito «Nacional»:** confirmado en el lince (Ley 9/1999, `ccaa` relleno).
 
+## Búsqueda sin acentos (F2b)
+
+Probado el 2026-09-29 contra `v_nombrescomunes` (castellano):
+- **Comodín `_` de LIKE** (`aguila` → `ilike.*_g__l_*`): funciona, pero con demasiado ruido: 546 nombres
+  («Pata de gallo», «Aulaguilla»…). Con el tope de 200 candidatos por vía, *Aquila adalberti* podía quedar fuera.
+- **Elegida: `imatch` con clases de acentos.** `eidosAccentPattern()` quita los acentos de la consulta y cambia cada
+  vocal por su clase (`a` → `[aáàâä]`, `n` → `[nñ]`, `c` → `[cç]`); el resto de caracteres especiales de regex se
+  descarta. «aguila» → `imatch.[aáàâä]g[uúùûü][iíìîï]l[aáàâä]`: 20 nombres, todos águilas y «helecho águila»; «aguila»
+  y «águila» dan el mismo total. Coste: una consulta, ~250 ms, igual que `ilike`. Se usa en las dos vías
+  (científico y común). El orden (primero lo que empieza por la consulta) compara con `eidosFold()`, sin acentos.
+- La caché (`species`) no lo necesita: la colación `utf8mb4_0900_ai_ci` ya ignora acentos.
+
 ## Mapeo EIDOS → tabla `species`
 
 Columnas previstas (propuesta para F2; nombres Darwin Core donde existen). Origen: vista.columna, siempre de la fila
@@ -90,4 +102,7 @@ nombre canónico sin autor; ningún dato de las especies creadas por el usuario.
 
 ## Sin resolver
 - Condiciones de reutilización (licencia) de las fotos de la Fototeca MITECO.
-- Qué ámbito UICN mostrar cuando España y Península discrepan (decisión de producto, F4/F6).
+- ~~Qué ámbito UICN mostrar cuando España y Península discrepan~~ → decidido en F2b: Península > España > Mundial
+  (`eidosPrimaryIucn()`); se guardan todas en `iucn_assessments`.
+- Los géneros (`taxonrank = Genus`) de `v_taxonomia` son filas huérfanas (`taxonid` null), pero con clasificación
+  válida: `eidosGenusClassification()` la usa para las especies de usuario.

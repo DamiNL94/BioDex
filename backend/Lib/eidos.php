@@ -2,7 +2,7 @@
 // ================================================================================================
 // eidos.php — cliente de EIDOS (Banco de Datos de la Naturaleza, IEPNB/MITECO).
 // Portado de NaturDex (Tools/lib/eidos.js), con las mismas trampas resueltas. Funciones puras: sin BD
-// ni caché (la caché en `species_cache` llega en F2). Solo se llama desde el backend.
+// ni caché (la caché en la tabla `species` está en Lib/species.php). Solo se llama desde el backend.
 // ------------------------------------------------------------------------------------------------
 // API PostgREST pública y SIN autenticación sobre https://iepnb.gob.es/api/, con dos esquemas:
 //   /api/especie/    v_taxonomia · v_estadoconservacion · v_estadolegal · v_nombrescomunes ·
@@ -85,6 +85,30 @@ function eidosRows(string $view, array $params, string $base = "especie"): array
 
 function eidosNorm(?string $s): string {
     return preg_replace('/\s+/u', " ", mb_strtolower(trim((string) $s)));
+}
+
+/** eidosNorm sin diacríticos: «Águila» → «aguila», «Ñu» → «nu». Para comparar como la colación _ai_. */
+function eidosFold(?string $s): string {
+    $s = eidosNorm($s);
+    if (class_exists("Normalizer")) $s = Normalizer::normalize($s, Normalizer::FORM_D);
+    return preg_replace('/\p{Mn}+/u', "", $s);
+}
+
+/**
+ * Patrón POSIX para `imatch` que ignora acentos: «aguila» → «[aáàâä]g[uúùûü][iíìîï]l[aáàâä]».
+ * El `ilike` de EIDOS distingue acentos; el comodín `_` de LIKE funciona, pero trae mucho ruido
+ * («_g__l_» casa con «Pata de gallo»: 546 nombres frente a 20). Ver docs/eidos.md, «Búsqueda sin acentos».
+ */
+function eidosAccentPattern(string $q): string {
+    static $classes = [
+        "a" => "[aáàâä]", "e" => "[eéèêë]", "i" => "[iíìîï]", "o" => "[oóòôö]", "u" => "[uúùûü]",
+        "n" => "[nñ]", "c" => "[cç]",
+    ];
+    $out = "";
+    foreach (mb_str_split(eidosFold($q)) as $ch) {
+        $out .= $classes[$ch] ?? (preg_match('/[\p{L}\p{N} \'-]/u', $ch) ? $ch : "");
+    }
+    return $out;
 }
 
 /** "Aquila fasciata Vieillot, 1822" casa con "Aquila fasciata"; nunca se trunca a dos palabras. */
@@ -209,6 +233,68 @@ function eidosConservation(int $idtaxon): array {
     return $byScope;
 }
 
+/** Prioridad de ámbito para la categoría UICN principal: el más específico que haya. */
+const EIDOS_IUCN_SCOPE_PRIORITY = ["Península", "España", "Mundial"];
+
+/**
+ * Categoría UICN principal a partir de la salida de eidosConservation(): la vigente más reciente del
+ * ámbito más específico disponible (Península > España > Mundial). Si no hay ninguno de los tres, la
+ * más reciente de cualquier otro ámbito (Canarias...). null si no hay evaluaciones.
+ * @return array{code:?string, scope:string, year:?int}|null
+ */
+function eidosPrimaryIucn(array $byScope): ?array {
+    foreach (EIDOS_IUCN_SCOPE_PRIORITY as $scope) {
+        if (isset($byScope[$scope])) {
+            return ["code" => $byScope[$scope]["code"], "scope" => $scope, "year" => $byScope[$scope]["year"]];
+        }
+    }
+    $best = null;
+    foreach ($byScope as $scope => $a) {
+        if ($best === null || ($a["year"] ?? 0) > ($best["year"] ?? 0)) {
+            $best = ["code" => $a["code"], "scope" => (string) $scope, "year" => $a["year"]];
+        }
+    }
+    return $best;
+}
+
+/** Columnas de v_taxonomia que BioDex guarda en `species` (clasificación con ids estables). */
+const EIDOS_TAXON_SELECT = "taxonid,name,taxonrank,nametype,scientificnameauthorship,genus,specificepithet,"
+    . "infraspecificepithet,taxonomicgroup,origen,areacode,kingdom,kingdomid,phylum,phylumid,class,classid,"
+    . "ordertaxonomic,ordertaxonomicid,family,familyid";
+
+/** Fila ACEPTADA de v_taxonomia de un taxonid (con EIDOS_TAXON_SELECT) y sus sinónimos. null si no existe. */
+function eidosTaxon(int $idtaxon): ?array {
+    $rows = eidosRows("v_taxonomia", ["taxonid" => "eq." . $idtaxon, "select" => EIDOS_TAXON_SELECT]);
+    $accepted = null;
+    $synonyms = [];
+    foreach ($rows as $r) {
+        if ($r["nametype"] === EIDOS_ACCEPTED) $accepted ??= $r;
+        elseif ($r["name"]) $synonyms[] = $r["name"];
+    }
+    if ($accepted === null) return null;
+    $accepted["synonyms"] = array_values(array_unique($synonyms));
+    return $accepted;
+}
+
+/**
+ * Clasificación (reino…familia, con ids) de un género según EIDOS, o null. Las filas de rango Genus
+ * suelen ser huérfanas (taxonid null), pero su clasificación es válida; si no hay fila del género,
+ * se toma la de cualquier taxón aceptado de ese género.
+ */
+function eidosGenusClassification(string $genus): ?array {
+    $genus = trim($genus);
+    if (!preg_match('/^\p{Lu}\p{Ll}+$/u', $genus)) return null;
+    $select = "name,taxonrank,kingdom,kingdomid,phylum,phylumid,class,classid,ordertaxonomic,ordertaxonomicid,family,familyid";
+    $rows = eidosRows("v_taxonomia", ["name" => "like.{$genus}*", "taxonrank" => "eq.Genus", "select" => $select]);
+    $rows = array_values(array_filter($rows, fn($r) => eidosNameMatches($r["name"], $genus) && $r["kingdom"]));
+    if (!$rows) {
+        $rows = eidosRows("v_taxonomia", [
+            "genus" => "eq.{$genus}", "nametype" => "eq." . EIDOS_ACCEPTED, "select" => $select, "limit" => 1,
+        ]);
+    }
+    return $rows[0] ?? null;
+}
+
 /**
  * ¿La norma de esta fila se aplica en la península, o solo en Canarias/Baleares? El RD 139/2011
  * tiene una columna «Población referida» que EIDOS sirve en `observacionespoblacion`: sin mirarla,
@@ -303,7 +389,7 @@ function eidosImages(int $idtaxon): array {
 
 // --- Búsqueda -----------------------------------------------------------------------------------
 
-/** Filtros que EIDOS resuelve en servidor (columna de v_taxonomia). El resto va sobre la caché (F4). */
+/** Filtros que EIDOS resuelve en servidor (columna de v_taxonomia). Legal y categoría: caché (Api/species.php). */
 const EIDOS_SEARCH_FILTERS = [
     "group"  => "taxonomicgroup",   // "Aves", "Plantas vasculares"...
     "origin" => "origen",           // "Especie nativa", "Especie introducida"...
@@ -319,40 +405,40 @@ const EIDOS_SEARCH_CAP = 200;
  * @return array{total:int, truncated:bool, items:list<array>}
  */
 function eidosSearch(string $q, array $filters = [], int $limit = 20, int $offset = 0): array {
-    $q = trim(preg_replace('/[*(),]/', " ", $q));   // caracteres con significado en PostgREST
-    if (mb_strlen($q) < 2) return ["total" => 0, "truncated" => false, "items" => []];
+    // Sin acentos ni caracteres con significado en PostgREST o en una regex (ver eidosAccentPattern).
+    $pattern = eidosAccentPattern(trim(preg_replace('/\s+/u', " ", $q)));
+    if (mb_strlen(trim($pattern)) < 2) return ["total" => 0, "truncated" => false, "items" => []];
 
     $taxFilters = [];
     foreach ($filters as $key => $value) {
         if (!isset(EIDOS_SEARCH_FILTERS[$key])) throw new InvalidArgumentException("Filtro EIDOS no soportado: {$key}");
         $taxFilters[EIDOS_SEARCH_FILTERS[$key]] = "eq." . $value;
     }
-    $select = "taxonid,name,taxonrank,taxonomicgroup";
-    $base = ["nametype" => "eq." . EIDOS_ACCEPTED, "taxonid" => "not.is.null", "select" => $select] + $taxFilters;
+    $base = ["nametype" => "eq." . EIDOS_ACCEPTED, "taxonid" => "not.is.null", "select" => EIDOS_TAXON_SELECT] + $taxFilters;
 
     // Vía 1: nombre científico.
     [$sciRows, $sciTotal] = eidosRequest("v_taxonomia",
-        ["name" => "ilike.*{$q}*", "order" => "name.asc", "limit" => EIDOS_SEARCH_CAP] + $base, "especie", true);
+        ["name" => "imatch.{$pattern}", "order" => "name.asc", "limit" => EIDOS_SEARCH_CAP] + $base, "especie", true);
 
     // Vía 2: nombre común en castellano → idtaxon → taxón aceptado (con los mismos filtros).
     $common = eidosRows("v_nombrescomunes", [
-        "nombre_comun" => "ilike.*{$q}*", "idioma" => "eq.Castellano",
+        "nombre_comun" => "imatch.{$pattern}", "idioma" => "eq.Castellano",
         "select" => "idtaxon", "limit" => EIDOS_SEARCH_CAP,
     ]);
     $ids = array_values(array_unique(array_map(fn($r) => (int) $r["idtaxon"], $common)));
     $comRows = $ids ? eidosRows("v_taxonomia", ["taxonid" => "in.(" . implode(",", $ids) . ")"] + $base) : [];
 
-    // Unión por taxonid; primero los que empiezan por el texto buscado.
+    // Unión por taxonid; primero los que empiezan por el texto buscado (comparando sin acentos).
     $byId = [];
     foreach (array_merge($sciRows, $comRows) as $r) $byId[(int) $r["taxonid"]] ??= $r;
-    $needle = eidosNorm($q);
+    $needle = eidosFold($q);
     uasort($byId, fn($a, $b) =>
-        [!str_starts_with(eidosNorm($a["name"]), $needle), $a["name"]] <=> [!str_starts_with(eidosNorm($b["name"]), $needle), $b["name"]]);
+        [!str_starts_with(eidosFold($a["name"]), $needle), $a["name"]] <=> [!str_starts_with(eidosFold($b["name"]), $needle), $b["name"]]);
     $page = array_slice(array_values($byId), $offset, $limit);
     $truncated = ($sciTotal ?? 0) > EIDOS_SEARCH_CAP || count($common) >= EIDOS_SEARCH_CAP;
     if (!$page) return ["total" => count($byId), "truncated" => $truncated, "items" => []];
 
-    // Enriquecer la página: nombre común y categoría UICN más reciente, en dos peticiones.
+    // Enriquecer la página: nombre común y evaluaciones UICN vigentes, en dos peticiones.
     $pageIds = implode(",", array_map(fn($r) => (int) $r["taxonid"], $page));
     $names = [];
     foreach (eidosRows("v_nombrescomunes", [
@@ -360,26 +446,34 @@ function eidosSearch(string $q, array $filters = [], int $limit = 20, int $offse
         "select" => "idtaxon,nombre_comun,espreferente", "order" => "espreferente.desc",
     ]) as $r) $names[(int) $r["idtaxon"]] ??= $r["nombre_comun"];
 
+    // Por taxón y ámbito, la más reciente (mismo criterio que eidosConservation).
     $iucn = [];
     foreach (eidosRows("v_estadoconservacion", [
         "idtaxon" => "in.({$pageIds})", "autoridad" => "eq.UICN", "vigencia" => "eq.Vigente",
-        "select" => "idtaxon,categoriaconservacion,aplicaa,anio", "order" => "anio.desc",
-    ]) as $r) $iucn[(int) $r["idtaxon"]] ??= $r;
+        "select" => "idtaxon,categoriaconservacion,aplicaa,anio,criterios",
+    ]) as $r) {
+        $scope = $r["aplicaa"] ?: "?";
+        $prev = $iucn[(int) $r["idtaxon"]][$scope] ?? null;
+        if ($prev === null || ($r["anio"] ?? 0) >= ($prev["year"] ?? 0)) {
+            $iucn[(int) $r["idtaxon"]][$scope] = [
+                "code" => eidosCategoryCode($r["categoriaconservacion"]), "label" => $r["categoriaconservacion"],
+                "year" => $r["anio"] !== null ? (int) $r["anio"] : null, "criteria" => $r["criterios"] ?: null,
+            ];
+        }
+    }
 
     $items = [];
     foreach ($page as $r) {
         $id = (int) $r["taxonid"];
-        $cat = $iucn[$id] ?? null;
         $items[] = [
-            "taxonID"        => (string) $id,
-            "scientificName" => $r["name"],
-            "vernacularName" => $names[$id] ?? null,
-            "group"          => $r["taxonomicgroup"],
-            "taxonRank"      => $r["taxonrank"],
-            "iucn"           => $cat ? [
-                "code" => eidosCategoryCode($cat["categoriaconservacion"]),
-                "scope" => $cat["aplicaa"], "year" => $cat["anio"],
-            ] : null,
+            "taxonID"         => (string) $id,
+            "scientificName"  => $r["name"],
+            "vernacularName"  => $names[$id] ?? null,
+            "group"           => $r["taxonomicgroup"],
+            "taxonRank"       => $r["taxonrank"],
+            "iucn"            => eidosPrimaryIucn($iucn[$id] ?? []),
+            "iucnAssessments" => $iucn[$id] ?? [],
+            "taxon"           => $r,   // fila de v_taxonomia (EIDOS_TAXON_SELECT) para la caché
         ];
     }
     return ["total" => count($byId), "truncated" => $truncated, "items" => $items];
