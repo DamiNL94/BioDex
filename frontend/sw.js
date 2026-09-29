@@ -13,7 +13,7 @@
  * F5, con su propia fecha y su propia regla de sincronización. Una respuesta de la API cacheada aquí
  * sería una segunda copia, sin edad conocida, que el navegador serviría como si fuese fresca.
  */
-var VERSION = 'v1';
+var VERSION = 'v2';
 var CACHE = 'biodex-shell-' + VERSION;
 
 var SHELL_ASSETS = [
@@ -37,8 +37,12 @@ var SHELL_ASSETS = [
   // js/ (nav.js es script clásico; el resto, módulos ES)
   'js/nav.js', 'js/util.js', 'js/state.js', 'js/api.js', 'js/auth.js', 'js/app.js',
 
+  // js/components/
+  'js/components/overlay.js', 'js/components/species-card.js',
+
   // js/views/
-  'js/views/map.js', 'js/views/catalogs.js', 'js/views/species.js', 'js/views/settings.js'
+  'js/views/map.js', 'js/views/catalogs.js', 'js/views/species.js', 'js/views/settings.js',
+  'js/views/search.js', 'js/views/catalog-builder.js', 'js/views/species-new.js', 'js/views/species-detail.js'
 ];
 
 self.addEventListener('install', function (event) {

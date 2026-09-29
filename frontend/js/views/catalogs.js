@@ -1,18 +1,24 @@
 // ================================================================================================
-// Vista Catálogos: lista de GET /api/catalogs, alta de uno nuevo y elección del catálogo activo.
-// En escritorio (≥ 900 px) se añade a la derecha el resumen del catálogo activo: allí es donde se
-// preparan los catálogos y sobra ancho para verlo junto a la lista.
+// Vista Catálogos: lista de GET /api/catalogs, elección del catálogo activo y «Datos del catálogo».
+// «Nuevo catálogo» abre el constructor (catalog-builder.js). En escritorio (≥ 900 px) los datos del
+// activo van a la derecha; en el móvil, debajo de la lista.
+// Datos del catálogo: resumen, árbol taxonómico plegable (GET /{id}/tree) con recuentos —tocar una
+// familia filtra la pestaña Especies—, «Añadir especies» (editor o más) y, para el owner, renombrar,
+// editar la descripción y borrar (diálogo propio con el nombre escrito para confirmar).
 // ================================================================================================
 
-import { apiGetJson, apiPostJson } from '../api.js';
+import { apiGetJson, apiPatchJson, apiDeleteJson } from '../api.js';
 import { state, subscribe, setActiveCatalog } from '../state.js';
 import { html, render, $, plural } from '../util.js';
-import { iucnEntries } from './species.js';
+import { confirmDialog } from '../components/overlay.js';
+import { iucnEntries, filterSpeciesByFamily } from './species.js';
+import { openCatalogBuilder, openAddSpecies } from './catalog-builder.js';
 
 export const ROLE_LABELS = { owner: 'Propietario', custodian: 'Custodio', editor: 'Editor', viewer: 'Lector' };
-const desktop = window.matchMedia('(min-width: 900px)');
+const ADD_ROLES = ['owner', 'custodian', 'editor'];
+const RANK_LABELS = { kingdom: 'Reino', phylum: 'Filo', class: 'Clase', order: 'Orden', family: 'Familia' };
 
-export function mount(el) {
+export function mount(el, { go }) {
   let catalogs = null;
   let loadError = null;
   let alive = true;
@@ -22,23 +28,11 @@ export function mount(el) {
       <h2>Catálogos</h2>
       <button type="button" class="btn-secondary" id="newCatalogBtn">Nuevo catálogo</button>
     </div>
-    <form class="panel new-catalog" id="newCatalogForm" hidden novalidate>
-      <h3>Nuevo catálogo</h3>
-      <label class="field"><span>Nombre</span><input name="name" required maxlength="120"></label>
-      <label class="field"><span>Descripción <em>(opcional)</em></span>
-        <textarea name="description" rows="3"></textarea></label>
-      <p class="form-error" role="alert" hidden></p>
-      <div class="form-actions">
-        <button type="submit" class="btn-primary">Crear catálogo</button>
-        <button type="button" class="link-btn" id="cancelNew">Cancelar</button>
-      </div>
-    </form>
     <div class="split">
       <ul class="rows" id="catalogList" aria-live="polite"></ul>
-      <aside class="aside" id="catalogAside"></aside>
+      <aside class="aside" id="catalogAside" aria-label="Datos del catálogo"></aside>
     </div>`);
 
-  const form = $('#newCatalogForm', el);
   const list = $('#catalogList', el);
   const aside = $('#catalogAside', el);
 
@@ -93,6 +87,7 @@ export function mount(el) {
       catalogs = null;
     }
     paintList();
+    asideFor = null;
     paintAside();
   }
 
@@ -105,80 +100,143 @@ export function mount(el) {
     else if (fresh.name !== active.name || fresh.role !== active.role) setActiveCatalog(fresh);
   }
 
-  // --- Resumen del activo (solo escritorio) -----------------------------------------------------
+  // --- Datos del catálogo activo -----------------------------------------------------------------
   let asideFor = null;
+  let editing = false;
+
+  function treeNode(node) {
+    const label = html`<span class="tree-rank">${RANK_LABELS[node.rank] || node.rank}</span>
+      <span class="tree-name">${node.name || 'Sin asignar'}</span><span class="tree-count">${node.count}</span>`;
+    if (node.rank === 'family') {
+      return html`<li><button type="button" class="tree-leaf" data-family="${node.name || ''}"
+        aria-label="Ver en Especies las ${plural(node.count, 'especie', 'especies')} de ${node.name || 'familia sin asignar'}">${label}</button></li>`;
+    }
+    return html`<li><details ${node.rank === 'kingdom' ? html`open` : ''}><summary>${label}</summary>
+      <ul class="tree">${(node.children || []).map(treeNode)}</ul></details></li>`;
+  }
+
   async function paintAside() {
     const active = state.activeCatalog;
-    if (!desktop.matches || !active) {
+    if (!active) {
       asideFor = null;
-      render(aside, active ? html`` : html`<div class="panel muted">Elige un catálogo de la lista
-        para trabajar con él: será el que se vea en Especies y, más adelante, en el mapa.</div>`);
+      render(aside, html`<div class="panel muted">Elige un catálogo de la lista para trabajar con él:
+        será el que se vea en Especies y, más adelante, en el mapa.</div>`);
       return;
     }
     if (asideFor === active.id) return;
     asideFor = active.id;
-    render(aside, html`<div class="panel muted">Cargando resumen…</div>`);
+    editing = false;
+    render(aside, html`<div class="panel muted">Cargando datos del catálogo…</div>`);
     try {
-      const { catalog, summary } = await apiGetJson('/catalogs/' + encodeURIComponent(active.id));
+      const id = encodeURIComponent(active.id);
+      const [{ catalog, summary }, { tree }] = await Promise.all([
+        apiGetJson('/catalogs/' + id), apiGetJson(`/catalogs/${id}/tree`),
+      ]);
       if (!alive || asideFor !== active.id) return;
-      const groups = Object.entries(summary.byTaxonomicGroup);
-      const cats = iucnEntries(summary.byIucnCategory);
-      render(aside, html`<div class="panel summary">
-        <p class="eyebrow">${ROLE_LABELS[catalog.role] || catalog.role}</p>
-        <h3>${catalog.name}</h3>
-        ${catalog.description ? html`<p>${catalog.description}</p>` : ''}
-        <p class="stat"><strong>${summary.total}</strong> ${summary.total === 1 ? 'especie' : 'especies'}</p>
-        ${cats.length ? html`<h4>Por categoría UICN</h4><dl class="counts">${cats.map(([k, n]) => html`
-          <div><dt class="iucn iucn-${k}">${k === 'none' ? 'Sin evaluar' : k}</dt><dd>${n}</dd></div>`)}</dl>` : ''}
-        ${groups.length ? html`<h4>Por grupo</h4><dl class="counts">${groups.map(([k, n]) => html`
-          <div><dt>${k}</dt><dd>${n}</dd></div>`)}</dl>` : ''}
-      </div>`);
+      paintData(catalog, summary, tree);
     } catch (e) {
-      if (alive && asideFor === active.id) render(aside, html`<div class="panel muted">${e.message}</div>`);
+      if (alive && asideFor === active.id) {
+        render(aside, html`<div class="panel muted">${e.status === 0 ? 'Sin conexión: los datos del catálogo necesitan red por ahora.' : e.message}</div>`);
+      }
     }
   }
 
-  // --- Alta ---------------------------------------------------------------------------------------
-  const errorEl = $('.form-error', form);
-  function closeForm() { form.hidden = true; form.reset(); errorEl.hidden = true; }
-  $('#newCatalogBtn', el).addEventListener('click', () => {
-    form.hidden = false;
-    window.BioDexNav.open('nuevo-catalogo', closeForm);
-    form.name.focus();
-  });
-  $('#cancelNew', el).addEventListener('click', () => window.BioDexNav.close('nuevo-catalogo'));
-  form.addEventListener('submit', async (ev) => {
-    ev.preventDefault();
-    const name = form.name.value.trim();
-    const description = form.description.value.trim();
-    const fail = (t) => { errorEl.textContent = t; errorEl.hidden = false; };
-    if (!name) return fail('El catálogo necesita un nombre.');
-    const button = $('button[type="submit"]', form);
-    button.disabled = true;
-    try {
-      const { catalog } = await apiPostJson('/catalogs', { name, description: description || null });
-      window.BioDexNav.close('nuevo-catalogo');
-      if (!state.activeCatalog) setActiveCatalog(catalog);
-      await load();
-    } catch (e) {
-      fail(e.message);
-    } finally {
-      button.disabled = false;
+  function paintData(catalog, summary, tree) {
+    const groups = Object.entries(summary.byTaxonomicGroup);
+    const cats = iucnEntries(summary.byIucnCategory);
+    const isOwner = catalog.role === 'owner';
+    render(aside, html`<div class="panel summary">
+      <p class="eyebrow">Datos del catálogo · ${ROLE_LABELS[catalog.role] || catalog.role}</p>
+      ${editing ? html`
+        <form class="form edit-catalog" novalidate>
+          <label class="field"><span>Nombre</span><input name="name" required maxlength="120" value="${catalog.name}"></label>
+          <label class="field"><span>Descripción</span><textarea name="description" rows="3">${catalog.description || ''}</textarea></label>
+          <p class="form-error" role="alert" hidden></p>
+          <div class="form-actions"><button type="submit" class="btn-primary">Guardar</button>
+            <button type="button" class="link-btn" data-cancel-edit>Cancelar</button></div>
+        </form>` : html`
+        <h3>${catalog.name}</h3>
+        ${catalog.description ? html`<p>${catalog.description}</p>` : ''}`}
+      <p class="stat"><strong>${summary.total}</strong> ${summary.total === 1 ? 'especie' : 'especies'}</p>
+      <div class="form-actions aside-actions">
+        ${ADD_ROLES.includes(catalog.role) ? html`<button type="button" class="btn-primary" data-add-species>Añadir especies</button>` : ''}
+        ${isOwner && !editing ? html`<button type="button" class="link-btn" data-edit>Renombrar o editar descripción</button>` : ''}
+      </div>
+      ${cats.length ? html`<h4>Por categoría UICN</h4><dl class="counts">${cats.map(([k, n]) => html`
+        <div><dt class="iucn iucn-${k}">${k === 'none' ? 'Sin evaluar' : k}</dt><dd>${n}</dd></div>`)}</dl>` : ''}
+      ${groups.length ? html`<h4>Por grupo</h4><dl class="counts">${groups.map(([k, n]) => html`
+        <div><dt>${k}</dt><dd>${n}</dd></div>`)}</dl>` : ''}
+      ${tree.length ? html`<h4>Árbol taxonómico</h4>
+        <p class="hint">Toca una familia para ver sus especies.</p>
+        <ul class="tree tree-root">${tree.map(treeNode)}</ul>` : ''}
+      ${isOwner ? html`<div class="danger-zone"><button type="button" class="btn-secondary danger" data-delete>Borrar catálogo</button></div>` : ''}
+    </div>`);
+
+    const on = (sel, fn) => { const n = $(sel, aside); if (n) n.addEventListener('click', fn); };
+    on('[data-add-species]', () => openAddSpecies(catalog, { onChanged: () => { asideFor = null; load(); } }));
+    on('[data-edit]', () => { editing = true; paintData(catalog, summary, tree); $('.edit-catalog input', aside).focus(); });
+    on('[data-cancel-edit]', () => { editing = false; paintData(catalog, summary, tree); $('[data-edit]', aside).focus(); });
+    on('[data-delete]', () => removeCatalog(catalog));
+    aside.querySelectorAll('[data-family]').forEach((b) => b.addEventListener('click', () => {
+      filterSpeciesByFamily(b.dataset.family || null);
+      go('especies');
+    }));
+
+    const form = $('.edit-catalog', aside);
+    if (form) {
+      form.addEventListener('submit', async (ev) => {
+        ev.preventDefault();
+        const err = $('.form-error', form);
+        const name = form.name.value.trim();
+        if (!name) { err.textContent = 'El catálogo necesita un nombre.'; err.hidden = false; return; }
+        const button = $('button[type="submit"]', form);
+        button.disabled = true;
+        try {
+          const res = await apiPatchJson('/catalogs/' + encodeURIComponent(catalog.id),
+            { name, description: form.description.value.trim() || null });
+          editing = false;
+          if (state.activeCatalog && state.activeCatalog.id === catalog.id) setActiveCatalog({ ...res.catalog, role: catalog.role });
+          asideFor = null;
+          await load();
+        } catch (e) {
+          err.textContent = e.message;
+          err.hidden = false;
+          button.disabled = false;
+        }
+      });
     }
-  });
+  }
+
+  async function removeCatalog(catalog) {
+    const ok = await confirmDialog({
+      key: 'borrar-catalogo', title: 'Borrar catálogo', danger: true, confirmLabel: 'Borrar catálogo',
+      requireText: catalog.name,
+      text: html`<p>Se borra «${catalog.name}» para todo el equipo: nadie podrá abrirlo ni anotar en él.
+        Las especies siguen en BioDex; solo desaparece esta lista.</p>`,
+    });
+    if (!ok) return;
+    try {
+      await apiDeleteJson('/catalogs/' + encodeURIComponent(catalog.id));
+      if (state.activeCatalog && state.activeCatalog.id === catalog.id) setActiveCatalog(null);
+      asideFor = null;
+      await load();
+      $('#newCatalogBtn', el).focus();
+    } catch (e) {
+      render(aside, html`<div class="panel"><p class="form-error">${e.message}</p></div>`);
+    }
+  }
+
+  // --- Nuevo catálogo ---------------------------------------------------------------------------
+  $('#newCatalogBtn', el).addEventListener('click', () => openCatalogBuilder({ onSaved: () => load() }));
 
   const unsubscribe = subscribe((key) => {
     if (key === 'activeCatalog') { paintList(); paintAside(); }
     if (key === 'online' && state.online && loadError) load();
   });
-  const onResize = () => paintAside();
-  desktop.addEventListener('change', onResize);
 
   load();
   return () => {
     alive = false;
     unsubscribe();
-    desktop.removeEventListener('change', onResize);
-    window.BioDexNav.close('nuevo-catalogo');
   };
 }

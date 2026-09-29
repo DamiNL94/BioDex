@@ -1,14 +1,21 @@
 // ================================================================================================
-// Vista Especies: especies del catálogo activo (GET /api/catalogs/{id}). Sin buscador hasta F4.
+// Vista Especies: especies del catálogo activo (GET /api/catalogs/{id}) con filtro LOCAL por texto,
+// grupo, categoría, nivel y familia (esta llega desde el árbol de «Datos del catálogo»), y orden por
+// nombre, categoría (de CR a LC) o grupo. Tocar una fila abre la ficha.
 // Cada fila lleva el filete lateral del color de su categoría UICN principal.
 // ================================================================================================
 
 import { apiGetJson } from '../api.js';
 import { state, subscribe, setActiveCatalog } from '../state.js';
-import { html, render, plural } from '../util.js';
+import { html, render, $, plural, sciName, sciNameText, store } from '../util.js';
+import { IUCN_CODES, iucnBadge, iucnClass } from '../components/species-card.js';
+import { openSpeciesDetail } from './species-detail.js';
+import { openAddSpecies } from './catalog-builder.js';
 
-// Orden de gravedad de la Lista Roja: el de los recuentos por categoría.
-export const IUCN_CODES = ['EX', 'EW', 'RE', 'CR', 'EN', 'VU', 'NT', 'LC', 'DD', 'NA', 'NE'];
+export { IUCN_CODES };
+const ADD_ROLES = ['owner', 'custodian', 'editor'];
+// Orden por gravedad de la pestaña: de CR a LC, luego lo demás (EX, DD, NE…) y sin evaluar.
+const SEVERITY = ['CR', 'EN', 'VU', 'NT', 'LC', 'RE', 'EW', 'EX', 'DD', 'NA', 'NE'];
 
 /** Entradas de summary.byIucnCategory ordenadas por gravedad; «none» (sin evaluar) al final. */
 export function iucnEntries(byCategory) {
@@ -16,10 +23,10 @@ export function iucnEntries(byCategory) {
   return Object.entries(byCategory).sort(([a], [b]) => rank(a) - rank(b));
 }
 
-function iucnBadge(iucn) {
-  if (!iucn || !iucn.code) return html`<span class="badge iucn iucn-none">Sin evaluar</span>`;
-  const code = IUCN_CODES.includes(iucn.code) ? iucn.code : 'other';
-  return html`<span class="badge iucn iucn-${code}" title="${[iucn.scope, iucn.year].filter(Boolean).join(' · ')}">${iucn.code}${iucn.scope ? html` · ${iucn.scope}` : ''}</span>`;
+// Filtro por familia pedido desde el árbol del catálogo; lo recoge el próximo montaje de la vista.
+let pendingFamily;
+export function filterSpeciesByFamily(family) {
+  pendingFamily = family;
 }
 
 function sensitivityBadge(s) {
@@ -27,14 +34,23 @@ function sensitivityBadge(s) {
   return html`<span class="badge level level-${s.level}">Nivel ${s.level}${s.confirmed ? '' : ' · sugerido'}</span>`;
 }
 
+const fold = (s) => String(s || '').normalize('NFD').replace(/\p{Mn}+/gu, '').toLowerCase();
+
 export function mount(el, { go }) {
   let alive = true;
+  let data = null;
+  // Filtros y orden: se recuerdan por dispositivo (comodidad), salvo la familia, que es de un viaje.
+  const saved = store.get('biodex.speciesFilters', {});
+  const f = { text: '', group: saved.group || '', category: saved.category || '', level: saved.level || '',
+    family: '', sort: saved.sort || 'name' };
+  if (pendingFamily !== undefined) { f.family = pendingFamily || ''; pendingFamily = undefined; }
 
   function paint(body) { if (alive) render(el, body); }
 
   async function load() {
     const active = state.activeCatalog;
     if (!active) {
+      data = null;
       paint(html`<section class="placeholder">
         <p class="eyebrow">Especies</p>
         <h2>Elige un catálogo</h2>
@@ -44,11 +60,12 @@ export function mount(el, { go }) {
       el.querySelector('#toCatalogs').addEventListener('click', (ev) => { ev.preventDefault(); go('catalogos'); });
       return;
     }
-    paint(html`<div class="page-head"><h2>Especies</h2></div><p class="muted">Cargando especies…</p>`);
+    if (!data) paint(html`<div class="page-head"><h2>Especies</h2></div><p class="muted">Cargando especies…</p>`);
     try {
-      const data = await apiGetJson('/catalogs/' + encodeURIComponent(active.id));
+      const fresh = await apiGetJson('/catalogs/' + encodeURIComponent(active.id));
       if (!alive || !state.activeCatalog || state.activeCatalog.id !== active.id) return;
-      paintSpecies(data);
+      data = fresh;
+      paintPage();
     } catch (e) {
       if (!alive) return;
       if (e.status === 403 || e.status === 404) {
@@ -62,33 +79,100 @@ export function mount(el, { go }) {
     }
   }
 
-  function paintSpecies({ catalog, species, summary }) {
-    const cats = iucnEntries(summary.byIucnCategory)
-      .map(([k, n]) => html`<span class="badge iucn iucn-${k}">${k === 'none' ? 'Sin evaluar' : k} ${n}</span>`);
+  function filtered() {
+    const q = fold(f.text.trim());
+    const list = data.species.filter((s) => {
+      if (q && !fold(`${s.scientificName} ${s.vernacularName || ''}`).includes(q)) return false;
+      if (f.group && (s.taxonomicGroup || '') !== f.group) return false;
+      if (f.category && ((s.iucnPrimary && s.iucnPrimary.code) || 'none') !== f.category) return false;
+      if (f.level && String(s.sensitivity && s.sensitivity.level) !== f.level) return false;
+      if (f.family && (s.family || '') !== f.family) return false;
+      return true;
+    });
+    const sev = (s) => { const i = SEVERITY.indexOf(s.iucnPrimary && s.iucnPrimary.code); return i === -1 ? 99 : i; };
+    const byName = (a, b) => sciNameText(a).localeCompare(sciNameText(b));
+    const sorters = {
+      name: byName,
+      category: (a, b) => sev(a) - sev(b) || byName(a, b),
+      group: (a, b) => (a.taxonomicGroup || '~').localeCompare(b.taxonomicGroup || '~') || byName(a, b),
+    };
+    return list.sort(sorters[f.sort] || byName);
+  }
+
+  function paintPage() {
+    const { catalog, species, summary } = data;
+    const groups = Object.keys(summary.byTaxonomicGroup);
+    const cats = iucnEntries(summary.byIucnCategory).map(([k]) => k);
+    const canAdd = ADD_ROLES.includes(catalog.role);
+    const opt = (value, label, current) => html`<option value="${value}" ${current === value ? html`selected` : ''}>${label}</option>`;
     paint(html`
       <div class="page-head">
         <div><h2>Especies</h2><p class="muted">${catalog.name} · ${plural(summary.total, 'especie', 'especies')}</p></div>
-        <div class="row-meta">${cats}</div>
+        ${canAdd ? html`<button type="button" class="btn-secondary" id="addSpeciesBtn">Añadir especies</button>` : ''}
       </div>
       ${species.length ? html`
+        <form class="list-filters" role="search" aria-label="Filtrar especies" novalidate>
+          <label class="field lf-text"><span>Buscar en el catálogo</span>
+            <input type="search" name="text" value="${f.text}" autocomplete="off" placeholder="Nombre científico o común"></label>
+          <label class="field"><span>Grupo</span><select name="group">${opt('', 'Todos', f.group)}${groups.map((g) => opt(g, g, f.group))}</select></label>
+          <label class="field"><span>Categoría</span><select name="category">${opt('', 'Todas', f.category)}${cats.map((c) => opt(c, c === 'none' ? 'Sin evaluar' : c, f.category))}</select></label>
+          <label class="field"><span>Nivel</span><select name="level">${opt('', 'Todos', f.level)}${['1', '2', '3', '4'].map((n) => opt(n, `Nivel ${n}`, f.level))}</select></label>
+          <label class="field"><span>Ordenar por</span><select name="sort">${opt('name', 'Nombre', f.sort)}${opt('category', 'Categoría (CR → LC)', f.sort)}${opt('group', 'Grupo', f.sort)}</select></label>
+        </form>
+        <div class="chips" id="familyChip"></div>
+        <p class="search-count" id="listCount" role="status" aria-live="polite"></p>
         <div class="table-head" aria-hidden="true">
           <span>Especie</span><span>Grupo</span><span>UICN</span><span>Sensibilidad</span></div>
-        <ul class="rows species-rows">${species.map((s) => html`
-          <li class="row sp iucn-edge-${s.iucnPrimary && IUCN_CODES.includes(s.iucnPrimary.code) ? s.iucnPrimary.code : 'none'}">
-            <span class="sp-name"><em class="sci">${s.scientificName}</em>
-              ${s.vernacularName ? html`<span class="row-text">${s.vernacularName}</span>` : ''}</span>
-            <span class="sp-group row-text">${s.taxonomicGroup || '—'}</span>
-            <span class="sp-iucn">${iucnBadge(s.iucnPrimary)}</span>
-            <span class="sp-level">${sensitivityBadge(s.sensitivity)}</span>
-          </li>`)}</ul>` : html`
+        <ul class="rows species-rows" id="speciesList"></ul>` : html`
         <section class="placeholder">
           <h3>Este catálogo aún no tiene especies</h3>
-          <p>El buscador para añadirlas desde EIDOS llega en F4.</p>
+          <p>${canAdd ? 'Búscalas en EIDOS con «Añadir especies».' : 'Quien lo administra aún no ha añadido ninguna.'}</p>
         </section>`}`);
+
+    const add = $('#addSpeciesBtn', el);
+    if (add) add.addEventListener('click', () => openAddSpecies(catalog, { onChanged: load }));
+    const form = $('.list-filters', el);
+    if (!form) return;
+    form.addEventListener('input', (ev) => {
+      const t = ev.target;
+      if (!t.name) return;
+      f[t.name] = t.value;
+      if (t.name !== 'text') store.set('biodex.speciesFilters', { group: f.group, category: f.category, level: f.level, sort: f.sort });
+      paintRows();
+    });
+    form.addEventListener('submit', (ev) => ev.preventDefault());
+    $('#speciesList', el).addEventListener('click', (ev) => {
+      const row = ev.target.closest('[data-taxon]');
+      if (row) openSpeciesDetail(row.dataset.taxon, { onChanged: load });
+    });
+    $('#familyChip', el).addEventListener('click', (ev) => {
+      if (!ev.target.closest('.chip')) return;
+      f.family = '';
+      paintRows();
+      form.text.focus();
+    });
+    paintRows();
+  }
+
+  function paintRows() {
+    const rows = filtered();
+    const total = data.species.length;
+    render($('#familyChip', el), f.family ? html`<button type="button" class="chip" aria-label="Quitar filtro familia ${f.family}"
+      >Familia ${f.family} <span aria-hidden="true">×</span></button>` : html``);
+    $('#listCount', el).textContent = rows.length === total ? plural(total, 'especie', 'especies')
+      : `${rows.length} de ${plural(total, 'especie', 'especies')}`;
+    render($('#speciesList', el), rows.length ? html`${rows.map((s) => html`
+      <li><button type="button" class="row sp iucn-edge-${iucnClass(s.iucnPrimary && s.iucnPrimary.code)}" data-taxon="${s.taxonID}">
+        <span class="sp-name">${sciName(s)}
+          ${s.vernacularName ? html`<span class="row-text">${s.vernacularName}</span>` : ''}</span>
+        <span class="sp-group row-text">${s.taxonomicGroup || '—'}</span>
+        <span class="sp-iucn">${iucnBadge(s.iucnPrimary)}</span>
+        <span class="sp-level">${sensitivityBadge(s.sensitivity)}</span>
+      </button></li>`)}` : html`<li class="empty"><p class="muted">Ninguna especie cumple los filtros.</p></li>`);
   }
 
   const unsubscribe = subscribe((key) => {
-    if (key === 'activeCatalog') load();
+    if (key === 'activeCatalog') { data = null; f.family = ''; load(); }
     if (key === 'online' && state.online) load();
   });
   load();
