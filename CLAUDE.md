@@ -13,7 +13,7 @@ PWA de campo para biólogos: catálogos de especies (EIDOS) → observaciones of
 - Datos compartidos (UICN, mapeo DwC) en `shared/*.json`.
 
 ## Comandos
-- `docker compose up -d` → app en http://localhost:8080, Adminer en :8081
+- `docker compose up -d` → app en http://localhost:8090, Adminer en :8081
 
 ## Convenciones
 - Idioma: UI y comentarios en español; código (variables, funciones) en inglés.

@@ -11,6 +11,6 @@ cp .env.example .env   # y ajusta DB_PASS
 docker compose up -d
 ```
 
-- App: http://localhost:8080
-- Comprobación: http://localhost:8080/api/health → `{"ok":true,"db":true}`
+- App: http://localhost:8090
+- Comprobación: http://localhost:8090/api/health → `{"ok":true,"db":true}`
 - Adminer: http://localhost:8081 (servidor `mysql`, usuario/contraseña de `.env`)
