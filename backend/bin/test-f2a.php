@@ -14,50 +14,9 @@ require_once __DIR__ . "/../Lib/migrate.php";
 require_once __DIR__ . "/../Lib/authz.php";
 require_once __DIR__ . "/../Lib/sensitivity.php";
 require_once __DIR__ . "/../Lib/audit.php";
+require_once __DIR__ . "/test-lib.php";
 
-$BASE    = getenv("TEST_BASE_URL") ?: "http://nginx";
 $MAILPIT = getenv("TEST_MAILPIT_URL") ?: "http://mailpit:8025";
-$failures = 0;
-
-function check(string $label, bool $ok, string $detail = ""): void {
-    global $failures;
-    if (!$ok) $failures++;
-    echo ($ok ? "OK   " : "FAIL ") . $label . ($ok || $detail === "" ? "" : "  → " . $detail) . "\n";
-}
-
-function section(string $title): void {
-    echo "\n== {$title}\n";
-}
-
-/** Petición HTTP con un tarro de cookies propio. Devuelve [código, cuerpo JSON decodificado]. */
-function http(string $method, string $path, ?array $body, array &$jar): array {
-    global $BASE;
-    $ch = curl_init($BASE . $path);
-    $headers = ["Accept: application/json"];
-    if ($body !== null) $headers[] = "Content-Type: application/json";
-    if ($jar) {
-        $headers[] = "Cookie: " . implode("; ", array_map(fn($k, $v) => "{$k}={$v}", array_keys($jar), $jar));
-    }
-    curl_setopt_array($ch, [
-        CURLOPT_CUSTOMREQUEST  => $method,
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER     => $headers,
-        CURLOPT_TIMEOUT        => 10,
-        CURLOPT_HEADERFUNCTION => function ($ch, $line) use (&$jar) {
-            if (preg_match('/^Set-Cookie:\s*([^=;]+)=([^;]*)(.*)$/i', trim($line), $m)) {
-                $expired = preg_match('/expires=([^;]+)/i', $m[3], $e) && strtotime($e[1]) < time();
-                if ($m[2] === "" || $m[2] === "deleted" || $expired) unset($jar[$m[1]]);
-                else $jar[$m[1]] = urldecode($m[2]);   // setcookie() codifica el ":" del token
-            }
-            return strlen($line);
-        },
-    ]);
-    if ($body !== null) curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($body));
-    $raw = curl_exec($ch);
-    $code = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
-    curl_close($ch);
-    return [$code, json_decode((string) $raw, true)];
-}
 
 function getJson(string $url): ?array {
     $raw = @file_get_contents($url);
