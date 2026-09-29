@@ -131,10 +131,15 @@ function speciesUpsert(PDO $pdo, string $taxonID, array $cols, string $source = 
 /** Guarda en la caché el detalle ligero de un resultado de eidosSearch(). */
 function speciesUpsertFromSearch(PDO $pdo, array $item): void {
     $cols = speciesColumnsFromTaxon($item["taxon"]) + speciesIucnColumns($item["iucnAssessments"]);
-    // El nombre común de la búsqueda no pisa el de la ficha (que usa el preferente de eidosCommonName).
+    // Nombre común, foto y descripción de la búsqueda no pisan los de la ficha (más completos).
     $stmt = $pdo->prepare("SELECT detail_fetched_at FROM species WHERE taxonID = ?");
     $stmt->execute([$item["taxonID"]]);
-    if (!$stmt->fetchColumn()) $cols["vernacularName"] = $item["vernacularName"];
+    if (!$stmt->fetchColumn()) {
+        $cols["vernacularName"] = $item["vernacularName"];
+        $cols["description"] = $item["description"] ?? null;
+        $photo = $item["photo"] ?? null;
+        $cols["images"] = $photo ? json_encode([$photo + ["attribution" => SPECIES_PHOTO_ATTRIBUTION]], JSON_UNESCAPED_UNICODE) : null;
+    }
     speciesUpsert($pdo, $item["taxonID"], $cols);
 }
 
@@ -226,19 +231,47 @@ function speciesEidosUrl(array $row): ?string {
     return $row["source"] === "eidos" ? SPECIES_EIDOS_URL . $row["taxonID"] : null;
 }
 
+/** Evaluaciones UICN vigentes: la principal primero, el resto por año descendente. */
+function speciesIucnSorted(array $row): array {
+    $list = json_decode((string) $row["iucn_assessments"], true) ?: [];
+    $primary = $row["iucn_primary_scope"];
+    usort($list, fn($a, $b) => [$a["scope"] !== $primary, -($a["year"] ?? 0)] <=> [$b["scope"] !== $primary, -($b["year"] ?? 0)]);
+    return $list;
+}
+
+/** Versión compacta para las tarjetas (sin literal ni criterios). */
+function speciesIucnBadges(array $row): array {
+    return array_map(fn($a) => ["code" => $a["code"], "scope" => $a["scope"], "year" => $a["year"]], speciesIucnSorted($row));
+}
+
+/** Primeros ~$max caracteres de un texto, cortados en un espacio. */
+function speciesExcerpt(?string $text, int $max = 320): ?string {
+    if ($text === null || trim($text) === "") return null;
+    $text = trim(preg_replace('/\s+/u', " ", $text));
+    if (mb_strlen($text) <= $max) return $text;
+    $cut = mb_substr($text, 0, $max);
+    $space = mb_strrpos($cut, " ");
+    return rtrim($space > $max * 0.6 ? mb_substr($cut, 0, $space) : $cut, " ,;.") . "…";
+}
+
 /** Tarjeta de especie (resultados de búsqueda, listas de catálogo). */
 function speciesSummaryOut(array $row): array {
     $images = json_decode((string) $row["images"], true) ?: [];
     return [
-        "taxonID"        => $row["taxonID"],
-        "source"         => $row["source"],
-        "scientificName" => $row["scientificName"],
-        "vernacularName" => $row["vernacularName"],
-        "taxonomicGroup" => $row["taxonomicGroup"],
-        "taxonRank"      => $row["taxonRank"],
-        "iucnPrimary"    => speciesIucnPrimary($row),
-        "thumbnail"      => $images[0]["url"] ?? null,
-        "eidosUrl"       => speciesEidosUrl($row),
+        "taxonID"                  => $row["taxonID"],
+        "source"                   => $row["source"],
+        "scientificName"           => $row["scientificName"],
+        "canonicalName"            => $row["canonical_name"],
+        "scientificNameAuthorship" => $row["scientificNameAuthorship"],
+        "vernacularName"           => $row["vernacularName"],
+        "taxonomicGroup"           => $row["taxonomicGroup"],
+        "family"                   => $row["family"],
+        "taxonRank"                => $row["taxonRank"],
+        "iucnPrimary"              => speciesIucnPrimary($row),
+        "iucnAssessments"          => speciesIucnBadges($row),
+        "descriptionExcerpt"       => speciesExcerpt($row["description"]),
+        "thumbnail"                => $images[0]["url"] ?? null,
+        "eidosUrl"                 => speciesEidosUrl($row),
     ];
 }
 
@@ -246,14 +279,15 @@ function speciesSummaryOut(array $row): array {
 function speciesFullOut(array $row): array {
     $legal = json_decode((string) $row["legal_status"], true);
     [$level, $reason] = speciesSuggestLevel($row);
-    return speciesSummaryOut($row) + [
+    // array_merge: aquí iucnAssessments va completo (con criterios), no el compacto de la tarjeta.
+    return array_merge(speciesSummaryOut($row), [
         "scientificNameAuthorship" => $row["scientificNameAuthorship"],
         "canonicalName"            => $row["canonical_name"],
         "classification"           => speciesClassificationOut($row),
         "establishmentMeans"       => $row["establishmentMeans"],
         "habitatScope"             => $row["habitatScope"],
         "synonyms"                 => json_decode((string) $row["synonyms"], true) ?: [],
-        "iucnAssessments"          => json_decode((string) $row["iucn_assessments"], true) ?: [],
+        "iucnAssessments"          => speciesIucnSorted($row),
         "legalStatus"              => $legal === null ? null : [
             "national"  => array_values(array_filter($legal["general"], fn($r) => $r["ambito"] === "Nacional")),
             "other"     => array_values(array_filter($legal["general"], fn($r) => $r["ambito"] !== "Nacional")),
@@ -265,7 +299,7 @@ function speciesFullOut(array $row): array {
         "taxonRemarks"             => $row["taxonRemarks"],
         "suggestedSensitivity"     => ["level" => $level, "reason" => $reason],
         "detailFetchedAt"          => $row["detail_fetched_at"],
-    ];
+    ]);
 }
 
 function speciesClassificationOut(array $row): array {

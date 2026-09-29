@@ -462,6 +462,30 @@ function eidosSearch(string $q, array $filters = [], int $limit = 20, int $offse
         }
     }
 
+    // Tarjeta (F4): foto prioritaria y descripción, otras dos peticiones por lotes (~0,2 s cada una).
+    $photos = [];
+    foreach (eidosRows("v_imagenes", [
+        "id_taxon" => "in.({$pageIds})", "select" => "id_taxon,id_foto,es_prioridad,descripcion,ruta_foto",
+        "order" => "es_prioridad.desc,id_foto.asc", "limit" => 500,
+    ]) as $r) {
+        $path = trim((string) $r["ruta_foto"]);
+        if ($path === "" || isset($photos[(int) $r["id_taxon"]])) continue;
+        $photos[(int) $r["id_taxon"]] = [
+            "url" => preg_match('#^https?://#i', $path) ? $path : "https://" . ltrim($path, "/"),
+            "id" => (int) $r["id_foto"], "priority" => (int) $r["es_prioridad"], "description" => $r["descripcion"],
+        ];
+    }
+    $descriptions = [];
+    $descRows = eidosRows("v_atributos_pliniancore", [
+        "idtaxon" => "in.({$pageIds})", "atributo" => "eq.Descripción de la especie",
+        "select" => "idtaxon,valor_atributo,idvigente",
+    ]);
+    usort($descRows, fn($a, $b) => ((int) $a["idvigente"] !== 1) <=> ((int) $b["idvigente"] !== 1));
+    foreach ($descRows as $r) {
+        $text = trim((string) $r["valor_atributo"]);
+        if ($text !== "") $descriptions[(int) $r["idtaxon"]] ??= $text;
+    }
+
     $items = [];
     foreach ($page as $r) {
         $id = (int) $r["taxonid"];
@@ -473,6 +497,8 @@ function eidosSearch(string $q, array $filters = [], int $limit = 20, int $offse
             "taxonRank"       => $r["taxonrank"],
             "iucn"            => eidosPrimaryIucn($iucn[$id] ?? []),
             "iucnAssessments" => $iucn[$id] ?? [],
+            "photo"           => $photos[$id] ?? null,
+            "description"     => $descriptions[$id] ?? null,
             "taxon"           => $r,   // fila de v_taxonomia (EIDOS_TAXON_SELECT) para la caché
         ];
     }

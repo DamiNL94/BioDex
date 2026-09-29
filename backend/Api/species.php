@@ -3,6 +3,7 @@
 // /api/species — buscador, ficha y especies creadas por el usuario. Requiere sesión.
 // ------------------------------------------------------------------------------------------------
 //   GET  /api/species?q=&group=&origin=&scope=&legal=&category=&limit=20&offset=0
+//   GET  /api/species/filters     opciones de los filtros (shared/eidos-filters.json) y niveles de sensibilidad
 //   GET  /api/species/{taxonID}   ficha completa (la trae de EIDOS si falta o tiene > 30 días)
 //   POST /api/species             {scientificName, scientificNameAuthorship, taxonRank, vernacularName?}
 //
@@ -23,6 +24,7 @@ const SEARCH_USER_CAP      = 50;    // especies de usuario por búsqueda
 const USER_SPECIES_RANKS   = ["Species", "Subspecies", "Variety", "Form"];
 const GBIF_MATCH_URL       = "https://api.gbif.org/v1/species/match";
 const IUCN_CODES           = ["EX", "EW", "RE", "CR", "EN", "VU", "NT", "LC", "DD", "NA", "NE"];
+const FILTERS_JSON         = __DIR__ . "/../../shared/eidos-filters.json";
 
 $pdo = db();
 biodexSessionStart($pdo);
@@ -163,6 +165,22 @@ function handleSearch(PDO $pdo): never {
     ]);
 }
 
+/**
+ * Opciones de los filtros del buscador (generadas por bin/build-filters.php) más los niveles de
+ * sensibilidad de shared/sensitivity.json, para que el cliente no duplique etiquetas ni distancias.
+ */
+function handleFilters(): never {
+    $filters = json_decode((string) @file_get_contents(FILTERS_JSON), true);
+    if (!is_array($filters)) apiError("Faltan los filtros: ejecuta bin/build-filters.php.", 500);
+    $levels = [];
+    foreach (sensitivityConfig()["levels"] as $n => $l) {
+        $levels[] = ["level" => (int) $n, "name" => $l["name"], "approxKm" => $l["approxKm"] ?? null,
+                     "display" => $l["display"] ?? null, "displayText" => $l["displayText"] ?? null];
+    }
+    header("Cache-Control: private, max-age=86400");
+    respond($filters + ["sensitivityLevels" => $levels]);
+}
+
 /** Clasificación desde GBIF (reino…familia), con los ids de EIDOS si EIDOS conoce la familia. */
 function gbifClassification(string $name, string $genus): ?array {
     foreach ([["name" => $name], ["name" => $genus, "rank" => "GENUS"]] as $params) {
@@ -248,6 +266,7 @@ function handleCreate(PDO $pdo, int $userId): never {
 // ------------------------------------------------------------------------------------------------
 
 if ($method === "GET" && $taxonID === null) handleSearch($pdo);
+if ($method === "GET" && $taxonID === "filters") handleFilters();
 
 if ($method === "GET") {
     $row = speciesWithDetail($pdo, $taxonID);

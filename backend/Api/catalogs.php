@@ -4,7 +4,7 @@
 // con requireCatalogPermission() (matriz CATALOG_PERMISSIONS de Lib/authz.php).
 // ------------------------------------------------------------------------------------------------
 //   GET    /api/catalogs                                   los míos y los compartidos
-//   POST   /api/catalogs                                   {name, description?} → owner
+//   POST   /api/catalogs                                   {name, description?, taxonIDs?} → owner
 //   GET    /api/catalogs/{id}                              view: datos, especies y resumen
 //   GET    /api/catalogs/{id}/tree                         view: reino › filo › clase › orden › familia
 //   PATCH  /api/catalogs/{id}                              edit_catalog (owner)
@@ -21,6 +21,8 @@ require_once __DIR__ . "/../Lib/audit.php";
 require_once __DIR__ . "/../Lib/species.php";
 
 const CATALOG_NAME_MAX = 120;
+// Especies por alta de catálogo: cada una sin ficha en caché son ~7 peticiones a EIDOS (~1,5 s).
+const CATALOG_CREATE_MAX_SPECIES = 200;
 
 $pdo = db();
 biodexSessionStart($pdo);
@@ -73,10 +75,11 @@ function catalogFields(array $body, bool $partial): array {
 function catalogSpecies(PDO $pdo, string $catalogId): array {
     $stmt = $pdo->prepare(
         "SELECT s.*, ss.level AS sens_level, ss.suggested_level AS sens_suggested, ss.reason AS sens_reason,
-                ss.set_by AS sens_set_by, cs.added_at
+                ss.set_by AS sens_set_by, ss.set_at AS sens_set_at, u.name AS sens_set_by_name, cs.added_at
            FROM catalog_species cs
            JOIN species s ON s.taxonID = cs.taxonID
            LEFT JOIN species_sensitivity ss ON ss.catalog_id = cs.catalog_id AND ss.taxonID = cs.taxonID
+           LEFT JOIN users u ON u.id = ss.set_by
           WHERE cs.catalog_id = ? AND cs.deleted_at IS NULL
           ORDER BY s.canonical_name"
     );
@@ -90,16 +93,62 @@ function sensitivityOut(array $r): array {
         "suggestedLevel" => $r["sens_suggested"] !== null ? (int) $r["sens_suggested"] : null,
         "reason"         => $r["sens_reason"],
         "confirmed"      => $r["sens_set_by"] !== null,
+        // Último cambio manual (del owner): quién y cuándo. Sin email: lo ven todos los miembros.
+        "setBy"          => $r["sens_set_by"] !== null ? ($r["sens_set_by_name"] ?: "Propietario del catálogo") : null,
+        "setAt"          => $r["sens_set_at"],
     ];
+}
+
+/** Taxones pedidos en el alta: lista de ids sin repetir, como mucho CATALOG_CREATE_MAX_SPECIES. */
+function catalogTaxonIDs(array $body): array {
+    if (!isset($body["taxonIDs"])) return [];
+    $ids = $body["taxonIDs"];
+    if (!is_array($ids) || !array_is_list($ids)) apiError("«taxonIDs» debe ser una lista de taxonID.", 400);
+    $out = [];
+    foreach ($ids as $id) {
+        if (!is_string($id) && !is_int($id)) apiError("«taxonIDs» solo admite taxonID de texto o número.", 400);
+        $id = trim((string) $id);
+        if ($id === "") apiError("«taxonIDs» contiene un taxonID vacío.", 400);
+        $out[$id] = true;
+    }
+    if (count($out) > CATALOG_CREATE_MAX_SPECIES) {
+        apiError("Como mucho " . CATALOG_CREATE_MAX_SPECIES . " especies por alta; añade el resto después.", 400);
+    }
+    return array_map("strval", array_keys($out));   // las claves numéricas vuelven como int
+}
+
+/**
+ * Alta (o recuperación, si estaba borrada) de una especie en el catálogo con su nivel sugerido; no pisa
+ * un nivel ya fijado. $species es la fila con ficha (speciesWithDetail). Va DENTRO de la transacción de
+ * quien llama. Devuelve true si la especie no estaba (o estaba borrada).
+ */
+function catalogAddSpecies(PDO $pdo, string $catalogId, array $species, int $userId): bool {
+    $taxonID = $species["taxonID"];
+    [$level, $reason] = speciesSuggestLevel($species);
+    $stmt = $pdo->prepare("SELECT deleted_at FROM catalog_species WHERE catalog_id = ? AND taxonID = ? FOR UPDATE");
+    $stmt->execute([$catalogId, $taxonID]);
+    $existing = $stmt->fetch();
+    if ($existing === false) {
+        $pdo->prepare("INSERT INTO catalog_species (catalog_id, taxonID, added_by) VALUES (?, ?, ?)")
+            ->execute([$catalogId, $taxonID, $userId]);
+    } elseif ($existing["deleted_at"] !== null) {
+        $pdo->prepare("UPDATE catalog_species SET deleted_at = NULL, added_by = ?, added_at = NOW() WHERE catalog_id = ? AND taxonID = ?")
+            ->execute([$userId, $catalogId, $taxonID]);
+    }
+    // Idempotente: si ya hay nivel (sugerido o fijado por el owner) se conserva.
+    $pdo->prepare("INSERT IGNORE INTO species_sensitivity (catalog_id, taxonID, level, suggested_level, reason) VALUES (?, ?, ?, ?, ?)")
+        ->execute([$catalogId, $taxonID, $level, $level, mb_substr($reason, 0, 255)]);
+    return $existing === false || $existing["deleted_at"] !== null;
 }
 
 /** Especie vigente del catálogo con su sensibilidad, o 404. */
 function catalogSpeciesRow(PDO $pdo, string $catalogId, string $taxonID): array {
     $stmt = $pdo->prepare(
         "SELECT cs.taxonID, ss.level AS sens_level, ss.suggested_level AS sens_suggested, ss.reason AS sens_reason,
-                ss.set_by AS sens_set_by
+                ss.set_by AS sens_set_by, ss.set_at AS sens_set_at, u.name AS sens_set_by_name
            FROM catalog_species cs
            LEFT JOIN species_sensitivity ss ON ss.catalog_id = cs.catalog_id AND ss.taxonID = cs.taxonID
+           LEFT JOIN users u ON u.id = ss.set_by
           WHERE cs.catalog_id = ? AND cs.taxonID = ? AND cs.deleted_at IS NULL"
     );
     $stmt->execute([$catalogId, $taxonID]);
@@ -153,15 +202,28 @@ if ($catalogId === null) {
         respond(["catalogs" => array_map(fn($c) => catalogOut($c, $c["role"], (int) $c["n"]), $stmt->fetchAll())]);
     }
     if ($method === "POST") {
-        $f = catalogFields(requireJsonBody("{name, description?}"), false);
+        $body = requireJsonBody("{name, description?, taxonIDs?}");
+        $f = catalogFields($body, false);
+        $taxonIDs = catalogTaxonIDs($body);
+        // Las fichas (UICN y estado legal para el nivel sugerido) se traen ANTES de la transacción:
+        // no se tiene la BD bloqueada esperando a EIDOS. Si falta alguna especie no se crea nada.
+        $species = [];
+        $missing = [];
+        foreach ($taxonIDs as $t) {
+            $row = speciesWithDetail($pdo, $t);
+            if ($row === null) $missing[] = $t; else $species[] = $row;
+        }
+        if ($missing) respond(["error" => "Especies no encontradas: " . implode(", ", $missing) . ".", "missing" => $missing], 404);
+
         $id = uuidV4();
         $pdo->beginTransaction();
         $pdo->prepare("INSERT INTO catalogs (id, owner_id, name, description) VALUES (?, ?, ?, ?)")
             ->execute([$id, $userId, $f["name"], $f["description"] ?? null]);
         $pdo->prepare("INSERT INTO catalog_members (catalog_id, user_id, role, granted_by) VALUES (?, ?, 'owner', ?)")
             ->execute([$id, $userId, $userId]);
+        foreach ($species as $row) catalogAddSpecies($pdo, $id, $row, $userId);
         $pdo->commit();
-        respond(["catalog" => catalogOut(catalogRow($pdo, $id), "owner", 0)], 201);
+        respond(["catalog" => catalogOut(catalogRow($pdo, $id), "owner", count($species))], 201);
     }
     apiMethodNotAllowed("GET o POST");
 }
@@ -221,25 +283,11 @@ if ($taxonID === null) {
     // La sugerencia de nivel necesita UICN y estado legal: ficha completa (de caché o de EIDOS).
     $species = speciesWithDetail($pdo, $taxonID);
     if ($species === null) apiError("Especie no encontrada.", 404);
-    [$level, $reason] = speciesSuggestLevel($species);
 
     $pdo->beginTransaction();
-    $stmt = $pdo->prepare("SELECT deleted_at FROM catalog_species WHERE catalog_id = ? AND taxonID = ? FOR UPDATE");
-    $stmt->execute([$catalogId, $taxonID]);
-    $existing = $stmt->fetch();
-    if ($existing === false) {
-        $pdo->prepare("INSERT INTO catalog_species (catalog_id, taxonID, added_by) VALUES (?, ?, ?)")
-            ->execute([$catalogId, $taxonID, $userId]);
-    } elseif ($existing["deleted_at"] !== null) {
-        $pdo->prepare("UPDATE catalog_species SET deleted_at = NULL, added_by = ?, added_at = NOW() WHERE catalog_id = ? AND taxonID = ?")
-            ->execute([$userId, $catalogId, $taxonID]);
-    }
-    // Idempotente: si ya hay nivel (sugerido o fijado por el owner) se conserva.
-    $pdo->prepare("INSERT IGNORE INTO species_sensitivity (catalog_id, taxonID, level, suggested_level, reason) VALUES (?, ?, ?, ?, ?)")
-        ->execute([$catalogId, $taxonID, $level, $level, mb_substr($reason, 0, 255)]);
+    $created = catalogAddSpecies($pdo, $catalogId, $species, $userId);
     $pdo->commit();
 
-    $created = $existing === false || $existing["deleted_at"] !== null;
     respond([
         "species"     => speciesSummaryOut($species),
         "sensitivity" => sensitivityOut(catalogSpeciesRow($pdo, $catalogId, $taxonID)),
