@@ -9,6 +9,8 @@
 //   · Los errores son `ApiError` con `status` (0 = sin red o sin respuesta) y `retryAfter` (s), para
 //     que quien llama distinga un 401 de un 429 de un fallo de red sin leer el texto.
 //   · Un 401 fuera de /auth/ avisa a la app con el evento `biodex:unauthorized` (sesión caducada).
+//   · `signal` propio (AbortController) para cancelar una petición que ya no interesa (buscador):
+//     el ApiError lleva entonces `aborted = true` y quien llama lo ignora.
 // ================================================================================================
 
 import { API_BASE } from './state.js';
@@ -16,23 +18,28 @@ import { API_BASE } from './state.js';
 export const API_TIMEOUT_MS = 8000;
 
 export class ApiError extends Error {
-  constructor(message, status = 0, retryAfter = null) {
+  constructor(message, status = 0, retryAfter = null, data = null) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
     this.retryAfter = retryAfter;
+    this.data = data;        // cuerpo JSON del error (p. ej. el taxonID de un 409)
+    this.aborted = false;
   }
 }
 
-export function apiSignal(ms = API_TIMEOUT_MS) {
-  return (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(ms) : undefined;
+export function apiSignal(ms = API_TIMEOUT_MS, signal = undefined) {
+  const timeout = (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(ms) : undefined;
+  if (!signal) return timeout;
+  if (!timeout) return signal;
+  return AbortSignal.any ? AbortSignal.any([signal, timeout]) : signal;
 }
 
 export const apiUrl = (path) => API_BASE + path;
 
 /** `fetch` con corte por tiempo. Devuelve la Response cruda; un fallo de red lanza ApiError(status 0). */
-export async function apiFetch(path, { method = 'GET', body, timeoutMs = API_TIMEOUT_MS } = {}) {
-  const opts = { method, signal: apiSignal(timeoutMs), credentials: 'same-origin', headers: { Accept: 'application/json' } };
+export async function apiFetch(path, { method = 'GET', body, timeoutMs = API_TIMEOUT_MS, signal } = {}) {
+  const opts = { method, signal: apiSignal(timeoutMs, signal), credentials: 'same-origin', headers: { Accept: 'application/json' } };
   if (body !== undefined) {
     opts.headers['Content-Type'] = 'application/json';
     opts.body = JSON.stringify(body);
@@ -41,6 +48,11 @@ export async function apiFetch(path, { method = 'GET', body, timeoutMs = API_TIM
   try {
     res = await fetch(apiUrl(path), opts);
   } catch (e) {
+    if (signal && signal.aborted) {
+      const err = new ApiError('Petición cancelada.', 0);
+      err.aborted = true;
+      throw err;
+    }
     const timeout = e && (e.name === 'TimeoutError' || e.name === 'AbortError');
     throw new ApiError(timeout ? 'El servidor no responde. Inténtalo de nuevo en un momento.'
                                : 'Sin conexión con el servidor.', 0);
@@ -58,7 +70,7 @@ async function errorFrom(res, fallback) {
   const message = data && data.error ? data.error
     : res.status >= 500 ? 'El servidor ha tenido un problema. Inténtalo más tarde.'
     : `${fallback} (HTTP ${res.status}).`;
-  return new ApiError(message, res.status, Number.isFinite(retry) ? retry : null);
+  return new ApiError(message, res.status, Number.isFinite(retry) ? retry : null, data);
 }
 
 async function json(res, fallback) {
@@ -74,6 +86,27 @@ export async function apiGetJson(path, opts = {}) {
 /** POST de JSON que devuelve el JSON parseado y LANZA ApiError si la respuesta no es 2xx. */
 export async function apiPostJson(path, body = {}, opts = {}) {
   return json(await apiFetch(path, { ...opts, method: 'POST', body }), 'No se pudo completar la operación');
+}
+
+/** PUT / PATCH / DELETE de JSON: como apiPostJson. */
+export async function apiPutJson(path, body = {}, opts = {}) {
+  return json(await apiFetch(path, { ...opts, method: 'PUT', body }), 'No se pudo guardar');
+}
+export async function apiPatchJson(path, body = {}, opts = {}) {
+  return json(await apiFetch(path, { ...opts, method: 'PATCH', body }), 'No se pudo guardar');
+}
+export async function apiDeleteJson(path, opts = {}) {
+  return json(await apiFetch(path, { ...opts, method: 'DELETE' }), 'No se pudo borrar');
+}
+
+// Opciones de los filtros del buscador y niveles de sensibilidad (GET /species/filters). Cambian
+// muy de tarde en tarde: una petición por sesión de la app (y el navegador la cachea un día).
+let filtersPromise = null;
+export function getSpeciesFilters() {
+  if (!filtersPromise) {
+    filtersPromise = apiGetJson('/species/filters').catch((e) => { filtersPromise = null; throw e; });
+  }
+  return filtersPromise;
 }
 
 /** POST de mejor esfuerzo: el JSON si fue bien; `null` si no hubo red o hubo error. Nunca lanza. */

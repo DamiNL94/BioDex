@@ -62,3 +62,51 @@ export const store = {
     try { localStorage.removeItem(key); } catch (e) { /* sin almacenamiento */ }
   },
 };
+
+// --- Nombres científicos -----------------------------------------------------------------------
+// Convención botánica y zoológica: en cursiva solo el nombre (género, epíteto e infraespecífico); el
+// autor y las marcas de rango (subsp., var., f.) van en redonda. La API da `canonicalName` (sin autor)
+// y `scientificNameAuthorship`; si faltan, se deducen de `scientificName`.
+const RANK_MARKERS = new Set(['subsp.', 'ssp.', 'var.', 'subvar.', 'f.', 'fo.', 'forma', 'nothosubsp.', 'cv.']);
+
+function nameParts(sp) {
+  const full = String(sp.scientificName || '').trim();
+  let canonical = String(sp.canonicalName || '').trim();
+  let author = String(sp.scientificNameAuthorship || '').trim();
+  if (!canonical) {
+    canonical = author && full.endsWith(author) ? full.slice(0, -author.length).trim() : full;
+    if (canonical === full) author = '';
+  } else if (!author && full.startsWith(canonical + ' ')) {
+    author = full.slice(canonical.length).trim();
+  }
+  return { canonical, author };
+}
+
+/** Nombre científico listo para pintar: html`` con el nombre en cursiva y el autor en redonda. */
+export function sciName(sp) {
+  const { canonical, author } = nameParts(sp);
+  // Tramos en cursiva separados por las marcas de rango, que van en redonda.
+  const runs = [];
+  for (const word of canonical.split(/\s+/).filter(Boolean)) {
+    const roman = RANK_MARKERS.has(word);
+    const last = runs[runs.length - 1];
+    if (last && last.roman === roman) last.words.push(word); else runs.push({ roman, words: [word] });
+  }
+  const name = runs.map((r, i) => html`${i ? ' ' : ''}${r.roman
+    ? html`<span class="sci-rank">${r.words.join(' ')}</span>`
+    : html`<em class="sci">${r.words.join(' ')}</em>`}`);
+  return html`<span class="sci-name">${name}${author ? html` <span class="sci-author">${author}</span>` : ''}</span>`;
+}
+
+/** Nombre sin autor en texto plano (alt de imágenes, títulos de diálogo). */
+export function sciNameText(sp) {
+  return nameParts(sp).canonical;
+}
+
+/** Función que retrasa `fn` hasta `ms` sin llamadas; `.cancel()` la anula. */
+export function debounce(fn, ms) {
+  let t = null;
+  const d = (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+  d.cancel = () => clearTimeout(t);
+  return d;
+}
