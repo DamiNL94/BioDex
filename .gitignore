@@ -2,3 +2,8 @@ node_modules/
 vendor/
 mysql-data/
 .env
+
+# Certificados locales de mkcert (HTTPS para el móvil)
+docker/nginx/certs/
+# Lo vendorizado del frontend (tipografías, y Leaflet en F7) sí va al repo
+!frontend/vendor/

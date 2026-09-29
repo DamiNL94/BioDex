@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <title>BioDex</title>
+  <rect width="512" height="512" rx="64" fill="#1F4D34"/>
+  <rect x="28" y="28" width="456" height="456" rx="44" fill="none" stroke="#C4A15E" stroke-width="12"/>
+  <path d="M176 348 C168 214 258 124 404 116 C396 262 306 352 176 348Z" fill="#FBF7EE"/>
+  <path d="M176 348 L352 172" stroke="#1F4D34" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="150" cy="374" r="52" fill="none" stroke="#C4A15E" stroke-width="10" opacity=".55"/>
+  <circle cx="150" cy="374" r="30" fill="#C4A15E"/>
+</svg>
