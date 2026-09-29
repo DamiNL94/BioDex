@@ -1,0 +1,184 @@
+{
+    "generatedAt": "2026-09-29T22:39:13+00:00",
+    "source": "EIDOS (iepnb.gob.es/api) · backend/bin/build-filters.php",
+    "groups": [
+        {
+            "value": "Algas",
+            "label": "Algas"
+        },
+        {
+            "value": "Anfibios",
+            "label": "Anfibios"
+        },
+        {
+            "value": "Ascidios",
+            "label": "Ascidios"
+        },
+        {
+            "value": "Aves",
+            "label": "Aves"
+        },
+        {
+            "value": "Cromistas y Bacterias",
+            "label": "Cromistas y Bacterias"
+        },
+        {
+            "value": "Hongos",
+            "label": "Hongos"
+        },
+        {
+            "value": "Invertebrados",
+            "label": "Invertebrados"
+        },
+        {
+            "value": "Mamíferos",
+            "label": "Mamíferos"
+        },
+        {
+            "value": "Peces",
+            "label": "Peces"
+        },
+        {
+            "value": "Plantas no vasculares",
+            "label": "Plantas no vasculares"
+        },
+        {
+            "value": "Plantas vasculares",
+            "label": "Plantas vasculares"
+        },
+        {
+            "value": "Reptiles",
+            "label": "Reptiles"
+        },
+        {
+            "value": "Sin asignar",
+            "label": "Sin asignar"
+        }
+    ],
+    "origins": [
+        {
+            "value": "Especie nativa",
+            "label": "Nativa",
+            "count": 52003
+        },
+        {
+            "value": "Especie no nativa",
+            "label": "No nativa",
+            "count": 3076
+        },
+        {
+            "value": "Desconocido",
+            "label": "Desconocido",
+            "count": 131
+        }
+    ],
+    "scopes": [
+        {
+            "value": "T",
+            "label": "Terrestre",
+            "count": 75242
+        },
+        {
+            "value": "M",
+            "label": "Marino",
+            "count": 21688
+        },
+        {
+            "value": "MT",
+            "label": "Marino y terrestre",
+            "count": 78
+        }
+    ],
+    "legal": [
+        {
+            "value": "rd139",
+            "label": "RD 139/2011 · LESRPE y Catálogo Español de Especies Amenazadas",
+            "short": "LESRPE / CEEA",
+            "norma": "Real Decreto 139/2011, de 4 de febrero, para el desarrollo del Listado de Especies Silvestres en Régimen de Protección Especial y del Catálogo Español de Especies Amenazadas. BOE 46, de 23 de febrero de 2011"
+        },
+        {
+            "value": "habitats",
+            "label": "Directiva Hábitats (92/43/CEE)",
+            "short": "Dir. Hábitats",
+            "norma": "Directiva 92/43/CE de 21 de mayo de 1992 relativa a la conservación de los habitats naturales y de la fauna y flora silvestres. DOUE L 206/7 de 22 de julio de 1992"
+        },
+        {
+            "value": "aves",
+            "label": "Directiva Aves (2009/147/CE)",
+            "short": "Dir. Aves",
+            "norma": "Directiva 2009/147/CE del Parlamento Europeo y del Consejo, de 30 de noviembre de 2009, relativa a la conservación de las aves silvestres. DOUE L 20/7 de 26 de enero de 2010"
+        },
+        {
+            "value": "rd630",
+            "label": "RD 630/2013 · Catálogo Español de Especies Exóticas Invasoras",
+            "short": "Exóticas invasoras (RD 630)",
+            "norma": "Real Decreto 630/2013, de 2 de agosto, por el que se regula el Catálogo español de especies exóticas invasoras. BOE 185 de 3 de agosto de 2013"
+        },
+        {
+            "value": "ue1143",
+            "label": "Reglamento (UE) 1143/2014 · especies exóticas invasoras",
+            "short": "Reg. UE 1143/2014",
+            "norma": "Reglamento de Ejecución (UE) 2016/1141 de la Comisión, de 13 de julio de 2016, por el que se adopta una lista de especies exóticas invasoras preocupantes para la Unión de conformidad con el Reglamento (UE) nº1143/2014 del Parlamento Europeo y del Consejo. DOUE 189, de 14 de julio de 2016"
+        }
+    ],
+    "iucn": [
+        {
+            "value": "EX",
+            "label": "Extinto"
+        },
+        {
+            "value": "EW",
+            "label": "Extinto en estado silvestre"
+        },
+        {
+            "value": "RE",
+            "label": "Extinto regionalmente"
+        },
+        {
+            "value": "CR",
+            "label": "En peligro crítico"
+        },
+        {
+            "value": "EN",
+            "label": "En peligro"
+        },
+        {
+            "value": "VU",
+            "label": "Vulnerable"
+        },
+        {
+            "value": "NT",
+            "label": "Casi amenazado"
+        },
+        {
+            "value": "LC",
+            "label": "Preocupación menor"
+        },
+        {
+            "value": "DD",
+            "label": "Datos insuficientes"
+        },
+        {
+            "value": "NE",
+            "label": "No evaluado"
+        }
+    ],
+    "art17": [
+        {
+            "value": "FV",
+            "label": "Favorable"
+        },
+        {
+            "value": "U1",
+            "label": "Desfavorable-inadecuado"
+        },
+        {
+            "value": "U2",
+            "label": "Desfavorable-malo"
+        },
+        {
+            "value": "XX",
+            "label": "Desconocido"
+        }
+    ]
+}
