@@ -23,7 +23,7 @@ Medido el 2026-09-29 desde el contenedor `php` (Docker Desktop, Windows).
 
 **Trampas de resolución** (`_evidencias.json → trampas_resolucion`):
 - **Sinónimo invertido:** EIDOS mantiene *Rosmarinus officinalis* como ACEPTADO, y *Salvia rosmarinus Spenn.* es su
-  sinónimo. Es al revés que POWO/GBIF. Por eso `eidosResolveTaxon('Salvia rosmarinus')` devuelve `sinonimo` → 7647.
+  sinónimo, al revés de lo que suponía el prompt de F1. Por eso `eidosResolveTaxon('Salvia rosmarinus')` devuelve `sinonimo` → 7647.
 - **Renumeración:** *Capra pyrenaica victoriae* (y el resto de subespecies) son hoy SINÓNIMOS con el taxonid de la
   especie (12055). El resolvedor devuelve `sinonimo`, `rankMismatch: true`: se pidió una subespecie y se entrega la especie.
 - **Subespecie:** el desempate por rango funciona: «Turdus merula» → 11726 (Species), no 11725 (subsp. cabrerae).
