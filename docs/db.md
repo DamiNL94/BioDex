@@ -15,7 +15,7 @@ MySQL 8.4, InnoDB, `utf8mb4_0900_ai_ci` (comparaciones insensibles a acentos y m
 ## Especies
 | Tabla | Propósito | Campos clave |
 |---|---|---|
-| `species` | Caché de EIDOS + especies de usuario | PK `taxonID` (entero EIDOS como texto o `biodex:<uuid>`), `source` `eidos`/`user`, términos DwC (`scientificName`, `taxonRank`, `kingdom`…`family`, `vernacularName`), `canonical_name` (sin autor, índice), `synonyms`, `iucn_assessments`, `legal_status`, `images` (JSON), `iucn_primary_code/scope`, `detail_fetched_at`, `created_by` |
+| `species` | Caché de EIDOS + especies de usuario | PK `taxonID` (entero EIDOS como texto o `biodex:<uuid>`), `source` `eidos`/`user`, términos DwC (`scientificName`, `taxonRank`, `kingdom`…`family`, `vernacularName`), `canonical_name` (sin autor, índice), `synonyms`, `iucn_assessments`, `legal_status` (`{general, andalucia}`), `images` (JSON), `iucn_primary_code/scope/year`, `detail_fetched_at` (ficha completa, caduca a 30 días), `legal_fetched_at` (solo estado legal, filtro del buscador), `kingdom_id`…`family_id` (ids de EIDOS, para el árbol), `classification_source` eidos/gbif/user, `taxonRemarks`, `created_by` |
 
 Mapeo columna ← vista de EIDOS: `docs/eidos.md`. `order` es palabra reservada: siempre entre comillas invertidas.
 

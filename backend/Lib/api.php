@@ -54,6 +54,14 @@ function requireJsonBody(string $expected = "un objeto JSON"): array {
     return $body;
 }
 
+/** UUID v4 aleatorio (ids de catálogo, taxonID de especies de usuario). */
+function uuidV4(): string {
+    $b = random_bytes(16);
+    $b[6] = chr((ord($b[6]) & 0x0f) | 0x40);
+    $b[8] = chr((ord($b[8]) & 0x3f) | 0x80);
+    return vsprintf("%s%s-%s-%s-%s-%s%s%s", str_split(bin2hex($b), 4));
+}
+
 /** Cierre estándar de un endpoint: el método no está contemplado. */
 function apiMethodNotAllowed(string $allowed = "GET o POST"): never {
     apiError("Método no permitido. Usa " . $allowed . ".", 405);
