@@ -1,0 +1,138 @@
+{
+  "source": "Resumen de los cinco criterios (A–E) de la Lista Roja de la UICN (Tabla_Categories_and_Criteria_es.pdf)",
+  "categories": [
+    "CR",
+    "EN",
+    "VU"
+  ],
+  "criteria": {
+    "A": {
+      "name": "Reducción del tamaño poblacional (10 años o 3 generaciones, el más largo)",
+      "thresholdsPct": {
+        "A1": {
+          "CR": 90,
+          "EN": 70,
+          "VU": 50
+        },
+        "A2_A3_A4": {
+          "CR": 80,
+          "EN": 50,
+          "VU": 30
+        }
+      },
+      "subcriteria": {
+        "A1": "Reducción pasada; causas reversibles, entendidas y cesadas",
+        "A2": "Reducción pasada; causas pueden no haber cesado, no entendidas o no reversibles",
+        "A3": "Reducción proyectada o sospechada en el futuro (máx. 100 años); no admite (a)",
+        "A4": "Reducción en periodo que incluye pasado y futuro (máx. 100 años)"
+      },
+      "basis": {
+        "a": "observación directa (excepto A3)",
+        "b": "índice de abundancia apropiado para el taxón",
+        "c": "reducción de AOO, EOO y/o calidad del hábitat",
+        "d": "niveles de explotación reales o potenciales",
+        "e": "taxones introducidos, hibridación, patógenos, contaminantes, competidores o parásitos"
+      }
+    },
+    "B": {
+      "name": "Distribución geográfica (EOO y/o AOO)",
+      "thresholdsKm2": {
+        "B1_EOO": {
+          "CR": 100,
+          "EN": 5000,
+          "VU": 20000
+        },
+        "B2_AOO": {
+          "CR": 10,
+          "EN": 500,
+          "VU": 2000
+        }
+      },
+      "requireAtLeast": 2,
+      "conditions": {
+        "a": {
+          "text": "Severamente fragmentada o nº de localidades",
+          "maxLocations": {
+            "CR": 1,
+            "EN": 5,
+            "VU": 10
+          }
+        },
+        "b": {
+          "text": "Disminución continua en: (i) EOO; (ii) AOO; (iii) área/extensión/calidad del hábitat; (iv) nº localidades o subpoblaciones; (v) nº individuos maduros"
+        },
+        "c": {
+          "text": "Fluctuaciones extremas en: (i) EOO; (ii) AOO; (iii) nº localidades o subpoblaciones; (iv) nº individuos maduros"
+        }
+      },
+      "metrics": {
+        "EOO": "Área del polígono convexo mínimo de todas las observaciones (UTM 30N, EPSG:25830). Mínimo 3 puntos. Si EOO < AOO, EOO = AOO.",
+        "AOO": "Nº de celdas de rejilla ocupadas × área de celda.",
+        "aooCellSizeKmDefault": 2,
+        "note": "La UICN mide la AOO en celdas de 2×2 km (4 km²); los umbrales B2 están calibrados para esa escala. Guardar siempre el tamaño de celda usado.",
+        "aooCellSizeKmOptions": [
+          2,
+          1
+        ]
+      }
+    },
+    "C": {
+      "name": "Pequeño tamaño de la población y disminución",
+      "matureIndividualsLessThan": {
+        "CR": 250,
+        "EN": 2500,
+        "VU": 10000
+      },
+      "requireOneOf": [
+        "C1",
+        "C2"
+      ],
+      "C1": {
+        "text": "Disminución continua de al menos",
+        "values": {
+          "CR": "25% en 3 años o 1 generación",
+          "EN": "20% en 5 años o 2 generaciones",
+          "VU": "10% en 10 años o 3 generaciones"
+        }
+      },
+      "C2": {
+        "text": "Disminución continua y al menos una de:",
+        "a_i_maxMaturePerSubpop": {
+          "CR": 50,
+          "EN": 250,
+          "VU": 1000
+        },
+        "a_ii_pctInOneSubpop": {
+          "CR": "90–100%",
+          "EN": "95–100%",
+          "VU": "100%"
+        },
+        "b": "Fluctuaciones extremas en el número de individuos maduros"
+      }
+    },
+    "D": {
+      "name": "Población muy pequeña o restringida",
+      "matureIndividualsLessThan": {
+        "CR": 50,
+        "EN": 250,
+        "VU": 1000
+      },
+      "D2_VU_only": "AOO < 20 km² o nº de localidades ≤ 5, con amenaza futura plausible"
+    },
+    "E": {
+      "name": "Análisis cuantitativo (probabilidad de extinción en estado silvestre)",
+      "values": {
+        "CR": "≥ 50% en 10 años o 3 generaciones (máx. 100)",
+        "EN": "≥ 20% en 20 años o 5 generaciones (máx. 100)",
+        "VU": "≥ 10% en 100 años"
+      }
+    }
+  },
+  "matureIndividuals": {
+    "dwcLifeStage": "adult",
+    "usedBy": [
+      "C",
+      "D"
+    ]
+  }
+}

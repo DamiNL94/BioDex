@@ -1,0 +1,5 @@
+node_modules/
+vendor/
+mysql-data/
+frontend/public/tiles/
+*.pdf

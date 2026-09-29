@@ -1,0 +1,60 @@
+{
+  "source": "GBIF — Current Best Practices for Generalizing Sensitive Species Occurrence Data (Chapman 2020)",
+  "method": "Ajuste a la celda de una rejilla en grados decimales (floor + centro de celda). Nunca desplazamiento aleatorio.",
+  "levels": {
+    "1": {
+      "name": "Extrema",
+      "suggestWhen": "solo manual",
+      "display": "withheld",
+      "displayText": "presente en la provincia",
+      "dwc": {
+        "informationWithheld": "Coordenadas retenidas por sensibilidad de la especie",
+        "dataGeneralizations": "Solo se publica la provincia"
+      }
+    },
+    "2": {
+      "name": "Alta",
+      "suggestWhen": [
+        "IUCN CR (cualquier ámbito EIDOS)",
+        "CEEA: En peligro de extinción"
+      ],
+      "gridDeg": 0.1,
+      "approxKm": 10,
+      "dwc": {
+        "dataGeneralizations": "Coordenadas generalizadas a 0,1°"
+      }
+    },
+    "3": {
+      "name": "Media",
+      "suggestWhen": [
+        "IUCN EN",
+        "IUCN VU",
+        "CEEA: Vulnerable"
+      ],
+      "gridDeg": 0.01,
+      "approxKm": 1,
+      "dwc": {
+        "dataGeneralizations": "Coordenadas generalizadas a 0,01°"
+      }
+    },
+    "4": {
+      "name": "Sin restricción",
+      "suggestWhen": "resto",
+      "gridDeg": null
+    }
+  },
+  "exactAccess": {
+    "roles": [
+      "owner",
+      "custodian"
+    ],
+    "ownRecords": "el autor siempre ve sus marcas exactas"
+  },
+  "rules": [
+    "La generalización se hace en el servidor antes de enviar datos; el cliente nunca recibe coordenadas exactas ajenas si su rol no lo permite",
+    "El registro original nunca se altera; la generalización solo afecta a copias enviadas o exportadas",
+    "coordinateUncertaintyInMeters de la copia generalizada = máx(original, semidiagonal de la celda)",
+    "El nivel sugerido lo propone BioDex desde EIDOS; el owner puede confirmarlo o subirlo; cada cambio va a access_log con motivo",
+    "Al expulsar a un miembro, su siguiente sync borra del dispositivo los datos del catálogo"
+  ]
+}
