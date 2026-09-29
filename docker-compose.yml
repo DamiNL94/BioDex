@@ -16,8 +16,17 @@ services:
       - ./backend:/var/www/backend
       # Scripts de backend/bin que escriben muestras en docs/ (F1: eidos-spike.php)
       - ./docs:/var/www/docs
+      # Reglas compartidas con el frontend (sensibilidad, UICN, DwC): solo lectura
+      - ./shared:/var/www/shared:ro
     depends_on:
       - mysql
+      - mailpit
+
+  # SMTP de desarrollo: recoge todo el correo saliente (SMTP mailpit:1025, bandeja en http://localhost:8025)
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "8025:8025"
 
   mysql:
     image: mysql:8.4

@@ -1,0 +1,26 @@
+<?php
+// ================================================================================================
+// audit.php — registro en access_log de lo que CLAUDE.md exige auditar: vistas de coordenadas
+// exactas, exportaciones completas, cambios de nivel de sensibilidad y de rol, logins fallidos.
+// ================================================================================================
+
+const AUDIT_ACTIONS = ["view_exact", "export_full", "set_level", "grant_role", "revoke_role", "login_failed"];
+
+/** IP del cliente tal como la ve PHP (nginx pasa REMOTE_ADDR). null en CLI. */
+function clientIp(): ?string {
+    $ip = $_SERVER["REMOTE_ADDR"] ?? null;
+    return is_string($ip) && $ip !== "" ? $ip : null;
+}
+
+/**
+ * Añade una entrada a access_log. $target identifica el objeto (occurrenceID, taxonID, id de
+ * usuario afectado, email en un login fallido...) y se recorta a 255 caracteres.
+ */
+function logAccess(PDO $pdo, ?int $userId, string $action, ?string $catalogId, ?string $target): void {
+    if (!in_array($action, AUDIT_ACTIONS, true)) {
+        throw new InvalidArgumentException("Acción de auditoría desconocida: {$action}");
+    }
+    $pdo->prepare(
+        "INSERT INTO access_log (user_id, catalog_id, action, target, ip) VALUES (?, ?, ?, ?, ?)"
+    )->execute([$userId, $catalogId, $action, $target === null ? null : mb_substr($target, 0, 255), clientIp()]);
+}
