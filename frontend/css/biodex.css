@@ -255,7 +255,199 @@ button.row:hover{border-color:var(--line-strong);box-shadow:var(--shadow-sm)}
 .counts dd{margin:0;font-weight:700;font-variant-numeric:tabular-nums}
 .summary .stat{font-size:var(--fs-sm);color:var(--muted)}
 .summary .stat strong{font-family:var(--font-display);font-size:2rem;color:var(--ink);margin-right:4px}
-.aside{display:none}
+
+/* ===== E2. F4: nombres, paneles, buscador, tarjetas, constructor, ficha ======================== */
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* Nombre científico: cursiva solo el nombre; autor y marca de rango en redonda */
+.sci-name{font-style:normal}
+.sci-author,.sci-rank{font-style:normal;font-weight:400;color:var(--ink-soft)}
+.sci-author{font-size:.92em}
+
+/* Selectores con la misma piel que los campos */
+.field select{width:100%;min-height:var(--tap-min);padding:8px 10px;background:var(--panel);
+  border:1px solid var(--line-strong);border-radius:var(--radius-md);color:var(--ink)}
+.field select:focus{border-color:var(--leaf);outline:none;box-shadow:inset 0 0 0 1px var(--leaf)}
+
+/* --- Paneles y diálogos (components/overlay.js) --- */
+body.has-overlay{overflow:hidden}
+.overlay{position:fixed;inset:0;z-index:40;display:flex}
+.overlay-backdrop{position:absolute;inset:0;background:rgba(20,22,15,.45)}
+.sheet{position:relative;display:flex;flex-direction:column;background:var(--paper);box-shadow:var(--shadow);
+  width:100%;height:100%;outline:none}
+.sheet-head{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:8px;min-height:56px;
+  padding:calc(6px + env(safe-area-inset-top)) 8px 6px 16px;background:var(--leaf-fill);color:var(--cream);
+  border-bottom:4px solid var(--brass)}
+.sheet-title{flex:1;min-width:0;margin:0;font-size:var(--fs-lg);color:#FFFFFF;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis}
+.sheet-close{flex:none;display:inline-flex;align-items:center;justify-content:center;width:var(--tap-min);
+  height:var(--tap-min);border:1px solid rgba(251,247,238,.35);border-radius:var(--radius-md);background:none;
+  color:var(--cream);cursor:pointer}
+.sheet-close:hover{border-color:var(--brass)}
+.sheet-body{flex:1;overflow:auto;padding:16px 16px calc(24px + env(safe-area-inset-bottom));overscroll-behavior:contain}
+.overlay-dialog{align-items:center;justify-content:center;padding:16px}
+.overlay-dialog .sheet{height:auto;max-height:calc(100vh - 32px);max-width:520px;border-radius:var(--radius-lg);overflow:hidden}
+.dialog-text p:last-child{margin-bottom:14px}
+.dialog-actions{margin-top:14px}
+
+/* --- Fichas de filtro (versalitas que se quitan con un toque) --- */
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips:empty{display:none}
+.chip{display:inline-flex;align-items:center;gap:6px;min-height:var(--tap-min);padding:0 12px;border:1px solid var(--line-strong);
+  border-left:var(--rule) solid var(--brass);border-radius:var(--radius-sm);background:var(--surface);color:var(--ink-soft);
+  font-size:var(--fs-xs);font-weight:700;letter-spacing:var(--tracking-caps);text-transform:uppercase;cursor:pointer}
+.chip:hover{border-color:var(--bark)}
+.chip span{font-size:1rem;line-height:1}
+
+/* --- Buscador (views/search.js) --- */
+.search{display:grid;gap:12px}
+.search-bar{display:flex;align-items:flex-end;gap:8px}
+.search-field{flex:1}
+.search-field input{font-size:var(--fs-md)}
+.search.is-offline .search-field{opacity:.6}
+.search-layout{display:block}
+.search-results{display:grid;gap:10px;min-width:0}
+.search-count{margin:0;color:var(--muted);font-size:var(--fs-sm);font-weight:600;min-height:1.3em}
+.search-notice{margin:0;padding:8px 12px;background:var(--warn-bg);color:var(--warn-ink);border-left:var(--rule) solid var(--warn);
+  font-size:var(--fs-sm);font-weight:600}
+.search-empty{padding:20px;background:var(--surface);border:1px dashed var(--line-strong);border-radius:var(--radius-lg)}
+.search-empty p:last-child{margin-bottom:0}
+.search-more{display:flex;justify-content:center}
+.search-more:empty{display:none}
+.search-filters-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.search-filters-head h3{margin:0}
+.search-filters-body{display:grid;gap:14px}
+.checks{margin:0;padding:0;border:0;display:grid;gap:2px}
+.checks legend{margin-bottom:6px;color:var(--muted);letter-spacing:var(--tracking-caps);text-transform:uppercase;
+  font-weight:700;font-size:var(--fs-xs)}
+.check{display:flex;align-items:center;gap:10px;min-height:var(--tap-min);cursor:pointer;font-size:var(--fs-sm)}
+.check input{width:20px;height:20px;accent-color:var(--leaf-fill);flex:none}
+/* Móvil: los filtros son una hoja que sube desde abajo */
+.search-filters{display:none}
+.search-filters.is-open{position:fixed;left:0;right:0;bottom:0;z-index:45;display:grid;gap:14px;max-height:85vh;overflow:auto;
+  padding:16px 16px calc(16px + env(safe-area-inset-bottom));background:var(--panel);border-top:4px solid var(--brass);
+  box-shadow:var(--shadow)}
+.filters-done{width:100%}
+
+/* --- Tarjetas de especie (components/species-card.js) --- */
+.cards{display:grid;gap:12px;grid-template-columns:1fr}
+.sp-card{display:grid;grid-template-columns:104px minmax(0,1fr);gap:0 12px;padding:12px;background:var(--surface);
+  border:1px solid var(--line);border-left:var(--rule) solid var(--line-strong);border-radius:var(--radius-sm);cursor:pointer}
+.sp-card:hover{border-color:var(--line-strong);box-shadow:var(--shadow-sm)}
+.sp-card-media{margin:0;align-self:start}
+.sp-card-media img{display:block;width:100%;aspect-ratio:1;object-fit:cover;border-radius:var(--radius-sm);background:var(--surface-alt)}
+.sp-card-media figcaption{margin-top:4px;color:var(--muted);font-size:.625rem;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;line-height:1.3}
+.sp-card-ph{display:flex;align-items:flex-end;aspect-ratio:1;padding:8px;background:var(--surface-alt);
+  border:1px solid var(--line);border-radius:var(--radius-sm);
+  background-image:repeating-linear-gradient(135deg,transparent 0 9px,var(--line) 9px 10px)}
+.sp-card-ph span{color:var(--muted);font-size:.625rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  background:var(--surface-alt);padding:2px 4px}
+.sp-card-body{display:grid;gap:4px;align-content:start;min-width:0}
+.sp-card-title{margin:0;font-family:var(--font-ui);font-size:var(--fs-md);line-height:1.3}
+.sp-card-open{padding:0;border:0;background:none;color:var(--ink);font:inherit;font-weight:600;text-align:left;cursor:pointer;
+  min-height:0}
+.sp-card-open:hover .sci{text-decoration:underline;text-underline-offset:3px}
+.sp-card-common{margin:0;color:var(--ink-soft);font-size:var(--fs-sm)}
+.sp-card-meta{margin:0;display:flex;flex-wrap:wrap;row-gap:2px}
+/* Una evaluación por línea: con el filete separador, las que saltaban de línea quedaban sangradas */
+.sp-card-iucn{margin:0;display:grid;justify-items:start;gap:1px}
+.sp-card-iucn .badge+.badge{margin-left:0;padding-left:0;border-left:0}
+.badge.iucn.is-primary{font-weight:800}
+.sp-card-desc{margin:2px 0 0;color:var(--ink-soft);font-size:var(--fs-sm);display:-webkit-box;-webkit-line-clamp:3;
+  -webkit-box-orient:vertical;overflow:hidden}
+.sp-card-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 12px;margin-top:6px}
+.sp-card-actions .link-btn{padding:0;min-height:var(--tap-min)}
+.sp-add{min-width:120px}
+.sp-added-wrap{display:inline-flex;align-items:center;gap:4px;margin-left:auto;white-space:nowrap}
+.sp-added{color:var(--leaf);font-weight:700;font-size:var(--fs-sm)}
+.sp-card.is-skeleton{cursor:default}
+.sk{display:block;height:12px;margin:6px 0;background:var(--surface-alt);border-radius:2px;animation:sk 1.2s ease-in-out infinite}
+.sk-title{height:18px;width:70%}
+.sk-short{width:40%}
+@keyframes sk{50%{opacity:.45}}
+
+/* --- Constructor de catálogos (views/catalog-builder.js) --- */
+.builder{display:grid;gap:14px}
+.builder-meta{display:grid;gap:10px}
+.builder-tabs{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line-strong);border-radius:var(--radius-md);overflow:hidden}
+.builder-tabs button{min-height:var(--tap-big);border:0;background:var(--surface-alt);color:var(--muted);font-weight:700;cursor:pointer}
+.builder-tabs button+button{border-left:1px solid var(--line-strong)}
+.builder-tabs button[aria-selected="true"]{background:var(--leaf-fill);color:var(--cream)}
+.builder[data-tab="search"] .builder-selection,.builder[data-tab="sel"] .builder-search{display:none}
+.builder-sel-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.builder-sel-head h3{margin:0}
+.sel-row{grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:8px}
+.sel-row .sel-open{grid-column:1;padding:0;border:0;background:none;color:var(--ink);text-align:left;font-weight:600;cursor:pointer;
+  min-height:32px}
+.sel-row .row-meta{grid-column:1}
+.sel-row .sel-remove{grid-column:2;grid-row:1 / span 4}
+.builder-foot{position:sticky;bottom:calc(-24px - env(safe-area-inset-bottom));display:grid;gap:8px;
+  margin:0 -16px;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:var(--paper);border-top:1px solid var(--line)}
+.builder-foot .btn-primary{width:100%}
+.builder-status{margin:0;font-size:var(--fs-sm)}
+.builder-status:empty{display:none}
+
+/* --- Ficha de especie (views/species-detail.js) --- */
+.detail{display:grid;gap:4px}
+.gallery{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding:0 16px;margin:0 -16px 8px;padding:0 16px 6px}
+.gallery-item{flex:0 0 85%;max-width:420px;margin:0;scroll-snap-align:start}
+.gallery-item img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:var(--radius-sm);background:var(--surface-alt)}
+.gallery-item figcaption{margin-top:4px;color:var(--muted);font-size:var(--fs-xs)}
+.gallery-item .credit{font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:.625rem}
+.gallery-item:only-child{flex-basis:100%}
+.detail-head{padding:4px 0 8px 12px;border-left:var(--rule) solid var(--line-strong)}
+.detail-name{margin:0;font-family:var(--font-ui);font-size:var(--fs-lg);font-weight:600;line-height:1.3}
+.detail-common{margin:2px 0 6px;color:var(--ink-soft)}
+.detail-sec{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.detail-sec h4{margin:0 0 8px}
+.detail-sec h5{margin:10px 0 4px;color:var(--muted);letter-spacing:var(--tracking-caps);text-transform:uppercase;font-size:var(--fs-xs)}
+.detail-desc{white-space:pre-line;color:var(--ink-soft)}
+.crumbs{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:4px 0}
+.crumbs li{display:inline-flex;align-items:baseline;gap:4px}
+.crumbs li+li::before{content:"›";margin:0 8px;color:var(--faint)}
+.crumb-rank{color:var(--muted);font-size:.625rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.data-table{width:100%;border-collapse:collapse;font-size:var(--fs-sm)}
+.data-table th{text-align:left;color:var(--muted);font-size:var(--fs-xs);letter-spacing:var(--tracking-caps);text-transform:uppercase;
+  padding:4px 8px 6px 0;border-bottom:1px solid var(--line-strong)}
+.data-table td{padding:6px 8px 6px 0;border-bottom:1px solid var(--line);vertical-align:top}
+.legal-list{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.legal-list li{display:grid;gap:0}
+.legal-tag{font-size:var(--fs-xs);font-weight:700;letter-spacing:var(--tracking-caps);text-transform:uppercase;color:var(--ink-soft)}
+.legal-obs{font-size:var(--fs-xs)}
+.more summary{cursor:pointer;min-height:var(--tap-min);display:flex;align-items:center;color:var(--leaf);font-weight:600}
+.sens-box{display:grid;gap:4px}
+.sens-box p{margin:0}
+.sens-current strong{font-weight:700}
+.sens-current.level-4{color:var(--ink)}
+.sens-form{margin-top:10px}
+.species-detail .guard-band{margin:6px 0}
+
+/* --- Datos del catálogo: árbol, acciones del owner --- */
+.aside-actions{margin:6px 0 4px}
+.tree{list-style:none;margin:0;padding:0 0 0 14px;border-left:1px solid var(--line)}
+.tree-root{padding-left:0;border-left:0}
+.tree summary,.tree-leaf{display:flex;align-items:center;gap:8px;min-height:var(--tap-min);cursor:pointer;width:100%}
+.tree summary{list-style:none}
+.tree summary::-webkit-details-marker{display:none}
+.tree summary::before{content:"▸";color:var(--muted);width:10px;flex:none}
+.tree details[open]>summary::before{content:"▾"}
+.tree-leaf{padding:0 0 0 18px;border:0;background:none;color:inherit;text-align:left;font:inherit}
+.tree-leaf:hover .tree-name{color:var(--leaf);text-decoration:underline;text-underline-offset:3px}
+.tree-rank{flex:none;width:52px;color:var(--muted);font-size:.625rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.tree-name{flex:1;min-width:0;overflow-wrap:anywhere}
+.tree-count{flex:none;font-weight:700;font-variant-numeric:tabular-nums}
+.danger-zone{margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
+.aside{display:block;margin-top:16px}
+
+/* --- Pestaña Especies: filtros locales --- */
+.list-filters{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+#familyChip{margin-bottom:8px}
+#listCount{margin-bottom:6px}
+.list-filters .lf-text{grid-column:1 / -1}
+.species-rows button.row{font:inherit;color:inherit}
+.species-rows>li{list-style:none}
+.species-rows .empty{max-width:none}
 
 /* ===== Escritorio (≥ 900 px): pestañas bajo el cartel y contenido a lo ancho =================== */
 @media (min-width:900px){
@@ -276,7 +468,34 @@ button.row:hover{border-color:var(--line-strong);box-shadow:var(--shadow-sm)}
 
   .split{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,380px);gap:24px;align-items:start}
   .rows#catalogList{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
-  .aside{display:block;position:sticky;top:64px}
+  .aside{display:block;position:sticky;top:64px;margin-top:0;max-height:calc(100vh - 80px);overflow:auto}
+
+  /* F4: paneles, buscador y constructor */
+  .overlay-side{justify-content:flex-end}
+  .overlay-side .sheet{width:min(560px,100%);border-left:4px solid var(--brass)}
+  .overlay-full .sheet-body{padding:20px 32px 0}
+  .search-layout{display:grid;grid-template-columns:240px minmax(0,1fr);gap:20px;align-items:start}
+  .search-filters,.search-filters.is-open{position:sticky;top:0;display:grid;gap:14px;max-height:none;padding:0;
+    background:none;border:0;box-shadow:none;z-index:auto}
+  .filters-toggle,.filters-done{display:none}
+  .cards{grid-template-columns:repeat(auto-fill,minmax(340px,1fr))}
+  .sp-card{grid-template-columns:120px minmax(0,1fr)}
+  .builder{grid-template-columns:minmax(0,1fr);max-width:1400px;margin:0 auto}
+  .builder-meta{grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);align-items:start}
+  .builder-tabs{display:none}
+  .builder[data-tab] .builder-search,.builder[data-tab] .builder-selection{display:block}
+  .builder-grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:24px;align-items:start}
+  .builder-selection{position:sticky;top:0;padding:14px;background:var(--surface);border:1px solid var(--line);
+    border-left:var(--rule) solid var(--brass);border-radius:var(--radius-lg);max-height:calc(100vh - 220px);overflow:auto}
+  .builder-add .search-layout{grid-template-columns:240px minmax(0,1fr)}
+  .builder-foot{margin:0 -32px;padding:12px 32px;bottom:0;display:flex;align-items:center;justify-content:flex-end;gap:16px}
+  .builder-foot .btn-primary{width:auto}
+  .builder-foot .form-error{margin-right:auto}
+  .builder-foot .builder-status{margin-right:auto}
+  .gallery{margin:0 -16px 8px}
+  .list-filters{grid-template-columns:minmax(0,2fr) repeat(4,minmax(0,1fr));align-items:end}
+  .list-filters .lf-text{grid-column:auto}
+  .species-rows button.row{display:grid}
 
   /* Especies como tabla: cabecera fija y columnas alineadas */
   .table-head,.sp{grid-template-columns:minmax(0,2.2fr) minmax(0,1fr) 170px 150px}
