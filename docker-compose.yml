@@ -3,8 +3,18 @@ services:
     image: nginx:1.27-alpine
     ports:
       - "8090:80"
+      # HTTPS para probar en el móvil; solo responde si hay certificados en docker/nginx/certs/ (README)
+      - "8443:443"
+    # entrypoint.sh activa https.conf si existen los certificados y luego sigue con el de la imagen
+    entrypoint: ["/bin/sh", "/etc/nginx/biodex/entrypoint.sh"]
+    command: ["nginx", "-g", "daemon off;"]
     volumes:
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./docker/nginx/biodex-app.conf:/etc/nginx/biodex/biodex-app.conf:ro
+      - ./docker/nginx/security-headers.conf:/etc/nginx/biodex/security-headers.conf:ro
+      - ./docker/nginx/https.conf:/etc/nginx/biodex/https.conf:ro
+      - ./docker/nginx/entrypoint.sh:/etc/nginx/biodex/entrypoint.sh:ro
+      - ./docker/nginx/certs:/etc/nginx/certs:ro
       - ./frontend:/var/www/frontend:ro
     depends_on:
       - php
@@ -18,6 +28,8 @@ services:
       - ./docs:/var/www/docs
       # Reglas compartidas con el frontend (sensibilidad, UICN, DwC): solo lectura
       - ./shared:/var/www/shared:ro
+      # Solo lectura, para bin/check-sw.php (SHELL_ASSETS de sw.js contra el disco)
+      - ./frontend:/var/www/frontend:ro
     depends_on:
       - mysql
       - mailpit

@@ -1,0 +1,2 @@
+# Los scripts que se ejecutan dentro de los contenedores Linux necesitan LF aunque el repo se clone en Windows
+*.sh text eol=lf
