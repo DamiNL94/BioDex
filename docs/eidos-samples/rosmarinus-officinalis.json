@@ -1,0 +1,324 @@
+{
+    "query": "Rosmarinus officinalis",
+    "resolve": {
+        "ms": 286,
+        "value": {
+            "status": "ok",
+            "taxonid": 7647,
+            "taxon": {
+                "taxonid": 7647,
+                "nameid": 7647,
+                "acceptednameid": 7647,
+                "name": "Rosmarinus officinalis L.",
+                "taxonrank": "Species",
+                "nametype": "Aceptado/válido",
+                "genus": "Rosmarinus",
+                "specificepithet": "officinalis",
+                "scientificnameauthorship": "L.",
+                "taxonomicgroup": "Plantas vasculares",
+                "origen": "Especie nativa",
+                "kingdom": "Plantae",
+                "phylum": "Tracheophyta",
+                "class": "Magnoliopsida",
+                "ordertaxonomic": "Lamiales",
+                "family": "Lamiaceae"
+            },
+            "acceptedName": "Rosmarinus officinalis L.",
+            "rankMismatch": false
+        }
+    },
+    "raw": {
+        "v_taxonomia": [
+            {
+                "nameid": 7647,
+                "name": "Rosmarinus officinalis L.",
+                "taxonrankid": 10,
+                "taxonrank": "Species",
+                "verbatimtaxonrank": "sp.",
+                "areacode": "T",
+                "origenid": 2,
+                "origen": "Especie nativa",
+                "taxonomicgroupid": 11,
+                "taxonomicgroup": "Plantas vasculares",
+                "kingdomid": 200006,
+                "kingdom": "Plantae",
+                "phylumid": 200051,
+                "phylum": "Tracheophyta",
+                "classid": 200170,
+                "class": "Magnoliopsida",
+                "ordertaxonomicid": 200720,
+                "ordertaxonomic": "Lamiales",
+                "familyid": 203163,
+                "family": "Lamiaceae",
+                "genusid": 210061,
+                "genus": "Rosmarinus",
+                "specificepithet": "officinalis",
+                "taxonconceptid": "urn:lsid:recibio.net:taxon:c351f38e-450f-4290-b839-6cb39514a81f",
+                "nameaccordingto": "CASTROVIEJO, S. (coord. gen.). 1986-2014. Flora iberica. Plantas vasculares de la Península Ibérica e Islas Baleares. 1-8, 10-16(1), 17-18, 20-21. Real Jardín Botánico, CSIC. Madrid.",
+                "namepublishedin": "Sp. Pl. 23. 1753",
+                "namepublishedinyear": "1753",
+                "scientificnameauthorship": "L.",
+                "euniscode": "175038",
+                "lp": 1,
+                "taxonid": 7647,
+                "nametypeid": 10,
+                "nametype": "Aceptado/válido",
+                "acceptednameid": 7647
+            },
+            {
+                "nameid": 80910,
+                "name": "Salvia rosmarinus Spenn.",
+                "taxonrankid": 10,
+                "taxonrank": "Species",
+                "verbatimtaxonrank": "sp.",
+                "areacode": "T",
+                "origenid": 2,
+                "origen": "Especie nativa",
+                "taxonomicgroupid": 11,
+                "taxonomicgroup": "Plantas vasculares",
+                "kingdomid": 200006,
+                "kingdom": "Plantae",
+                "phylumid": 200051,
+                "phylum": "Tracheophyta",
+                "classid": 200170,
+                "class": "Magnoliopsida",
+                "ordertaxonomicid": 200720,
+                "ordertaxonomic": "Lamiales",
+                "familyid": 203163,
+                "family": "Lamiaceae",
+                "genusid": 210062,
+                "genus": "Salvia",
+                "specificepithet": "rosmarinus",
+                "namepublishedin": "Handb. Angew. Bot. 2: 447 (1835)",
+                "scientificnameauthorship": "Spenn.",
+                "taxonid": 7647,
+                "nametypeid": 11,
+                "nametype": "Sinónimo",
+                "acceptednameid": 7647
+            },
+            {
+                "nameid": 97537,
+                "name": "Rosmarinus officinalis subsp. palaui",
+                "taxonrankid": 11,
+                "taxonrank": "Subspecies",
+                "areacode": "T",
+                "origenid": 2,
+                "origen": "Especie nativa",
+                "taxonomicgroupid": 11,
+                "taxonomicgroup": "Plantas vasculares",
+                "kingdomid": 200006,
+                "kingdom": "Plantae",
+                "phylumid": 200051,
+                "phylum": "Tracheophyta",
+                "classid": 200170,
+                "class": "Magnoliopsida",
+                "ordertaxonomicid": 200720,
+                "ordertaxonomic": "Lamiales",
+                "familyid": 203163,
+                "family": "Lamiaceae",
+                "genusid": 210061,
+                "genus": "Rosmarinus",
+                "specificepithet": "officinalis",
+                "infraspecificepithet": "palaui",
+                "taxonid": 7647,
+                "nametypeid": 11,
+                "nametype": "Sinónimo",
+                "acceptednameid": 7647
+            }
+        ],
+        "v_estadoconservacion": [],
+        "v_estadolegal": [
+            {
+                "idtaxon": 7647,
+                "idnombre_acept": 7647,
+                "nombre_aceptado": "Rosmarinus officinalis L.",
+                "idestadolegal": 449,
+                "estadolegal": "ANEXO I. 2) Lista de taxones forestales para conservación ex situ",
+                "norma": "Real Decreto 159/2022, de 1 de marzo, sobre conservación de los recursos genéticos forestales y de la flora silvestre y por el que se modifica el Real Decreto 1424/2008, de 14 de agosto, por el que se determinan la composición y las funciones de la Comisión Estatal para el Patrimonio Natural y la Bi…[+292]",
+                "idvigente": 1,
+                "idambito": 1,
+                "ambito": "Nacional",
+                "iddataset": 388,
+                "dataset": "Lista de taxones para la conservación de los recursos genéticos forestales y de la flora silvestre",
+                "idnombre_dat": 7647,
+                "nombre_en_dataset": "Rosmarinus officinalis L.",
+                "fecha_alta": "2025-11-20"
+            }
+        ],
+        "v_nombrescomunes": [
+            {
+                "idtaxon": 7647,
+                "idnombre_aceptado": 7647,
+                "nombre_aceptado": "Rosmarinus officinalis L.",
+                "idnombre_comun": 5002986,
+                "nombre_comun": "Romero Blanco",
+                "tiponombre": "Nombre común",
+                "ididioma": 1,
+                "idioma": "Castellano",
+                "espreferente": false
+            },
+            {
+                "idtaxon": 7647,
+                "idnombre_aceptado": 7647,
+                "nombre_aceptado": "Rosmarinus officinalis L.",
+                "idnombre_comun": 5017373,
+                "nombre_comun": "Rocío del mar",
+                "tiponombre": "Nombre común",
+                "ididioma": 1,
+                "idioma": "Castellano",
+                "espreferente": false
+            },
+            {
+                "idtaxon": 7647,
+                "idnombre_aceptado": 7647,
+                "nombre_aceptado": "Rosmarinus officinalis L.",
+                "idnombre_comun": 5017392,
+                "nombre_comun": "Romér",
+                "tiponombre": "Nombre común",
+                "ididioma": 1,
+                "idioma": "Castellano",
+                "espreferente": false
+            }
+        ],
+        "v_atributos_pliniancore": [
+            {
+                "idtaxon": 7647,
+                "idnombre_acept": 7647,
+                "nombre_aceptado": "Rosmarinus officinalis L.",
+                "idatributo": 4,
+                "atributo": "Ciclo vital",
+                "valor_atributo": "Puede florecer durante todo el año, pero sobre todo a fines de invierno y primavera.",
+                "prioritario": true,
+                "idfuente": 121,
+                "fuente": "Inventario español de conocimientos tradicionales",
+                "iddataset": 14,
+                "dataset": "Inventario español de conocimientos tradicionales",
+                "idnombre_dat": 7647,
+                "nombre_en_dataset": "Rosmarinus officinalis L.",
+                "idvigente": 1
+            },
+            {
+                "idtaxon": 7647,
+                "idnombre_acept": 7647,
+                "nombre_aceptado": "Rosmarinus officinalis L.",
+                "idatributo": 1,
+                "atributo": "Descripción de la especie",
+                "valor_atributo": "Arbusto de hasta 1,8 m, perennifolio, aromático, muy ramoso, con ramas en general erguidas. Hojas de 10-40 x 1-3 mm, opuestas, lineares, agudas, con el margen revuelto, verde y brillante por el haz, frecuentemente con numerosos pelos blanquecinos en el envés. Inflorescencia en racimos axilares corto…[+399]",
+                "prioritario": true,
+                "idfuente": 121,
+                "fuente": "Inventario español de conocimientos tradicionales",
+                "iddataset": 14,
+                "dataset": "Inventario español de conocimientos tradicionales",
+                "idnombre_dat": 7647,
+                "nombre_en_dataset": "Rosmarinus officinalis L.",
+                "idvigente": 1,
+                "fecha_alta": "2022-12-31"
+            },
+            {
+                "idtaxon": 7647,
+                "idnombre_acept": 7647,
+                "nombre_aceptado": "Rosmarinus officinalis L.",
+                "idatributo": 3,
+                "atributo": "Distribución",
+                "valor_atributo": "Planta de distribución mediterránea, preferentemente occidental. Habita en toda la Península Ibérica, a excepción de las comarcas más húmedas del norte y noroeste. Crece también en las Islas Baleares.",
+                "prioritario": true,
+                "idfuente": 121,
+                "fuente": "Inventario español de conocimientos tradicionales",
+                "iddataset": 14,
+                "dataset": "Inventario español de conocimientos tradicionales",
+                "idnombre_dat": 7647,
+                "nombre_en_dataset": "Rosmarinus officinalis L.",
+                "idvigente": 1
+            }
+        ],
+        "v_imagenes": [
+            {
+                "id_taxon": "7647",
+                "idnombre_acept": 7647,
+                "nombre_aceptado": "Rosmarinus officinalis L.",
+                "id_foto": 8963,
+                "es_prioridad": 0,
+                "ruta_foto": "www.miteco.gob.es/content/dam/fototeca/imagenes/1987/05/8963.jpg"
+            },
+            {
+                "id_taxon": "7647",
+                "idnombre_acept": 7647,
+                "nombre_aceptado": "Rosmarinus officinalis L.",
+                "id_foto": 8601,
+                "es_prioridad": 0,
+                "ruta_foto": "www.miteco.gob.es/content/dam/fototeca/imagenes/1987/05/8601.jpg"
+            },
+            {
+                "id_taxon": "7647",
+                "idnombre_acept": 7647,
+                "nombre_aceptado": "Rosmarinus officinalis L.",
+                "id_foto": 19601,
+                "es_prioridad": 0,
+                "ruta_foto": "www.miteco.gob.es/content/dam/fototeca/imagenes/1993/03/19601.jpg"
+            }
+        ]
+    },
+    "conservation": {
+        "ms": 271,
+        "value": []
+    },
+    "legal": {
+        "ms": 312,
+        "value": {
+            "vigentes": [
+                {
+                    "estadolegal": "ANEXO I. 2) Lista de taxones forestales para conservación ex situ",
+                    "norma": "Real Decreto 159/2022, de 1 de marzo, sobre conservación de los recursos genéticos forestales y de la flora silvestre y por el que se modifica el Real Decreto 1424/2008, de 14 de agosto, por el que se determinan la composición y las funciones de la Comisión Estatal para el Patrimonio Natural y la Bi…[+292]",
+                    "ambito": "Nacional",
+                    "idvigente": 1
+                }
+            ],
+            "nacional": [
+                {
+                    "estadolegal": "ANEXO I. 2) Lista de taxones forestales para conservación ex situ",
+                    "norma": "Real Decreto 159/2022, de 1 de marzo, sobre conservación de los recursos genéticos forestales y de la flora silvestre y por el que se modifica el Real Decreto 1424/2008, de 14 de agosto, por el que se determinan la composición y las funciones de la Comisión Estatal para el Patrimonio Natural y la Bi…[+292]",
+                    "ambito": "Nacional",
+                    "idvigente": 1
+                }
+            ],
+            "peninsular": [
+                {
+                    "estadolegal": "ANEXO I. 2) Lista de taxones forestales para conservación ex situ",
+                    "norma": "Real Decreto 159/2022, de 1 de marzo, sobre conservación de los recursos genéticos forestales y de la flora silvestre y por el que se modifica el Real Decreto 1424/2008, de 14 de agosto, por el que se determinan la composición y las funciones de la Comisión Estatal para el Patrimonio Natural y la Bi…[+292]",
+                    "ambito": "Nacional",
+                    "idvigente": 1
+                }
+            ],
+            "autonomico": []
+        }
+    },
+    "commonName": {
+        "ms": 312,
+        "value": "Romero Blanco"
+    },
+    "description": {
+        "ms": 284,
+        "value": "Arbusto de hasta 1,8 m, perennifolio, aromático, muy ramoso, con ramas en general erguidas. Hojas de 10-40 x 1-3 mm, opuestas, lineares, agudas, con el margen revuelto, verde y brillante por el haz, frecuentemente con numerosos pelos blanquecinos en el envés. Inflorescencia en racimos axilares corto…[+399]"
+    },
+    "images": {
+        "ms": 268,
+        "value": [
+            {
+                "url": "https://www.miteco.gob.es/content/dam/fototeca/imagenes/1993/05/23288.jpg",
+                "id": 23288,
+                "priority": 1
+            },
+            {
+                "url": "https://www.miteco.gob.es/content/dam/fototeca/imagenes/1986/06/4829.jpg",
+                "id": 4829,
+                "priority": 0
+            },
+            {
+                "url": "https://www.miteco.gob.es/content/dam/fototeca/imagenes/1987/05/8601.jpg",
+                "id": 8601,
+                "priority": 0
+            }
+        ]
+    },
+    "totalMs": 1733
+}

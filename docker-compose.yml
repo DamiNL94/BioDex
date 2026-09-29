@@ -14,6 +14,8 @@ services:
     env_file: .env
     volumes:
       - ./backend:/var/www/backend
+      # Scripts de backend/bin que escriben muestras en docs/ (F1: eidos-spike.php)
+      - ./docs:/var/www/docs
     depends_on:
       - mysql
 

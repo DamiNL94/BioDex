@@ -1,0 +1,426 @@
+{
+    "query": "Aquila adalberti",
+    "resolve": {
+        "ms": 302,
+        "value": {
+            "status": "ok",
+            "taxonid": 11014,
+            "taxon": {
+                "taxonid": 11014,
+                "nameid": 11014,
+                "acceptednameid": 11014,
+                "name": "Aquila adalberti Brehm, CL, 1861",
+                "taxonrank": "Species",
+                "nametype": "Aceptado/válido",
+                "genus": "Aquila",
+                "specificepithet": "adalberti",
+                "scientificnameauthorship": "Brehm, CL, 1861",
+                "taxonomicgroup": "Aves",
+                "origen": "Especie nativa",
+                "kingdom": "Animalia",
+                "phylum": "Chordata",
+                "class": "Aves",
+                "ordertaxonomic": "Accipitriformes",
+                "family": "Accipitridae"
+            },
+            "acceptedName": "Aquila adalberti Brehm, CL, 1861",
+            "rankMismatch": false
+        }
+    },
+    "raw": {
+        "v_taxonomia": [
+            {
+                "nameid": 11014,
+                "name": "Aquila adalberti Brehm, CL, 1861",
+                "taxonrankid": 10,
+                "taxonrank": "Species",
+                "verbatimtaxonrank": "sp.",
+                "areacode": "T",
+                "origenid": 2,
+                "origen": "Especie nativa",
+                "taxonomicgroupid": 4,
+                "taxonomicgroup": "Aves",
+                "kingdomid": 200001,
+                "kingdom": "Animalia",
+                "phylumid": 200011,
+                "phylum": "Chordata",
+                "classid": 200070,
+                "class": "Aves",
+                "ordertaxonomicid": 243707,
+                "ordertaxonomic": "Accipitriformes",
+                "familyid": 201502,
+                "family": "Accipitridae",
+                "genusid": 205707,
+                "genus": "Aquila",
+                "specificepithet": "adalberti",
+                "scientificnameid": "urn:lsid:recibio.net:name:c6cfe712-a8f6-44bd-9f83-550a807a6e9e",
+                "scientificnameauthorship": "Brehm, CL, 1861",
+                "citescode": "9871",
+                "euniscode": "893",
+                "euringcode": "2952",
+                "rednaturacode": "A405",
+                "lp": 1,
+                "taxonid": 11014,
+                "nametypeid": 10,
+                "nametype": "Aceptado/válido",
+                "acceptednameid": 11014
+            },
+            {
+                "nameid": 28233,
+                "name": "Aquila heliaca adalberti C. L. Brehm, 1861",
+                "taxonrankid": 11,
+                "taxonrank": "Subspecies",
+                "verbatimtaxonrank": "subsp.",
+                "areacode": "T",
+                "origenid": 2,
+                "origen": "Especie nativa",
+                "taxonomicgroupid": 4,
+                "taxonomicgroup": "Aves",
+                "kingdomid": 200001,
+                "kingdom": "Animalia",
+                "phylumid": 200011,
+                "phylum": "Chordata",
+                "classid": 200070,
+                "class": "Aves",
+                "ordertaxonomicid": 243707,
+                "ordertaxonomic": "Accipitriformes",
+                "familyid": 201502,
+                "family": "Accipitridae",
+                "genusid": 205707,
+                "genus": "Aquila",
+                "scientificnameauthorship": "C. L. Brehm, 1861",
+                "euniscode": "898",
+                "taxonid": 11014,
+                "nametypeid": 11,
+                "nametype": "Sinónimo",
+                "acceptednameid": 11014
+            }
+        ],
+        "v_estadoconservacion": [
+            {
+                "idtaxon": 11014,
+                "anio": 1992,
+                "idcategoria": 11,
+                "categoriaconservacion": "EN (En peligro)",
+                "idautoridad": 1,
+                "autoridad": "UICN",
+                "idaplicaa": 2,
+                "aplicaa": "España",
+                "iddataset": 130,
+                "fechaalta": "2024-01-10",
+                "idvigente": 1,
+                "vigencia": "Vigente",
+                "idnombre": 1030182
+            },
+            {
+                "idtaxon": 11014,
+                "anio": 2004,
+                "idcategoria": 11,
+                "categoriaconservacion": "EN (En peligro)",
+                "criterios": "C1+2a(i)",
+                "idautoridad": 1,
+                "autoridad": "UICN",
+                "idaplicaa": 2,
+                "aplicaa": "España",
+                "iddataset": 19,
+                "idvigente": 1,
+                "vigencia": "Vigente",
+                "idnombre": 11014
+            },
+            {
+                "idtaxon": 11014,
+                "anio": 2016,
+                "idcategoria": 19,
+                "categoriaconservacion": "VU (Vulnerable)",
+                "criterios": "D1",
+                "idautoridad": 1,
+                "autoridad": "UICN",
+                "idaplicaa": 1,
+                "aplicaa": "Mundial",
+                "iddataset": 119,
+                "idvigente": 1,
+                "vigencia": "Vigente"
+            }
+        ],
+        "v_estadolegal": [
+            {
+                "idtaxon": 11014,
+                "idnombre_acept": 11014,
+                "nombre_aceptado": "Aquila adalberti Brehm, CL, 1861",
+                "idestadolegal": 446,
+                "estadolegal": "Incluido",
+                "norma": "RESOLUCIÓN de 15 de octubre de 2010, del conseller de Medio Ambiente, Agua, Urbanismo y Vivienda y vicepresidente tercero del Consell, por la que se establecen las zonas de protección de la avifauna contra la colisión y electrocución, y se ordenan medidas para la reducción de la mortalidad de aves e…[+36]",
+                "idvigente": 1,
+                "idambito": 2,
+                "ambito": "Autonómico",
+                "id_ccaa": 52,
+                "ccaa": "Comunidad Valenciana",
+                "iddataset": 340,
+                "dataset": "Areas prioritarias de reproducción, alimentación, dispersión y concentración local de aves catalogadas en la Comunidad Valenciana",
+                "idnombre_dat": 1003931,
+                "nombre_en_dataset": "Aquila adalberti",
+                "fecha_alta": "2025-08-08"
+            },
+            {
+                "idtaxon": 11014,
+                "idnombre_acept": 11014,
+                "nombre_aceptado": "Aquila adalberti Brehm, CL, 1861",
+                "idestadolegal": 41,
+                "estadolegal": "Anexo II",
+                "norma": "Instrumento de ratificación del Convenio relativo a la conservación de la vida silvestre y del medio natural en Europa, hecho en Berna el 19 de septiembre de 1979. BOE 235 de 1 de octubre de 1986",
+                "idvigente": 1,
+                "observacionespoblacion": "Información sobre las especies incluidas en los Anexos del Convenio de Berna o Convenio relativo a la Conservación de la Vida Silvestre y del Medio Natural en Europa, proveniente de la Base de Datos europea EUNIS sobre especies a fecha de Mayo 2016.",
+                "idambito": 3,
+                "ambito": "Internacional",
+                "iddataset": 43,
+                "dataset": "Instrumento de ratificación del Convenio relativo a la conservación de la vida silvestre y del medio natural en Europa, hecho en Berna el 19 de septiembre de 1979.",
+                "idnombre_dat": 1005898,
+                "nombre_en_dataset": "Aquila adalberti Brehm, 1861"
+            },
+            {
+                "idtaxon": 11014,
+                "idnombre_acept": 11014,
+                "nombre_aceptado": "Aquila adalberti Brehm, CL, 1861",
+                "idestadolegal": 243,
+                "estadolegal": "En Peligro de Extinción",
+                "norma": "Decreto 18/1992, de 26 de marzo, por el que se aprueba el Catálogo Regional de Especies Amenazadas de Fauna y Flora Silvestres y se crea la categoría de árboles singulares (Comunidad de Madrid). ",
+                "idvigente": 1,
+                "idambito": 2,
+                "ambito": "Autonómico",
+                "id_ccaa": 30,
+                "ccaa": "Comunidad de Madrid",
+                "iddataset": 63,
+                "dataset": "Catálogo Regional de especies amenazadas de la Comunidad de Madrid",
+                "idnombre_dat": 1005896,
+                "nombre_en_dataset": "Aquila adalberti C.L. Brehm"
+            }
+        ],
+        "v_nombrescomunes": [
+            {
+                "idtaxon": 11014,
+                "idnombre_aceptado": 11014,
+                "nombre_aceptado": "Aquila adalberti Brehm, CL, 1861",
+                "idnombre_comun": 5036452,
+                "nombre_comun": "Águila imperial ibérica",
+                "tiponombre": "Nombre común",
+                "ididioma": 1,
+                "idioma": "Castellano",
+                "espreferente": true
+            },
+            {
+                "idtaxon": 11014,
+                "idnombre_aceptado": 11014,
+                "nombre_aceptado": "Aquila adalberti Brehm, CL, 1861",
+                "idnombre_comun": 5036452,
+                "nombre_comun": "Águila imperial ibérica",
+                "tiponombre": "Nombre común",
+                "ididioma": 1,
+                "idioma": "Castellano"
+            },
+            {
+                "idtaxon": 11014,
+                "idnombre_aceptado": 11014,
+                "nombre_aceptado": "Aquila adalberti Brehm, CL, 1861",
+                "idnombre_comun": 5007373,
+                "nombre_comun": "Eguzki-arranoa",
+                "tiponombre": "Nombre común",
+                "ididioma": 2,
+                "idioma": "Euskera",
+                "espreferente": false
+            }
+        ],
+        "v_atributos_pliniancore": [
+            {
+                "idtaxon": 11014,
+                "idnombre_acept": 11014,
+                "nombre_aceptado": "Aquila adalberti Brehm, CL, 1861",
+                "idatributo": 8,
+                "atributo": "Alimentación",
+                "valor_atributo": "El régimen trófico del águila imperial se basa fundamentalmente en una presa: el conejo (Oryctolagus cuniculus). Constituyendo en general la mitad de presas capturadas por el águila; llegando en algunos casos hasta el 70%. Evolutivamente la formación de A. adalberti, pudo estar relacionada a la exis…[+974]",
+                "prioritario": true,
+                "idfuente": 122,
+                "fuente": "Libro Rojo de las Aves de España. 2004",
+                "iddataset": 33,
+                "dataset": "Libro Rojo de las Aves de España. 2004",
+                "idnombre_dat": 1003931,
+                "nombre_en_dataset": "Aquila adalberti",
+                "idvigente": 1,
+                "fecha_alta": "2024-02-09"
+            },
+            {
+                "idtaxon": 11014,
+                "idnombre_acept": 11014,
+                "nombre_aceptado": "Aquila adalberti Brehm, CL, 1861",
+                "idatributo": 1,
+                "atributo": "Descripción de la especie",
+                "valor_atributo": "Rapaz de gran tamaño, el adulto es de tono general marrón muy oscuro, con hombros blanquecinos, y nuca y laterales de la cabeza pálidos. Pico muy poderoso. En vuelo destacan los hombros blancos y la base de la cola pálida sobre el resto del plumaje oscuro. Las alas son largas y relativamente rectang…[+614]",
+                "prioritario": true,
+                "idfuente": 0,
+                "fuente": "Sin fuente asociada",
+                "iddataset": 0,
+                "dataset": "Sin dataset asociado",
+                "idvigente": 1,
+                "fecha_alta": "2022-12-31"
+            },
+            {
+                "idtaxon": 11014,
+                "idnombre_acept": 11014,
+                "nombre_aceptado": "Aquila adalberti Brehm, CL, 1861",
+                "idatributo": 3,
+                "atributo": "Distribución",
+                "valor_atributo": "Mundial. Paleártica, en el extremo occidental de la cuenca mediterránea, actualmente sólo en España (Del Hoyo et al., 1994). En Portugal, la última pareja pudo nidificar en 1991 (Palma et al., 1999). Extinguida en Marruecos a finales del siglo XIX o principios del XX (González, 1991b), se localizó u…[+1535]",
+                "prioritario": true,
+                "idfuente": 120,
+                "fuente": "Informe nacional sobre la aplicación de la Directiva Aves en España 2008-2012.",
+                "iddataset": 5,
+                "dataset": "Informe nacional sobre la aplicación de la Directiva Aves en España 2008-2012.",
+                "idnombre_dat": 1003931,
+                "nombre_en_dataset": "Aquila adalberti",
+                "idvigente": 1
+            }
+        ],
+        "v_imagenes": [
+            {
+                "id_taxon": "11014",
+                "idnombre_acept": 11014,
+                "nombre_aceptado": "Aquila adalberti Brehm, CL, 1861",
+                "id_foto": 298,
+                "es_prioridad": 0,
+                "ruta_foto": "www.miteco.gob.es/content/dam/fototeca/imagenes/1976/06/298.jpg"
+            },
+            {
+                "id_taxon": "11014",
+                "idnombre_acept": 11014,
+                "nombre_aceptado": "Aquila adalberti Brehm, CL, 1861",
+                "id_foto": 315,
+                "es_prioridad": 0,
+                "ruta_foto": "www.miteco.gob.es/content/dam/fototeca/imagenes/1976/06/315.jpg"
+            },
+            {
+                "id_taxon": "11014",
+                "idnombre_acept": 11014,
+                "nombre_aceptado": "Aquila adalberti Brehm, CL, 1861",
+                "id_foto": 263,
+                "es_prioridad": 0,
+                "ruta_foto": "www.miteco.gob.es/content/dam/fototeca/imagenes/1980/11/263.jpg"
+            }
+        ]
+    },
+    "conservation": {
+        "ms": 264,
+        "value": {
+            "España": {
+                "code": "EN",
+                "label": "EN (En peligro)",
+                "year": 2004,
+                "criteria": "C1+2a(i)"
+            },
+            "Mundial": {
+                "code": "VU",
+                "label": "VU (Vulnerable)",
+                "year": 2021,
+                "criteria": "D1"
+            },
+            "Península": {
+                "code": "EN",
+                "label": "EN (En peligro)",
+                "year": 2021,
+                "criteria": "Reproductoras"
+            }
+        }
+    },
+    "legal": {
+        "ms": 430,
+        "value": {
+            "vigentes": [
+                {
+                    "estadolegal": "Incluido",
+                    "norma": "RESOLUCIÓN de 15 de octubre de 2010, del conseller de Medio Ambiente, Agua, Urbanismo y Vivienda y vicepresidente tercero del Consell, por la que se establecen las zonas de protección de la avifauna contra la colisión y electrocución, y se ordenan medidas para la reducción de la mortalidad de aves e…[+36]",
+                    "ambito": "Autonómico",
+                    "ccaa": "Comunidad Valenciana",
+                    "idvigente": 1
+                },
+                {
+                    "estadolegal": "Anexo II",
+                    "norma": "Instrumento de ratificación del Convenio relativo a la conservación de la vida silvestre y del medio natural en Europa, hecho en Berna el 19 de septiembre de 1979. BOE 235 de 1 de octubre de 1986",
+                    "ambito": "Internacional",
+                    "idvigente": 1,
+                    "observacionespoblacion": "Información sobre las especies incluidas en los Anexos del Convenio de Berna o Convenio relativo a la Conservación de la Vida Silvestre y del Medio Natural en Europa, proveniente de la Base de Datos europea EUNIS sobre especies a fecha de Mayo 2016."
+                },
+                {
+                    "estadolegal": "En Peligro de Extinción",
+                    "norma": "Decreto 18/1992, de 26 de marzo, por el que se aprueba el Catálogo Regional de Especies Amenazadas de Fauna y Flora Silvestres y se crea la categoría de árboles singulares (Comunidad de Madrid). ",
+                    "ambito": "Autonómico",
+                    "ccaa": "Comunidad de Madrid",
+                    "idvigente": 1
+                }
+            ],
+            "nacional": [
+                {
+                    "estadolegal": "CEEA: En peligro de extinción",
+                    "norma": "Real Decreto 139/2011, de 4 de febrero, para el desarrollo del Listado de Especies Silvestres en Régimen de Protección Especial y del Catálogo Español de Especies Amenazadas. BOE 46, de 23 de febrero de 2011",
+                    "ambito": "Nacional",
+                    "idvigente": 1
+                },
+                {
+                    "estadolegal": "Anexo IV",
+                    "norma": "Ley 42/2007, de 13 de diciembre, del Patrimonio Natural y de la Biodiversidad. BOE 299, de 14 de diciembre de 2007",
+                    "ambito": "Nacional",
+                    "idvigente": 1
+                }
+            ],
+            "peninsular": [
+                {
+                    "estadolegal": "CEEA: En peligro de extinción",
+                    "norma": "Real Decreto 139/2011, de 4 de febrero, para el desarrollo del Listado de Especies Silvestres en Régimen de Protección Especial y del Catálogo Español de Especies Amenazadas. BOE 46, de 23 de febrero de 2011",
+                    "ambito": "Nacional",
+                    "idvigente": 1
+                },
+                {
+                    "estadolegal": "Anexo IV",
+                    "norma": "Ley 42/2007, de 13 de diciembre, del Patrimonio Natural y de la Biodiversidad. BOE 299, de 14 de diciembre de 2007",
+                    "ambito": "Nacional",
+                    "idvigente": 1
+                }
+            ],
+            "autonomico": [
+                {
+                    "estadolegal": "En peligro de extinción",
+                    "norma": "Decreto 23/2012, de 14 de febrero, por el que se regula la conservación y el uso sostenible de la flora y la fauna silvestres y sus hábitats.",
+                    "ambito": "Autonómico",
+                    "ccaa": "Andalucía",
+                    "idvigente": 1
+                }
+            ]
+        }
+    },
+    "commonName": {
+        "ms": 270,
+        "value": "Águila imperial ibérica"
+    },
+    "description": {
+        "ms": 294,
+        "value": "Rapaz de gran tamaño, el adulto es de tono general marrón muy oscuro, con hombros blanquecinos, y nuca y laterales de la cabeza pálidos. Pico muy poderoso. En vuelo destacan los hombros blancos y la base de la cola pálida sobre el resto del plumaje oscuro. Las alas son largas y relativamente rectang…[+614]"
+    },
+    "images": {
+        "ms": 274,
+        "value": [
+            {
+                "url": "https://www.miteco.gob.es/content/dam/fototeca/imagenes/2023/11/47075.jpg",
+                "id": 47075,
+                "priority": 1
+            },
+            {
+                "url": "https://www.miteco.gob.es/content/dam/fototeca/imagenes/1980/11/263.jpg",
+                "id": 263,
+                "priority": 0
+            },
+            {
+                "url": "https://www.miteco.gob.es/content/dam/fototeca/imagenes/1980/11/265.jpg",
+                "id": 265,
+                "priority": 0
+            }
+        ]
+    },
+    "totalMs": 1834
+}

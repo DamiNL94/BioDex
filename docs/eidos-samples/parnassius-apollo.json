@@ -1,0 +1,388 @@
+{
+    "query": "Parnassius apollo",
+    "resolve": {
+        "ms": 318,
+        "value": {
+            "status": "ok",
+            "taxonid": 10740,
+            "taxon": {
+                "taxonid": 10740,
+                "nameid": 10740,
+                "acceptednameid": 10740,
+                "name": "Parnassius apollo (Linnaeus, 1758)",
+                "taxonrank": "Species",
+                "nametype": "Aceptado/válido",
+                "genus": "Parnassius",
+                "specificepithet": "apollo",
+                "scientificnameauthorship": "(Linnaeus, 1758)",
+                "taxonomicgroup": "Invertebrados",
+                "origen": "Especie nativa",
+                "kingdom": "Animalia",
+                "phylum": "Arthropoda",
+                "class": "Insecta",
+                "ordertaxonomic": "Lepidoptera",
+                "family": "Papilionidae"
+            },
+            "acceptedName": "Parnassius apollo (Linnaeus, 1758)",
+            "rankMismatch": false
+        }
+    },
+    "raw": {
+        "v_taxonomia": [
+            {
+                "nameid": 10740,
+                "name": "Parnassius apollo (Linnaeus, 1758)",
+                "taxonrankid": 10,
+                "taxonrank": "Species",
+                "verbatimtaxonrank": "sp.",
+                "areacode": "T",
+                "origenid": 2,
+                "origen": "Especie nativa",
+                "taxonomicgroupid": 7,
+                "taxonomicgroup": "Invertebrados",
+                "kingdomid": 200001,
+                "kingdom": "Animalia",
+                "phylumid": 200008,
+                "phylum": "Arthropoda",
+                "classid": 200058,
+                "class": "Insecta",
+                "ordertaxonomicid": 200217,
+                "ordertaxonomic": "Lepidoptera",
+                "familyid": 200948,
+                "family": "Papilionidae",
+                "genusid": 204124,
+                "genus": "Parnassius",
+                "specificepithet": "apollo",
+                "scientificnameauthorship": "(Linnaeus, 1758)",
+                "citescode": "10671",
+                "euniscode": "284",
+                "rednaturacode": "1057",
+                "lp": 1,
+                "taxonid": 10740,
+                "nametypeid": 10,
+                "nametype": "Aceptado/válido",
+                "acceptednameid": 10740
+            }
+        ],
+        "v_estadoconservacion": [
+            {
+                "idtaxon": 10740,
+                "anio": 1996,
+                "idcategoria": 19,
+                "categoriaconservacion": "VU (Vulnerable)",
+                "criterios": "A1cde",
+                "idautoridad": 1,
+                "autoridad": "UICN",
+                "idaplicaa": 1,
+                "aplicaa": "Mundial",
+                "iddataset": 119,
+                "idvigente": 1,
+                "vigencia": "Vigente"
+            },
+            {
+                "idtaxon": 10740,
+                "anio": 2011,
+                "idcategoria": 18,
+                "categoriaconservacion": "LC (Preocupación menor)",
+                "idautoridad": 1,
+                "autoridad": "UICN",
+                "idaplicaa": 2,
+                "aplicaa": "España",
+                "iddataset": 10,
+                "idvigente": 1,
+                "vigencia": "Vigente",
+                "idnombre": 10740
+            },
+            {
+                "idtaxon": 10740,
+                "anio": 2012,
+                "idcategoria": 41,
+                "categoriaconservacion": "XX (Desconocido)",
+                "idautoridad": 5,
+                "autoridad": "Art. 17 (Dir. Hábitats)",
+                "idaplicaa": 25,
+                "aplicaa": "Región Mediterránea",
+                "iddataset": 2,
+                "idvigente": 1,
+                "vigencia": "Vigente",
+                "idnombre": 10740
+            }
+        ],
+        "v_estadolegal": [
+            {
+                "idtaxon": 10740,
+                "idnombre_acept": 10740,
+                "nombre_aceptado": "Parnassius apollo (Linnaeus, 1758)",
+                "idestadolegal": 370,
+                "estadolegal": "LAESRPE",
+                "norma": "Decreto 129/2022, de 5 de septiembre, del Gobierno de Aragón, por el que se crea el Listado Aragonés de Especies Silvestres en Régimen de Protección Especial y se regula el Catálogo de Especies Amenazadas de Aragón. BOA 179 de 14/09/2022",
+                "idvigente": 1,
+                "idambito": 2,
+                "ambito": "Autonómico",
+                "id_ccaa": 24,
+                "ccaa": "Aragón",
+                "iddataset": 108,
+                "dataset": "Listado Aragonés de Especies Silvestres en Régimen de Protección Especial y Catálogo de Especies Amenazadas de Aragón",
+                "idnombre_dat": 1021346,
+                "nombre_en_dataset": "Parnassius apollo  (Linnaeus,  1758)                                                            "
+            },
+            {
+                "idtaxon": 10740,
+                "idnombre_acept": 10740,
+                "nombre_aceptado": "Parnassius apollo (Linnaeus, 1758)",
+                "idestadolegal": 439,
+                "estadolegal": "Vulnerable",
+                "norma": "Ley 2/2023, de 31 de enero, de biodiversidad y patrimonio natural de La Rioja",
+                "idvigente": 2,
+                "idambito": 2,
+                "ambito": "Autonómico",
+                "id_ccaa": 23,
+                "ccaa": "La Rioja",
+                "iddataset": 65,
+                "dataset": "Registro Riojano de Especies Silvestres en Régimen de Protección Especial y Catálogo Riojano de Especies Amenazadas",
+                "idnombre_dat": 1002692,
+                "nombre_en_dataset": "Parnassius apollo",
+                "fecha_alta": "2025-06-13",
+                "fecha_baja": "2025-06-13"
+            },
+            {
+                "idtaxon": 10740,
+                "idnombre_acept": 10740,
+                "nombre_aceptado": "Parnassius apollo (Linnaeus, 1758)",
+                "idestadolegal": 441,
+                "estadolegal": "En Régimen de Protección Especial",
+                "norma": "Ley 2/2023, de 31 de enero, de biodiversidad y patrimonio natural de La Rioja",
+                "idvigente": 1,
+                "idambito": 2,
+                "ambito": "Autonómico",
+                "id_ccaa": 23,
+                "ccaa": "La Rioja",
+                "iddataset": 65,
+                "dataset": "Registro Riojano de Especies Silvestres en Régimen de Protección Especial y Catálogo Riojano de Especies Amenazadas",
+                "idnombre_dat": 1002692,
+                "nombre_en_dataset": "Parnassius apollo",
+                "fecha_alta": "2025-06-13"
+            }
+        ],
+        "v_nombrescomunes": [
+            {
+                "idtaxon": 10740,
+                "idnombre_aceptado": 10740,
+                "nombre_aceptado": "Parnassius apollo (Linnaeus, 1758)",
+                "idnombre_comun": 5002394,
+                "nombre_comun": "Apolo",
+                "tiponombre": "Nombre común",
+                "ididioma": 1,
+                "idioma": "Castellano",
+                "espreferente": true
+            },
+            {
+                "idtaxon": 10740,
+                "idnombre_aceptado": 10740,
+                "nombre_aceptado": "Parnassius apollo (Linnaeus, 1758)",
+                "idnombre_comun": 5032734,
+                "nombre_comun": "Mariposa Apolo",
+                "tiponombre": "Nombre común",
+                "ididioma": 1,
+                "idioma": "Castellano",
+                "espreferente": false
+            },
+            {
+                "idtaxon": 10740,
+                "idnombre_aceptado": 10740,
+                "nombre_aceptado": "Parnassius apollo (Linnaeus, 1758)",
+                "idnombre_comun": 5003125,
+                "nombre_comun": "Apollo",
+                "tiponombre": "Nombre común",
+                "ididioma": 5,
+                "idioma": "Inglés",
+                "espreferente": false
+            }
+        ],
+        "v_atributos_pliniancore": [
+            {
+                "idtaxon": 10740,
+                "idnombre_acept": 10740,
+                "nombre_aceptado": "Parnassius apollo (Linnaeus, 1758)",
+                "idatributo": 8,
+                "atributo": "Alimentación",
+                "valor_atributo": "Planta nutricia: crasuláceas de los géneros Sedum, Sempervivum y Bryophylum, siendo la planta más común a las diversas colonias ibéricas Sedum telephium.",
+                "prioritario": true,
+                "idfuente": 124,
+                "fuente": "Libro Rojo de los Lepidópteros, 2006.",
+                "iddataset": 50,
+                "dataset": "Libro Rojo de los Lepidópteros, 2006.",
+                "idnombre_dat": 10740,
+                "nombre_en_dataset": "Parnassius apollo (Linnaeus, 1758)",
+                "idvigente": 1
+            },
+            {
+                "idtaxon": 10740,
+                "idnombre_acept": 10740,
+                "nombre_aceptado": "Parnassius apollo (Linnaeus, 1758)",
+                "idatributo": 8,
+                "atributo": "Alimentación",
+                "valor_atributo": "La larva presenta coloración aposemática y su planta nutricia la constituyen varias especies del género Sedum (S. album, S. amplexicaule, S. forsterianum, S. sempervirum, S. telephium, S. brevifolium) (Gómez-Bustillo & Fernández-Rubio, 1974a; 1974b; Gomariz, 1993; Delgado, 1997; Ashton et al., 2009)…[+127]",
+                "prioritario": false,
+                "idfuente": 118,
+                "fuente": "Bases ecológicas preliminares para la conservación de los tipos de hábitat de interés comunitario en España: Invertebrados",
+                "iddataset": 78,
+                "dataset": "Bases ecológicas preliminares para la conservación de los tipos de hábitat de interés comunitario en España: Invertebrados",
+                "idnombre_dat": 1002692,
+                "nombre_en_dataset": "Parnassius apollo",
+                "idvigente": 1
+            },
+            {
+                "idtaxon": 10740,
+                "idnombre_acept": 10740,
+                "nombre_aceptado": "Parnassius apollo (Linnaeus, 1758)",
+                "idatributo": 4,
+                "atributo": "Ciclo vital",
+                "valor_atributo": "Especie univoltina, el adulto vuela entre junio y agosto dependiendo de la zona (llegándose a ver algún individuo desde mayo a septiembre), en altitudes comprendidas entre los 800 y 3.000m. \nPresenta 5 estadíos larvarios, invernando en forma de huevo. En cuanto a parasitoides conocidos, el himenópte…[+114]",
+                "prioritario": false,
+                "idfuente": 118,
+                "fuente": "Bases ecológicas preliminares para la conservación de los tipos de hábitat de interés comunitario en España: Invertebrados",
+                "iddataset": 78,
+                "dataset": "Bases ecológicas preliminares para la conservación de los tipos de hábitat de interés comunitario en España: Invertebrados",
+                "idnombre_dat": 1002692,
+                "nombre_en_dataset": "Parnassius apollo",
+                "idvigente": 1
+            }
+        ],
+        "v_imagenes": [
+            {
+                "id_taxon": "10740",
+                "idnombre_acept": 10740,
+                "nombre_aceptado": "Parnassius apollo (Linnaeus, 1758)",
+                "id_foto": 40976,
+                "es_prioridad": 0,
+                "ruta_foto": "www.miteco.gob.es/content/dam/fototeca/imagenes/2017/07/40976.jpg"
+            },
+            {
+                "id_taxon": "10740",
+                "idnombre_acept": 10740,
+                "nombre_aceptado": "Parnassius apollo (Linnaeus, 1758)",
+                "id_foto": 40977,
+                "es_prioridad": 0,
+                "ruta_foto": "www.miteco.gob.es/content/dam/fototeca/imagenes/2017/07/40977.jpg"
+            },
+            {
+                "id_taxon": "10740",
+                "idnombre_acept": 10740,
+                "nombre_aceptado": "Parnassius apollo (Linnaeus, 1758)",
+                "id_foto": 36559,
+                "es_prioridad": 0,
+                "ruta_foto": "www.miteco.gob.es/content/dam/fototeca/imagenes/2015/06/36559.jpg"
+            }
+        ]
+    },
+    "conservation": {
+        "ms": 287,
+        "value": {
+            "Mundial": {
+                "code": "LC",
+                "label": "LC (Preocupación menor)",
+                "year": 2021
+            },
+            "España": {
+                "code": "LC",
+                "label": "LC (Preocupación menor)",
+                "year": 2011
+            }
+        }
+    },
+    "legal": {
+        "ms": 268,
+        "value": {
+            "vigentes": [
+                {
+                    "estadolegal": "LAESRPE",
+                    "norma": "Decreto 129/2022, de 5 de septiembre, del Gobierno de Aragón, por el que se crea el Listado Aragonés de Especies Silvestres en Régimen de Protección Especial y se regula el Catálogo de Especies Amenazadas de Aragón. BOA 179 de 14/09/2022",
+                    "ambito": "Autonómico",
+                    "ccaa": "Aragón",
+                    "idvigente": 1
+                },
+                {
+                    "estadolegal": "En Régimen de Protección Especial",
+                    "norma": "Ley 2/2023, de 31 de enero, de biodiversidad y patrimonio natural de La Rioja",
+                    "ambito": "Autonómico",
+                    "ccaa": "La Rioja",
+                    "idvigente": 1
+                },
+                {
+                    "estadolegal": "Anexo II",
+                    "norma": "Instrumento de ratificación del Convenio relativo a la conservación de la vida silvestre y del medio natural en Europa, hecho en Berna el 19 de septiembre de 1979. BOE 235 de 1 de octubre de 1986",
+                    "ambito": "Internacional",
+                    "idvigente": 1,
+                    "observacionespoblacion": "Información sobre las especies incluidas en los Anexos del Convenio de Berna o Convenio relativo a la Conservación de la Vida Silvestre y del Medio Natural en Europa, proveniente de la Base de Datos europea EUNIS sobre especies a fecha de Mayo 2016."
+                }
+            ],
+            "nacional": [
+                {
+                    "estadolegal": "LESRPE: En régimen de protección especial",
+                    "norma": "Real Decreto 139/2011, de 4 de febrero, para el desarrollo del Listado de Especies Silvestres en Régimen de Protección Especial y del Catálogo Español de Especies Amenazadas. BOE 46, de 23 de febrero de 2011",
+                    "ambito": "Nacional",
+                    "idvigente": 1
+                },
+                {
+                    "estadolegal": "Anexo V",
+                    "norma": "Ley 42/2007, de 13 de diciembre, del Patrimonio Natural y de la Biodiversidad. BOE 299, de 14 de diciembre de 2007",
+                    "ambito": "Nacional",
+                    "idvigente": 1
+                }
+            ],
+            "peninsular": [
+                {
+                    "estadolegal": "LESRPE: En régimen de protección especial",
+                    "norma": "Real Decreto 139/2011, de 4 de febrero, para el desarrollo del Listado de Especies Silvestres en Régimen de Protección Especial y del Catálogo Español de Especies Amenazadas. BOE 46, de 23 de febrero de 2011",
+                    "ambito": "Nacional",
+                    "idvigente": 1
+                },
+                {
+                    "estadolegal": "Anexo V",
+                    "norma": "Ley 42/2007, de 13 de diciembre, del Patrimonio Natural y de la Biodiversidad. BOE 299, de 14 de diciembre de 2007",
+                    "ambito": "Nacional",
+                    "idvigente": 1
+                }
+            ],
+            "autonomico": [
+                {
+                    "estadolegal": "Listado",
+                    "norma": "Decreto 23/2012, de 14 de febrero, por el que se regula la conservación y el uso sostenible de la flora y la fauna silvestres y sus hábitats.",
+                    "ambito": "Autonómico",
+                    "ccaa": "Andalucía",
+                    "idvigente": 1
+                }
+            ]
+        }
+    },
+    "commonName": {
+        "ms": 276,
+        "value": "Apolo"
+    },
+    "description": {
+        "ms": 277,
+        "value": "Mariposa relativamente grande, que puede alcanzar una envergadura de unos 8 cm. Es inmediatamente reconocible por el color predominantemente blanco de sus alas, de textura apergaminada y translúcidas (hialinas) en sus partes marginales, donde carecen de escamas. El ala anterior lleva una serie de gr…[+421]"
+    },
+    "images": {
+        "ms": 287,
+        "value": [
+            {
+                "url": "https://www.miteco.gob.es/content/dam/fototeca/imagenes/2024/01/47062.jpg",
+                "id": 47062,
+                "priority": 1
+            },
+            {
+                "url": "https://www.miteco.gob.es/content/dam/fototeca/imagenes/1994/08/23824.jpg",
+                "id": 23824,
+                "priority": 0
+            },
+            {
+                "url": "https://www.miteco.gob.es/content/dam/fototeca/imagenes/2012/03/29208.jpg",
+                "id": 29208,
+                "priority": 0
+            }
+        ]
+    },
+    "totalMs": 1713
+}

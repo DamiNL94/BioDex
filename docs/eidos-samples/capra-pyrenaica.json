@@ -1,0 +1,390 @@
+{
+    "query": "Capra pyrenaica",
+    "resolve": {
+        "ms": 288,
+        "value": {
+            "status": "ok",
+            "taxonid": 12055,
+            "taxon": {
+                "taxonid": 12055,
+                "nameid": 100363,
+                "acceptednameid": 100363,
+                "name": "Capra pyrenaica H. R. Schinz, 1838",
+                "taxonrank": "Species",
+                "nametype": "Aceptado/válido",
+                "genus": "Capra",
+                "specificepithet": "pyrenaica",
+                "scientificnameauthorship": "H. R. Schinz, 1838",
+                "taxonomicgroup": "Mamíferos",
+                "origen": "Especie nativa",
+                "kingdom": "Animalia",
+                "phylum": "Chordata",
+                "class": "Mammalia",
+                "ordertaxonomic": "Artiodactyla",
+                "family": "Bovidae"
+            },
+            "acceptedName": "Capra pyrenaica H. R. Schinz, 1838",
+            "rankMismatch": false
+        }
+    },
+    "raw": {
+        "v_taxonomia": [
+            {
+                "nameid": 80100,
+                "name": "Capra pyrenaica victoriae Cabrera, 1911",
+                "taxonrankid": 11,
+                "taxonrank": "Subspecies",
+                "verbatimtaxonrank": "subsp.",
+                "areacode": "T",
+                "origenid": 2,
+                "origen": "Especie nativa",
+                "taxonomicgroupid": 8,
+                "taxonomicgroup": "Mamíferos",
+                "kingdomid": 200001,
+                "kingdom": "Animalia",
+                "phylumid": 200011,
+                "phylum": "Chordata",
+                "classid": 200075,
+                "class": "Mammalia",
+                "ordertaxonomicid": 200315,
+                "ordertaxonomic": "Artiodactyla",
+                "familyid": 201605,
+                "family": "Bovidae",
+                "genusid": 205976,
+                "genus": "Capra",
+                "specificepithet": "pyrenaica",
+                "infraspecificepithet": "victoriae",
+                "scientificnameauthorship": "Cabrera, 1911",
+                "taxonid": 12055,
+                "nametypeid": 11,
+                "nametype": "Sinónimo",
+                "acceptednameid": 100363
+            },
+            {
+                "nameid": 100363,
+                "name": "Capra pyrenaica H. R. Schinz, 1838",
+                "taxonrankid": 10,
+                "taxonrank": "Species",
+                "verbatimtaxonrank": "sp.",
+                "areacode": "T",
+                "origenid": 2,
+                "origen": "Especie nativa",
+                "taxonomicgroupid": 8,
+                "taxonomicgroup": "Mamíferos",
+                "kingdomid": 200001,
+                "kingdom": "Animalia",
+                "phylumid": 200011,
+                "phylum": "Chordata",
+                "classid": 200075,
+                "class": "Mammalia",
+                "ordertaxonomicid": 200315,
+                "ordertaxonomic": "Artiodactyla",
+                "familyid": 201605,
+                "family": "Bovidae",
+                "genusid": 205976,
+                "genus": "Capra",
+                "specificepithet": "pyrenaica",
+                "scientificnameauthorship": "H. R. Schinz, 1838",
+                "lp": 1,
+                "taxonid": 12055,
+                "nametypeid": 10,
+                "nametype": "Aceptado/válido",
+                "acceptednameid": 100363
+            }
+        ],
+        "v_estadoconservacion": [
+            {
+                "idtaxon": 12055,
+                "anio": 1992,
+                "idcategoria": 24,
+                "categoriaconservacion": "R (Rara)",
+                "idautoridad": 2,
+                "autoridad": "Otras",
+                "idaplicaa": 6,
+                "aplicaa": "España",
+                "iddataset": 130,
+                "fechaalta": "2024-01-10",
+                "idvigente": 1,
+                "vigencia": "Vigente",
+                "idnombre": 12055
+            },
+            {
+                "idtaxon": 12055,
+                "anio": 2007,
+                "idcategoria": 15,
+                "categoriaconservacion": "NT (Casi amenazado)",
+                "idautoridad": 1,
+                "autoridad": "UICN",
+                "idaplicaa": 2,
+                "aplicaa": "España",
+                "iddataset": 34,
+                "idvigente": 1,
+                "vigencia": "Vigente",
+                "idnombre": 12055
+            },
+            {
+                "idtaxon": 12055,
+                "anio": 2008,
+                "idcategoria": 18,
+                "categoriaconservacion": "LC (Preocupación menor)",
+                "idautoridad": 1,
+                "autoridad": "UICN",
+                "idaplicaa": 1,
+                "aplicaa": "Mundial",
+                "iddataset": 119,
+                "idvigente": 1,
+                "vigencia": "Vigente"
+            }
+        ],
+        "v_estadolegal": [
+            {
+                "idtaxon": 12055,
+                "idnombre_acept": 100363,
+                "nombre_aceptado": "Capra pyrenaica H. R. Schinz, 1838",
+                "idestadolegal": 42,
+                "estadolegal": "Anexo III",
+                "norma": "Instrumento de ratificación del Convenio relativo a la conservación de la vida silvestre y del medio natural en Europa, hecho en Berna el 19 de septiembre de 1979. BOE 235 de 1 de octubre de 1986",
+                "idvigente": 1,
+                "observacionespoblacion": "Información sobre las especies incluidas en los Anexos del Convenio de Berna o Convenio relativo a la Conservación de la Vida Silvestre y del Medio Natural en Europa, proveniente de la Base de Datos europea EUNIS sobre especies a fecha de Mayo 2016.",
+                "idambito": 3,
+                "ambito": "Internacional",
+                "iddataset": 43,
+                "dataset": "Instrumento de ratificación del Convenio relativo a la conservación de la vida silvestre y del medio natural en Europa, hecho en Berna el 19 de septiembre de 1979.",
+                "idnombre_dat": 1008539,
+                "nombre_en_dataset": "Capra pyrenaica Schinz, 1838"
+            },
+            {
+                "idtaxon": 12055,
+                "idnombre_acept": 100363,
+                "nombre_aceptado": "Capra pyrenaica H. R. Schinz, 1838",
+                "idestadolegal": 8,
+                "estadolegal": "Anexo V",
+                "norma": "Directiva 92/43/CE de 21 de mayo de 1992 relativa a la conservación de los habitats naturales y de la fauna y flora silvestres. DOUE L 206/7 de 22 de julio de 1992",
+                "idvigente": 1,
+                "idambito": 3,
+                "ambito": "Internacional",
+                "iddataset": 40,
+                "dataset": "Directiva 92/43/CEE (Directiva Hábitats)",
+                "idnombre_dat": 1008536,
+                "nombre_en_dataset": "Capra pyrenaica (except Capra pyrenaica pyrenaica)"
+            },
+            {
+                "idtaxon": 12055,
+                "idnombre_acept": 100363,
+                "nombre_aceptado": "Capra pyrenaica H. R. Schinz, 1838",
+                "idestadolegal": 230,
+                "estadolegal": "Anexo VI",
+                "norma": "Ley 42/2007, de 13 de diciembre, del Patrimonio Natural y de la Biodiversidad. BOE 299, de 14 de diciembre de 2007",
+                "idvigente": 1,
+                "observacionespoblacion": "Excepto Capra pyrenaica pyrenaica",
+                "idambito": 1,
+                "ambito": "Nacional",
+                "iddataset": 47,
+                "dataset": "Ley 42/2007, de 13 de diciembre, del Patrimonio Natural y de la Biodiversidad",
+                "idnombre_dat": 1000818,
+                "nombre_en_dataset": "Capra pyrenaica"
+            }
+        ],
+        "v_nombrescomunes": [
+            {
+                "idtaxon": 12055,
+                "idnombre_aceptado": 100363,
+                "nombre_aceptado": "Capra pyrenaica H. R. Schinz, 1838",
+                "idnombre_comun": 5001918,
+                "nombre_comun": "Cabra montés",
+                "tiponombre": "Nombre común",
+                "ididioma": 1,
+                "idioma": "Castellano",
+                "espreferente": true
+            },
+            {
+                "idtaxon": 12055,
+                "idnombre_aceptado": 100363,
+                "nombre_aceptado": "Capra pyrenaica H. R. Schinz, 1838",
+                "idnombre_comun": 5002496,
+                "nombre_comun": "Cabra Montesa",
+                "tiponombre": "Nombre común",
+                "ididioma": 1,
+                "idioma": "Castellano",
+                "espreferente": false
+            },
+            {
+                "idtaxon": 12055,
+                "idnombre_aceptado": 100363,
+                "nombre_aceptado": "Capra pyrenaica H. R. Schinz, 1838",
+                "idnombre_comun": 5006379,
+                "nombre_comun": "Bucardo",
+                "tiponombre": "Nombre común",
+                "ididioma": 1,
+                "idioma": "Castellano",
+                "espreferente": false
+            }
+        ],
+        "v_atributos_pliniancore": [
+            {
+                "idtaxon": 12055,
+                "idnombre_acept": 100363,
+                "nombre_aceptado": "Capra pyrenaica H. R. Schinz, 1838",
+                "idatributo": 8,
+                "atributo": "Alimentación",
+                "valor_atributo": "Los estudios efectuados sobre la alimentación de la cabra montés ponen de manifiesto un elevado carácter adaptativo a las condiciones del medio donde viven. Cuando predominan los pastos, la cabra se comporta como pascícola, mientras que cuando éstos escasean, la cabra suele ser ramoneadora.",
+                "prioritario": true,
+                "idfuente": 116,
+                "fuente": "Atlas y Libro Rojo de los Mamíferos Terrestres de España. Dirección General para la Biodiversidad-SECEM-SECEMU",
+                "iddataset": 34,
+                "dataset": "Atlas y Libro Rojo de los Mamíferos Terrestres de España. Dirección General para la Biodiversidad-SECEM-SECEMU",
+                "idnombre_dat": 12055,
+                "nombre_en_dataset": "Capra pyrenaica Schinz, 1838",
+                "idvigente": 1
+            },
+            {
+                "idtaxon": 12055,
+                "idnombre_acept": 100363,
+                "nombre_aceptado": "Capra pyrenaica H. R. Schinz, 1838",
+                "idatributo": 4,
+                "atributo": "Ciclo vital",
+                "valor_atributo": "Es una especie polígama. El período de celo tiene lugar a finales de otoño y principios de invierno. Las hembras comienzan a reproducirse cuando alcanzan 24 kg de peso, a los 30 meses por regla general. Los machos adultos (mayores de ocho años) son los que se reproducen aunque pueden hacerlo con men…[+268]",
+                "prioritario": true,
+                "idfuente": 116,
+                "fuente": "Atlas y Libro Rojo de los Mamíferos Terrestres de España. Dirección General para la Biodiversidad-SECEM-SECEMU",
+                "iddataset": 34,
+                "dataset": "Atlas y Libro Rojo de los Mamíferos Terrestres de España. Dirección General para la Biodiversidad-SECEM-SECEMU",
+                "idnombre_dat": 12055,
+                "nombre_en_dataset": "Capra pyrenaica Schinz, 1838",
+                "idvigente": 1
+            },
+            {
+                "idtaxon": 12055,
+                "idnombre_acept": 100363,
+                "nombre_aceptado": "Capra pyrenaica H. R. Schinz, 1838",
+                "idatributo": 17,
+                "atributo": "Comportamiento/Etología",
+                "valor_atributo": "Es un animal gregario, siendo los rebaños de diferente tamaño y composición a lo largo del año, permaneciendo los sexos separados durante la mayor parte del mismo. Esta segregación sexual se rompe durante el celo, cuando se forman grupos mixtos de ambos sexos y todas las edades. En la época de parto…[+586]",
+                "prioritario": true,
+                "idfuente": 116,
+                "fuente": "Atlas y Libro Rojo de los Mamíferos Terrestres de España. Dirección General para la Biodiversidad-SECEM-SECEMU",
+                "iddataset": 34,
+                "dataset": "Atlas y Libro Rojo de los Mamíferos Terrestres de España. Dirección General para la Biodiversidad-SECEM-SECEMU",
+                "idnombre_dat": 12055,
+                "nombre_en_dataset": "Capra pyrenaica Schinz, 1838",
+                "idvigente": 1
+            }
+        ],
+        "v_imagenes": [
+            {
+                "id_taxon": "12055",
+                "idnombre_acept": 100363,
+                "nombre_aceptado": "Capra pyrenaica H. R. Schinz, 1838",
+                "id_foto": 41138,
+                "es_prioridad": 0,
+                "ruta_foto": "www.miteco.gob.es/content/dam/fototeca/imagenes/2017/12/41138.jpg"
+            },
+            {
+                "id_taxon": "12055",
+                "idnombre_acept": 100363,
+                "nombre_aceptado": "Capra pyrenaica H. R. Schinz, 1838",
+                "id_foto": 1898,
+                "es_prioridad": 0,
+                "ruta_foto": "www.miteco.gob.es/content/dam/fototeca/imagenes/1985/09/1898.jpg"
+            },
+            {
+                "id_taxon": "12055",
+                "idnombre_acept": 100363,
+                "nombre_aceptado": "Capra pyrenaica H. R. Schinz, 1838",
+                "id_foto": 1885,
+                "es_prioridad": 0,
+                "ruta_foto": "www.miteco.gob.es/content/dam/fototeca/imagenes/1989/12/1885.jpg"
+            }
+        ]
+    },
+    "conservation": {
+        "ms": 283,
+        "value": {
+            "España": {
+                "code": "NT",
+                "label": "NT (Casi amenazado)",
+                "year": 2007
+            },
+            "Mundial": {
+                "code": "LC",
+                "label": "LC (Preocupación menor)",
+                "year": 2021
+            }
+        }
+    },
+    "legal": {
+        "ms": 311,
+        "value": {
+            "vigentes": [
+                {
+                    "estadolegal": "Anexo III",
+                    "norma": "Instrumento de ratificación del Convenio relativo a la conservación de la vida silvestre y del medio natural en Europa, hecho en Berna el 19 de septiembre de 1979. BOE 235 de 1 de octubre de 1986",
+                    "ambito": "Internacional",
+                    "idvigente": 1,
+                    "observacionespoblacion": "Información sobre las especies incluidas en los Anexos del Convenio de Berna o Convenio relativo a la Conservación de la Vida Silvestre y del Medio Natural en Europa, proveniente de la Base de Datos europea EUNIS sobre especies a fecha de Mayo 2016."
+                },
+                {
+                    "estadolegal": "Anexo V",
+                    "norma": "Directiva 92/43/CE de 21 de mayo de 1992 relativa a la conservación de los habitats naturales y de la fauna y flora silvestres. DOUE L 206/7 de 22 de julio de 1992",
+                    "ambito": "Internacional",
+                    "idvigente": 1
+                },
+                {
+                    "estadolegal": "Anexo VI",
+                    "norma": "Ley 42/2007, de 13 de diciembre, del Patrimonio Natural y de la Biodiversidad. BOE 299, de 14 de diciembre de 2007",
+                    "ambito": "Nacional",
+                    "idvigente": 1,
+                    "observacionespoblacion": "Excepto Capra pyrenaica pyrenaica"
+                }
+            ],
+            "nacional": [
+                {
+                    "estadolegal": "Anexo VI",
+                    "norma": "Ley 42/2007, de 13 de diciembre, del Patrimonio Natural y de la Biodiversidad. BOE 299, de 14 de diciembre de 2007",
+                    "ambito": "Nacional",
+                    "idvigente": 1,
+                    "observacionespoblacion": "Excepto Capra pyrenaica pyrenaica"
+                }
+            ],
+            "peninsular": [
+                {
+                    "estadolegal": "Anexo VI",
+                    "norma": "Ley 42/2007, de 13 de diciembre, del Patrimonio Natural y de la Biodiversidad. BOE 299, de 14 de diciembre de 2007",
+                    "ambito": "Nacional",
+                    "idvigente": 1,
+                    "observacionespoblacion": "Excepto Capra pyrenaica pyrenaica"
+                }
+            ],
+            "autonomico": []
+        }
+    },
+    "commonName": {
+        "ms": 287,
+        "value": "Cabra montés"
+    },
+    "description": {
+        "ms": 278,
+        "value": "Es un ungulado robusto y de mediano tamaño, CC: 97-148 cm; CR: 65-84 cm; Ps: 31-90 kg. Ambos sexos presentan cuernos persistentes, formados por un soporte óseo recubierto de un estuche córneo, no ramificados, gruesos y nudosos, que en los machos adultos se curva en forma de “S”. El número de nudos, …[+522]"
+    },
+    "images": {
+        "ms": 263,
+        "value": [
+            {
+                "url": "https://www.miteco.gob.es/content/dam/fototeca/imagenes/2017/11/47104.jpg",
+                "id": 47104,
+                "priority": 1
+            },
+            {
+                "url": "https://www.miteco.gob.es/content/dam/fototeca/imagenes/1985/01/1875.jpg",
+                "id": 1875,
+                "priority": 0
+            },
+            {
+                "url": "https://www.miteco.gob.es/content/dam/fototeca/imagenes/1989/12/1885.jpg",
+                "id": 1885,
+                "priority": 0
+            }
+        ]
+    },
+    "totalMs": 1710
+}

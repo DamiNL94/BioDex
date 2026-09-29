@@ -1,0 +1,354 @@
+{
+    "query": "Turdus merula",
+    "resolve": {
+        "ms": 311,
+        "value": {
+            "status": "ok",
+            "taxonid": 11726,
+            "taxon": {
+                "taxonid": 11726,
+                "nameid": 11726,
+                "acceptednameid": 11726,
+                "name": "Turdus merula Linnaeus, 1758",
+                "taxonrank": "Species",
+                "nametype": "Aceptado/válido",
+                "genus": "Turdus",
+                "specificepithet": "merula",
+                "scientificnameauthorship": "Linnaeus, 1758",
+                "taxonomicgroup": "Aves",
+                "origen": "Especie nativa",
+                "kingdom": "Animalia",
+                "phylum": "Chordata",
+                "class": "Aves",
+                "ordertaxonomic": "Passeriformes",
+                "family": "Turdidae"
+            },
+            "acceptedName": "Turdus merula Linnaeus, 1758",
+            "rankMismatch": false
+        }
+    },
+    "raw": {
+        "v_taxonomia": [
+            {
+                "nameid": 11726,
+                "name": "Turdus merula Linnaeus, 1758",
+                "taxonrankid": 10,
+                "taxonrank": "Species",
+                "verbatimtaxonrank": "sp.",
+                "areacode": "T",
+                "origenid": 2,
+                "origen": "Especie nativa",
+                "taxonomicgroupid": 4,
+                "taxonomicgroup": "Aves",
+                "kingdomid": 200001,
+                "kingdom": "Animalia",
+                "phylumid": 200011,
+                "phylum": "Chordata",
+                "classid": 200070,
+                "class": "Aves",
+                "ordertaxonomicid": 200293,
+                "ordertaxonomic": "Passeriformes",
+                "familyid": 201547,
+                "family": "Turdidae",
+                "genusid": 205856,
+                "genus": "Turdus",
+                "specificepithet": "merula",
+                "scientificnameid": "urn:lsid:recibio.net:name:8fed574c-ebcc-46a1-8bc3-752f8f4987b2",
+                "scientificnameauthorship": "Linnaeus, 1758",
+                "euniscode": "1332",
+                "euringcode": "11870",
+                "rednaturacode": "A283",
+                "lp": 1,
+                "taxonid": 11726,
+                "nametypeid": 10,
+                "nametype": "Aceptado/válido",
+                "acceptednameid": 11726
+            }
+        ],
+        "v_estadoconservacion": [
+            {
+                "idtaxon": 11726,
+                "anio": 2004,
+                "idcategoria": 14,
+                "categoriaconservacion": "NE (No evaluado)",
+                "idautoridad": 1,
+                "autoridad": "UICN",
+                "idaplicaa": 2,
+                "aplicaa": "España",
+                "iddataset": 19,
+                "idvigente": 1,
+                "vigencia": "Vigente",
+                "idnombre": 11726
+            },
+            {
+                "idtaxon": 11726,
+                "anio": 2016,
+                "idcategoria": 18,
+                "categoriaconservacion": "LC (Preocupación menor)",
+                "idautoridad": 1,
+                "autoridad": "UICN",
+                "idaplicaa": 1,
+                "aplicaa": "Mundial",
+                "iddataset": 119,
+                "idvigente": 1,
+                "vigencia": "Vigente"
+            },
+            {
+                "idtaxon": 11726,
+                "anio": 2021,
+                "idcategoria": 18,
+                "categoriaconservacion": "LC (Preocupación menor)",
+                "idcriterio": 2,
+                "criteriomedidaconservacion": "Reproductoras",
+                "criterios": "Reproductoras",
+                "idautoridad": 1,
+                "autoridad": "UICN",
+                "idaplicaa": 4,
+                "aplicaa": "Península",
+                "iddataset": 316,
+                "fechaalta": "2024-03-27",
+                "idvigente": 1,
+                "vigencia": "Vigente"
+            }
+        ],
+        "v_estadolegal": [
+            {
+                "idtaxon": 11726,
+                "idnombre_acept": 11726,
+                "nombre_aceptado": "Turdus merula Linnaeus, 1758",
+                "idestadolegal": 42,
+                "estadolegal": "Anexo III",
+                "norma": "Instrumento de ratificación del Convenio relativo a la conservación de la vida silvestre y del medio natural en Europa, hecho en Berna el 19 de septiembre de 1979. BOE 235 de 1 de octubre de 1986",
+                "idvigente": 1,
+                "observacionespoblacion": "Información sobre las especies incluidas en los Anexos del Convenio de Berna o Convenio relativo a la Conservación de la Vida Silvestre y del Medio Natural en Europa, proveniente de la Base de Datos europea EUNIS sobre especies a fecha de Mayo 2016.",
+                "idambito": 3,
+                "ambito": "Internacional",
+                "iddataset": 43,
+                "dataset": "Instrumento de ratificación del Convenio relativo a la conservación de la vida silvestre y del medio natural en Europa, hecho en Berna el 19 de septiembre de 1979.",
+                "idnombre_dat": 11726,
+                "nombre_en_dataset": "Turdus merula Linnaeus, 1758"
+            },
+            {
+                "idtaxon": 11726,
+                "idnombre_acept": 11726,
+                "nombre_aceptado": "Turdus merula Linnaeus, 1758",
+                "idestadolegal": 3,
+                "estadolegal": "Anexo II",
+                "norma": "Directiva 2009/147/CE del Parlamento Europeo y del Consejo, de 30 de noviembre de 2009, relativa a la conservación de las aves silvestres. DOUE L 20/7 de 26 de enero de 2010",
+                "idvigente": 1,
+                "idambito": 3,
+                "ambito": "Internacional",
+                "iddataset": 41,
+                "dataset": "Directiva 2009/147/CE (Directiva Aves)",
+                "idnombre_dat": 1003794,
+                "nombre_en_dataset": "Turdus merula"
+            },
+            {
+                "idtaxon": 11726,
+                "idnombre_acept": 11726,
+                "nombre_aceptado": "Turdus merula Linnaeus, 1758",
+                "idestadolegal": 288,
+                "estadolegal": "Especie de interés especial",
+                "norma": "Ley 9/1999, de 26 de mayo, de conservación de la Naturaleza. DOCM 40 de 12 de junio de 1999.",
+                "idvigente": 1,
+                "idambito": 1,
+                "ambito": "Nacional",
+                "id_ccaa": 42,
+                "ccaa": "Castilla-La Mancha",
+                "iddataset": 61,
+                "dataset": "Catálogo Regional de Especies Amenazadas de Castilla-La Mancha",
+                "idnombre_dat": 1003794,
+                "nombre_en_dataset": "Turdus merula"
+            }
+        ],
+        "v_nombrescomunes": [
+            {
+                "idtaxon": 11726,
+                "idnombre_aceptado": 11726,
+                "nombre_aceptado": "Turdus merula Linnaeus, 1758",
+                "idnombre_comun": 5001069,
+                "nombre_comun": "Mirlo común",
+                "tiponombre": "Nombre común",
+                "ididioma": 1,
+                "idioma": "Castellano",
+                "espreferente": true
+            },
+            {
+                "idtaxon": 11726,
+                "idnombre_aceptado": 11726,
+                "nombre_aceptado": "Turdus merula Linnaeus, 1758",
+                "idnombre_comun": 5001069,
+                "nombre_comun": "Mirlo común",
+                "tiponombre": "Nombre común",
+                "ididioma": 1,
+                "idioma": "Castellano"
+            },
+            {
+                "idtaxon": 11726,
+                "idnombre_aceptado": 11726,
+                "nombre_aceptado": "Turdus merula Linnaeus, 1758",
+                "idnombre_comun": 5016293,
+                "nombre_comun": "Patoja",
+                "tiponombre": "Nombre común",
+                "ididioma": 1,
+                "idioma": "Castellano",
+                "espreferente": false
+            }
+        ],
+        "v_atributos_pliniancore": [
+            {
+                "idtaxon": 11726,
+                "idnombre_acept": 11726,
+                "nombre_aceptado": "Turdus merula Linnaeus, 1758",
+                "idatributo": 1,
+                "atributo": "Descripción de la especie",
+                "valor_atributo": "Túrdido de mediano tamaño y con aspecto muy característico. De tonos uniformes y oscuros, el macho luce color negro, con el pico y el anillo ocular anaranjados, mientras que la hembra es marrón oscura, con el pico amarillento o parduzco. Exhibe un vuelo ágil y directo, frecuentemente a baja altura, …[+132]",
+                "prioritario": true,
+                "idfuente": 0,
+                "fuente": "Sin fuente asociada",
+                "iddataset": 0,
+                "dataset": "Sin dataset asociado",
+                "idvigente": 1,
+                "fecha_alta": "2022-12-31"
+            },
+            {
+                "idtaxon": 11726,
+                "idnombre_acept": 11726,
+                "nombre_aceptado": "Turdus merula Linnaeus, 1758",
+                "idatributo": 3,
+                "atributo": "Distribución",
+                "valor_atributo": "Mundial. En el Paleártico, India y región Oriental. Introducida en Australia y Nueva Zelanda. Quince subespecies reconocidas. Su distribución es mucho más amplia en Europa que en otras áreas geográficas (Clement & Hathway, 2000). Especie migradora parcial, sus movimientos migratorios son complejos p…[+1329]",
+                "prioritario": true,
+                "idfuente": 120,
+                "fuente": "Informe nacional sobre la aplicación de la Directiva Aves en España 2008-2012.",
+                "iddataset": 5,
+                "dataset": "Informe nacional sobre la aplicación de la Directiva Aves en España 2008-2012.",
+                "idnombre_dat": 1003794,
+                "nombre_en_dataset": "Turdus merula",
+                "idvigente": 1
+            },
+            {
+                "idtaxon": 11726,
+                "idnombre_acept": 11726,
+                "nombre_aceptado": "Turdus merula Linnaeus, 1758",
+                "idatributo": 3,
+                "atributo": "Distribución",
+                "valor_atributo": "Mundial. En el Paleártico, India y región Oriental. Introducida en Australia y Nueva Zelanda. Quince subespecies reconocidas. Su distribución es mucho más amplia en Europa que en otras áreas geográficas (Clement & Hathway, 2000). Especie migradora parcial, sus movimientos migratorios son complejos p…[+1329]",
+                "prioritario": true,
+                "idfuente": 120,
+                "fuente": "Informe nacional sobre la aplicación de la Directiva Aves en España 2008-2012.",
+                "iddataset": 5,
+                "dataset": "Informe nacional sobre la aplicación de la Directiva Aves en España 2008-2012.",
+                "idnombre_dat": 1003794,
+                "nombre_en_dataset": "Turdus merula",
+                "idvigente": 1
+            }
+        ],
+        "v_imagenes": [
+            {
+                "id_taxon": "11726",
+                "idnombre_acept": 11726,
+                "nombre_aceptado": "Turdus merula Linnaeus, 1758",
+                "id_foto": 5280,
+                "es_prioridad": 0,
+                "ruta_foto": "www.miteco.gob.es/content/dam/fototeca/imagenes/1986/06/5280.jpg"
+            },
+            {
+                "id_taxon": "11726",
+                "idnombre_acept": 11726,
+                "nombre_aceptado": "Turdus merula Linnaeus, 1758",
+                "id_foto": 47158,
+                "es_prioridad": 1,
+                "ruta_foto": "www.miteco.gob.es/content/dam/fototeca/imagenes/2021/01/47158.jpg"
+            },
+            {
+                "id_taxon": "11726",
+                "idnombre_acept": 11726,
+                "nombre_aceptado": "Turdus merula Linnaeus, 1758",
+                "id_foto": 29236,
+                "es_prioridad": 0,
+                "ruta_foto": "www.miteco.gob.es/content/dam/fototeca/imagenes/2012/05/29236.jpg"
+            }
+        ]
+    },
+    "conservation": {
+        "ms": 309,
+        "value": {
+            "España": {
+                "code": "NE",
+                "label": "NE (No evaluado)",
+                "year": 2004
+            },
+            "Mundial": {
+                "code": "LC",
+                "label": "LC (Preocupación menor)",
+                "year": 2016
+            },
+            "Península": {
+                "code": "LC",
+                "label": "LC (Preocupación menor)",
+                "year": 2021,
+                "criteria": "Reproductoras"
+            }
+        }
+    },
+    "legal": {
+        "ms": 350,
+        "value": {
+            "vigentes": [
+                {
+                    "estadolegal": "Anexo III",
+                    "norma": "Instrumento de ratificación del Convenio relativo a la conservación de la vida silvestre y del medio natural en Europa, hecho en Berna el 19 de septiembre de 1979. BOE 235 de 1 de octubre de 1986",
+                    "ambito": "Internacional",
+                    "idvigente": 1,
+                    "observacionespoblacion": "Información sobre las especies incluidas en los Anexos del Convenio de Berna o Convenio relativo a la Conservación de la Vida Silvestre y del Medio Natural en Europa, proveniente de la Base de Datos europea EUNIS sobre especies a fecha de Mayo 2016."
+                },
+                {
+                    "estadolegal": "Anexo II",
+                    "norma": "Directiva 2009/147/CE del Parlamento Europeo y del Consejo, de 30 de noviembre de 2009, relativa a la conservación de las aves silvestres. DOUE L 20/7 de 26 de enero de 2010",
+                    "ambito": "Internacional",
+                    "idvigente": 1
+                },
+                {
+                    "estadolegal": "Especie de interés especial",
+                    "norma": "Ley 9/1999, de 26 de mayo, de conservación de la Naturaleza. DOCM 40 de 12 de junio de 1999.",
+                    "ambito": "Nacional",
+                    "ccaa": "Castilla-La Mancha",
+                    "idvigente": 1
+                }
+            ],
+            "nacional": [],
+            "peninsular": [],
+            "autonomico": []
+        }
+    },
+    "commonName": {
+        "ms": 304,
+        "value": "Mirlo común"
+    },
+    "description": {
+        "ms": 285,
+        "value": "Túrdido de mediano tamaño y con aspecto muy característico. De tonos uniformes y oscuros, el macho luce color negro, con el pico y el anillo ocular anaranjados, mientras que la hembra es marrón oscura, con el pico amarillento o parduzco. Exhibe un vuelo ágil y directo, frecuentemente a baja altura, …[+132]"
+    },
+    "images": {
+        "ms": 270,
+        "value": [
+            {
+                "url": "https://www.miteco.gob.es/content/dam/fototeca/imagenes/2021/01/47158.jpg",
+                "id": 47158,
+                "priority": 1
+            },
+            {
+                "url": "https://www.miteco.gob.es/content/dam/fototeca/imagenes/1986/06/5279.jpg",
+                "id": 5279,
+                "priority": 0
+            },
+            {
+                "url": "https://www.miteco.gob.es/content/dam/fototeca/imagenes/1986/06/5280.jpg",
+                "id": 5280,
+                "priority": 0
+            }
+        ]
+    },
+    "totalMs": 1829
+}

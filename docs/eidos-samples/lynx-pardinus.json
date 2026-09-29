@@ -1,0 +1,426 @@
+{
+    "query": "Lynx pardinus",
+    "resolve": {
+        "ms": 303,
+        "value": {
+            "status": "ok",
+            "taxonid": 11943,
+            "taxon": {
+                "taxonid": 11943,
+                "nameid": 98923,
+                "acceptednameid": 98923,
+                "name": "Lynx pardinus (Temminck, 1825)",
+                "taxonrank": "Species",
+                "nametype": "Aceptado/válido",
+                "genus": "Lynx",
+                "specificepithet": "pardinus",
+                "scientificnameauthorship": "(Temminck, 1825)",
+                "taxonomicgroup": "Mamíferos",
+                "origen": "Especie nativa",
+                "kingdom": "Animalia",
+                "phylum": "Chordata",
+                "class": "Mammalia",
+                "ordertaxonomic": "Carnivora",
+                "family": "Felidae"
+            },
+            "acceptedName": "Lynx pardinus (Temminck, 1825)",
+            "rankMismatch": false
+        }
+    },
+    "raw": {
+        "v_taxonomia": [
+            {
+                "nameid": 81371,
+                "name": "Lynx pardina",
+                "taxonrankid": 10,
+                "taxonrank": "Species",
+                "verbatimtaxonrank": "sp.",
+                "areacode": "T",
+                "origenid": 2,
+                "origen": "Especie nativa",
+                "taxonomicgroupid": 8,
+                "taxonomicgroup": "Mamíferos",
+                "kingdomid": 200001,
+                "kingdom": "Animalia",
+                "phylumid": 200011,
+                "phylum": "Chordata",
+                "classid": 200075,
+                "class": "Mammalia",
+                "ordertaxonomicid": 200316,
+                "ordertaxonomic": "Carnivora",
+                "familyid": 201610,
+                "family": "Felidae",
+                "genusid": 205988,
+                "genus": "Lynx",
+                "specificepithet": "pardina",
+                "scientificnameauthorship": "Beier, 1939",
+                "taxonid": 11943,
+                "nametypeid": 12,
+                "nametype": "Variación ortográfica/Chresónimo",
+                "acceptednameid": 98923
+            },
+            {
+                "nameid": 98923,
+                "name": "Lynx pardinus (Temminck, 1825)",
+                "taxonrankid": 10,
+                "taxonrank": "Species",
+                "verbatimtaxonrank": "sp.",
+                "areacode": "T",
+                "origenid": 2,
+                "origen": "Especie nativa",
+                "taxonomicgroupid": 8,
+                "taxonomicgroup": "Mamíferos",
+                "kingdomid": 200001,
+                "kingdom": "Animalia",
+                "phylumid": 200011,
+                "phylum": "Chordata",
+                "classid": 200075,
+                "class": "Mammalia",
+                "ordertaxonomicid": 200316,
+                "ordertaxonomic": "Carnivora",
+                "familyid": 201610,
+                "family": "Felidae",
+                "genusid": 205988,
+                "genus": "Lynx",
+                "specificepithet": "pardinus",
+                "scientificnameauthorship": "(Temminck, 1825)",
+                "lp": 1,
+                "taxonid": 11943,
+                "nametypeid": 10,
+                "nametype": "Aceptado/válido",
+                "acceptednameid": 98923
+            }
+        ],
+        "v_estadoconservacion": [
+            {
+                "idtaxon": 11943,
+                "anio": 1992,
+                "idcategoria": 11,
+                "categoriaconservacion": "EN (En peligro)",
+                "idautoridad": 1,
+                "autoridad": "UICN",
+                "idaplicaa": 2,
+                "aplicaa": "España",
+                "iddataset": 130,
+                "fechaalta": "2024-01-10",
+                "idvigente": 1,
+                "vigencia": "Vigente",
+                "idnombre": 1030192
+            },
+            {
+                "idtaxon": 11943,
+                "anio": 2007,
+                "idcategoria": 13,
+                "categoriaconservacion": "CR (En peligro crítico)",
+                "criterios": "A2bc; C2a(i)",
+                "idautoridad": 1,
+                "autoridad": "UICN",
+                "idaplicaa": 2,
+                "aplicaa": "España",
+                "iddataset": 34,
+                "idvigente": 1,
+                "vigencia": "Vigente",
+                "idnombre": 11943
+            },
+            {
+                "idtaxon": 11943,
+                "anio": 2012,
+                "idcategoria": 40,
+                "categoriaconservacion": "U2 (Desfavorable-malo)",
+                "idautoridad": 5,
+                "autoridad": "Art. 17 (Dir. Hábitats)",
+                "idaplicaa": 25,
+                "aplicaa": "Región Mediterránea",
+                "iddataset": 2,
+                "idvigente": 1,
+                "vigencia": "Vigente",
+                "idnombre": 11943
+            }
+        ],
+        "v_estadolegal": [
+            {
+                "idtaxon": 11943,
+                "idnombre_acept": 98923,
+                "nombre_aceptado": "Lynx pardinus (Temminck, 1825)",
+                "idestadolegal": 41,
+                "estadolegal": "Anexo II",
+                "norma": "Instrumento de ratificación del Convenio relativo a la conservación de la vida silvestre y del medio natural en Europa, hecho en Berna el 19 de septiembre de 1979. BOE 235 de 1 de octubre de 1986",
+                "idvigente": 1,
+                "observacionespoblacion": "Información sobre las especies incluidas en los Anexos del Convenio de Berna o Convenio relativo a la Conservación de la Vida Silvestre y del Medio Natural en Europa, proveniente de la Base de Datos europea EUNIS sobre especies a fecha de Mayo 2016.",
+                "idambito": 3,
+                "ambito": "Internacional",
+                "iddataset": 43,
+                "dataset": "Instrumento de ratificación del Convenio relativo a la conservación de la vida silvestre y del medio natural en Europa, hecho en Berna el 19 de septiembre de 1979.",
+                "idnombre_dat": 1018617,
+                "nombre_en_dataset": "Lynx pardinus (Temminck, 1827)"
+            },
+            {
+                "idtaxon": 11943,
+                "idnombre_acept": 98923,
+                "nombre_aceptado": "Lynx pardinus (Temminck, 1825)",
+                "idestadolegal": 243,
+                "estadolegal": "En Peligro de Extinción",
+                "norma": "Decreto 18/1992, de 26 de marzo, por el que se aprueba el Catálogo Regional de Especies Amenazadas de Fauna y Flora Silvestres y se crea la categoría de árboles singulares (Comunidad de Madrid). ",
+                "idvigente": 1,
+                "idambito": 2,
+                "ambito": "Autonómico",
+                "id_ccaa": 30,
+                "ccaa": "Comunidad de Madrid",
+                "iddataset": 63,
+                "dataset": "Catálogo Regional de especies amenazadas de la Comunidad de Madrid",
+                "idnombre_dat": 1018616,
+                "nombre_en_dataset": "Lynx pardina Temminck"
+            },
+            {
+                "idtaxon": 11943,
+                "idnombre_acept": 98923,
+                "nombre_aceptado": "Lynx pardinus (Temminck, 1825)",
+                "idestadolegal": 388,
+                "estadolegal": "Responsabilidad civil y reparación de daños: A: 6.000 eur",
+                "norma": "Decreto Legislativo 2/2008, de 15 de abril por el que se aprueba el Texto refundido de la Ley de protección de animales. DOGC  5113, 17 de abril de 2008",
+                "idvigente": 1,
+                "idambito": 2,
+                "ambito": "Autonómico",
+                "id_ccaa": 51,
+                "ccaa": "Cataluña",
+                "iddataset": 70,
+                "dataset": "Especies protegidas de la fauna salvaje autóctona por el Decreto Legislativo 2/2008 (Cataluña).",
+                "idnombre_dat": 1004147,
+                "nombre_en_dataset": "A Lince ibérico Felidae («Lynx pardina»)."
+            }
+        ],
+        "v_nombrescomunes": [
+            {
+                "idtaxon": 11943,
+                "idnombre_aceptado": 98923,
+                "nombre_aceptado": "Lynx pardinus (Temminck, 1825)",
+                "idnombre_comun": 5035778,
+                "nombre_comun": "Lince",
+                "tiponombre": "Nombre común",
+                "ididioma": 1,
+                "idioma": "Castellano",
+                "espreferente": true
+            },
+            {
+                "idtaxon": 11943,
+                "idnombre_aceptado": 98923,
+                "nombre_aceptado": "Lynx pardinus (Temminck, 1825)",
+                "idnombre_comun": 5036280,
+                "nombre_comun": "Lince ibérico",
+                "tiponombre": "Nombre común",
+                "ididioma": 1,
+                "idioma": "Castellano",
+                "espreferente": false
+            },
+            {
+                "idtaxon": 11943,
+                "idnombre_aceptado": 98923,
+                "nombre_aceptado": "Lynx pardinus (Temminck, 1825)",
+                "idnombre_comun": 5002118,
+                "nombre_comun": "Katamotz iberiarra",
+                "tiponombre": "Nombre común",
+                "ididioma": 2,
+                "idioma": "Euskera",
+                "espreferente": false
+            }
+        ],
+        "v_atributos_pliniancore": [
+            {
+                "idtaxon": 11943,
+                "idnombre_acept": 98923,
+                "nombre_aceptado": "Lynx pardinus (Temminck, 1825)",
+                "idatributo": 8,
+                "atributo": "Alimentación",
+                "valor_atributo": "Es una especie estenófaga. En las localidades donde se ha estudiado su dieta, el conejo (Oryctolagus cuniculus) supone más del 90% de la biomasa consumida. Ciervos (Cervus elaphus), gamos (Dama dama), perdices (Alectoris rufa), micromamíferos y anátidas son otras presas capturadas ocasionalmente.",
+                "prioritario": true,
+                "idfuente": 116,
+                "fuente": "Atlas y Libro Rojo de los Mamíferos Terrestres de España. Dirección General para la Biodiversidad-SECEM-SECEMU",
+                "iddataset": 34,
+                "dataset": "Atlas y Libro Rojo de los Mamíferos Terrestres de España. Dirección General para la Biodiversidad-SECEM-SECEMU",
+                "idnombre_dat": 11943,
+                "nombre_en_dataset": "Lynx pardinus (Temminck, 1827)",
+                "idvigente": 1
+            },
+            {
+                "idtaxon": 11943,
+                "idnombre_acept": 98923,
+                "nombre_aceptado": "Lynx pardinus (Temminck, 1825)",
+                "idatributo": 4,
+                "atributo": "Ciclo vital",
+                "valor_atributo": "Las hembras crían una vez al año y no todos los años. A menudo la edad de primera reproducción se retrasa hasta el tercer o cuarto año debido a factores sociales o ambientales. Los partos tienen lugar entre marzo y abril tras aproximadamente dos meses de gestación. Las crías son altriciales, poco mó…[+269]",
+                "prioritario": true,
+                "idfuente": 116,
+                "fuente": "Atlas y Libro Rojo de los Mamíferos Terrestres de España. Dirección General para la Biodiversidad-SECEM-SECEMU",
+                "iddataset": 34,
+                "dataset": "Atlas y Libro Rojo de los Mamíferos Terrestres de España. Dirección General para la Biodiversidad-SECEM-SECEMU",
+                "idnombre_dat": 11943,
+                "nombre_en_dataset": "Lynx pardinus (Temminck, 1827)",
+                "idvigente": 1
+            },
+            {
+                "idtaxon": 11943,
+                "idnombre_acept": 98923,
+                "nombre_aceptado": "Lynx pardinus (Temminck, 1825)",
+                "idatributo": 17,
+                "atributo": "Comportamiento/Etología",
+                "valor_atributo": "Los linces son solitarios y territoriales. Defienden con exclusividad el centro de su área de campeo ante individuos subadultos o adultos del mismo sexo. En Doñana el tamaño medio de las áreas de campeo de adultos residentes es algo mayor en machos (10,3 km2) que en hembras (8,7 km2). Esta población…[+393]",
+                "prioritario": true,
+                "idfuente": 116,
+                "fuente": "Atlas y Libro Rojo de los Mamíferos Terrestres de España. Dirección General para la Biodiversidad-SECEM-SECEMU",
+                "iddataset": 34,
+                "dataset": "Atlas y Libro Rojo de los Mamíferos Terrestres de España. Dirección General para la Biodiversidad-SECEM-SECEMU",
+                "idnombre_dat": 11943,
+                "nombre_en_dataset": "Lynx pardinus (Temminck, 1827)",
+                "idvigente": 1
+            }
+        ],
+        "v_imagenes": [
+            {
+                "id_taxon": "11943",
+                "idnombre_acept": 98923,
+                "nombre_aceptado": "Lynx pardinus (Temminck, 1825)",
+                "id_foto": 19703,
+                "es_prioridad": 0,
+                "ruta_foto": "www.miteco.gob.es/content/dam/fototeca/imagenes/1993/03/19703.jpg"
+            },
+            {
+                "id_taxon": "11943",
+                "idnombre_acept": 98923,
+                "nombre_aceptado": "Lynx pardinus (Temminck, 1825)",
+                "id_foto": 40133,
+                "es_prioridad": 0,
+                "ruta_foto": "www.miteco.gob.es/content/dam/fototeca/imagenes/2018/04/40133.jpg"
+            },
+            {
+                "id_taxon": "11943",
+                "idnombre_acept": 98923,
+                "nombre_aceptado": "Lynx pardinus (Temminck, 1825)",
+                "id_foto": 40134,
+                "es_prioridad": 0,
+                "ruta_foto": "www.miteco.gob.es/content/dam/fototeca/imagenes/2018/04/40134.jpg"
+            }
+        ]
+    },
+    "conservation": {
+        "ms": 266,
+        "value": {
+            "España": {
+                "code": "CR",
+                "label": "CR (En peligro crítico)",
+                "year": 2007,
+                "criteria": "A2bc; C2a(i)"
+            },
+            "Mundial": {
+                "code": "VU",
+                "label": "VU (Vulnerable)",
+                "year": 2024
+            }
+        }
+    },
+    "legal": {
+        "ms": 323,
+        "value": {
+            "vigentes": [
+                {
+                    "estadolegal": "Anexo II",
+                    "norma": "Instrumento de ratificación del Convenio relativo a la conservación de la vida silvestre y del medio natural en Europa, hecho en Berna el 19 de septiembre de 1979. BOE 235 de 1 de octubre de 1986",
+                    "ambito": "Internacional",
+                    "idvigente": 1,
+                    "observacionespoblacion": "Información sobre las especies incluidas en los Anexos del Convenio de Berna o Convenio relativo a la Conservación de la Vida Silvestre y del Medio Natural en Europa, proveniente de la Base de Datos europea EUNIS sobre especies a fecha de Mayo 2016."
+                },
+                {
+                    "estadolegal": "En Peligro de Extinción",
+                    "norma": "Decreto 18/1992, de 26 de marzo, por el que se aprueba el Catálogo Regional de Especies Amenazadas de Fauna y Flora Silvestres y se crea la categoría de árboles singulares (Comunidad de Madrid). ",
+                    "ambito": "Autonómico",
+                    "ccaa": "Comunidad de Madrid",
+                    "idvigente": 1
+                },
+                {
+                    "estadolegal": "Responsabilidad civil y reparación de daños: A: 6.000 eur",
+                    "norma": "Decreto Legislativo 2/2008, de 15 de abril por el que se aprueba el Texto refundido de la Ley de protección de animales. DOGC  5113, 17 de abril de 2008",
+                    "ambito": "Autonómico",
+                    "ccaa": "Cataluña",
+                    "idvigente": 1
+                }
+            ],
+            "nacional": [
+                {
+                    "estadolegal": "CEEA: En peligro de extinción",
+                    "norma": "Real Decreto 139/2011, de 4 de febrero, para el desarrollo del Listado de Especies Silvestres en Régimen de Protección Especial y del Catálogo Español de Especies Amenazadas. BOE 46, de 23 de febrero de 2011",
+                    "ambito": "Nacional",
+                    "idvigente": 1
+                },
+                {
+                    "estadolegal": "Prioritaria",
+                    "norma": "Ley 42/2007, de 13 de diciembre, del Patrimonio Natural y de la Biodiversidad. BOE 299, de 14 de diciembre de 2007",
+                    "ambito": "Nacional",
+                    "idvigente": 1
+                },
+                {
+                    "estadolegal": "Anexo II",
+                    "norma": "Ley 42/2007, de 13 de diciembre, del Patrimonio Natural y de la Biodiversidad. BOE 299, de 14 de diciembre de 2007",
+                    "ambito": "Nacional",
+                    "idvigente": 1
+                }
+            ],
+            "peninsular": [
+                {
+                    "estadolegal": "CEEA: En peligro de extinción",
+                    "norma": "Real Decreto 139/2011, de 4 de febrero, para el desarrollo del Listado de Especies Silvestres en Régimen de Protección Especial y del Catálogo Español de Especies Amenazadas. BOE 46, de 23 de febrero de 2011",
+                    "ambito": "Nacional",
+                    "idvigente": 1
+                },
+                {
+                    "estadolegal": "Prioritaria",
+                    "norma": "Ley 42/2007, de 13 de diciembre, del Patrimonio Natural y de la Biodiversidad. BOE 299, de 14 de diciembre de 2007",
+                    "ambito": "Nacional",
+                    "idvigente": 1
+                },
+                {
+                    "estadolegal": "Anexo II",
+                    "norma": "Ley 42/2007, de 13 de diciembre, del Patrimonio Natural y de la Biodiversidad. BOE 299, de 14 de diciembre de 2007",
+                    "ambito": "Nacional",
+                    "idvigente": 1
+                }
+            ],
+            "autonomico": [
+                {
+                    "estadolegal": "En peligro de extinción",
+                    "norma": "Decreto 23/2012, de 14 de febrero, por el que se regula la conservación y el uso sostenible de la flora y la fauna silvestres y sus hábitats.",
+                    "ambito": "Autonómico",
+                    "ccaa": "Andalucía",
+                    "idvigente": 1
+                }
+            ]
+        }
+    },
+    "commonName": {
+        "ms": 268,
+        "value": "Lince"
+    },
+    "description": {
+        "ms": 315,
+        "value": "Aspecto estilizado, con extremidades largas, cabeza relativamente pequeña y cola corta. Cráneo con frente alta y rostro corto. Fórmula dentaria: 3.1.2.1/3.1.2.1. Pelaje de la cabeza, dorso, flancos y exterior de las patas de color leonado salpicado de manchas oscuras de tamaño variable. Unos mechone…[+593]"
+    },
+    "images": {
+        "ms": 288,
+        "value": [
+            {
+                "url": "https://www.miteco.gob.es/content/dam/fototeca/imagenes/2007/01/35072.jpg",
+                "id": 35072,
+                "priority": 1
+            },
+            {
+                "url": "https://www.miteco.gob.es/content/dam/fototeca/imagenes/1981/01/2073.jpg",
+                "id": 2073,
+                "priority": 0
+            },
+            {
+                "url": "https://www.miteco.gob.es/content/dam/fototeca/imagenes/1989/12/2095.jpg",
+                "id": 2095,
+                "priority": 0
+            }
+        ]
+    },
+    "totalMs": 1763
+}

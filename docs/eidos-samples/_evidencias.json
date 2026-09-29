@@ -1,0 +1,886 @@
+{
+    "trampas_resolucion": {
+        "Salvia rosmarinus": {
+            "status": "sinonimo",
+            "taxonid": 7647,
+            "acceptedName": "Rosmarinus officinalis L.",
+            "synonymName": "Salvia rosmarinus Spenn.",
+            "rankMismatch": false,
+            "rank": "Species"
+        },
+        "Capra pyrenaica victoriae": {
+            "status": "sinonimo",
+            "taxonid": 12055,
+            "acceptedName": "Capra pyrenaica H. R. Schinz, 1838",
+            "synonymName": "Capra pyrenaica victoriae Cabrera, 1911",
+            "rankMismatch": true,
+            "rank": "Subspecies"
+        },
+        "Turdus merula cabrerae": {
+            "status": "ok",
+            "taxonid": 11725,
+            "acceptedName": "Turdus merula subsp. cabrerae Linnaeus, 1758",
+            "synonymName": null,
+            "rankMismatch": false,
+            "rank": "Subspecies"
+        },
+        "Turdus merula subsp. cabrerae": {
+            "status": "ok",
+            "taxonid": 11725,
+            "acceptedName": "Turdus merula subsp. cabrerae Linnaeus, 1758",
+            "synonymName": null,
+            "rankMismatch": false,
+            "rank": "Subspecies"
+        }
+    },
+    "q1_clasificacion": [
+        {
+            "kingdomid": 200001,
+            "kingdom": "Animalia",
+            "phylumid": 200011,
+            "phylum": "Chordata",
+            "classid": 200075,
+            "class": "Mammalia",
+            "ordertaxonomicid": 200316,
+            "ordertaxonomic": "Carnivora",
+            "familyid": 201610,
+            "family": "Felidae",
+            "genusid": 205988,
+            "genus": "Lynx",
+            "taxonrank": "Species",
+            "taxonomicgroup": "Mamíferos"
+        }
+    ],
+    "q2_busqueda": {
+        "name_ilike": {
+            "ms": 439,
+            "total": 1,
+            "first": [
+                {
+                    "taxonid": 11943,
+                    "name": "Lynx pardinus (Temminck, 1825)"
+                }
+            ]
+        },
+        "name_like_case": {
+            "ms": 336,
+            "total": 0,
+            "first": []
+        },
+        "comun_ilike": {
+            "ms": 350,
+            "total": 2,
+            "first": [
+                {
+                    "idtaxon": 11943,
+                    "nombre_comun": "Lince"
+                },
+                {
+                    "idtaxon": 11943,
+                    "nombre_comun": "Lince ibérico"
+                }
+            ]
+        },
+        "comun_sin_acento": {
+            "ms": 346,
+            "total": 3,
+            "first": [
+                {
+                    "idtaxon": 11014,
+                    "nombre_comun": "Aguila imperial"
+                },
+                {
+                    "idtaxon": 16300,
+                    "nombre_comun": "Aguila Imperial Oriental"
+                },
+                {
+                    "idtaxon": 16300,
+                    "nombre_comun": "Aguila imperial"
+                }
+            ]
+        },
+        "comun_con_acento": {
+            "ms": 329,
+            "total": 3,
+            "first": [
+                {
+                    "idtaxon": 11014,
+                    "nombre_comun": "Águila imperial ibérica"
+                },
+                {
+                    "idtaxon": 11014,
+                    "nombre_comun": "Águila imperial ibérica"
+                },
+                {
+                    "idtaxon": 16300,
+                    "nombre_comun": "Águila imperial oriental"
+                }
+            ]
+        },
+        "paginacion_offset": {
+            "ms": 426,
+            "total": 18,
+            "first": [
+                {
+                    "taxonid": 30470,
+                    "name": "Aquila chrysaetos homeyeri Severtzov, 1888"
+                },
+                {
+                    "taxonid": 10888,
+                    "name": "Aquila chrysaetos (Linnaeus, 1758)"
+                },
+                {
+                    "taxonid": 30471,
+                    "name": "Aquila chrysaetos rapax"
+                }
+            ]
+        }
+    },
+    "q2_eidosSearch": {
+        "lince": {
+            "ms": 1569,
+            "total": 1,
+            "truncated": false,
+            "error": null,
+            "top3": [
+                {
+                    "taxonID": "11943",
+                    "scientificName": "Lynx pardinus (Temminck, 1825)",
+                    "vernacularName": "Lince",
+                    "group": "Mamíferos",
+                    "taxonRank": "Species",
+                    "iucn": {
+                        "code": "VU",
+                        "scope": "Mundial",
+                        "year": 2024
+                    }
+                }
+            ]
+        },
+        "aquila": {
+            "ms": 1283,
+            "total": 20,
+            "truncated": false,
+            "error": null,
+            "top3": [
+                {
+                    "taxonID": "205707",
+                    "scientificName": "Aquila",
+                    "vernacularName": null,
+                    "group": "Aves",
+                    "taxonRank": "Genus",
+                    "iucn": null
+                },
+                {
+                    "taxonID": "11014",
+                    "scientificName": "Aquila adalberti Brehm, CL, 1861",
+                    "vernacularName": "Águila imperial ibérica",
+                    "group": "Aves",
+                    "taxonRank": "Species",
+                    "iucn": {
+                        "code": "EN",
+                        "scope": "Península",
+                        "year": 2021
+                    }
+                },
+                {
+                    "taxonID": "10888",
+                    "scientificName": "Aquila chrysaetos (Linnaeus, 1758)",
+                    "vernacularName": "Águila real",
+                    "group": "Aves",
+                    "taxonRank": "Species",
+                    "iucn": {
+                        "code": "NT",
+                        "scope": "Península",
+                        "year": 2021
+                    }
+                }
+            ]
+        },
+        "romero": {
+            "ms": 1619,
+            "total": 72,
+            "truncated": false,
+            "error": null,
+            "top3": [
+                {
+                    "taxonID": "1908",
+                    "scientificName": "Acacia farnesiana (L.) Willd.",
+                    "vernacularName": "Carambuco",
+                    "group": "Plantas vasculares",
+                    "taxonRank": "Species",
+                    "iucn": {
+                        "code": "LC",
+                        "scope": "Mundial",
+                        "year": 2020
+                    }
+                },
+                {
+                    "taxonID": "9801",
+                    "scientificName": "Agrostis canina subsp. granatensis Romero García, Blanca & C. Morales",
+                    "vernacularName": null,
+                    "group": "Plantas vasculares",
+                    "taxonRank": "Subspecies",
+                    "iucn": {
+                        "code": "VU",
+                        "scope": "España",
+                        "year": 2010
+                    }
+                },
+                {
+                    "taxonID": "10314",
+                    "scientificName": "Agrostis hesperica Romero García, Blanca & C. Morales",
+                    "vernacularName": null,
+                    "group": "Plantas vasculares",
+                    "taxonRank": "Species",
+                    "iucn": null
+                }
+            ]
+        },
+        "apollo": {
+            "ms": 1659,
+            "total": 17,
+            "truncated": false,
+            "error": null,
+            "top3": [
+                {
+                    "taxonID": "210093",
+                    "scientificName": "Apollonias",
+                    "vernacularName": null,
+                    "group": "Plantas vasculares",
+                    "taxonRank": "Genus",
+                    "iucn": null
+                },
+                {
+                    "taxonID": "2097",
+                    "scientificName": "Amaranthus albus L.",
+                    "vernacularName": "Rabanillo",
+                    "group": "Plantas vasculares",
+                    "taxonRank": "Species",
+                    "iucn": null
+                },
+                {
+                    "taxonID": "3610",
+                    "scientificName": "Cistus clusii Dunal",
+                    "vernacularName": "huagarzo",
+                    "group": "Plantas vasculares",
+                    "taxonRank": "Species",
+                    "iucn": null
+                }
+            ]
+        },
+        "salvia": {
+            "ms": 1572,
+            "total": 63,
+            "truncated": false,
+            "error": null,
+            "top3": [
+                {
+                    "taxonID": "210062",
+                    "scientificName": "Salvia",
+                    "vernacularName": "Salvia",
+                    "group": "Plantas vasculares",
+                    "taxonRank": "Genus",
+                    "iucn": null
+                },
+                {
+                    "taxonID": "7919",
+                    "scientificName": "Salvia aethiopis L.",
+                    "vernacularName": "etiópide",
+                    "group": "Plantas vasculares",
+                    "taxonRank": "Species",
+                    "iucn": null
+                },
+                {
+                    "taxonID": "37610",
+                    "scientificName": "Salvia africana L.",
+                    "vernacularName": null,
+                    "group": "Plantas vasculares",
+                    "taxonRank": "Species",
+                    "iucn": null
+                }
+            ]
+        }
+    },
+    "q2_eidosSearch_media_ms": 1540,
+    "q3_filtros": {
+        "grupo_aves": {
+            "ms": 314,
+            "total": 2834,
+            "first": [
+                {
+                    "taxonid": 10468,
+                    "name": "Myiopsitta monachus (Boddaert, 1783)"
+                },
+                {
+                    "taxonid": 10479,
+                    "name": "Amandava amandava (Linnaeus, 1758)"
+                },
+                {
+                    "taxonid": 10489,
+                    "name": "Branta canadensis (Linnaeus, 1758)"
+                }
+            ]
+        },
+        "grupo_y_nombre": {
+            "ms": 336,
+            "total": 14,
+            "first": [
+                {
+                    "taxonid": 10888,
+                    "name": "Aquila chrysaetos (Linnaeus, 1758)"
+                },
+                {
+                    "taxonid": 11014,
+                    "name": "Aquila adalberti Brehm, CL, 1861"
+                },
+                {
+                    "taxonid": 28234,
+                    "name": "Aquila heliaca heliaca Savigny, 1809"
+                }
+            ]
+        },
+        "origen_nativa": {
+            "ms": 457,
+            "total": 52003,
+            "first": [
+                {
+                    "taxonid": 1,
+                    "name": "Erodium paularense Fern. Gonz. & Izco"
+                },
+                {
+                    "taxonid": 2,
+                    "name": "Echium onosmifolium subsp. spectabile G. Kunkel"
+                },
+                {
+                    "taxonid": 3,
+                    "name": "Echium sventenii Bramwell"
+                }
+            ]
+        },
+        "origen_valores_5000": [
+            "Especie nativa",
+            "Especie no nativa",
+            "Desconocido"
+        ],
+        "areacode_totales": {
+            "T": 75242,
+            "M": 21688,
+            "MT": 78,
+            "C": 0
+        },
+        "legal_rd139": {
+            "ms": 358,
+            "total": 1052,
+            "first": [
+                {
+                    "idtaxon": 490,
+                    "estadolegal": "CEEA: En peligro de extinción"
+                },
+                {
+                    "idtaxon": 848,
+                    "estadolegal": "CEEA: En peligro de extinción"
+                },
+                {
+                    "idtaxon": 847,
+                    "estadolegal": "CEEA: En peligro de extinción"
+                }
+            ]
+        },
+        "legal_habitats": {
+            "ms": 317,
+            "total": 670,
+            "first": [
+                {
+                    "idtaxon": 12350,
+                    "estadolegal": "Anexo IV"
+                },
+                {
+                    "idtaxon": 12350,
+                    "estadolegal": "Anexo II - No prioritaria"
+                },
+                {
+                    "idtaxon": 24314,
+                    "estadolegal": "Anexo IV"
+                }
+            ]
+        },
+        "legal_aves": {
+            "ms": 335,
+            "total": 415,
+            "first": [
+                {
+                    "idtaxon": 11691,
+                    "estadolegal": "Anexo I"
+                },
+                {
+                    "idtaxon": 14072,
+                    "estadolegal": "Anexo I"
+                },
+                {
+                    "idtaxon": 16310,
+                    "estadolegal": "Anexo I"
+                }
+            ]
+        },
+        "legal_rd630": {
+            "ms": 313,
+            "total": 972,
+            "first": [
+                {
+                    "idtaxon": 989,
+                    "estadolegal": "CEEEI: Incluido"
+                },
+                {
+                    "idtaxon": 29726,
+                    "estadolegal": "Incluido"
+                },
+                {
+                    "idtaxon": 80314,
+                    "estadolegal": "CEEA: En peligro de extinción"
+                }
+            ]
+        },
+        "legal_ue1143": {
+            "ms": 330,
+            "total": 37,
+            "first": [
+                {
+                    "idtaxon": 1078,
+                    "estadolegal": "Incluido"
+                },
+                {
+                    "idtaxon": 6076,
+                    "estadolegal": "Incluido"
+                },
+                {
+                    "idtaxon": 10587,
+                    "estadolegal": "Incluido"
+                }
+            ]
+        },
+        "embedding_vistas": {
+            "ms": 278,
+            "error": "EIDOS v_taxonomia (HTTP 300): Could not embed because more than one relationship was found for 'v_taxonomia' and 'v_estadolegal'"
+        },
+        "patron_normas_combinado": {
+            "ms": 340,
+            "total": 3,
+            "first": [
+                {
+                    "idtaxon": 10888,
+                    "ScientificName": "Aquila chrysaetos (Linnaeus, 1758)",
+                    "Normativa": "Real Decreto 139/2011, de 4 de febrero, para el desarrollo del Listado de Especies Silvestres en Régimen de Protección Especial y del Catálogo Español de Especies Amenazadas. BOE 46, de 23 de febrero de 2011",
+                    "Categoría": "LESRPE: En régimen de protección especial"
+                },
+                {
+                    "idtaxon": 11014,
+                    "ScientificName": "Aquila adalberti Brehm, CL, 1861",
+                    "Normativa": "Real Decreto 139/2011, de 4 de febrero, para el desarrollo del Listado de Especies Silvestres en Régimen de Protección Especial y del Catálogo Español de Especies Amenazadas. BOE 46, de 23 de febrero de 2011",
+                    "Categoría": "CEEA: En peligro de extinción"
+                },
+                {
+                    "idtaxon": 16302,
+                    "ScientificName": "Aquila fasciata Vieillot, 1822",
+                    "Normativa": "Real Decreto 139/2011, de 4 de febrero, para el desarrollo del Listado de Especies Silvestres en Régimen de Protección Especial y del Catálogo Español de Especies Amenazadas. BOE 46, de 23 de febrero de 2011",
+                    "Categoría": "CEEA: Vulnerable"
+                }
+            ]
+        },
+        "patron_grupo_entrecomillado": {
+            "ms": 317,
+            "total": 1111,
+            "first": [
+                {
+                    "idtaxon": 10468,
+                    "ScientificName": "Myiopsitta monachus (Boddaert, 1783)",
+                    "Environment": "Terrestre (incl. fluvial)"
+                },
+                {
+                    "idtaxon": 10479,
+                    "ScientificName": "Amandava amandava (Linnaeus, 1758)",
+                    "Environment": "Terrestre (incl. fluvial)"
+                },
+                {
+                    "idtaxon": 10489,
+                    "ScientificName": "Branta canadensis (Linnaeus, 1758)",
+                    "Environment": "Terrestre (incl. fluvial)"
+                }
+            ]
+        },
+        "patron_environment": {
+            "ms": 319,
+            "total": 69118,
+            "first": [
+                {
+                    "idtaxon": 1,
+                    "ScientificName": "Erodium paularense Fern. Gonz. & Izco",
+                    "Environment": "Terrestre (incl. fluvial)"
+                },
+                {
+                    "idtaxon": 2,
+                    "ScientificName": "Echium onosmifolium subsp. spectabile G. Kunkel",
+                    "Environment": "Terrestre (incl. fluvial)"
+                },
+                {
+                    "idtaxon": 3,
+                    "ScientificName": "Echium sventenii Bramwell",
+                    "Environment": "Terrestre (incl. fluvial)"
+                }
+            ]
+        }
+    },
+    "q3_categorias": {
+        "LC": {
+            "total": 9862,
+            "literal": "LC (Preocupación menor)",
+            "autoridad": "UICN",
+            "ms": 287,
+            "error": null
+        },
+        "NT": {
+            "total": 1701,
+            "literal": "NT (Casi amenazado)",
+            "autoridad": "UICN",
+            "ms": 294,
+            "error": null
+        },
+        "VU": {
+            "total": 3865,
+            "literal": "VU (Vulnerable)",
+            "autoridad": "UICN",
+            "ms": 284,
+            "error": null
+        },
+        "EN": {
+            "total": 2102,
+            "literal": "EN (En peligro)",
+            "autoridad": "UICN",
+            "ms": 268,
+            "error": null
+        },
+        "CR": {
+            "total": 1621,
+            "literal": "CR (En peligro crítico)",
+            "autoridad": "UICN",
+            "ms": 344,
+            "error": null
+        },
+        "EX": {
+            "total": 136,
+            "literal": "EX (RE) (Extinto a nivel Regional)\r\n",
+            "autoridad": "Otras",
+            "ms": 275,
+            "error": null
+        },
+        "RE": {
+            "total": 24,
+            "literal": "RE (Extinto regionalmente)",
+            "autoridad": "UICN",
+            "ms": 267,
+            "error": null
+        },
+        "EW": {
+            "total": 20,
+            "literal": "EW (\"Extinto en estado silvestre)",
+            "autoridad": "UICN",
+            "ms": 344,
+            "error": null
+        },
+        "DD": {
+            "total": 1926,
+            "literal": "DD (Datos insuficientes)",
+            "autoridad": "UICN",
+            "ms": 268,
+            "error": null
+        },
+        "NE": {
+            "total": 289,
+            "literal": "NE (No evaluado)",
+            "autoridad": "UICN",
+            "ms": 296,
+            "error": null
+        },
+        "FV": {
+            "total": 260,
+            "literal": "FV (Favorable)",
+            "autoridad": "Art. 17 (Dir. Hábitats)",
+            "ms": 278,
+            "error": null
+        },
+        "U1": {
+            "total": 556,
+            "literal": "U1 (Desfavorable-inadecuado)",
+            "autoridad": "Art. 17 (Dir. Hábitats)",
+            "ms": 291,
+            "error": null
+        },
+        "U2": {
+            "total": 294,
+            "literal": "U2 (Desfavorable-malo)",
+            "autoridad": "Art. 17 (Dir. Hábitats)",
+            "ms": 327,
+            "error": null
+        },
+        "XX": {
+            "total": 346,
+            "literal": "XX (Desconocido)",
+            "autoridad": "Art. 17 (Dir. Hábitats)",
+            "ms": 271,
+            "error": null
+        }
+    },
+    "q4_imagenes": {
+        "columnas": [
+            "id_taxon",
+            "idnombre_acept",
+            "nombre_aceptado",
+            "id_foto",
+            "es_prioridad"
+        ],
+        "https": {
+            "url": "https://www.miteco.gob.es/content/dam/fototeca/imagenes/2007/01/35072.jpg",
+            "status": 200,
+            "headers": {
+                "content-type": "image/jpeg",
+                "content-length": "131211"
+            }
+        },
+        "http": {
+            "url": "http://www.miteco.gob.es/content/dam/fototeca/imagenes/2007/01/35072.jpg",
+            "status": 200,
+            "headers": {
+                "content-type": "image/jpeg",
+                "content-length": "131211"
+            }
+        },
+        "por_especie": {
+            "Artemisia granatensis": 1,
+            "Atropa baetica": 0,
+            "Parnassius apollo": 9,
+            "Lynx pardinus": 142,
+            "Aquila adalberti": 27,
+            "Turdus merula": 8,
+            "Capra pyrenaica": 31,
+            "Rosmarinus officinalis": 10,
+            "Inventadus falsus": 0
+        }
+    },
+    "q5_descripcion": {
+        "Artemisia granatensis": {
+            "chars": 413,
+            "html": false,
+            "saltos_linea": 0
+        },
+        "Atropa baetica": {
+            "chars": 568,
+            "html": false,
+            "saltos_linea": 0
+        },
+        "Parnassius apollo": {
+            "chars": 721,
+            "html": false,
+            "saltos_linea": 0
+        },
+        "Lynx pardinus": {
+            "chars": 893,
+            "html": false,
+            "saltos_linea": 0
+        },
+        "Aquila adalberti": {
+            "chars": 914,
+            "html": false,
+            "saltos_linea": 0
+        },
+        "Turdus merula": {
+            "chars": 432,
+            "html": false,
+            "saltos_linea": 0
+        },
+        "Capra pyrenaica": {
+            "chars": 822,
+            "html": false,
+            "saltos_linea": 0
+        },
+        "Rosmarinus officinalis": {
+            "chars": 699,
+            "html": false,
+            "saltos_linea": 0
+        },
+        "Inventadus falsus": null
+    },
+    "q6_ficha": {
+        "head_sin_slug": {
+            "url": "https://iepnb.gob.es/areas-tematicas/especies-silvestres/eidos/11943",
+            "status": 200,
+            "headers": {
+                "content-type": "text/html; charset=UTF-8"
+            }
+        },
+        "get_sin_slug": {
+            "status": 200,
+            "bytes": 114681,
+            "menciona_pardinus": 58
+        },
+        "get_inexistente": {
+            "status": 200,
+            "bytes": 36782,
+            "menciona_pardinus": 0
+        }
+    },
+    "q7_cors": {
+        "url": "https://iepnb.gob.es/api/especie/v_taxonomia?taxonid=eq.11943&select=name",
+        "status": 200,
+        "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "content-range": "0-1/*",
+            "access-control-allow-origin": "*",
+            "access-control-expose-headers": "Content-Encoding, Content-Location, Content-Range, Content-Type, Date, Location, Server, Transfer-Encoding, Range-Unit"
+        }
+    },
+    "q8_literales_legales": [
+        "CEEA: En peligro de extinción",
+        "CEEA: Vulnerable"
+    ],
+    "q8_literales_lesrpe": [
+        "LESRPE: En régimen de protección especial"
+    ],
+    "q8_literales_uicn": {
+        "LC": "LC (Preocupación menor)",
+        "NT": "NT (Casi amenazado)",
+        "VU": "VU (Vulnerable)",
+        "EN": "EN (En peligro)",
+        "CR": "CR (En peligro crítico)",
+        "EX": "EX (RE) (Extinto a nivel Regional)\r\n",
+        "RE": "RE (Extinto regionalmente)",
+        "EW": "EW (\"Extinto en estado silvestre)",
+        "DD": "DD (Datos insuficientes)",
+        "NE": "NE (No evaluado)",
+        "FV": "FV (Favorable)",
+        "U1": "U1 (Desfavorable-inadecuado)",
+        "U2": "U2 (Desfavorable-malo)",
+        "XX": "XX (Desconocido)"
+    },
+    "q9_rpc": {
+        "ms": 417,
+        "filas": 2,
+        "columnas": [
+            "nameid",
+            "name",
+            "taxonrankid",
+            "taxonrank",
+            "verbatimtaxonrank"
+        ],
+        "muestra": [
+            {
+                "nameid": 11943,
+                "name": "Lynx pardinus (Temminck, 1827)",
+                "taxonrankid": 10,
+                "taxonrank": "Species",
+                "verbatimtaxonrank": "sp.",
+                "taxonomicgroupid": 8,
+                "taxonomicgroup": "Mamíferos",
+                "kingdomid": 200001,
+                "kingdom": "Animalia",
+                "phylumid": 200011,
+                "phylum": "Chordata",
+                "classid": 200075,
+                "class": "Mammalia",
+                "idorder": 200316,
+                "order": "Carnivora",
+                "familyid": 201610,
+                "family": "Felidae",
+                "genusid": 205988,
+                "genus": "Lynx",
+                "specificepithet": "pardinus",
+                "scientificnameid": "urn:lsid:recibio.net:name:1ed7b611-cc9c-48dd-b017-0d877c9eead1",
+                "scientificnameauthorship": "(Temminck, 1827)",
+                "cites_code": "8879",
+                "eunis_code": "1442",
+                "rednatura_code": "1362"
+            },
+            {
+                "nameid": 98923,
+                "name": "Lynx pardinus (Temminck, 1825)",
+                "taxonrankid": 10,
+                "taxonrank": "Species",
+                "verbatimtaxonrank": "sp.",
+                "areacode": "T",
+                "originid": 2,
+                "origin": "Especie nativa",
+                "taxonomicgroupid": 8,
+                "taxonomicgroup": "Mamíferos",
+                "kingdomid": 200001,
+                "kingdom": "Animalia",
+                "phylumid": 200011,
+                "phylum": "Chordata",
+                "classid": 200075,
+                "class": "Mammalia",
+                "idorder": 200316,
+                "order": "Carnivora",
+                "familyid": 201610,
+                "family": "Felidae",
+                "genusid": 205988,
+                "genus": "Lynx",
+                "specificepithet": "pardinus",
+                "scientificnameauthorship": "(Temminck, 1825)",
+                "lp": 1,
+                "taxonid": 11943,
+                "nametypeid": 10,
+                "nametype": "Aceptado/válido",
+                "acceptednameid": 98923
+            }
+        ]
+    },
+    "q10_inexistente": {
+        "eidosResolveTaxon('Inventadus falsus')": {
+            "ms": 281,
+            "value": null,
+            "error": null
+        },
+        "eidosConservation(999999999)": {
+            "ms": 282,
+            "value": [],
+            "error": null
+        },
+        "eidosLegal(999999999)": {
+            "ms": 291,
+            "value": {
+                "vigentes": [],
+                "nacional": [],
+                "peninsular": [],
+                "autonomico": []
+            },
+            "error": null
+        },
+        "eidosCommonName(999999999)": {
+            "ms": 361,
+            "value": null,
+            "error": null
+        },
+        "eidosDescription(999999999)": {
+            "ms": 274,
+            "value": null,
+            "error": null
+        },
+        "eidosImages(999999999)": {
+            "ms": 270,
+            "value": [],
+            "error": null
+        },
+        "eidosSearch('Inventadus falsus')": {
+            "ms": 660,
+            "value": {
+                "total": 0,
+                "truncated": false,
+                "items": []
+            },
+            "error": null
+        },
+        "columna_erronea": {
+            "ms": 292,
+            "value": null,
+            "error": "EidosException: EIDOS v_imagenes (HTTP 400): column v_imagenes.idtaxon does not exist"
+        }
+    }
+}

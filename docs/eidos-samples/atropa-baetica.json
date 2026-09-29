@@ -1,0 +1,381 @@
+{
+    "query": "Atropa baetica",
+    "resolve": {
+        "ms": 280,
+        "value": {
+            "status": "ok",
+            "taxonid": 2723,
+            "taxon": {
+                "taxonid": 2723,
+                "nameid": 2723,
+                "acceptednameid": 2723,
+                "name": "Atropa baetica Willk.",
+                "taxonrank": "Species",
+                "nametype": "Aceptado/válido",
+                "genus": "Atropa",
+                "specificepithet": "baetica",
+                "scientificnameauthorship": "Willk.",
+                "taxonomicgroup": "Plantas vasculares",
+                "origen": "Especie nativa",
+                "kingdom": "Plantae",
+                "phylum": "Tracheophyta",
+                "class": "Magnoliopsida",
+                "ordertaxonomic": "Solanales",
+                "family": "Solanaceae"
+            },
+            "acceptedName": "Atropa baetica Willk.",
+            "rankMismatch": false
+        }
+    },
+    "raw": {
+        "v_taxonomia": [
+            {
+                "nameid": 2723,
+                "name": "Atropa baetica Willk.",
+                "taxonrankid": 10,
+                "taxonrank": "Species",
+                "verbatimtaxonrank": "sp.",
+                "areacode": "T",
+                "origenid": 2,
+                "origen": "Especie nativa",
+                "taxonomicgroupid": 11,
+                "taxonomicgroup": "Plantas vasculares",
+                "kingdomid": 200006,
+                "kingdom": "Plantae",
+                "phylumid": 200051,
+                "phylum": "Tracheophyta",
+                "classid": 200170,
+                "class": "Magnoliopsida",
+                "ordertaxonomicid": 200732,
+                "ordertaxonomic": "Solanales",
+                "familyid": 203190,
+                "family": "Solanaceae",
+                "genusid": 210388,
+                "genus": "Atropa",
+                "specificepithet": "baetica",
+                "taxonconceptid": "urn:lsid:recibio.net:taxon:71155011-e146-48ef-a397-1d9785f14a81",
+                "nameaccordingto": "CASTROVIEJO, S. (coord. gen.). 1986-2014. Flora iberica. Plantas vasculares de la Península Ibérica e Islas Baleares. 1-8, 10-16(1), 17-18, 20-21. Real Jardín Botánico, CSIC. Madrid.",
+                "namepublishedin": "Linnaea 25 :50. 1852",
+                "namepublishedinyear": "1852",
+                "scientificnameauthorship": "Willk.",
+                "euniscode": "185085",
+                "rednaturacode": "1707",
+                "lp": 1,
+                "taxonid": 2723,
+                "nametypeid": 10,
+                "nametype": "Aceptado/válido",
+                "acceptednameid": 2723
+            },
+            {
+                "nameid": 26445,
+                "name": "Atropa belladonna subsp. baetica (Willk.) Font Quer",
+                "taxonrankid": 11,
+                "taxonrank": "Subspecies",
+                "verbatimtaxonrank": "subsp.",
+                "areacode": "T",
+                "origenid": 2,
+                "origen": "Especie nativa",
+                "taxonomicgroupid": 11,
+                "taxonomicgroup": "Plantas vasculares",
+                "kingdomid": 200006,
+                "kingdom": "Plantae",
+                "phylumid": 200051,
+                "phylum": "Tracheophyta",
+                "classid": 200170,
+                "class": "Magnoliopsida",
+                "ordertaxonomicid": 200732,
+                "ordertaxonomic": "Solanales",
+                "familyid": 203190,
+                "family": "Solanaceae",
+                "genusid": 210388,
+                "genus": "Atropa",
+                "specificepithet": "belladonna",
+                "infraspecificepithet": "baetica",
+                "scientificnameauthorship": "(Willk.) Font Quer",
+                "taxonid": 2723,
+                "nametypeid": 11,
+                "nametype": "Sinónimo",
+                "acceptednameid": 2723
+            }
+        ],
+        "v_estadoconservacion": [
+            {
+                "idtaxon": 2723,
+                "anio": 2000,
+                "idcategoria": 13,
+                "categoriaconservacion": "CR (En peligro crítico)",
+                "criterios": "B1+3c",
+                "idautoridad": 1,
+                "autoridad": "UICN",
+                "idaplicaa": 2,
+                "aplicaa": "España",
+                "iddataset": 121,
+                "fechaalta": "2024-01-10",
+                "idvigente": 1,
+                "vigencia": "Vigente",
+                "idnombre": 2723
+            },
+            {
+                "idtaxon": 2723,
+                "anio": 2004,
+                "idcategoria": 11,
+                "categoriaconservacion": "EN (En peligro)",
+                "criterios": "B2ab(i,iii,iv) ; D",
+                "idautoridad": 1,
+                "autoridad": "UICN",
+                "idaplicaa": 2,
+                "aplicaa": "España",
+                "iddataset": 122,
+                "fechaalta": "2024-01-10",
+                "idvigente": 1,
+                "vigencia": "Vigente",
+                "idnombre": 2723
+            },
+            {
+                "idtaxon": 2723,
+                "anio": 2008,
+                "idcategoria": 11,
+                "categoriaconservacion": "EN (En peligro)",
+                "criterios": "B2ab(i,iii,iv) ; D",
+                "idautoridad": 1,
+                "autoridad": "UICN",
+                "idaplicaa": 2,
+                "aplicaa": "España",
+                "iddataset": 124,
+                "idvigente": 1,
+                "vigencia": "Vigente"
+            }
+        ],
+        "v_estadolegal": [
+            {
+                "idtaxon": 2723,
+                "idnombre_acept": 2723,
+                "nombre_aceptado": "Atropa baetica Willk.",
+                "idestadolegal": 231,
+                "estadolegal": "Prioritaria",
+                "norma": "Ley 42/2007, de 13 de diciembre, del Patrimonio Natural y de la Biodiversidad. BOE 299, de 14 de diciembre de 2007",
+                "idvigente": 1,
+                "idambito": 1,
+                "ambito": "Nacional",
+                "iddataset": 47,
+                "dataset": "Ley 42/2007, de 13 de diciembre, del Patrimonio Natural y de la Biodiversidad",
+                "idnombre_dat": 1007004,
+                "nombre_en_dataset": "Atropa baetica Willk"
+            },
+            {
+                "idtaxon": 2723,
+                "idnombre_acept": 2723,
+                "nombre_aceptado": "Atropa baetica Willk.",
+                "idestadolegal": 183,
+                "estadolegal": "Anexo II",
+                "norma": "Ley 42/2007, de 13 de diciembre, del Patrimonio Natural y de la Biodiversidad. BOE 299, de 14 de diciembre de 2007",
+                "idvigente": 1,
+                "idambito": 1,
+                "ambito": "Nacional",
+                "iddataset": 47,
+                "dataset": "Ley 42/2007, de 13 de diciembre, del Patrimonio Natural y de la Biodiversidad",
+                "idnombre_dat": 1007004,
+                "nombre_en_dataset": "Atropa baetica Willk"
+            },
+            {
+                "idtaxon": 2723,
+                "idnombre_acept": 2723,
+                "nombre_aceptado": "Atropa baetica Willk.",
+                "idestadolegal": 23,
+                "estadolegal": "CEEA: En peligro de extinción",
+                "norma": "Real Decreto 139/2011, de 4 de febrero, para el desarrollo del Listado de Especies Silvestres en Régimen de Protección Especial y del Catálogo Español de Especies Amenazadas. BOE 46, de 23 de febrero de 2011",
+                "idvigente": 1,
+                "idambito": 1,
+                "ambito": "Nacional",
+                "iddataset": 12,
+                "dataset": "Listado de Especies Silvestres en Régimen de Protección Especial y Catálogo español de especies amenazadas (RD 139/2011)",
+                "idnombre_dat": 1000632,
+                "nombre_en_dataset": "Atropa baetica"
+            }
+        ],
+        "v_nombrescomunes": [
+            {
+                "idtaxon": 2723,
+                "idnombre_aceptado": 2723,
+                "nombre_aceptado": "Atropa baetica Willk.",
+                "idnombre_comun": 5000429,
+                "nombre_comun": "Tabaco gordo",
+                "tiponombre": "Nombre común",
+                "ididioma": 1,
+                "idioma": "Castellano",
+                "espreferente": false
+            },
+            {
+                "idtaxon": 2723,
+                "idnombre_aceptado": 2723,
+                "nombre_aceptado": "Atropa baetica Willk.",
+                "idnombre_comun": 5000429,
+                "nombre_comun": "Tabaco gordo",
+                "tiponombre": "Nombre común",
+                "ididioma": 1,
+                "idioma": "Castellano"
+            },
+            {
+                "idtaxon": 2723,
+                "idnombre_aceptado": 2723,
+                "nombre_aceptado": "Atropa baetica Willk.",
+                "idnombre_comun": 5007587,
+                "nombre_comun": "Tabaco de pastor",
+                "tiponombre": "Nombre común",
+                "ididioma": 1,
+                "idioma": "Castellano",
+                "espreferente": false
+            }
+        ],
+        "v_atributos_pliniancore": [
+            {
+                "idtaxon": 2723,
+                "idnombre_acept": 2723,
+                "nombre_aceptado": "Atropa baetica Willk.",
+                "idatributo": 4,
+                "atributo": "Ciclo vital",
+                "valor_atributo": "Florece desde finales de la primavera hasta inicio del otoño y tiene una polinización entomófila, principalmente por abejorros. Su flor proterógina intenta asegurar una polinización alógama, aunque con frecuencia es geitonógama (autógama en la senescencia). Sus bayas maduran al final del verano e in…[+403]",
+                "prioritario": true,
+                "idfuente": 110,
+                "fuente": "Atlas y Libro Rojo de la Flora Vascular Amenazada de España. Adenda 2017",
+                "iddataset": 127,
+                "dataset": "Atlas y Libro Rojo de la Flora Vascular Amenazada de España. Adenda 2017",
+                "idnombre_dat": 2723,
+                "nombre_en_dataset": "Atropa baetica Willk.",
+                "idvigente": 1
+            },
+            {
+                "idtaxon": 2723,
+                "idnombre_acept": 2723,
+                "nombre_aceptado": "Atropa baetica Willk.",
+                "idatributo": 1,
+                "atributo": "Descripción de la especie",
+                "valor_atributo": "Herbácea perenne, rizomatosa, de hasta 150(200) cm. Tallos glabros (los jóvenes algo glanduloso-pubescentes). Hojas alternas, pecioladas, enteras, de hasta 16x9 cm, de ovadas a lanceoladas. Flores solitarias o geminadas, actinomorfas o algo zigomorfas. Cáliz acrescente hasta 20 mm al fructificar, ca…[+269]",
+                "prioritario": true,
+                "idfuente": 110,
+                "fuente": "Atlas y Libro Rojo de la Flora Vascular Amenazada de España. Adenda 2017",
+                "iddataset": 127,
+                "dataset": "Atlas y Libro Rojo de la Flora Vascular Amenazada de España. Adenda 2017",
+                "idnombre_dat": 2723,
+                "nombre_en_dataset": "Atropa baetica Willk.",
+                "idvigente": 1,
+                "fecha_alta": "2022-12-31"
+            },
+            {
+                "idtaxon": 2723,
+                "idnombre_acept": 2723,
+                "nombre_aceptado": "Atropa baetica Willk.",
+                "idatributo": 3,
+                "atributo": "Distribución",
+                "valor_atributo": "Iberomagrebí (España y Marruecos). En España aparece en el CE y S peninsular (Almería, Córdoba, Cuenca, Granada, Guadalajara, Jaén, Málaga, Murcia y Tarragona). Reintroducida en Albacete y extinta en Cádiz.",
+                "prioritario": true,
+                "idfuente": 110,
+                "fuente": "Atlas y Libro Rojo de la Flora Vascular Amenazada de España. Adenda 2017",
+                "iddataset": 127,
+                "dataset": "Atlas y Libro Rojo de la Flora Vascular Amenazada de España. Adenda 2017",
+                "idnombre_dat": 2723,
+                "nombre_en_dataset": "Atropa baetica Willk.",
+                "idvigente": 1
+            }
+        ],
+        "v_imagenes": []
+    },
+    "conservation": {
+        "ms": 271,
+        "value": {
+            "España": {
+                "code": "EN",
+                "label": "EN (En peligro)",
+                "year": 2017,
+                "criteria": "B2ab(iii)"
+            }
+        }
+    },
+    "legal": {
+        "ms": 320,
+        "value": {
+            "vigentes": [
+                {
+                    "estadolegal": "Prioritaria",
+                    "norma": "Ley 42/2007, de 13 de diciembre, del Patrimonio Natural y de la Biodiversidad. BOE 299, de 14 de diciembre de 2007",
+                    "ambito": "Nacional",
+                    "idvigente": 1
+                },
+                {
+                    "estadolegal": "Anexo II",
+                    "norma": "Ley 42/2007, de 13 de diciembre, del Patrimonio Natural y de la Biodiversidad. BOE 299, de 14 de diciembre de 2007",
+                    "ambito": "Nacional",
+                    "idvigente": 1
+                },
+                {
+                    "estadolegal": "CEEA: En peligro de extinción",
+                    "norma": "Real Decreto 139/2011, de 4 de febrero, para el desarrollo del Listado de Especies Silvestres en Régimen de Protección Especial y del Catálogo Español de Especies Amenazadas. BOE 46, de 23 de febrero de 2011",
+                    "ambito": "Nacional",
+                    "idvigente": 1
+                }
+            ],
+            "nacional": [
+                {
+                    "estadolegal": "Prioritaria",
+                    "norma": "Ley 42/2007, de 13 de diciembre, del Patrimonio Natural y de la Biodiversidad. BOE 299, de 14 de diciembre de 2007",
+                    "ambito": "Nacional",
+                    "idvigente": 1
+                },
+                {
+                    "estadolegal": "Anexo II",
+                    "norma": "Ley 42/2007, de 13 de diciembre, del Patrimonio Natural y de la Biodiversidad. BOE 299, de 14 de diciembre de 2007",
+                    "ambito": "Nacional",
+                    "idvigente": 1
+                },
+                {
+                    "estadolegal": "CEEA: En peligro de extinción",
+                    "norma": "Real Decreto 139/2011, de 4 de febrero, para el desarrollo del Listado de Especies Silvestres en Régimen de Protección Especial y del Catálogo Español de Especies Amenazadas. BOE 46, de 23 de febrero de 2011",
+                    "ambito": "Nacional",
+                    "idvigente": 1
+                }
+            ],
+            "peninsular": [
+                {
+                    "estadolegal": "Prioritaria",
+                    "norma": "Ley 42/2007, de 13 de diciembre, del Patrimonio Natural y de la Biodiversidad. BOE 299, de 14 de diciembre de 2007",
+                    "ambito": "Nacional",
+                    "idvigente": 1
+                },
+                {
+                    "estadolegal": "Anexo II",
+                    "norma": "Ley 42/2007, de 13 de diciembre, del Patrimonio Natural y de la Biodiversidad. BOE 299, de 14 de diciembre de 2007",
+                    "ambito": "Nacional",
+                    "idvigente": 1
+                },
+                {
+                    "estadolegal": "CEEA: En peligro de extinción",
+                    "norma": "Real Decreto 139/2011, de 4 de febrero, para el desarrollo del Listado de Especies Silvestres en Régimen de Protección Especial y del Catálogo Español de Especies Amenazadas. BOE 46, de 23 de febrero de 2011",
+                    "ambito": "Nacional",
+                    "idvigente": 1
+                }
+            ],
+            "autonomico": [
+                {
+                    "estadolegal": "En peligro de extinción",
+                    "norma": "Decreto 23/2012, de 14 de febrero, por el que se regula la conservación y el uso sostenible de la flora y la fauna silvestres y sus hábitats.",
+                    "ambito": "Autonómico",
+                    "ccaa": "Andalucía",
+                    "idvigente": 1
+                }
+            ]
+        }
+    },
+    "commonName": {
+        "ms": 281,
+        "value": "Belladona de Andalucia"
+    },
+    "description": {
+        "ms": 272,
+        "value": "Herbácea perenne, rizomatosa, de hasta 150(200) cm. Tallos glabros (los jóvenes algo glanduloso-pubescentes). Hojas alternas, pecioladas, enteras, de hasta 16x9 cm, de ovadas a lanceoladas. Flores solitarias o geminadas, actinomorfas o algo zigomorfas. Cáliz acrescente hasta 20 mm al fructificar, ca…[+268]"
+    },
+    "images": {
+        "ms": 284,
+        "value": []
+    },
+    "totalMs": 1708
+}
