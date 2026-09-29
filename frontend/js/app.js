@@ -1,0 +1,192 @@
+// ================================================================================================
+// app.js — arranque de la PWA, armazón (cabecera de cartel + navegación) y enrutado por hash.
+// ------------------------------------------------------------------------------------------------
+// Rutas: #/mapa · #/catalogos · #/especies · #/ajustes. Cambiar de sección NO apila historial
+// (replaceState): en el móvil «atrás» deshace el último panel abierto, no el último toque de pestaña.
+// Ajustes sí se abre como nivel de BioDexNav, para que «atrás» devuelva a la sección de la que se vino.
+// ================================================================================================
+
+import { state, subscribe, setOnline, setNotice, APP_VERSION } from './state.js';
+import { bootSession, renderAuth, logout, SESSION_EXPIRED } from './auth.js';
+import { html, render, $, $$ } from './util.js';
+import * as mapView from './views/map.js';
+import * as catalogsView from './views/catalogs.js';
+import * as speciesView from './views/species.js';
+import * as settingsView from './views/settings.js';
+
+const Nav = window.BioDexNav;
+const root = document.getElementById('app');
+
+const ICONS = {
+  map: html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Zm0 0v14m6-12v14"/></svg>`,
+  catalogs: html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16M4 12h16M4 19h10"/></svg>`,
+  species: html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19C5 10 10 5 20 4c-1 10-6 15-15 15Zm0 0 8-8"/></svg>`,
+  settings: html`<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M4.9 4.9l2.1 2.1m10 10 2.1 2.1M4.9 19.1 7 17m10-10 2.1-2.1"/></svg>`,
+};
+
+const ROUTES = {
+  mapa:      { label: 'Mapa', icon: ICONS.map, view: mapView },
+  catalogos: { label: 'Catálogos', icon: ICONS.catalogs, view: catalogsView },
+  especies:  { label: 'Especies', icon: ICONS.species, view: speciesView },
+  ajustes:   { label: 'Ajustes', icon: ICONS.settings, view: settingsView },
+};
+
+let current = null;       // ruta pintada
+let cleanup = null;       // desmontaje de la vista actual
+let settingsReturn = 'mapa';
+let closingSilently = false;
+let unsubscribeShell = null;
+let banner = null;        // aviso de una sola vez bajo la cabecera (p. ej. «revisa tu correo»)
+
+// --- Pantalla de acceso ---------------------------------------------------------------------------
+
+function showAuth() {
+  if (unsubscribeShell) { unsubscribeShell(); unsubscribeShell = null; }
+  if (cleanup) { cleanup(); cleanup = null; }
+  current = null;
+  Nav.reset();
+  Nav.setExitGuard(false);
+  document.body.classList.remove('in-app');
+  renderAuth(root, ({ registered, verificationSent }) => {
+    if (registered) {
+      const local = ['localhost', '127.0.0.1'].includes(location.hostname);
+      banner = {
+        kind: 'info',
+        text: verificationSent
+          ? `Cuenta creada. Revisa tu correo (${state.user.email}) para verificarla.` +
+            (local ? ' En local llega a Mailpit: http://localhost:8025' : '')
+          : 'Cuenta creada. No se pudo enviar el correo de verificación; puedes pedirlo más tarde.',
+      };
+    }
+    showApp();
+  });
+}
+
+// --- Armazón --------------------------------------------------------------------------------------
+
+function showApp() {
+  document.body.classList.add('in-app');
+  const tabs = ['mapa', 'catalogos', 'especies', 'ajustes'].map((key) => html`
+    <a class="tab ${key === 'ajustes' ? 'tab-settings' : ''}" href="#/${key}" data-route="${key}">
+      ${ROUTES[key].icon}<span>${ROUTES[key].label}</span></a>`);
+
+  render(root, html`
+    <div class="shell">
+      <header class="sign app-sign">
+        <div class="sign-main">
+          <p class="eyebrow">BioDex · Catálogo activo</p>
+          <p class="sign-title" id="signCatalog"></p>
+        </div>
+        <div class="sign-tools">
+          <span class="conn" id="conn" role="status"></span>
+          <a class="icon-btn gear" href="#/ajustes" data-route="ajustes" aria-label="Ajustes">${ICONS.settings}</a>
+        </div>
+      </header>
+      <nav class="tabs" aria-label="Secciones">${tabs}</nav>
+      <div id="bands"></div>
+      <main class="view" id="view" tabindex="-1"></main>
+    </div>`);
+
+  $$('[data-route]', root).forEach((a) => a.addEventListener('click', (ev) => {
+    ev.preventDefault();
+    go(a.dataset.route);
+  }));
+
+  updateShell();
+  unsubscribeShell = subscribe((key) => {
+    if (key === 'online' || key === 'activeCatalog' || key === 'user') updateShell();
+  });
+  Nav.setExitGuard(true);
+  current = null;
+  go(routeFromHash());
+}
+
+function updateShell() {
+  const cat = state.activeCatalog;
+  const title = $('#signCatalog', root);
+  if (!title) return;
+  title.textContent = cat ? cat.name : 'Sin catálogo activo';
+  title.classList.toggle('is-empty', !cat);
+
+  render($('#conn', root), state.online
+    ? html`<span class="conn-dot"></span><span class="conn-label">En línea</span>`
+    : html`<span class="conn-dot off"></span><span class="conn-label">Sin conexión</span>`);
+
+  render($('#bands', root), html`
+    ${state.online ? '' : html`<p class="guard-band warn" role="status">Sin conexión: trabajas en local.</p>`}
+    ${banner ? html`<p class="guard-band ${banner.kind}" role="status">
+      <span>${banner.text}</span>
+      <button type="button" class="band-close" aria-label="Cerrar aviso">×</button></p>` : ''}`);
+  const close = $('.band-close', root);
+  if (close) close.addEventListener('click', () => { banner = null; updateShell(); });
+}
+
+// --- Enrutado -------------------------------------------------------------------------------------
+
+function routeFromHash() {
+  const key = (location.hash.match(/^#\/([a-z]+)/) || [])[1];
+  return ROUTES[key] ? key : 'mapa';
+}
+
+function go(route) {
+  if (!ROUTES[route]) route = 'mapa';
+  if (route === current) return;
+  if (route === 'ajustes') {
+    settingsReturn = current && current !== 'ajustes' ? current : 'mapa';
+    Nav.open('ajustes', () => { if (!closingSilently) show(settingsReturn); });
+  } else if (Nav.has('ajustes')) {
+    // Se sale de Ajustes por una pestaña: se cierra su nivel sin que su cierre nos lleve atrás.
+    closingSilently = true;
+    Nav.close('ajustes');
+    closingSilently = false;
+  }
+  show(route);
+}
+
+function show(route) {
+  if (route === current) return;
+  if (cleanup) { cleanup(); cleanup = null; }
+  current = route;
+  try { history.replaceState(history.state, '', '#/' + route); } catch (e) { /* file:// */ }
+  $$('.tab', root).forEach((t) => {
+    const on = t.dataset.route === route;
+    t.classList.toggle('active', on);
+    if (on) t.setAttribute('aria-current', 'page'); else t.removeAttribute('aria-current');
+  });
+  $('.gear', root).classList.toggle('is-active', route === 'ajustes');
+  const view = $('#view', root);
+  view.className = 'view view-' + route;
+  cleanup = ROUTES[route].view.mount(view, { go, onLogout }) || null;
+}
+
+async function onLogout() {
+  await logout();
+  showAuth();
+}
+
+// --- Arranque -------------------------------------------------------------------------------------
+
+window.addEventListener('online', () => setOnline(true));
+window.addEventListener('offline', () => setOnline(false));
+// El hash solo se lee al arrancar. Después lo escribe show(), y un cambio que llegue desde fuera es
+// casi siempre el history.go() de BioDexNav aterrizando en una entrada con el hash de antes: se
+// reescribe con la sección que se está viendo en vez de navegar (si no, cerrar Ajustes lo reabría).
+window.addEventListener('hashchange', () => {
+  if (current && routeFromHash() !== current) {
+    try { history.replaceState(history.state, '', '#/' + current); } catch (e) { /* file:// */ }
+  }
+});
+window.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') Nav.back(); });
+window.addEventListener('biodex:unauthorized', () => {
+  if (!current) return;
+  setNotice({ kind: 'warn', text: SESSION_EXPIRED });
+  showAuth();
+});
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch((e) => console.info('SW no registrado:', e.message));
+}
+
+Nav.init();
+document.documentElement.dataset.version = APP_VERSION;
+bootSession().then((where) => (where === 'app' ? showApp() : showAuth()));
