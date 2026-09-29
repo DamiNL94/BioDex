@@ -20,8 +20,10 @@ $pdo = db();
 runMigrations($pdo);
 
 function cleanup(PDO $pdo): void {
-    $pdo->exec("DELETE FROM access_log WHERE catalog_id IN (SELECT id FROM catalogs WHERE name LIKE 'test-f4 %')");
-    $pdo->exec("DELETE FROM catalogs WHERE name LIKE 'test-f4 %'");
+    // También los catálogos de f4-cdp-* (recorrido del navegador), que no llevan el prefijo test-f4.
+    $mine = "SELECT c.id FROM catalogs c JOIN users u ON u.id = c.owner_id WHERE c.name LIKE 'test-f4 %' OR u.email LIKE 'f4-%@biodex.test'";
+    $pdo->exec("DELETE FROM access_log WHERE catalog_id IN (SELECT id FROM ({$mine}) t)");
+    $pdo->exec("DELETE FROM catalogs WHERE id IN (SELECT id FROM ({$mine}) t)");
     $pdo->exec("DELETE FROM login_attempts WHERE email LIKE 'f4-%@biodex.test'");
     $pdo->exec("DELETE FROM users WHERE email LIKE 'f4-%@biodex.test'");
 }
