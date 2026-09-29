@@ -3,3 +3,4 @@ vendor/
 mysql-data/
 frontend/public/tiles/
 *.pdf
+docs/design/*.html
