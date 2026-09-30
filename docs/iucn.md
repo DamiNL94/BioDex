@@ -40,7 +40,9 @@ Criterios de la Lista Roja de la UICN.» No sustituye a las evaluaciones oficial
 
 ## Datos que BioDex sugiere (siempre editables, con su origen)
 - C y D: suma de maduros registrados y máximo de individuos en un día (resumen de F8a), con el aviso de doble conteo.
-- B: EOO y AOO desde las marcas del catálogo → **F9** (hueco preparado en el paso B).
+- B: EOO y AOO desde las marcas del catálogo («Calcular» en el paso B; abajo, «EOO y AOO en BioDex»), con su origen
+  (servidor con fecha o provisional) y tamaño de celda; si se cambian a mano, el origen lo dice.
+
 
 ## Limitaciones
 - No sustituye a las Directrices de uso: no comprueba definiciones (localidad, subpoblación, fragmentación severa,
@@ -50,3 +52,31 @@ Criterios de la Lista Roja de la UICN.» No sustituye a las evaluaciones oficial
 - El servidor guarda `inputs` y `result` tal como salen del dispositivo, sin recalcular (el motor es JS); valida la
   forma, los vocabularios y la coherencia mínima (final con categoría, ajuste con justificación).
 - La AOO debe medirse en celdas de 2×2 km para compararla con B2 (`criteria.B.metrics`).
+
+## EOO y AOO en BioDex (F9)
+Cálculo: `shared/geo-metrics.js` (dispositivo) y su port `backend/Lib/metrics.php` + `Lib/utm.php` (servidor), con los
+mismos casos: `shared/metrics-cases.json` (`node shared/geo-metrics.test.js` · `bin/test-f9.php`, ±0,01 km²).
+- **EOO**: área del polígono convexo mínimo de los registros (cadena monótona de Andrew + fórmula del lazo), en km².
+  Con menos de 3 puntos no colineales no hay EOO. Si EOO < AOO → EOO = AOO, con aviso.
+- **AOO**: celdas ocupadas × área de la celda. Celda de **2 × 2 km** por defecto; 1 km con aviso (B2 está calibrado
+  para 2 km). Se guarda siempre el tamaño usado. Rejilla anclada al origen UTM: celda `floor(x / tamaño)`, la misma
+  que la cuadrícula UTM nacional; informativo, mínimo y máximo desplazándola medio tamaño en x, en y y en ambos.
+- Todo en **ETRS89 / UTM 30N (EPSG:25830)**; un registro fuera de 6° O–0° se proyecta igual, con aviso de deformación.
+- **Qué cuenta**: presencias no borradas del catálogo, del equipo o solo propias; fuera las ausencias y las de
+  precisión peor que la celda (se dice cuántas). El nº de **localidades no se calcula**: lo decide el investigador.
+- **Definitivo = servidor** (`GET …/species/{taxonID}/metrics`, `docs/api.md`), con las coordenadas exactas. Se
+  guarda en `species_metrics` y se recalcula al pedirlo si hay marcas nuevas, editadas o borradas (`server_seq`).
+- **Geometría según confianza** (regla de `applyVisibility`): owner, custodio, nivel 4 o ámbito «propias» → casco y
+  celdas; resto en nivel 2–3 → solo cifras y las celdas de 0,1° / 0,01° con registros; nivel 1 → solo cifras. El casco
+  nunca sale hacia quien no ve exactas: sus vértices son registros reales. El casco de exactas ajenas de una especie
+  sensible queda en `access_log` (`view_exact`, «EOO/AOO <taxón>: n»).
+- **Provisional sin red**: el dispositivo calcula con sus marcas **exactas** (las generalizadas no cuentan), rotulado
+  «Provisional · N registros exactos en este dispositivo · el definitivo lo calcula el servidor», junto al último
+  definitivo guardado con su fecha.
+- Dónde se ve: ficha › «Distribución», mapa › «EOO / AOO» (especie elegida en Filtros) y asistente › paso B.
+
+**Limitaciones.** Reflejan los registros del catálogo, **no la distribución completa de la especie**: sin prospección
+exhaustiva la EOO y la AOO salen por debajo de las reales. Un editor sin red en una especie sensible solo cuenta
+sus marcas. El casco convexo incluye zonas no habitables: así lo define la UICN y BioDex no las recorta.
+La rejilla anclada puede variar la AOO (de ahí el rango). Pendiente: contrastar la referencia con shapely/pyproj
+(`backend/bin/metrics-reference.py`); hoy es PROJ (`cs2cs`) + envoltura de Jarvis.

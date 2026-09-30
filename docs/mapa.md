@@ -73,6 +73,15 @@ urbanas la estimación se queda corta: la de la Alhambra (z13–16, base + PNOA)
 - Marcadores (F8a): el punto marcado a mano lleva **borde discontinuo** (24 px, 3 px); una ausencia, marcador
   hueco con aspa. Los dos salen en la leyenda y en el globo.
 
+## Capa «EOO / AOO» (F9)
+Botón **«EOO / AOO»** de la barra: con una especie elegida en Filtros (si no la hay, abre Filtros), pinta lo que manda
+`GET …/species/{taxonID}/metrics?scope=team&cell=2` (`map/metrics-layer.js`, sin interacción y por debajo de las
+marcas): **polígono convexo mínimo** (EOO, latón discontinuo) y **celdas de 2 km** (AOO, azul; celdas UTM dibujadas con
+sus 4 esquinas por `fromUtm`, porque en grados no son rectángulos) para owner, custodio o nivel 4; para el resto en
+nivel 2–3, solo las **celdas de 0,1° / 0,01°** con registros; en nivel 1, nada (la nota lo dice). Nota con las cifras y
+el origen (servidor con fecha o provisional sin red), leyenda y encuadre al activarla. Se recalcula tras cada
+sincronización. Reglas y límites: `docs/iucn.md` › «EOO y AOO en BioDex».
+
 ## Marcas en el mapa
 
 Del catálogo activo, desde IndexedDB (sin red también), repintadas al terminar cada sincronización.

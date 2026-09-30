@@ -162,6 +162,8 @@ cola, respaldo) y `sync.js` (motor).
   exportarlas o descartarlas.
 - **Respaldo**: JSON `{format: "biodex-backup", version: 1, userId, catalogs, species, occurrences}`; solo lo
   importa la misma cuenta y es idempotente por `occurrenceID`.
+- **EOO/AOO (F9)**: el último resultado del servidor por especie, ámbito y celda va a `meta`
+  (`metrics:<catálogo>:<taxón>:<ámbito>:<celda>`, `js/metrics.js`) para verlo sin red con su fecha; sale con el catálogo.
 - **Zonas del mapa (F7)**: la base sube a la versión 2 con el almacén `zones`; sus teselas van a las cachés
   `biodex-tiles-<zoneId>`, que cerrar sesión también borra. Detalle en `docs/mapa.md`.
 - **Notas (F8a)**: versión 3 con el almacén `notes` (índices `catalogId`, `taxonID`). Cola `note` / `noteDelete`,
