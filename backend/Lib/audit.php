@@ -2,11 +2,12 @@
 // ================================================================================================
 // audit.php — registro en access_log de lo que CLAUDE.md exige auditar: vistas de coordenadas
 // exactas, exportaciones completas, cambios de nivel de sensibilidad y de rol, logins fallidos y (F6)
-// invitaciones y altas y bajas de miembros.
+// invitaciones y altas y bajas de miembros; (F8b) la evaluación UICN de referencia de cada especie.
 // ================================================================================================
 
 const AUDIT_ACTIONS = ["view_exact", "export_full", "set_level", "grant_role", "revoke_role", "login_failed",
-                       "invite_created", "invite_revoked", "member_joined", "member_removed", "member_left"];
+                       "invite_created", "invite_revoked", "member_joined", "member_removed", "member_left",
+                       "set_reference"];   // F8b: evaluación UICN de referencia del catálogo
 
 /** IP del cliente tal como la ve PHP (nginx pasa REMOTE_ADDR). null en CLI. */
 function clientIp(): ?string {

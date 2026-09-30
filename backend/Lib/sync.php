@@ -21,6 +21,12 @@ const SYNC_UINT_MAX         = 4294967295;
 const SYNC_HABITAT_MAX      = 500;
 const SYNC_GEOREF_REMARKS_MAX = 255;
 const SYNC_NOTE_MAX         = 4000;
+// Evaluaciones UICN (F8b)
+const SYNC_ASSESSMENT_JSON_MAX = 32768;   // inputs y result, cada uno (result lleva el detalle por criterio)
+const SYNC_JUSTIFICATION_MAX   = 4000;
+const ASSESSMENT_CATEGORIES    = ["CR", "EN", "VU", "NT", "LC", "DD"];
+const ASSESSMENT_STATUSES      = ["draft", "final"];
+const ASSESSMENT_ADJUSTMENTS   = ["down", "up"];
 
 // Vocabularios cerrados (F8a). lifeStage y sex: vocabulario de GBIF; las etiquetas en castellano son
 // cosa de la interfaz (frontend/js/views/mark-sheet.js).
@@ -185,6 +191,63 @@ function syncValidateNote(mixed $n): array {
     ];
 }
 
+/**
+ * Evaluación UICN del cuerpo de un push (F8b) → columnas de species_assessments. El servidor no recalcula
+ * (el motor es shared/iucn-engine.js, en el dispositivo): comprueba forma, tamaños y coherencia mínima.
+ * No toca is_reference: la referencia solo la marca el owner (PUT .../reference-assessment).
+ */
+function syncValidateAssessment(mixed $a): array {
+    if (!is_array($a) || array_is_list($a)) syncReject("invalid_item", "Cada evaluación debe ser un objeto.");
+    if (!isUuidV4($a["assessmentID"] ?? null)) syncReject("invalid_uuid", "«assessmentID» debe ser un UUID v4 en minúsculas.");
+    $taxonID = syncTaxonID($a);
+
+    $json = [];
+    foreach (["inputs", "result"] as $field) {
+        $v = $a[$field] ?? null;
+        if (!is_array($v)) syncReject("missing_field", "Falta «{$field}» (objeto).");
+        $enc = json_encode($v, JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION);
+        if ($enc === false || strlen($enc) > SYNC_ASSESSMENT_JSON_MAX) {
+            syncReject("invalid_field", "«{$field}» no puede pasar de " . SYNC_ASSESSMENT_JSON_MAX . " bytes.");
+        }
+        // Un objeto vacío llega como lista vacía: se guarda como objeto.
+        $json[$field] = $v === [] ? "{}" : $enc;
+    }
+    $result = $a["result"];
+    foreach (["category", "baseCategory"] as $k) {
+        $cat = $result[$k] ?? null;
+        if ($cat !== null && !in_array($cat, ASSESSMENT_CATEGORIES, true)) {
+            syncReject("invalid_vocabulary", "«result.{$k}» debe ser una de: " . implode(", ", ASSESSMENT_CATEGORIES) . ".");
+        }
+    }
+    $criteriaString = $result["criteriaString"] ?? null;
+    if ($criteriaString !== null && (!is_string($criteriaString) || mb_strlen($criteriaString) > 255)) {
+        syncReject("invalid_field", "«result.criteriaString» debe ser texto de 255 caracteres como mucho.");
+    }
+
+    $status = syncEnum($a, "status", ASSESSMENT_STATUSES, "draft");
+    $adjust = syncEnum($a, "regionalAdjustment", ASSESSMENT_ADJUSTMENTS);
+    $justification = syncText($a, "justification", SYNC_JUSTIFICATION_MAX);
+    if ($adjust !== null && $justification === null) {
+        syncReject("missing_field", "El ajuste regional exige una justificación («justification»).");
+    }
+    $category = $result["category"] ?? null;
+    if ($status === "final" && $category === null) {
+        syncReject("invalid_field", "Una evaluación final necesita categoría: si no alcanza umbrales, elige NT, LC o DD.");
+    }
+
+    return [
+        "assessmentID"        => $a["assessmentID"],
+        "taxonID"             => $taxonID,
+        "inputs"              => $json["inputs"],
+        "result"              => $json["result"],
+        "category"            => $category,
+        "regional_adjustment" => $adjust,
+        "justification"       => $justification,
+        "status"              => $status,
+        "client_updated_at"   => syncClientUpdatedAt($a["clientUpdatedAt"] ?? null),
+    ];
+}
+
 /** Borrado del cuerpo de un push → [id, client_updated_at]. $idField: occurrenceID, noteID… */
 function syncValidateDelete(mixed $d, string $idField = "occurrenceID"): array {
     if (!is_array($d) || array_is_list($d)) syncReject("invalid_item", "Cada borrado debe ser un objeto.");
@@ -262,4 +325,42 @@ function noteOut(array $row): array {
         "recordedBy" => $row["recorded_by"] ?? null,
         "text"       => $row["text"],
     ];
+}
+
+/**
+ * Evaluación UICN tal como sale (F8b). Sin coordenadas: EOO/AOO y localidades son números agregados.
+ * El pull solo la manda a miembros con view. $row necesita `recorded_by` y `reference_set_by_name`.
+ */
+function assessmentOut(array $row): array {
+    $meta = [
+        "assessmentID"    => $row["assessmentID"],
+        "taxonID"         => $row["taxonID"],
+        "userId"          => (int) $row["user_id"],
+        "clientUpdatedAt" => syncIsoUtc($row["client_updated_at"]),
+        "serverSeq"       => (int) $row["server_seq"],
+    ];
+    if ($row["deleted_at"] !== null) return $meta + ["deleted" => true];
+    $isRef = (int) $row["is_reference"] === 1;
+    return $meta + [
+        "deleted"            => false,
+        "recordedBy"         => $row["recorded_by"] ?? null,
+        "inputs"             => json_decode($row["inputs"], true),
+        "result"             => json_decode($row["result"], true),
+        "category"           => $row["category"],
+        "regionalAdjustment" => $row["regional_adjustment"],
+        "justification"      => $row["justification"],
+        "status"             => $row["status"],
+        "isReference"        => $isRef,
+        "referenceSetBy"     => $isRef ? ($row["reference_set_by_name"] ?? null) : null,
+        "referenceSetAt"     => $isRef ? syncIsoUtc($row["reference_set_at"]) : null,
+    ];
+}
+
+/** SELECT de evaluaciones con los nombres que necesita assessmentOut(); $where sobre el alias a. */
+function assessmentSelect(string $where): string {
+    return "SELECT a.*, u.name AS recorded_by, rb.name AS reference_set_by_name
+              FROM species_assessments a
+              JOIN users u ON u.id = a.user_id
+              LEFT JOIN users rb ON rb.id = a.reference_set_by
+             WHERE {$where}";
 }

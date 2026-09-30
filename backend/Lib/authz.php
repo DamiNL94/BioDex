@@ -20,6 +20,7 @@ const CATALOG_PERMISSIONS = [
     "mark"           => ["owner", "custodian", "editor"],            // crear marcas
     "view_exact"     => ["owner", "custodian"],                      // coordenadas exactas ajenas
     "export_full"    => ["owner", "custodian"],
+    "set_reference"  => ["owner"],                                   // evaluación UICN de referencia (F8b)
 ];
 
 /** Rol del usuario en el catálogo, o null si no es miembro o el catálogo está borrado. */

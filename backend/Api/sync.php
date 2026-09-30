@@ -1,12 +1,15 @@
 <?php
 // ================================================================================================
-// /api/sync — sincronización en dos sentidos de marcas y notas de especie (protocolo: docs/sync.md).
+// /api/sync — sincronización en dos sentidos de marcas, notas de especie y evaluaciones UICN
+// (protocolo: docs/sync.md).
 // ------------------------------------------------------------------------------------------------
 //   POST /api/sync/push   {catalogId, deviceId, occurrences:[…], deletes:[{occurrenceID, clientUpdatedAt}],
-//                          notes:[…], noteDeletes:[{noteID, clientUpdatedAt}]}
-//                         permiso mark → {results:[{occurrenceID, status, …}], noteResults:[{noteID, status, …}]}
+//                          notes:[…], noteDeletes:[{noteID, clientUpdatedAt}],
+//                          assessments:[…], assessmentDeletes:[{assessmentID, clientUpdatedAt}]}
+//                         permiso mark → {results:[…], noteResults:[…], assessmentResults:[…]}
 //   GET  /api/sync/pull?catalogId=&since=&limit=500
-//                         permiso view → {items, notes, cursor, hasMore, catalogContentSeq, role, visibilityEpoch}
+//                         permiso view → {items, notes, assessments, cursor, hasMore, catalogContentSeq, role,
+//                                         visibilityEpoch}
 // Cada tipo de entidad (SYNC_ENTITIES) sigue las mismas reglas y comparte el contador server_seq.
 // Sin rol en el catálogo (expulsado o catálogo borrado): 403 {error, code: "not_member"}; el móvil
 // borra entonces sus datos de ese catálogo. Si visibilityEpoch no es la que tiene guardada, borra las
@@ -70,18 +73,23 @@ function syncWithRetry(PDO $pdo, callable $fn): array {
  *   list/deletes/results  claves del cuerpo del push y de su respuesta
  *   pull                  clave de la lista en el pull
  *   noun                  para los mensajes («la marca es de otro autor…»)
- * F8b añade `assessments`.
+ *   reference             (F8b) la fila puede ser la «evaluación de referencia» del owner: si su autor la
+ *                         borra o la pasa a borrador, deja de serlo (y queda en access_log)
  */
 const SYNC_ENTITIES = [
     "occurrence" => ["table" => "occurrences", "id" => "occurrenceID", "list" => "occurrences", "deletes" => "deletes",
                      "results" => "results", "pull" => "items", "validate" => "syncValidateOccurrence", "noun" => "La marca"],
     "note"       => ["table" => "species_notes", "id" => "noteID", "list" => "notes", "deletes" => "noteDeletes",
                      "results" => "noteResults", "pull" => "notes", "validate" => "syncValidateNote", "noun" => "La nota"],
+    "assessment" => ["table" => "species_assessments", "id" => "assessmentID", "list" => "assessments",
+                     "deletes" => "assessmentDeletes", "results" => "assessmentResults", "pull" => "assessments",
+                     "validate" => "syncValidateAssessment", "noun" => "La evaluación", "reference" => true],
 ];
 
 /** Fila actual del elemento, bloqueada hasta el final de la transacción; null si no existe. */
 function syncLockRow(PDO $pdo, array $ent, string $id): ?array {
-    $stmt = $pdo->prepare("SELECT `{$ent["id"]}`, catalog_id, user_id, client_updated_at, server_seq, deleted_at
+    $extra = empty($ent["reference"]) ? "" : ", is_reference";
+    $stmt = $pdo->prepare("SELECT `{$ent["id"]}`, catalog_id, taxonID, user_id, client_updated_at, server_seq, deleted_at{$extra}
                              FROM `{$ent["table"]}` WHERE `{$ent["id"]}` = ? FOR UPDATE");
     $stmt->execute([$id]);
     return $stmt->fetch() ?: null;
@@ -93,6 +101,11 @@ function syncCurrent(PDO $pdo, array $ent, string $id, string $role, int $userId
         $stmt = $pdo->prepare("SELECT n.*, u.name AS recorded_by FROM species_notes n JOIN users u ON u.id = n.user_id WHERE n.noteID = ?");
         $stmt->execute([$id]);
         return noteOut($stmt->fetch());
+    }
+    if ($ent["table"] === "species_assessments") {
+        $stmt = $pdo->prepare(assessmentSelect("a.assessmentID = ?"));
+        $stmt->execute([$id]);
+        return assessmentOut($stmt->fetch());
     }
     $stmt = $pdo->prepare(
         "SELECT o.*, u.name AS recorded_by, ss.level AS sens_level
@@ -106,9 +119,22 @@ function syncCurrent(PDO $pdo, array $ent, string $id, string $role, int $userId
     return occurrenceOut($row, normalizeSensitivityLevel($row["sens_level"]), $role, $userId);
 }
 
-/** Clave de la versión del servidor en un «stale»: `occurrence` o `note`. */
+/** Clave de la versión del servidor en un «stale»: `occurrence`, `note` o `assessment`. */
 function syncStaleKey(array $ent): string {
-    return $ent["table"] === "species_notes" ? "note" : "occurrence";
+    return ["species_notes" => "note", "species_assessments" => "assessment"][$ent["table"]] ?? "occurrence";
+}
+
+/**
+ * F8b: una evaluación de referencia que su autor borra o pasa a borrador deja de ser la referencia del
+ * catálogo. Devuelve las columnas que hay que poner a cero (vacío si no toca) y lo deja en access_log,
+ * dentro de la misma transacción.
+ */
+function syncReferenceClear(PDO $pdo, array $ent, array $existing, int $userId, ?string $status): array {
+    if (empty($ent["reference"]) || (int) ($existing["is_reference"] ?? 0) !== 1) return [];
+    if ($status !== null && $status !== "draft") return [];   // null = borrado
+    $why = $status === null ? "su autor la borró" : "su autor la pasó a borrador";
+    logAccess($pdo, $userId, "set_reference", $existing["catalog_id"], "{$existing["taxonID"]}: ninguna ({$why})");
+    return ["is_reference" => 0, "reference_set_by" => null, "reference_set_at" => null];
 }
 
 /**
@@ -155,6 +181,7 @@ function syncPushItem(PDO $pdo, array $ent, string $catalogId, int $userId, ?str
 
     // Más reciente: gana. Una edición posterior a un borrado lo deshace (última escritura gana).
     unset($c[$idField]);
+    $c += syncReferenceClear($pdo, $ent, $existing, $userId, $c["status"] ?? "");
     $c += ["device_id" => $deviceId, "server_seq" => syncNextSeq($pdo)];
     $sets = implode(", ", array_map(fn($k) => "`{$k}` = ?", array_keys($c)));
     $pdo->prepare("UPDATE `{$table}` SET {$sets}, deleted_at = NULL WHERE `{$idField}` = ?")
@@ -187,8 +214,10 @@ function syncPushDelete(PDO $pdo, array $ent, string $catalogId, int $userId, ?s
 
     // A igualdad de hora, el borrado gana a la edición.
     $seq = syncNextSeq($pdo);
-    $pdo->prepare("UPDATE `{$ent["table"]}` SET deleted_at = NOW(), client_updated_at = ?, device_id = ?, server_seq = ? WHERE `{$idField}` = ?")
-        ->execute([$clientUpdatedAt, $deviceId, $seq, $id]);
+    $clear = syncReferenceClear($pdo, $ent, $existing, $userId, null);
+    $extra = implode("", array_map(fn($k) => ", `{$k}` = ?", array_keys($clear)));
+    $pdo->prepare("UPDATE `{$ent["table"]}` SET deleted_at = NOW(), client_updated_at = ?, device_id = ?, server_seq = ?{$extra} WHERE `{$idField}` = ?")
+        ->execute([$clientUpdatedAt, $deviceId, $seq, ...array_values($clear), $id]);
     $pdo->commit();
     return [$idField => $id, "status" => "accepted", "serverSeq" => $seq];
 }
@@ -202,7 +231,7 @@ function syncRejected(array $ent, mixed $item, SyncRejection $e): array {
 
 if ($action === "push") {
     if ($method !== "POST") apiMethodNotAllowed("POST");
-    $body = requireJsonBody("{catalogId, deviceId, occurrences, deletes, notes, noteDeletes}");
+    $body = requireJsonBody("{catalogId, deviceId, occurrences, deletes, notes, noteDeletes, assessments, assessmentDeletes}");
     $catalogId = $body["catalogId"] ?? null;
     if (!is_string($catalogId) || !preg_match(UUID_RE, $catalogId)) apiError("«catalogId» debe ser el id del catálogo.", 400);
     $deviceId = $body["deviceId"] ?? null;
@@ -289,15 +318,22 @@ $stmt = $pdo->prepare(
 $stmt->execute([$catalogId, $since]);
 foreach ($stmt->fetchAll() as $r) $rows[] = ["note", $r];
 
+// Evaluaciones UICN (F8b): tampoco llevan coordenadas; las mismas reglas que las notas.
+$stmt = $pdo->prepare(assessmentSelect("a.catalog_id = ? AND a.server_seq > ?") . " ORDER BY a.server_seq LIMIT " . ($limit + 1));
+$stmt->execute([$catalogId, $since]);
+foreach ($stmt->fetchAll() as $r) $rows[] = ["assessment", $r];
+
 usort($rows, fn($a, $b) => (int) $a[1]["server_seq"] <=> (int) $b[1]["server_seq"]);
 $hasMore = count($rows) > $limit;
 $rows = array_slice($rows, 0, $limit);
 
 $items = [];
 $notes = [];
+$assessments = [];
 $exactForeign = 0;
 foreach ($rows as [$kind, $r]) {
     if ($kind === "note") { $notes[] = noteOut($r); continue; }
+    if ($kind === "assessment") { $assessments[] = assessmentOut($r); continue; }
     // Sin nivel registrado → normalizeSensitivityLevel() cae al más restrictivo (1).
     $level = normalizeSensitivityLevel($r["sens_level"]);
     $item = occurrenceOut($r, $level, $role, $userId);
@@ -313,6 +349,7 @@ $stmt->execute([$catalogId]);
 respond([
     "items"             => $items,
     "notes"             => $notes,
+    "assessments"       => $assessments,
     "cursor"            => $rows ? (int) end($rows)[1]["server_seq"] : $since,
     "hasMore"           => $hasMore,
     "catalogContentSeq" => (int) $stmt->fetchColumn(),

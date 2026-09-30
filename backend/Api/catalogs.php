@@ -13,6 +13,8 @@
 //   POST   /api/catalogs/{id}/species                      add_species {taxonID}, idempotente
 //   DELETE /api/catalogs/{id}/species/{taxonID}            remove_species (owner), borrado lógico
 //   PUT    /api/catalogs/{id}/species/{taxonID}/sensitivity  set_level {level, reason} → access_log
+//   PUT    /api/catalogs/{id}/species/{taxonID}/reference-assessment  set_reference (owner) {assessmentID|null}
+//          → evaluación UICN de referencia de la especie en el catálogo (F8b), a access_log
 // Miembros, invitaciones, salir, transferir y registro (F6): Api/teams.php, incluido desde aquí.
 // content_seq sube con cada cambio de lo que lleva el paquete offline (especies, niveles, nombre):
 // el pull de /api/sync lo devuelve y el móvil vuelve a descargar el paquete si no coincide.
@@ -23,6 +25,7 @@ require_once __DIR__ . "/../Lib/authz.php";
 require_once __DIR__ . "/../Lib/audit.php";
 require_once __DIR__ . "/../Lib/species.php";
 require_once __DIR__ . "/../Lib/teams.php";
+require_once __DIR__ . "/../Lib/sync.php";      // syncNextSeq(), assessmentOut() (F8b)
 
 const CATALOG_NAME_MAX = 120;
 // Especies por alta de catálogo: cada una sin ficha en caché son ~7 peticiones a EIDOS (~1,5 s).
@@ -39,13 +42,14 @@ if (preg_match('#^/api/catalogs/([0-9a-f-]{36})/(members|invites|leave|transfer|
     require __DIR__ . "/teams.php";
     exit;
 }
-if (!preg_match('#^/api/catalogs(?:/([0-9a-f-]{36})(?:/(tree|species|offline)(?:/([^/]+)(?:/(sensitivity))?)?)?)?/?$#', $path, $m)) {
+if (!preg_match('#^/api/catalogs(?:/([0-9a-f-]{36})(?:/(tree|species|offline)(?:/([^/]+)(?:/(sensitivity|reference-assessment))?)?)?)?/?$#', $path, $m)) {
     apiError("Recurso no encontrado.", 404);
 }
 $catalogId = $m[1] ?? null;
 $sub       = $m[2] ?? null;
 $taxonID   = isset($m[3]) ? rawurldecode($m[3]) : null;
 $sensPath  = isset($m[4]);
+$refPath   = ($m[4] ?? null) === "reference-assessment";
 
 // ------------------------------------------------------------------------------------------------
 
@@ -337,6 +341,69 @@ if (!$sensPath) {
     catalogBumpContent($pdo, $catalogId);
     $pdo->commit();
     respond(["ok" => true]);
+}
+
+// --- /api/catalogs/{id}/species/{taxonID}/reference-assessment (F8b) ---------------------------
+// Solo el owner. {assessmentID} marca como «Evaluación de referencia del catálogo» una evaluación FINAL
+// de esa especie en este catálogo (de cualquier autor); {assessmentID: null} la quita. Una por especie
+// (reference_key única). Las filas que cambian toman server_seq nuevo: el pull lleva la referencia a
+// todos los móviles. El contenido de la evaluación no se toca (sigue siendo de su autor).
+
+if ($refPath) {
+    if ($method !== "PUT") apiMethodNotAllowed("PUT");
+    requireCatalogPermission($pdo, $catalogId, $userId, "set_reference");
+    $body = requireJsonBody("{assessmentID}");
+    $assessmentID = $body["assessmentID"] ?? null;
+    if ($assessmentID !== null && !isUuidV4($assessmentID)) apiError("«assessmentID» debe ser el UUID de una evaluación o null.", 400);
+    catalogSpeciesRow($pdo, $catalogId, $taxonID);
+
+    $pdo->beginTransaction();
+    $stmt = $pdo->prepare("SELECT * FROM species_assessments WHERE catalog_id = ? AND taxonID = ? AND is_reference = 1 FOR UPDATE");
+    $stmt->execute([$catalogId, $taxonID]);
+    $old = $stmt->fetch() ?: null;
+
+    $new = null;
+    if ($assessmentID !== null) {
+        $stmt = $pdo->prepare("SELECT * FROM species_assessments WHERE assessmentID = ? FOR UPDATE");
+        $stmt->execute([$assessmentID]);
+        $new = $stmt->fetch() ?: null;
+        if ($new === null || $new["deleted_at"] !== null || $new["catalog_id"] !== $catalogId || (string) $new["taxonID"] !== $taxonID) {
+            $pdo->rollBack();
+            apiError("No hay ninguna evaluación con ese id para esta especie en este catálogo.", 404);
+        }
+        if ($new["status"] !== "final") {
+            $pdo->rollBack();
+            apiError("Solo una evaluación final puede ser la de referencia (esta es un borrador).", 422);
+        }
+    }
+
+    if ($old !== null && ($new === null || $old["assessmentID"] !== $new["assessmentID"])) {
+        $pdo->prepare("UPDATE species_assessments SET is_reference = 0, reference_set_by = NULL, reference_set_at = NULL, server_seq = ?
+                        WHERE assessmentID = ?")->execute([syncNextSeq($pdo), $old["assessmentID"]]);
+    }
+    if ($new !== null && ($old === null || $old["assessmentID"] !== $new["assessmentID"])) {
+        $pdo->prepare("UPDATE species_assessments SET is_reference = 1, reference_set_by = ?, reference_set_at = NOW(), server_seq = ?
+                        WHERE assessmentID = ?")->execute([$userId, syncNextSeq($pdo), $new["assessmentID"]]);
+    }
+    $describe = function (?array $a): string {
+        if ($a === null) return "ninguna";
+        $s = json_decode($a["result"], true)["criteriaString"] ?? null;
+        return ($s ?: ($a["category"] ?? "sin categoría")) . " [{$a["assessmentID"]}]";
+    };
+    $changed = ($old["assessmentID"] ?? null) !== ($new["assessmentID"] ?? null);
+    if ($changed) {
+        $who = $new !== null ? " de user:{$new["user_id"]}" : "";
+        logAccess($pdo, $userId, "set_reference", $catalogId, "{$taxonID}: {$describe($new)}{$who} (antes: {$describe($old)})");
+    }
+    $pdo->commit();
+
+    $ref = null;
+    if ($new !== null) {
+        $stmt = $pdo->prepare(assessmentSelect("a.assessmentID = ?"));
+        $stmt->execute([$new["assessmentID"]]);
+        $ref = assessmentOut($stmt->fetch());
+    }
+    respond(["taxonID" => $taxonID, "reference" => $ref, "changed" => $changed]);
 }
 
 // --- /api/catalogs/{id}/species/{taxonID}/sensitivity ------------------------------------------
