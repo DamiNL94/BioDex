@@ -72,3 +72,25 @@ sube al añadir o quitar especies, cambiar niveles o editar el catálogo.
 
 Imágenes: siempre `/img/fototeca/...` (proxy de nginx a la Fototeca del MITECO, con caché de 30 días): mismo
 origen, se pueden guardar sin respuestas opacas. Solo esa forma de ruta y sin parámetros; lo demás → 400.
+
+## En el dispositivo (F5b)
+Código: `frontend/js/db.js` (IndexedDB), `offline.js` (descarga y lecturas locales), `marks.js` (marcas,
+cola, respaldo) y `sync.js` (motor).
+
+- **Una base por usuario**: `biodex-<userId>` con `catalogs`, `species`, `catalogSpecies`, `occurrences`,
+  `outbox` y `meta` (cursor por catálogo, `deviceId`, última sincronización). Cerrar sesión la borra, junto
+  con las cachés `biodex-img-<catalogId>`, pero **solo** si no hay nada en la cola o el usuario lo decide
+  (diálogo «Tienes n marcas sin sincronizar» → sincronizar · exportar respaldo · cancelar).
+- **Descargar un catálogo** = paquete offline + pull completo + la primera foto de cada especie en Cache
+  Storage (el SW la sirve cache-first). El activo se descarga solo al activarlo con red.
+- **Cola** (`outbox`): una entrada por marca con la última intención (`occurrence` o `delete`) y una por
+  especie creada sin red (`species`). Las rechazadas se quedan con su motivo hasta que el usuario las
+  reintenta o descarta (Ajustes › Sincronización).
+- **Motor**: al entrar, al volver «En línea», cada 5 min, tras guardar y con «Sincronizar ahora». Candado
+  en memoria + Web Locks (`biodex-sync`) entre pestañas. Red caída → reintento a 30 s, 1, 2 y 5 min.
+  401 → se conserva la cola y la pantalla de acceso dice «Inicia sesión para sincronizar (n pendientes)».
+- **Pull**: lo que tenga un cambio local en cola no se pisa (lo decide el push). 403 `not_member` → el
+  catálogo sale del dispositivo; si hay marcas propias sin subir queda como `revoked` y Ajustes ofrece
+  exportarlas o descartarlas.
+- **Respaldo**: JSON `{format: "biodex-backup", version: 1, userId, catalogs, species, occurrences}`; solo lo
+  importa la misma cuenta y es idempotente por `occurrenceID`.

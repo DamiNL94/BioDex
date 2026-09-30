@@ -5,3 +5,6 @@ Frontend PWA de BioDex: JS sin framework ni build (módulos ES nativos), servido
 - `css/biodex.css` una sola hoja · `vendor/fonts/` Zilla Slab + Public Sans (OFL) · `img/` iconos
   (los PNG salen de `backend/bin/make-icons.php`).
 - `js/app.js` arranque y rutas · `js/views/*` una vista por sección · todo HTML dinámico con `html```.
+- Sin conexión (F5): `js/db.js` IndexedDB por usuario (`biodex-<userId>`) · `js/offline.js` descarga de
+  catálogos y lecturas locales · `js/marks.js` marcas, cola y respaldo · `js/sync.js` motor de
+  sincronización · `js/components/marks.js` «Marcar aquí» y «Mis marcas». Protocolo: `docs/sync.md`.
