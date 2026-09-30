@@ -20,7 +20,7 @@ import { store } from './util.js';
 
 export const API_TIMEOUT_MS = 8000;
 export const HEALTH_INTERVAL_MS = 30000;
-const SHORT_TIMEOUT_MS = 3000;       // /health y GET con copia guardada
+const SHORT_TIMEOUT_MS = 3000;       // /health
 
 // --- Estado de conexión ---------------------------------------------------------------------------
 // Cada respuesta de la API dice «en línea»; cada fallo de red o timeout, «servidor no disponible»
@@ -141,38 +141,12 @@ export function getSpeciesFilters() {
   return filtersPromise;
 }
 
-// --- Copia de la última respuesta buena (provisional) ----------------------------------------------
-// TODO F5: sustituir por IndexedDB. Hasta entonces, Catálogos y Especies guardan en localStorage
-// (biodex.copy:<ruta>) la última respuesta buena de sus GET y la pintan cuando el servidor no contesta,
-// en vez de un error técnico. Son datos que el servidor ya envió a este usuario; se borran al cerrar
-// sesión (clearApiCopies) para que no los vea otra cuenta en el mismo dispositivo.
-const COPY_PREFIX = 'biodex.copy:';
-
-/**
- * GET con respaldo: `{data, savedAt}`. `savedAt` es null si `data` viene del servidor, o la fecha (ms)
- * de la copia si el servidor no contesta. Sin copia, o con un error del servidor que no sea de conexión
- * (403, 404…), lanza el ApiError; `e.offline` indica que fue por no poder hablar con el servidor.
- */
-export async function apiGetWithCopy(path, opts = {}) {
-  const copy = store.get(COPY_PREFIX + path);
-  // Ya se sabe que el servidor no contesta: la copia, sin esperar. Cuando vuelva, /health cambia el
-  // estado a «en línea» y las vistas recargan.
-  if (copy && !state.online) return { data: copy.data, savedAt: copy.savedAt };
+// --- Copias antiguas en localStorage (F3b) --------------------------------------------------------
+// Hasta F5 Catálogos y Especies guardaban aquí (biodex.copy:<ruta>) la última respuesta buena. Ahora
+// los datos de trabajo viven en IndexedDB (db.js, offline.js): las claves viejas se borran al arrancar.
+export function clearLegacyCopies() {
   try {
-    // Con copia a mano no merece la pena esperar el corte largo: 3 s, como el resto del arranque.
-    const data = await apiGetJson(path, { timeoutMs: copy ? SHORT_TIMEOUT_MS : API_TIMEOUT_MS, ...opts });
-    store.set(COPY_PREFIX + path, { savedAt: Date.now(), data });
-    return { data, savedAt: null };
-  } catch (e) {
-    e.offline = !e.aborted && (e.status === 0 || [502, 503, 504].includes(e.status));
-    if (copy && e.offline) return { data: copy.data, savedAt: copy.savedAt };
-    throw e;
-  }
-}
-
-export function clearApiCopies() {
-  try {
-    Object.keys(localStorage).filter((k) => k.startsWith(COPY_PREFIX)).forEach((k) => store.remove(k));
+    Object.keys(localStorage).filter((k) => k.startsWith('biodex.copy:')).forEach((k) => store.remove(k));
   } catch (e) { /* sin almacenamiento */ }
 }
 

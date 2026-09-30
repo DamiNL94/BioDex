@@ -5,24 +5,30 @@
 // Datos del catálogo: resumen, árbol taxonómico plegable (GET /{id}/tree) con recuentos —tocar una
 // familia filtra la pestaña Especies—, «Añadir especies» (editor o más) y, para el owner, renombrar,
 // editar la descripción y borrar (diálogo propio con el nombre escrito para confirmar).
+// F5: «Descargar para usar sin conexión» (tamaño estimado antes, progreso durante, fecha al terminar).
+// Sin servidor, la lista y los datos salen del dispositivo (IndexedDB) y lo que necesita red se oculta.
 // ================================================================================================
 
-import { apiGetWithCopy, apiPatchJson, apiDeleteJson } from '../api.js';
+import { apiGetJson, apiPatchJson, apiDeleteJson } from '../api.js';
 import { state, subscribe, setActiveCatalog } from '../state.js';
-import { html, render, $, plural, savedCopyText } from '../util.js';
+import { html, render, $, plural } from '../util.js';
+import { remoteOrLocal, saveCatalogList, localCatalogs, localCatalog, localCatalogData, localTree, localNote,
+  estimateBytes, formatBytes, shortDate } from '../offline.js';
+import { startDownload, handleNotMember } from '../sync.js';
 import { confirmDialog } from '../components/overlay.js';
 import { iucnEntries, filterSpeciesByFamily } from './species.js';
 import { openCatalogBuilder, openAddSpecies } from './catalog-builder.js';
 
 export const ROLE_LABELS = { owner: 'Propietario', custodian: 'Custodio', editor: 'Editor', viewer: 'Lector' };
 const ADD_ROLES = ['owner', 'custodian', 'editor'];
-// TODO F5: con IndexedDB este texto cambia (los catálogos ya estarán en el dispositivo).
-const OFFLINE_EMPTY = 'Sin conexión con el servidor. Tus catálogos se guardarán en el dispositivo en F5.';
+const OFFLINE_EMPTY = 'Sin conexión con el servidor y aún no hay catálogos en este dispositivo. Con red, elige uno y pulsa «Descargar para usar sin conexión».';
+const PHASES = { package: 'Descargando fichas y niveles…', marks: 'Descargando marcas del equipo…', images: 'Guardando imágenes' };
 const RANK_LABELS = { kingdom: 'Reino', phylum: 'Filo', class: 'Clase', order: 'Orden', family: 'Familia' };
 
 export function mount(el, { go }) {
   let catalogs = null;
-  let savedAt = null;       // fecha de la copia guardada si la lista no viene del servidor
+  let fromDevice = false;   // la lista sale del dispositivo (sin servidor)
+  let locals = new Map();   // id → registro local (downloadedAt…)
   let loadError = null;
   let alive = true;
 
@@ -43,8 +49,8 @@ export function mount(el, { go }) {
   // --- Lista ------------------------------------------------------------------------------------
   function paintList() {
     const note = $('#catalogNote', el);
-    note.hidden = !savedAt;
-    note.textContent = savedAt ? savedCopyText(savedAt) : '';
+    note.hidden = !fromDevice;
+    note.textContent = fromDevice ? 'Datos del dispositivo · sin conexión con el servidor' : '';
     if (loadError) {
       render(list, html`<li class="empty"><p>${loadError}</p>
         <button type="button" class="btn-secondary" id="retry">Reintentar</button></li>`);
@@ -71,6 +77,7 @@ export function mount(el, { go }) {
             <span class="badge">${ROLE_LABELS[c.role] || c.role}</span>
             <span class="badge">${plural(c.speciesCount || 0, 'especie', 'especies')}</span>
             ${c.id === activeId ? html`<span class="badge ok">Activo</span>` : ''}
+            ${locals.get(c.id) && locals.get(c.id).downloadedAt ? html`<span class="badge ok">Sin conexión ✓</span>` : ''}
           </span>
         </button>
       </li>`)}`);
@@ -83,22 +90,36 @@ export function mount(el, { go }) {
     loadError = null;
     paintList();
     try {
-      // TODO F5: sin servidor, leer los catálogos de IndexedDB en vez de la copia de localStorage.
-      const res = await apiGetWithCopy('/catalogs');
+      const res = await remoteOrLocal(async () => {
+        const { catalogs: list } = await apiGetJson('/catalogs');
+        await saveCatalogList(list);
+        // Los que ya no llegan (expulsado o borrado) salen del dispositivo, salvo marcas sin subir.
+        const ids = new Set(list.map((c) => c.id));
+        for (const c of await localCatalogs()) if (!ids.has(c.id) && !c.revoked) await handleNotMember(c.id);
+        return list;
+      }, async () => {
+        const list = (await localCatalogs()).filter((c) => !c.revoked && c.role);
+        return list.length ? list : null;
+      });
       if (!alive) return;
-      catalogs = res.data.catalogs;
-      savedAt = res.savedAt;
-      // Con la copia no se sabe si el activo sigue siendo accesible: se comprueba al volver el servidor.
-      if (!savedAt) syncActive();
+      catalogs = res.data;
+      fromDevice = res.fromDevice;
+      await refreshLocals();
+      // Sin servidor no se sabe si el activo sigue siendo accesible: se comprueba al volver.
+      if (!fromDevice) syncActive();
     } catch (e) {
       if (!alive) return;
       loadError = e.offline ? OFFLINE_EMPTY : e.message;
       catalogs = null;
-      savedAt = null;
+      fromDevice = false;
     }
     paintList();
     asideFor = null;
     paintAside();
+  }
+
+  async function refreshLocals() {
+    locals = new Map((await localCatalogs().catch(() => [])).map((c) => [c.id, c]));
   }
 
   // El catálogo activo guardado puede haber cambiado de nombre o de rol, o ya no ser accesible.
@@ -112,7 +133,7 @@ export function mount(el, { go }) {
 
   // --- Datos del catálogo activo -----------------------------------------------------------------
   let asideFor = null;
-  let asideSavedAt = null;
+  let asideDevice = null;    // registro local si los datos salen del dispositivo
   let editing = false;
 
   function treeNode(node) {
@@ -140,17 +161,20 @@ export function mount(el, { go }) {
     render(aside, html`<div class="panel muted">Cargando datos del catálogo…</div>`);
     try {
       const id = encodeURIComponent(active.id);
-      // TODO F5: como la lista, desde IndexedDB.
       const [one, tree] = await Promise.all([
-        apiGetWithCopy('/catalogs/' + id), apiGetWithCopy(`/catalogs/${id}/tree`),
+        remoteOrLocal(() => apiGetJson('/catalogs/' + id), () => localCatalogData(active.id)),
+        remoteOrLocal(() => apiGetJson(`/catalogs/${id}/tree`), async () => {
+          const c = await localCatalog(active.id);
+          return c && c.downloadedAt ? { tree: await localTree(active.id) } : null;
+        }),
       ]);
       if (!alive || asideFor !== active.id) return;
-      asideSavedAt = one.savedAt || tree.savedAt;
+      asideDevice = one.fromDevice ? one.data.local : null;
       paintData(one.data.catalog, one.data.summary, tree.data.tree);
     } catch (e) {
       if (alive && asideFor === active.id) {
         render(aside, html`<div class="panel muted">${e.offline
-          ? 'Sin conexión con el servidor. Los datos del catálogo se guardarán en el dispositivo en F5.' : e.message}</div>`);
+          ? 'Sin conexión con el servidor y este catálogo no está descargado en el dispositivo.' : e.message}</div>`);
       }
     }
   }
@@ -158,10 +182,11 @@ export function mount(el, { go }) {
   function paintData(catalog, summary, tree) {
     const groups = Object.entries(summary.byTaxonomicGroup);
     const cats = iucnEntries(summary.byIucnCategory);
-    const isOwner = catalog.role === 'owner';
+    // Sin servidor no se edita: lo que necesita red no se ofrece.
+    const isOwner = catalog.role === 'owner' && !asideDevice;
     render(aside, html`<div class="panel summary">
       <p class="eyebrow">Datos del catálogo · ${ROLE_LABELS[catalog.role] || catalog.role}</p>
-      ${asideSavedAt ? html`<p class="copy-note">${savedCopyText(asideSavedAt)}</p>` : ''}
+      ${asideDevice ? html`<p class="copy-note">${localNote(asideDevice)}</p>` : ''}
       ${editing ? html`
         <form class="form edit-catalog" novalidate>
           <label class="field"><span>Nombre</span><input name="name" required maxlength="120" value="${catalog.name}"></label>
@@ -173,8 +198,9 @@ export function mount(el, { go }) {
         <h3>${catalog.name}</h3>
         ${catalog.description ? html`<p>${catalog.description}</p>` : ''}`}
       <p class="stat"><strong>${summary.total}</strong> ${summary.total === 1 ? 'especie' : 'especies'}</p>
+      <div class="offline-box" id="offlineBox" aria-live="polite"></div>
       <div class="form-actions aside-actions">
-        ${ADD_ROLES.includes(catalog.role) ? html`<button type="button" class="btn-primary" data-add-species>Añadir especies</button>` : ''}
+        ${ADD_ROLES.includes(catalog.role) && !asideDevice ? html`<button type="button" class="btn-primary" data-add-species>Añadir especies</button>` : ''}
         ${isOwner && !editing ? html`<button type="button" class="link-btn" data-edit>Renombrar o editar descripción</button>` : ''}
       </div>
       ${cats.length ? html`<h4>Por categoría UICN</h4><dl class="counts">${cats.map(([k, n]) => html`
@@ -188,6 +214,7 @@ export function mount(el, { go }) {
     </div>`);
 
     const on = (sel, fn) => { const n = $(sel, aside); if (n) n.addEventListener('click', fn); };
+    paintOffline(catalog, summary.total);
     on('[data-add-species]', () => openAddSpecies(catalog, { onChanged: () => { asideFor = null; load(); } }));
     on('[data-edit]', () => { editing = true; paintData(catalog, summary, tree); $('.edit-catalog input', aside).focus(); });
     on('[data-cancel-edit]', () => { editing = false; paintData(catalog, summary, tree); $('[data-edit]', aside).focus(); });
@@ -222,6 +249,50 @@ export function mount(el, { go }) {
     }
   }
 
+  // --- «Llevar al campo» ---------------------------------------------------------------------------
+  let offlineFor = null;    // {catalog, total} del recuadro pintado
+  let offlineError = null;
+
+  async function paintOffline(catalog, total) {
+    offlineFor = { catalog, total };
+    const box = $('#offlineBox', aside);
+    if (!box) return;
+    const local = await localCatalog(catalog.id).catch(() => null);
+    if (!alive || !box.isConnected) return;
+    const dl = state.downloads[catalog.id];
+    if (dl) {
+      const pct = dl.phase === 'images' && dl.total ? Math.round((dl.done / dl.total) * 100) : null;
+      render(box, html`<p class="offline-status"><strong>${PHASES[dl.phase] || 'Descargando…'}</strong>
+          ${dl.phase === 'images' && dl.total ? html` ${dl.done} de ${dl.total}` : ''}</p>
+        <progress max="100" ${pct === null ? '' : html`value="${pct}"`} aria-label="Progreso de la descarga"></progress>`);
+      return;
+    }
+    const done = local && local.downloadedAt;
+    const size = formatBytes(estimateBytes(total));
+    render(box, html`
+      ${done ? html`<p class="offline-status ok"><strong>Disponible sin conexión · ${shortDate(local.downloadedAt)}</strong></p>` : ''}
+      ${offlineError ? html`<p class="form-error" role="alert">${offlineError}</p>` : ''}
+      ${state.online ? html`<button type="button" class="${done ? 'link-btn' : 'btn-primary'}" data-download>
+          ${done ? 'Actualizar la copia del dispositivo' : 'Descargar para usar sin conexión'}</button>
+        ${done ? '' : html`<p class="hint">Tamaño estimado: ~${size} (fichas, marcas del equipo y una foto de cada una de las
+          ${plural(total, 'especie', 'especies')}).</p>`}`
+        : done ? '' : html`<p class="hint">Necesitas conexión para descargarlo.</p>`}`);
+    const btn = $('[data-download]', box);
+    if (btn) {
+      btn.addEventListener('click', () => {
+        offlineError = null;
+        startDownload(catalog.id).catch((e) => { offlineError = e.message; })
+          .finally(async () => { await refreshLocals(); if (alive) { paintList(); repaintOffline(); } });
+      });
+    }
+  }
+
+  function repaintOffline() {
+    if (offlineFor && state.activeCatalog && state.activeCatalog.id === offlineFor.catalog.id) {
+      paintOffline(offlineFor.catalog, offlineFor.total);
+    }
+  }
+
   async function removeCatalog(catalog) {
     const ok = await confirmDialog({
       key: 'borrar-catalogo', title: 'Borrar catálogo', danger: true, confirmLabel: 'Borrar catálogo',
@@ -246,7 +317,12 @@ export function mount(el, { go }) {
 
   const unsubscribe = subscribe((key) => {
     if (key === 'activeCatalog') { paintList(); paintAside(); }
-    if (key === 'online' && state.online && (loadError || savedAt || asideSavedAt)) load();
+    if (key === 'online' && state.online && (loadError || fromDevice || asideDevice)) load();
+    else if (key === 'online') repaintOffline();
+    if (key === 'download') {
+      repaintOffline();
+      refreshLocals().then(() => { if (alive && catalogs) paintList(); });
+    }
   });
 
   load();

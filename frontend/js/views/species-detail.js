@@ -5,13 +5,17 @@
 // Galería con atribución, descripción, clasificación, evaluaciones UICN, estado legal (nacional y
 // Andalucía) y el NIVEL DE SENSIBILIDAD dentro del catálogo activo: todos lo ven; solo el owner lo
 // cambia. Bajar respecto al sugerido exige motivo: lo valida el servidor (422) y aquí se muestra.
+// Sin servidor, la ficha y el nivel salen del catálogo descargado (IndexedDB) y las fotos, de Cache
+// Storage (las sirve el SW). Debajo del nivel, las marcas de la especie en el catálogo activo (F5).
 // ================================================================================================
 
-import { apiGetJson, apiPutJson, getSpeciesFilters } from '../api.js';
+import { apiGetJson, apiPutJson } from '../api.js';
 import { state } from '../state.js';
 import { html, render, $, sciName, sciNameText } from '../util.js';
 import { openOverlay } from '../components/overlay.js';
 import { iucnBadge, iucnClass } from '../components/species-card.js';
+import { mountMarks } from '../components/marks.js';
+import { remoteOrLocal, localSpecies, localCatalogData, sensitivityLevels, localNote } from '../offline.js';
 
 // --- Estado legal en versalitas: «CEEA · VULNERABLE», «DIR. HÁBITATS · ANEXO II» -------------------
 const NORMS = [
@@ -78,26 +82,34 @@ function fmtDate(s) {
  */
 export function openSpeciesDetail(taxonID, { onChanged } = {}) {
   let alive = true;
+  let marks = null;
+  let fromDevice = false;   // sin servidor: el nivel no se puede cambiar
   const ov = openOverlay({ key: 'ficha-especie', title: 'Ficha de especie', variant: 'side', className: 'species-detail',
-    onClose: () => { alive = false; } });
+    onClose: () => { alive = false; if (marks) marks.destroy(); } });
   render(ov.body, html`<p class="muted">Cargando ficha…</p>`);
 
   const active = state.activeCatalog;
+  const localCard = async () => { const sp = await localSpecies(taxonID); return sp ? { species: sp } : null; };
   Promise.all([
-    apiGetJson('/species/' + encodeURIComponent(taxonID), { timeoutMs: 30000 }),
-    active ? apiGetJson('/catalogs/' + encodeURIComponent(active.id)).catch(() => null) : Promise.resolve(null),
-    getSpeciesFilters().catch(() => null),
-  ]).then(([{ species }, catalogData, filters]) => {
+    remoteOrLocal(() => apiGetJson('/species/' + encodeURIComponent(taxonID), { timeoutMs: state.online ? 30000 : 3000 }), localCard),
+    active ? remoteOrLocal(() => apiGetJson('/catalogs/' + encodeURIComponent(active.id)), () => localCatalogData(active.id))
+      .catch(() => null) : Promise.resolve(null),
+    sensitivityLevels(),
+  ]).then(([one, cat, levels]) => {
     if (!alive) return;
+    const species = one.data.species;
+    const catalogData = cat ? cat.data : null;
     const inCatalog = catalogData && catalogData.species.find((s) => s.taxonID === species.taxonID);
-    paint(species, catalogData, inCatalog, filters ? filters.sensitivityLevels : []);
+    paint(species, catalogData, inCatalog, levels, one.fromDevice ? (catalogData && catalogData.local) || {} : null);
   }).catch((e) => {
     if (!alive) return;
-    render(ov.body, html`<p class="form-error">${e.status === 0 && !state.online
-      ? 'Sin conexión: la ficha necesita red por ahora.' : e.message}</p>`);
+    render(ov.body, html`<p class="guard-band warn">${e.offline
+      ? 'Esta ficha no está en el dispositivo. Descarga su catálogo con red («Descargar para usar sin conexión») para verla en el campo.'
+      : e.message}</p>`);
   });
 
-  function paint(sp, catalogData, inCatalog, levels) {
+  function paint(sp, catalogData, inCatalog, levels, device) {
+    fromDevice = !!device;
     ov.setTitle(sciNameText(sp));
     const cls = sp.classification || {};
     const ranks = [['Reino', cls.kingdom], ['Filo', cls.phylum], ['Clase', cls.class], ['Orden', cls.order], ['Familia', cls.family]];
@@ -105,6 +117,7 @@ export function openSpeciesDetail(taxonID, { onChanged } = {}) {
     const images = sp.images || [];
     render(ov.body, html`
       <article class="detail">
+        ${device ? html`<p class="copy-note" role="status">${localNote(device)}</p>` : ''}
         ${images.length ? html`<div class="gallery" role="list" aria-label="Fotos">${images.map((img, i) => html`
           <figure class="gallery-item" role="listitem">
             <img src="${img.url}" loading="${i ? 'lazy' : 'eager'}" decoding="async"
@@ -123,6 +136,9 @@ export function openSpeciesDetail(taxonID, { onChanged } = {}) {
 
         <section class="detail-sec" aria-labelledby="d-sens"><h4 id="d-sens">Nivel de sensibilidad</h4>
           <div class="sens-box"></div></section>
+
+        ${inCatalog ? html`<section class="detail-sec" aria-labelledby="d-marks"><h4 id="d-marks">Marcas en «${catalogData.catalog.name}»</h4>
+          <div class="marks-box"></div></section>` : ''}
 
         <section class="detail-sec" aria-labelledby="d-cls"><h4 id="d-cls">Clasificación</h4>
           <ol class="crumbs">${ranks.map(([r, v]) => html`<li><span class="crumb-rank">${r}</span> ${v || '—'}</li>`)}</ol>
@@ -159,6 +175,16 @@ export function openSpeciesDetail(taxonID, { onChanged } = {}) {
           rel="noopener noreferrer">Ver en EIDOS</a></p>` : ''}
       </article>`);
     paintSensitivity(sp, catalogData, inCatalog, levels);
+    // Fotos que no están guardadas en el dispositivo: fuera, en vez del icono de imagen rota.
+    ov.body.addEventListener('error', (ev) => {
+      const fig = ev.target instanceof HTMLImageElement && ev.target.closest('.gallery-item');
+      if (fig) fig.remove();
+    }, true);
+    if (inCatalog) {
+      if (marks) marks.destroy();
+      marks = mountMarks($('.marks-box', ov.body), { species: sp, catalog: { ...catalogData.catalog, role: catalogData.catalog.role },
+        levels, sensitivity: inCatalog.sensitivity });
+    }
   }
 
   function paintSensitivity(sp, catalogData, inCatalog, levels) {
@@ -178,7 +204,7 @@ export function openSpeciesDetail(taxonID, { onChanged } = {}) {
       return;
     }
     const s = inCatalog.sensitivity;
-    const isOwner = cat.role === 'owner';
+    const isOwner = cat.role === 'owner' && !fromDevice;
     const levelOptions = [1, 2, 3, 4].map((n) => html`<option value="${n}" ${n === s.level ? html`selected` : ''}>${levelText(levels, n)}</option>`);
     render(box, html`
       <p class="sens-current level-${s.level}"><strong>${levelText(levels, s.level)}</strong></p>
@@ -195,7 +221,8 @@ export function openSpeciesDetail(taxonID, { onChanged } = {}) {
             <textarea name="reason" rows="2" maxlength="255"></textarea></label>
           <p class="form-error" role="alert" hidden></p>
           <div class="form-actions"><button type="submit" class="btn-primary">Guardar nivel</button></div>
-        </form>` : html`<p class="hint">Solo el propietario del catálogo puede cambiar el nivel.</p>`}`);
+        </form>` : html`<p class="hint">${fromDevice ? 'Sin conexión: el nivel se cambia con red.'
+          : 'Solo el propietario del catálogo puede cambiar el nivel.'}</p>`}`);
     if (!isOwner) return;
 
     const form = $('.sens-form', box);

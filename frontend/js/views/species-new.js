@@ -4,6 +4,8 @@
 // Se abre desde «Sin resultados» del buscador (con el texto precargado) y desde el constructor.
 // 201 → clasificación obtenida y SU FUENTE (género en EIDOS o GBIF) con aviso de guarda.
 // 409 → «Ya existe» con enlace a su ficha: nunca se crean duplicados.
+// Sin servidor y dentro de un catálogo (F5): se guarda en el dispositivo con taxonID biodex:<uuid> y
+// sync.js la da de alta al volver la red (si el nombre ya existe, sus marcas pasan a la existente).
 // ================================================================================================
 
 import { apiPostJson } from '../api.js';
@@ -11,6 +13,8 @@ import { state } from '../state.js';
 import { html, render, $, sciName } from '../util.js';
 import { openOverlay } from '../components/overlay.js';
 import { openSpeciesDetail } from './species-detail.js';
+import { createLocalSpecies } from '../marks.js';
+import { requestSync } from '../sync.js';
 
 const RANKS = [['Species', 'Especie'], ['Subspecies', 'Subespecie'], ['Variety', 'Variedad'], ['Form', 'Forma']];
 const SPECIES_RE = /^\p{Lu}\p{Ll}+ \p{Ll}[\p{Ll}-]+$/u;
@@ -31,8 +35,9 @@ function tidy(name) {
  * Abre el formulario.
  *   initialName  texto buscado
  *   onAdd(sp)    si se da, «Añadir a la selección» con la especie recién creada (tarjeta)
+ *   catalog      {id, name}: sin servidor, la especie se guarda en el dispositivo dentro de él
  */
-export function openSpeciesNew({ initialName = '', onAdd } = {}) {
+export function openSpeciesNew({ initialName = '', onAdd, catalog = null } = {}) {
   const ov = openOverlay({ key: 'nueva-especie', title: 'Crear especie', variant: 'dialog', className: 'species-new' });
 
   function paintForm(values = {}) {
@@ -77,7 +82,16 @@ export function openSpeciesNew({ initialName = '', onAdd } = {}) {
           : 'Escribe el trinomio sin autor: «Genus epithet subsp. infra» (o var. / f.).', 'scientificName');
       }
       if (!body.scientificNameAuthorship) return fail('Indica la autoría («Autor, año»).', 'scientificNameAuthorship');
-      if (!state.online) return fail('Sin conexión: crear una especie necesita red.');
+      if (!state.online) {
+        if (!catalog) return fail('Sin conexión: crear una especie necesita red.');
+        try {
+          const sp = await createLocalSpecies(body, catalog.id);
+          requestSync();
+          paintSavedLocal(sp);
+          if (onAdd) Promise.resolve(onAdd(sp)).catch(() => {});
+        } catch (e) { fail(e.message); }
+        return;
+      }
       const button = $('button[type="submit"]', form);
       button.disabled = true;
       button.textContent = 'Consultando EIDOS y GBIF…';
@@ -121,6 +135,18 @@ export function openSpeciesNew({ initialName = '', onAdd } = {}) {
     $('[data-open]', ov.body).addEventListener('click', () => { ov.close(); openSpeciesDetail(sp.taxonID); });
     $('[data-close]', ov.body).addEventListener('click', () => ov.close());
     if (!add) $('[data-open]', ov.body).focus();
+  }
+
+  function paintSavedLocal(sp) {
+    ov.setTitle('Especie guardada');
+    render(ov.body, html`
+      <p class="detail-name">${sciName(sp)}</p>
+      <p class="guard-band info">Guardada en el dispositivo y añadida a «${catalog.name}». Ya puedes marcarla.
+        Al sincronizar se dará de alta en BioDex con su clasificación; si ya existe con ese nombre, tus
+        marcas pasarán a la existente.</p>
+      <div class="form-actions dialog-actions"><button type="button" class="btn-primary" data-close>Cerrar</button></div>`);
+    $('[data-close]', ov.body).addEventListener('click', () => ov.close());
+    $('[data-close]', ov.body).focus();
   }
 
   function paintExisting(values, data) {

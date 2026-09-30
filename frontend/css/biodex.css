@@ -452,6 +452,48 @@ body.has-overlay{overflow:hidden}
 .species-rows>li{list-style:none}
 .species-rows .empty{max-width:none}
 
+/* --- F5: sin conexión, marcas y sincronización --- */
+/* «n pendientes» en el cartel, junto al indicador de conexión */
+.pending-count{display:inline-flex;align-items:center;min-height:var(--tap-min);padding:0 10px;border:1px solid var(--brass);
+  border-radius:var(--radius-md);color:var(--brass-ink);font-size:var(--fs-xs);font-weight:700;letter-spacing:var(--tracking-caps);
+  text-transform:uppercase;text-decoration:none;white-space:nowrap}
+.pending-count.is-syncing{border-style:dashed}
+/* Fila de especie + «Marcar aquí» */
+.species-rows>li.sp-item{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:stretch}
+.sp-mark{min-width:var(--tap-big);padding:0 12px;border:1px solid var(--line);border-left:0;background:var(--surface);
+  color:var(--leaf);font-weight:700;font-size:var(--fs-sm);cursor:pointer;border-radius:0 var(--radius-sm) var(--radius-sm) 0}
+.sp-mark:hover{background:var(--leaf-fill);color:var(--cream)}
+/* Descarga del catálogo */
+.offline-box{margin:10px 0 4px;display:grid;gap:6px;justify-items:start}
+.offline-status{margin:0;font-size:var(--fs-sm);color:var(--ink-soft)}
+.offline-status.ok{color:var(--leaf)}
+.offline-box progress{width:100%;height:8px;accent-color:var(--leaf-fill)}
+/* Marcas */
+.marks-head{margin-bottom:6px}
+.marks{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.mark{display:grid;gap:2px;padding:8px 10px;background:var(--surface);border:1px solid var(--line);
+  border-left:var(--rule) solid var(--line-strong);border-radius:var(--radius-sm)}
+.mark-main{display:flex;flex-wrap:wrap;align-items:center;gap:2px 10px}
+.mark-main .badge+.badge{margin-left:0;padding-left:0;border-left:0}
+.mark-when{font-weight:700;font-variant-numeric:tabular-nums}
+.mark-coord{color:var(--muted);font-size:var(--fs-sm);font-variant-numeric:tabular-nums}
+.mark-note{margin:2px 0 0;font-size:var(--fs-sm);color:var(--ink-soft);white-space:pre-line}
+.mark-generalized{margin:2px 0 0;font-size:var(--fs-sm);font-weight:700;color:var(--warn-ink)}
+.mark-del{justify-self:start;min-height:36px;padding:0;color:var(--danger)}
+.badge.danger{color:var(--danger)}
+.danger-link{color:var(--danger)}
+.mark-dialog .mark-species{margin:0 0 8px;font-size:var(--fs-md)}
+.mark-gps{margin:0 0 12px;min-height:1.5em}
+.mark-gps .guard-band{display:block}
+.gps-wait{color:var(--muted)}
+/* Ajustes */
+.plain-list{margin:0 0 8px;padding-left:18px}
+.revoked{display:block;margin-top:12px}
+.revoked p{margin:0 0 6px}
+.file-btn{position:relative;overflow:hidden;cursor:pointer}
+.file-btn input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.file-btn:focus-within{outline:3px solid var(--brass);outline-offset:2px}
+
 /* ===== Escritorio (≥ 900 px): pestañas bajo el cartel y contenido a lo ancho =================== */
 @media (min-width:900px){
   .app-sign{padding:14px 32px;position:static}
@@ -503,6 +545,8 @@ body.has-overlay{overflow:hidden}
   /* Especies como tabla: cabecera fija y columnas alineadas */
   .table-head,.sp{grid-template-columns:minmax(0,2.2fr) minmax(0,1fr) 170px 150px}
   .table-head{display:grid;column-gap:12px;padding:0 14px 6px 18px;color:var(--muted)}
+  .table-head{grid-template-columns:minmax(0,2.2fr) minmax(0,1fr) 170px 150px 120px}
+  .sp-mark{width:120px;margin-top:-1px}
   .species-rows{gap:0}
   .sp{padding:10px 14px;border-radius:0;margin-top:-1px}
   .sp-name,.sp-group{grid-column:auto}

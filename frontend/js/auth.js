@@ -8,11 +8,19 @@
 //     plano (corte de 3 s): 200 actualiza el usuario; 401 → acceso con aviso de sesión caducada (vía
 //     biodex:unauthorized); caído o timeout no cambian nada (la cabecera dirá «Servidor no disponible»).
 //   · sin usuario guardado → hace falta red: GET /auth/me decide entre la app y la pantalla de acceso.
+// Cerrar sesión (F5): con marcas sin sincronizar se BLOQUEA con un diálogo (sincronizar, exportar
+// respaldo o cancelar): nunca se borran sin que el usuario lo decida. Al cerrar, se borra la base
+// `biodex-<userId>` y las imágenes de sus catálogos (dispositivos compartidos).
 // ================================================================================================
 
-import { apiGetJson, apiPostJson, apiPostQuiet, clearApiCopies } from './api.js';
-import { state, setUser, setNotice } from './state.js';
-import { html, render, $ } from './util.js';
+import { apiGetJson, apiPostJson, apiPostQuiet } from './api.js';
+import { state, setUser, setNotice, setActiveCatalog } from './state.js';
+import { html, render, $, plural } from './util.js';
+import { hasDb, getAll, deleteUserDb, closeDb } from './db.js';
+import { queueCounts, downloadBackup } from './marks.js';
+import { syncNow, stopSync, syncIdle } from './sync.js';
+import { IMG_CACHE_PREFIX } from './offline.js';
+import { openOverlay } from './components/overlay.js';
 
 export const SESSION_EXPIRED = 'Tu sesión ha caducado. Lo que tengas en este dispositivo se conserva.';
 const ME_TIMEOUT_MS = 3000;
@@ -48,12 +56,84 @@ function validateSessionInBackground() {
     });
 }
 
+/** Aviso para la pantalla de acceso tras un 401: si hay cola, se dice cuánto espera a sincronizarse. */
+export function sessionExpiredText() {
+  const n = state.sync.unsynced;
+  return n ? `Inicia sesión para sincronizar (${plural(n, 'pendiente', 'pendientes')}). Lo que tienes en este dispositivo se conserva.`
+    : SESSION_EXPIRED;
+}
+
+const unsyncedNow = async () => (hasDb() ? (await queueCounts()).unsynced : 0);
+
+/**
+ * ¿Se puede cerrar sesión? Sin marcas pendientes, sí. Con pendientes, diálogo «Tienes n marcas sin
+ * sincronizar» → Sincronizar ahora · Exportar respaldo · Cancelar. Resuelve true solo si el usuario
+ * lo decide (todo sincronizado, o respaldo exportado y confirmado).
+ */
+export async function confirmLogout() {
+  if (!(await unsyncedNow())) return true;
+  return new Promise((resolve) => {
+    let result = false;
+    let exported = 0;
+    let message = null;
+    const ov = openOverlay({ key: 'cerrar-sesion', title: 'Marcas sin sincronizar', variant: 'dialog',
+      onClose: () => resolve(result) });
+
+    async function paint() {
+      const n = await unsyncedNow();
+      if (!ov.isOpen()) return;
+      if (!n) { result = true; ov.close(true); return; }
+      render(ov.body, html`
+        <p class="dialog-text"><strong>Tienes ${plural(n, 'marca', 'marcas')} sin sincronizar.</strong>
+          Si cierras sesión se borran de este dispositivo. Sincronízalas o guarda un respaldo antes.</p>
+        ${message ? html`<p class="guard-band ${message.kind}" role="status">${message.text}</p>` : ''}
+        ${state.online ? '' : html`<p class="hint">Sin conexión: para sincronizar necesitas red. El respaldo se guarda sin ella.</p>`}
+        <div class="form-actions dialog-actions">
+          <button type="button" class="btn-primary" data-sync ${state.sync.running || !state.online ? html`disabled` : ''}>Sincronizar ahora</button>
+          <button type="button" class="btn-secondary" data-export>Exportar respaldo</button>
+          <button type="button" class="link-btn" data-cancel>Cancelar</button>
+        </div>
+        ${exported ? html`<div class="danger-zone">
+          <button type="button" class="btn-secondary danger" data-wipe>Cerrar sesión y borrar del dispositivo</button>
+          <p class="hint">El respaldo guardado se puede importar después en Ajustes.</p></div>` : ''}`);
+      $('[data-cancel]', ov.body).addEventListener('click', () => ov.close(true));
+      $('[data-sync]', ov.body).addEventListener('click', async (ev) => {
+        ev.currentTarget.disabled = true;
+        ev.currentTarget.textContent = 'Sincronizando…';
+        await syncNow();
+        const left = await unsyncedNow();
+        message = left ? { kind: 'warn', text: state.sync.error || 'Quedan marcas que el servidor ha rechazado: revísalas en Ajustes › Sincronización.' } : null;
+        paint();
+      });
+      $('[data-export]', ov.body).addEventListener('click', async () => {
+        exported = await downloadBackup();
+        message = { kind: 'info', text: `Respaldo descargado (${plural(exported, 'marca', 'marcas')}).` };
+        exported = exported || 1;
+        paint();
+      });
+      const wipe = $('[data-wipe]', ov.body);
+      if (wipe) wipe.addEventListener('click', () => { result = true; ov.close(true); });
+      $(state.online ? '[data-sync]' : '[data-export]', ov.body).focus();
+    }
+    paint();
+  });
+}
+
+/** Cierra la sesión y borra los datos de este usuario del dispositivo (llamar tras confirmLogout). */
 export async function logout() {
+  stopSync();
+  await syncIdle();
   // Con el servidor caído no se espera al corte: el token caduca solo en el servidor.
   if (state.online) await apiPostQuiet('/auth/logout');
-  // TODO F5: decidir aquí qué pasa con los datos locales (IndexedDB) al cerrar sesión: las marcas
-  // sin sincronizar no se pueden borrar sin avisar.
-  clearApiCopies();
+  const userId = state.user && state.user.id;
+  if (userId && hasDb()) {
+    const ids = (await getAll('catalogs').catch(() => [])).map((c) => c.id);
+    if ('caches' in window) await Promise.all(ids.map((id) => caches.delete(IMG_CACHE_PREFIX + id).catch(() => {})));
+    await deleteUserDb(userId);
+  } else {
+    closeDb();
+  }
+  setActiveCatalog(null);
   setUser(null);
 }
 

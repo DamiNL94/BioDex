@@ -4,12 +4,16 @@
 // Rutas: #/mapa · #/catalogos · #/especies · #/ajustes. Cambiar de sección NO apila historial
 // (replaceState): en el móvil «atrás» deshace el último panel abierto, no el último toque de pestaña.
 // Ajustes sí se abre como nivel de BioDexNav, para que «atrás» devuelva a la sección de la que se vino.
+// F5: al entrar se abre la base local del usuario (db.js) y arranca el motor de sincronización
+// (sync.js); la cabecera muestra «n pendientes» junto al indicador de conexión mientras haya cola.
 // ================================================================================================
 
 import { state, subscribe, setConnection, setNotice, APP_VERSION, CONNECTION_LABELS } from './state.js';
-import { checkHealth } from './api.js';
-import { bootSession, renderAuth, logout, SESSION_EXPIRED } from './auth.js';
-import { html, render, $, $$ } from './util.js';
+import { checkHealth, clearLegacyCopies } from './api.js';
+import { bootSession, renderAuth, logout, confirmLogout, sessionExpiredText } from './auth.js';
+import { html, render, $, $$, plural } from './util.js';
+import { openUserDb } from './db.js';
+import { startSync, stopSync } from './sync.js';
 import * as mapView from './views/map.js';
 import * as catalogsView from './views/catalogs.js';
 import * as speciesView from './views/species.js';
@@ -43,6 +47,7 @@ let banner = null;        // aviso de una sola vez bajo la cabecera (p. ej. «re
 // --- Pantalla de acceso ---------------------------------------------------------------------------
 
 function showAuth() {
+  stopSync();
   if (unsubscribeShell) { unsubscribeShell(); unsubscribeShell = null; }
   if (cleanup) { cleanup(); cleanup = null; }
   current = null;
@@ -66,7 +71,17 @@ function showAuth() {
 
 // --- Armazón --------------------------------------------------------------------------------------
 
-function showApp() {
+async function showApp() {
+  let dbError = false;
+  try {
+    await openUserDb(state.user.id);
+  } catch (e) {
+    dbError = true;
+    console.info('IndexedDB no disponible:', e && e.message);
+  }
+  if (dbError) {
+    banner = { kind: 'warn', text: 'Este navegador no deja guardar datos en el dispositivo (¿modo privado?): sin red no podrás trabajar ni marcar.' };
+  }
   document.body.classList.add('in-app');
   const tabs = ['mapa', 'catalogos', 'especies', 'ajustes'].map((key) => html`
     <a class="tab ${key === 'ajustes' ? 'tab-settings' : ''}" href="#/${key}" data-route="${key}">
@@ -80,6 +95,7 @@ function showApp() {
           <p class="sign-title" id="signCatalog"></p>
         </div>
         <div class="sign-tools">
+          <a class="pending-count" id="pendingCount" href="#/ajustes" data-route="ajustes" hidden></a>
           <span class="conn" id="conn" role="status"></span>
           <a class="icon-btn gear" href="#/ajustes" data-route="ajustes" aria-label="Ajustes">${ICONS.settings}</a>
         </div>
@@ -96,11 +112,12 @@ function showApp() {
 
   updateShell();
   unsubscribeShell = subscribe((key) => {
-    if (key === 'online' || key === 'activeCatalog' || key === 'user') updateShell();
+    if (key === 'online' || key === 'activeCatalog' || key === 'user' || key === 'sync') updateShell();
   });
   Nav.setExitGuard(true);
   current = null;
   go(routeFromHash());
+  if (!dbError) startSync();
 }
 
 const CONNECTION_BANDS = {
@@ -118,9 +135,20 @@ function updateShell() {
   render($('#conn', root), html`<span class="conn-dot ${state.online ? '' : 'off'}"></span>
     <span class="conn-label">${CONNECTION_LABELS[state.connection]}</span>`);
 
+  // «n pendientes»: lo que aún no está en el servidor (incluidas las rechazadas, que esperan decisión).
+  const pending = $('#pendingCount', root);
+  const n = state.sync.unsynced;
+  pending.hidden = !n;
+  pending.textContent = n ? plural(n, 'pendiente', 'pendientes') : '';
+  pending.classList.toggle('is-syncing', state.sync.running);
+  pending.setAttribute('aria-label', n ? `${plural(n, 'marca pendiente', 'marcas pendientes')} de sincronizar. Ver en Ajustes` : '');
+
   const band = CONNECTION_BANDS[state.connection];
+  const revoked = state.sync.revoked || [];
   render($('#bands', root), html`
     ${band ? html`<p class="guard-band warn" role="status">${band}</p>` : ''}
+    ${revoked.map((c) => html`<p class="guard-band warn" role="status"><span>Ya no eres miembro de «${c.name}».
+      Tus marcas sin sincronizar de ese catálogo siguen aquí: expórtalas en Ajustes › Sincronización.</span></p>`)}
     ${banner ? html`<p class="guard-band ${banner.kind}" role="status">
       <span>${banner.text}</span>
       ${banner.action ? html`<button type="button" class="link-btn band-action">${banner.action.label}</button>` : ''}
@@ -169,9 +197,12 @@ function show(route) {
   cleanup = ROUTES[route].view.mount(view, { go, onLogout }) || null;
 }
 
+/** Cerrar sesión desde Ajustes. Devuelve false si el usuario lo cancela (marcas sin sincronizar). */
 async function onLogout() {
+  if (!(await confirmLogout())) return false;
   await logout();
   showAuth();
+  return true;
 }
 
 // --- Arranque -------------------------------------------------------------------------------------
@@ -190,7 +221,7 @@ window.addEventListener('hashchange', () => {
 window.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') Nav.back(); });
 window.addEventListener('biodex:unauthorized', () => {
   if (!current) return;
-  setNotice({ kind: 'warn', text: SESSION_EXPIRED });
+  setNotice({ kind: 'warn', text: sessionExpiredText() });
   showAuth();
 });
 
@@ -207,6 +238,7 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+clearLegacyCopies();
 Nav.init();
 document.documentElement.dataset.version = APP_VERSION;
 bootSession().then((where) => (where === 'app' ? showApp() : showAuth()));
