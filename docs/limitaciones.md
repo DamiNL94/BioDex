@@ -1,4 +1,4 @@
-# Limitaciones conocidas (1.0.0 · demo)
+# Limitaciones conocidas (1.1.0 · F10c)
 
 Lista cerrada al terminar F10b (2026-09-30). Recoge lo que BioDex **no hace**, lo que hace de forma **orientativa** y
 lo que **no se ha podido probar** en esta máquina. Cada punto abierto de las listas de F3 a F10a está aquí o marcado
@@ -20,6 +20,10 @@ como resuelto en su lista.
 - **Exportación**: el ZIP no ha pasado el validador de GBIF (sin red a GBIF desde aquí) ni se ha abierto el XLSX en
   Excel o LibreOffice (no hay ofimática en esta máquina). `datasetID` y el correo de contacto del EML quedan para
   cuando se publique en el IPT de GBIF.ES.
+- **Plinian Core validado solo contra el XSD** (3.2.2.7 vendorizado, con el `include` que le falta para compilar:
+  `backend/Lib/plinian/README.md`). No hay un validador público equivalente al de GBIF, y los ejemplos del repositorio de
+  TDWG son de PliC 3.0/3.1. Categoría y criterios van juntos en `ThreatCategory` (el esquema no tiene elemento de
+  criterios); el ámbito es el nombre del catálogo (los catálogos no tienen área geográfica) y la celda siempre de 2 km.
 
 ## UICN, EOO y AOO
 - **Evaluación orientativa.** El asistente aplica los umbrales de la UICN 3.1 a los datos que se le dan; no sustituye

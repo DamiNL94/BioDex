@@ -51,12 +51,15 @@ Rol mínimo según `CATALOG_PERMISSIONS` (`Lib/authz.php`); sin rol o catálogo 
 ## Exportación (`Api/exports.php`, incluido desde `Api/catalogs.php`) — requieren sesión (F10a)
 Se genera en el servidor (`Lib/export.php`, mapeo en `docs/dwc.md`). Cuerpo común: `{mode: public·full, dateFrom?, dateTo?
 (AAAA-MM-DD, hora peninsular), taxonIDs?: [], observers?: [userId], includeAbsences? (true), license? (CC-BY-4.0·CC0-1.0·
-CC-BY-NC-4.0), title?, description?}` (vacíos = los del catálogo). `full` con rol sin `export_full` → 403; opción no válida → 400.
+CC-BY-NC-4.0), title?, description?, formats?: [dwc·plinian·sheets]}` (vacíos = los del catálogo; sin `formats`,
+`["dwc", "sheets"]`: el ZIP de F10a). `full` con rol sin `export_full` → 403; opción no válida o `formats` vacío → 400.
+F10c: con `plinian`, `pliniancore/especies.xml` (Plinian Core 3.2.2.7, `Lib/plinian.php`, mapeo en `docs/plinian.md`); si
+no valida contra el XSD vendorizado → 500 con un mensaje claro y sin ZIP.
 
 | Método · ruta | Rol mínimo | Qué hace |
 |---|---|---|
 | `POST /api/catalogs/{id}/export/preview` | viewer (`full`: custodian) | → `{mode, role, canFull, defaults {title, description, license}, licenses [{value, label, url}], available {species [{taxonID, scientificName, canonicalName, vernacularName, count}], observers [{userId, name, count}], dateMin, dateMax}, summary {occurrences, presences, absences, species, observers, generalized, withheld, measurements}}`. Sin coordenadas; no registra nada |
-| `POST /api/catalogs/{id}/export` | viewer (`full`: custodian) | → `application/zip` `BioDex_<catálogo>_<completa·publicar>_<AAAA-MM-DD>.zip` con `dwca/` (occurrence.txt, measurementorfact.txt, meta.xml, eml.xml), `hojas/` (XLSX y CSV) y `LEEME.txt`. `public`: cada coordenada por `applyPublicVisibility()` (generalizada según el nivel, sea quien sea quien exporta; sin notas libres en las generalizadas). `full`: exactas y una fila `export_full` en `access_log` por descarga |
+| `POST /api/catalogs/{id}/export` | viewer (`full`: custodian) | → `application/zip` `BioDex_<catálogo>_<completa·publicar>_<AAAA-MM-DD>.zip` con, según `formats`, `dwca/` (occurrence.txt, measurementorfact.txt, meta.xml, eml.xml), `hojas/` (XLSX y CSV) y `pliniancore/` (especies.xml, sin coordenadas), y `LEEME.txt`. `public`: cada coordenada por `applyPublicVisibility()` (generalizada según el nivel, sea quien sea quien exporta; sin notas libres en las generalizadas). `full`: exactas y una fila `export_full` en `access_log` por descarga |
 
 ## Equipo (`Api/teams.php`, incluido desde `Api/catalogs.php`, e `Api/invites.php`) — requieren sesión
 Todo cambio de miembros, roles o invitaciones va a `access_log` en la misma transacción. Orden de roles:

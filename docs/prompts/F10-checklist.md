@@ -50,3 +50,18 @@ foco visible con el teclado, erratas de espacio antes de puntuación). Corregido
 «Registro», acciones de marcas y notas y selección del constructor a 36/32 px → 44 px; título de la tarjeta de
 especie (única forma de abrir la ficha) a 21 px → 44 px; «no se calcula : depende» y «de su especie ; en ellas».
 Mensajes: el 500 ya no enseña la excepción en dev (va aparte en `detail`) y los de respaldo no dicen «(HTTP nnn)».
+
+## F10c · Plinian Core (2026-10-01)
+Automático, todo en verde: `test-f10c.php` (47): `formats` inválido o vacío → 400; en los dos modos el XML valida contra
+el XSD vendorizado (`plinianValidate` y `schemaValidate`), un TaxonRecord por especie, categorías oficiales de EIDOS y
+evaluación BioDex en entradas separadas (la BioDex con «NO oficial», evaluadora, fecha y localidades), EOO/AOO =
+`computeMetrics` de las presencias exportadas, filtros de especies y fechas, DwC-A citado solo si va; «para publicar»
+sin ninguna coordenada exacta ni de celda de las especies sensibles, con la nota de información retenida y la
+justificación retenida; «completa» con `export_full`; regresión (sin `formats` = `[dwc, sheets]`, «solo DwC» = mismo
+`dwca/`); la DEMO exporta PliC válido. Siguen en verde `test-f10a` (sin tocarlo), `test-f10b` (tras `reset-demo` +
+`seed-demo`, que ahora exporta PliC al terminar) y `check-sw.php` (SW v12, 67 ficheros).
+Regresión a mano: ZIP de la DEMO en los dos modos con el código de F10a y con el de F10c sin `formats`: 46 de 48
+ficheros idénticos salvo marcas de tiempo; los 2 restantes son el `.xlsx` binario (fechas del ZIP interno), cuyas partes
+XML son idénticas.
+Navegador: «Formatos» con DwC-A y hojas marcados y Plinian Core no; sin ninguno, «Elige al menos un formato» y botón
+desactivado; solo Plinian Core envía `formats: ["plinian"]`. Sin captura (ventana oculta); sin desbordamiento.
