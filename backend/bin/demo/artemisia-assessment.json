@@ -1,0 +1,220 @@
+{
+  "inputs": {
+    "generationLength": null,
+    "A": {
+      "skip": true,
+      "reductionPct": null,
+      "subcriterion": null,
+      "basis": []
+    },
+    "B": {
+      "skip": false,
+      "eoo": 62.455,
+      "aoo": 12,
+      "aooCellKm": 2,
+      "metricsOrigin": null,
+      "eooEdited": false,
+      "aooEdited": false,
+      "severelyFragmented": false,
+      "locations": 3,
+      "decline": [
+        "iii"
+      ],
+      "fluctuation": []
+    },
+    "C": {
+      "skip": true,
+      "mature": null,
+      "matureSource": null,
+      "c1DeclinePct": null,
+      "c1Years": null,
+      "continuingDecline": false,
+      "maxPerSubpop": null,
+      "pctInOneSubpop": null,
+      "extremeFluctuation": false
+    },
+    "D": {
+      "skip": true,
+      "mature": null,
+      "matureSource": null,
+      "plausibleThreat": false,
+      "aoo": null,
+      "locations": null
+    },
+    "E": {
+      "skip": true,
+      "probabilityPct": null,
+      "horizonYears": null
+    },
+    "dataDeficient": false,
+    "expertCategory": null,
+    "regional": {
+      "direction": null
+    }
+  },
+  "result": {
+    "category": "EN",
+    "baseCategory": "EN",
+    "criteriaString": "EN B1ab(iii)+2ab(iii)",
+    "determining": [
+      "B"
+    ],
+    "byCriterion": {
+      "A": {
+        "status": "skipped",
+        "category": null,
+        "notation": null,
+        "levels": {
+          "CR": {
+            "met": false,
+            "notation": null,
+            "reasons": []
+          },
+          "EN": {
+            "met": false,
+            "notation": null,
+            "reasons": []
+          },
+          "VU": {
+            "met": false,
+            "notation": null,
+            "reasons": []
+          }
+        },
+        "notes": [
+          "Sin datos para este criterio."
+        ]
+      },
+      "B": {
+        "status": "met",
+        "levels": {
+          "CR": {
+            "met": false,
+            "notation": null,
+            "reasons": [
+              "(a) 3 localidades > 1 ✗",
+              "(b) disminución continua (iii) ✓",
+              "(c) sin fluctuaciones extremas ✗",
+              "1 de 2 subcriterios en el umbral de CR ✗",
+              "B1: EOO 62,46 km² < 100 ✓",
+              "B2: AOO 12 km² ≥ 10 ✗"
+            ]
+          },
+          "EN": {
+            "met": true,
+            "notation": "B1ab(iii)+2ab(iii)",
+            "reasons": [
+              "(a) 3 localidades ≤ 5 ✓",
+              "(b) disminución continua (iii) ✓",
+              "(c) sin fluctuaciones extremas ✗",
+              "2 de 2 subcriterios en el umbral de EN ✓",
+              "B1: EOO 62,46 km² < 5000 ✓",
+              "B2: AOO 12 km² < 500 ✓"
+            ]
+          },
+          "VU": {
+            "met": true,
+            "notation": "B1ab(iii)+2ab(iii)",
+            "reasons": [
+              "(a) 3 localidades ≤ 10 ✓",
+              "(b) disminución continua (iii) ✓",
+              "(c) sin fluctuaciones extremas ✗",
+              "2 de 2 subcriterios en el umbral de VU ✓",
+              "B1: EOO 62,46 km² < 20000 ✓",
+              "B2: AOO 12 km² < 2000 ✓"
+            ]
+          }
+        },
+        "notes": [],
+        "eoo": 62.455,
+        "aoo": 12,
+        "category": "EN",
+        "notation": "B1ab(iii)+2ab(iii)"
+      },
+      "C": {
+        "status": "skipped",
+        "category": null,
+        "notation": null,
+        "levels": {
+          "CR": {
+            "met": false,
+            "notation": null,
+            "reasons": []
+          },
+          "EN": {
+            "met": false,
+            "notation": null,
+            "reasons": []
+          },
+          "VU": {
+            "met": false,
+            "notation": null,
+            "reasons": []
+          }
+        },
+        "notes": [
+          "Sin datos para este criterio."
+        ]
+      },
+      "D": {
+        "status": "skipped",
+        "category": null,
+        "notation": null,
+        "levels": {
+          "CR": {
+            "met": false,
+            "notation": null,
+            "reasons": []
+          },
+          "EN": {
+            "met": false,
+            "notation": null,
+            "reasons": []
+          },
+          "VU": {
+            "met": false,
+            "notation": null,
+            "reasons": []
+          }
+        },
+        "notes": [
+          "Sin datos para este criterio."
+        ]
+      },
+      "E": {
+        "status": "skipped",
+        "category": null,
+        "notation": null,
+        "levels": {
+          "CR": {
+            "met": false,
+            "notation": null,
+            "reasons": []
+          },
+          "EN": {
+            "met": false,
+            "notation": null,
+            "reasons": []
+          },
+          "VU": {
+            "met": false,
+            "notation": null,
+            "reasons": []
+          }
+        },
+        "notes": [
+          "Sin datos para este criterio."
+        ]
+      }
+    },
+    "warnings": [],
+    "message": null,
+    "basis": "criteria",
+    "regional": {
+      "direction": null,
+      "from": "EN",
+      "to": "EN",
+      "applied": false
+    }
+  }
+}
