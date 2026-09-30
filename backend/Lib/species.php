@@ -27,6 +27,26 @@ const SPECIES_LEGAL_FILTERS = [
     "ue1143"   => "1143/2014",   // Reglamento UE de especies exóticas invasoras
 ];
 
+// Fotos de la Fototeca servidas desde nuestro origen (proxy de nginx, docker/nginx/biodex-app.conf):
+// el móvil puede guardarlas sin respuestas «opacas». Misma forma de ruta que admite nginx.
+const SPECIES_FOTOTECA_ORIGIN = '#^https?://www\.miteco\.gob\.es/content/dam/fototeca/([A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*\.(?:jpe?g|png|webp|gif))$#i';
+const SPECIES_FOTOTECA_PROXY = "/img/fototeca/";
+
+/** URL de la Fototeca → la del proxy; null si no es de la Fototeca (la CSP no la dejaría cargar). */
+function speciesImageUrl(?string $url): ?string {
+    return $url !== null && preg_match(SPECIES_FOTOTECA_ORIGIN, $url, $m) ? SPECIES_FOTOTECA_PROXY . $m[1] : null;
+}
+
+/** Imágenes guardadas con la URL del proxy; las que no se pueden servir se omiten. */
+function speciesImagesOut(array $row): array {
+    $out = [];
+    foreach (json_decode((string) $row["images"], true) ?: [] as $img) {
+        $url = speciesImageUrl($img["url"] ?? null);
+        if ($url !== null) $out[] = ["url" => $url] + $img;
+    }
+    return $out;
+}
+
 function speciesIsEidosId(string $taxonID): bool {
     return ctype_digit($taxonID);
 }
@@ -256,7 +276,7 @@ function speciesExcerpt(?string $text, int $max = 320): ?string {
 
 /** Tarjeta de especie (resultados de búsqueda, listas de catálogo). */
 function speciesSummaryOut(array $row): array {
-    $images = json_decode((string) $row["images"], true) ?: [];
+    $images = speciesImagesOut($row);
     return [
         "taxonID"                  => $row["taxonID"],
         "source"                   => $row["source"],
@@ -294,7 +314,7 @@ function speciesFullOut(array $row): array {
             "andalucia" => $legal["andalucia"],
         ],
         "description"              => $row["description"],
-        "images"                   => json_decode((string) $row["images"], true) ?: [],
+        "images"                   => speciesImagesOut($row),
         "photoAttribution"         => SPECIES_PHOTO_ATTRIBUTION,
         "taxonRemarks"             => $row["taxonRemarks"],
         "suggestedSensitivity"     => ["level" => $level, "reason" => $reason],

@@ -73,7 +73,7 @@ check("«aguila» + Aves → Aquila adalberti", $c === 200 && $ad !== null, "HTT
 check("…nombre canónico y autor por separado", ($ad["canonicalName"] ?? "") === "Aquila adalberti"
     && ($ad["scientificNameAuthorship"] ?? "") !== "" && !str_contains($ad["canonicalName"] ?? "", $ad["scientificNameAuthorship"] ?? "§"),
     json_encode([$ad["canonicalName"] ?? null, $ad["scientificNameAuthorship"] ?? null], JSON_UNESCAPED_UNICODE));
-check("…foto de la fototeca (thumbnail https)", str_starts_with((string) ($ad["thumbnail"] ?? ""), "https://www.miteco.gob.es/"), (string) ($ad["thumbnail"] ?? "null"));
+check("…foto de la fototeca (thumbnail por el proxy, F5a)", str_starts_with((string) ($ad["thumbnail"] ?? ""), "/img/fototeca/"), (string) ($ad["thumbnail"] ?? "null"));
 check("…extracto de descripción", mb_strlen((string) ($ad["descriptionExcerpt"] ?? "")) > 40 && mb_strlen($ad["descriptionExcerpt"]) <= 330);
 $scopes = array_column($ad["iucnAssessments"] ?? [], "scope");
 check("…UICN de todos los ámbitos, la principal primero", count($scopes) >= 2 && $scopes[0] === ($ad["iucnPrimary"]["scope"] ?? "?"),
