@@ -1,6 +1,6 @@
 // Vista Ajustes: cuenta, tema, versión, estado de conexión y cierre de sesión.
 
-import { state, subscribe, setTheme, APP_VERSION } from '../state.js';
+import { state, subscribe, setTheme, APP_VERSION, CONNECTION_LABELS } from '../state.js';
 import { html, render, $ } from '../util.js';
 
 const THEMES = [['system', 'Sistema'], ['light', 'Claro'], ['dark', 'Oscuro']];
@@ -32,14 +32,14 @@ export function mount(el, { onLogout }) {
           <h3>Aplicación</h3>
           <dl class="facts">
             <div><dt>Versión</dt><dd>${APP_VERSION}</dd></div>
-            <div><dt>Conexión</dt><dd>${state.online ? 'En línea' : 'Sin conexión'}</dd></div>
+            <div><dt>Conexión</dt><dd>${CONNECTION_LABELS[state.connection]}</dd></div>
             <div><dt>Uso sin conexión</dt><dd>${sw ? 'Preparado' : 'No disponible en este navegador o aún instalándose'}</dd></div>
           </dl>
         </section>
         <section class="panel">
           <button type="button" class="btn-secondary danger" id="logoutBtn">Cerrar sesión</button>
           <p class="hint">${state.online ? 'Cierra la sesión solo en este dispositivo.'
-            : 'Sin conexión: se olvida la sesión en este dispositivo; el servidor la cerrará cuando caduque.'}</p>
+            : `${CONNECTION_LABELS[state.connection]}: se olvida la sesión en este dispositivo; el servidor la cerrará cuando caduque.`}</p>
         </section>
       </div>`);
 

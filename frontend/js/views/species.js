@@ -5,9 +5,9 @@
 // Cada fila lleva el filete lateral del color de su categoría UICN principal.
 // ================================================================================================
 
-import { apiGetJson } from '../api.js';
+import { apiGetWithCopy } from '../api.js';
 import { state, subscribe, setActiveCatalog } from '../state.js';
-import { html, render, $, plural, sciName, sciNameText, store } from '../util.js';
+import { html, render, $, plural, sciName, sciNameText, store, savedCopyText } from '../util.js';
 import { IUCN_CODES, iucnBadge, iucnClass } from '../components/species-card.js';
 import { openSpeciesDetail } from './species-detail.js';
 import { openAddSpecies } from './catalog-builder.js';
@@ -39,6 +39,7 @@ const fold = (s) => String(s || '').normalize('NFD').replace(/\p{Mn}+/gu, '').to
 export function mount(el, { go }) {
   let alive = true;
   let data = null;
+  let savedAt = null;       // fecha de la copia guardada si las especies no vienen del servidor
   // Filtros y orden: se recuerdan por dispositivo (comodidad), salvo la familia, que es de un viaje.
   const saved = store.get('biodex.speciesFilters', {});
   const f = { text: '', group: saved.group || '', category: saved.category || '', level: saved.level || '',
@@ -62,9 +63,11 @@ export function mount(el, { go }) {
     }
     if (!data) paint(html`<div class="page-head"><h2>Especies</h2></div><p class="muted">Cargando especies…</p>`);
     try {
-      const fresh = await apiGetJson('/catalogs/' + encodeURIComponent(active.id));
+      // TODO F5: sin servidor, leer las especies del catálogo desde IndexedDB en vez de la copia.
+      const res = await apiGetWithCopy('/catalogs/' + encodeURIComponent(active.id));
       if (!alive || !state.activeCatalog || state.activeCatalog.id !== active.id) return;
-      data = fresh;
+      data = res.data;
+      savedAt = res.savedAt;
       paintPage();
     } catch (e) {
       if (!alive) return;
@@ -73,9 +76,13 @@ export function mount(el, { go }) {
         setActiveCatalog(null);
         return;
       }
-      // TODO F5: sin red, leer las especies del catálogo desde IndexedDB.
-      paint(html`<div class="page-head"><h2>Especies</h2></div>
-        <p class="guard-band warn">${e.status === 0 ? 'Sin conexión: la lista de especies necesita red por ahora.' : e.message}</p>`);
+      data = null;
+      paint(e.offline ? html`<div class="page-head"><h2>Especies</h2></div>
+        <section class="placeholder">
+          <h3>Sin conexión con el servidor</h3>
+          <p>Las especies de «${active.name}» se guardarán en el dispositivo en F5.</p>
+        </section>` : html`<div class="page-head"><h2>Especies</h2></div>
+        <p class="guard-band warn">${e.message}</p>`);
     }
   }
 
@@ -107,7 +114,8 @@ export function mount(el, { go }) {
     const opt = (value, label, current) => html`<option value="${value}" ${current === value ? html`selected` : ''}>${label}</option>`;
     paint(html`
       <div class="page-head">
-        <div><h2>Especies</h2><p class="muted">${catalog.name} · ${plural(summary.total, 'especie', 'especies')}</p></div>
+        <div><h2>Especies</h2><p class="muted">${catalog.name} · ${plural(summary.total, 'especie', 'especies')}</p>
+          ${savedAt ? html`<p class="copy-note" role="status">${savedCopyText(savedAt)}</p>` : ''}</div>
         ${canAdd ? html`<button type="button" class="btn-secondary" id="addSpeciesBtn">Añadir especies</button>` : ''}
       </div>
       ${species.length ? html`
@@ -173,7 +181,7 @@ export function mount(el, { go }) {
 
   const unsubscribe = subscribe((key) => {
     if (key === 'activeCatalog') { data = null; f.family = ''; load(); }
-    if (key === 'online' && state.online) load();
+    if (key === 'online' && state.online && (savedAt || !data)) load();
   });
   load();
   return () => { alive = false; unsubscribe(); };

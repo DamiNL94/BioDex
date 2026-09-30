@@ -3,46 +3,57 @@
 // ------------------------------------------------------------------------------------------------
 // La sesión vive en cookies HttpOnly (el JS no las ve). Lo que sí guarda el cliente es el último
 // `user` en localStorage (biodex.user): con él la app arranca sin red, que es lo normal tras varios
-// días en el campo. Reglas de arranque (bootSession):
-//   · sin red y con usuario guardado  → entra directo; la cabecera avisa «Sin conexión».
-//   · con red → GET /auth/me: 200 actualiza el usuario; 401 → acceso con aviso de sesión caducada.
-//     Si el servidor no contesta (caído, timeout) se trata como «sin red».
+// días en el campo. Reglas de arranque (bootSession, F3b):
+//   · con usuario guardado → se pinta la app YA, sin esperar a la red; GET /auth/me va en segundo
+//     plano (corte de 3 s): 200 actualiza el usuario; 401 → acceso con aviso de sesión caducada (vía
+//     biodex:unauthorized); caído o timeout no cambian nada (la cabecera dirá «Servidor no disponible»).
+//   · sin usuario guardado → hace falta red: GET /auth/me decide entre la app y la pantalla de acceso.
 // ================================================================================================
 
-import { apiGetJson, apiPostJson, apiPostQuiet } from './api.js';
+import { apiGetJson, apiPostJson, apiPostQuiet, clearApiCopies } from './api.js';
 import { state, setUser, setNotice } from './state.js';
 import { html, render, $ } from './util.js';
 
 export const SESSION_EXPIRED = 'Tu sesión ha caducado. Lo que tengas en este dispositivo se conserva.';
+const ME_TIMEOUT_MS = 3000;
 
 /** Decide si se entra en la app ('app') o en la pantalla de acceso ('auth'). */
 export async function bootSession() {
+  if (state.user) {
+    validateSessionInBackground();
+    return 'app';
+  }
   if (!navigator.onLine) {
-    if (state.user) return 'app';
     setNotice({ kind: 'warn', text: 'Sin conexión. La primera vez necesitas red para entrar.' });
     return 'auth';
   }
   try {
-    const { user } = await apiGetJson('/auth/me');
+    const { user } = await apiGetJson('/auth/me', { timeoutMs: ME_TIMEOUT_MS });
     setUser(user);
     return 'app';
   } catch (e) {
-    if (e.status === 401) {
-      // Se conserva biodex.user: si el aviso llega en el campo y se pierde la red, se puede seguir
-      // trabajando en local. Solo cerrar sesión a propósito lo borra.
-      if (state.user) setNotice({ kind: 'warn', text: SESSION_EXPIRED });
-      return 'auth';
-    }
-    if (state.user) return 'app';   // servidor inaccesible: como sin red
-    setNotice({ kind: 'warn', text: e.message });
+    if (e.status !== 401) setNotice({ kind: 'warn', text: e.message });
     return 'auth';
   }
 }
 
+// Se conserva biodex.user aunque llegue un 401: si el aviso llega en el campo y se pierde la red, se
+// puede seguir trabajando en local. Solo cerrar sesión a propósito lo borra.
+function validateSessionInBackground() {
+  if (!navigator.onLine) return;
+  apiGetJson('/auth/me', { timeoutMs: ME_TIMEOUT_MS })
+    .then(({ user }) => setUser(user))
+    .catch((e) => {
+      if (e.status === 401) window.dispatchEvent(new CustomEvent('biodex:unauthorized'));
+    });
+}
+
 export async function logout() {
-  if (navigator.onLine) await apiPostQuiet('/auth/logout');
+  // Con el servidor caído no se espera al corte: el token caduca solo en el servidor.
+  if (state.online) await apiPostQuiet('/auth/logout');
   // TODO F5: decidir aquí qué pasa con los datos locales (IndexedDB) al cerrar sesión: las marcas
   // sin sincronizar no se pueden borrar sin avisar.
+  clearApiCopies();
   setUser(null);
 }
 

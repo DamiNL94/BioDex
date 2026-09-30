@@ -47,6 +47,17 @@ export function plural(n, one, many) {
   return `${n} ${n === 1 ? one : many}`;
 }
 
+/**
+ * Línea de datos guardados: «Datos de las 14:05 · sin conexión con el servidor» (o «del 28/9 a las
+ * 14:05» si no son de hoy: tras varios días en el campo la hora sola engaña).
+ */
+export function savedCopyText(savedAt) {
+  const d = new Date(savedAt);
+  const time = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+  const today = d.toDateString() === new Date().toDateString();
+  return `Datos ${today ? 'de las' : `del ${d.getDate()}/${d.getMonth() + 1} a las`} ${time} · sin conexión con el servidor`;
+}
+
 /** Lectura/escritura de localStorage que no revienta en modo privado o con el almacenamiento lleno. */
 export const store = {
   get(key, fallback = null) {

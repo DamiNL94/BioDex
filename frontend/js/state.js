@@ -5,13 +5,14 @@
 //   biodex.user           último `user` de la API: permite entrar sin red (días en el campo)
 //   biodex.activeCatalog  {id, name, role} del catálogo con el que se trabaja
 //   biodex.theme          'system' | 'light' | 'dark'
+//   biodex.copy:<ruta>    última respuesta buena de GET /catalogs y /catalogs/{id} (api.js; TODO F5)
 // Las observaciones y el resto de datos de trabajo NO van aquí: van a IndexedDB en F5.
 // ================================================================================================
 
 import { store } from './util.js';
 
 export const API_BASE = '/api';
-export const APP_VERSION = '0.4.0 · F4';
+export const APP_VERSION = '0.4.1 · F3b';
 
 const listeners = new Set();
 
@@ -19,7 +20,10 @@ export const state = {
   user: store.get('biodex.user'),
   activeCatalog: store.get('biodex.activeCatalog'),
   theme: store.get('biodex.theme', 'system'),
-  online: navigator.onLine,
+  // Conexión real: 'online' · 'server-down' (hay red, pero la API no contesta) · 'offline' (sin red).
+  // La actualizan api.js (cada respuesta o fallo) y los eventos online/offline de app.js.
+  connection: navigator.onLine ? 'online' : 'offline',
+  get online() { return this.connection === 'online'; },
   // Aviso de sesión caducada / correo enviado que la pantalla siguiente tiene que mostrar.
   notice: null,
 };
@@ -47,9 +51,13 @@ export function setActiveCatalog(catalog) {
   emit('activeCatalog');
 }
 
-export function setOnline(online) {
-  if (state.online === online) return;
-  state.online = online;
+export const CONNECTION_LABELS = { online: 'En línea', 'server-down': 'Servidor no disponible', offline: 'Sin conexión' };
+
+/** Cambia el estado de conexión; avisa con la clave 'online' (la que ya escuchan las vistas). */
+export function setConnection(connection) {
+  if (!navigator.onLine) connection = 'offline';
+  if (state.connection === connection) return;
+  state.connection = connection;
   emit('online');
 }
 

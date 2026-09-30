@@ -6,7 +6,8 @@
 // Ajustes sí se abre como nivel de BioDexNav, para que «atrás» devuelva a la sección de la que se vino.
 // ================================================================================================
 
-import { state, subscribe, setOnline, setNotice, APP_VERSION } from './state.js';
+import { state, subscribe, setConnection, setNotice, APP_VERSION, CONNECTION_LABELS } from './state.js';
+import { checkHealth } from './api.js';
 import { bootSession, renderAuth, logout, SESSION_EXPIRED } from './auth.js';
 import { html, render, $, $$ } from './util.js';
 import * as mapView from './views/map.js';
@@ -36,7 +37,8 @@ let cleanup = null;       // desmontaje de la vista actual
 let settingsReturn = 'mapa';
 let closingSilently = false;
 let unsubscribeShell = null;
-let banner = null;        // aviso de una sola vez bajo la cabecera (p. ej. «revisa tu correo»)
+let banner = null;        // aviso de una sola vez bajo la cabecera (p. ej. «revisa tu correo»):
+                          // {kind, text, action?: {label, run}}
 
 // --- Pantalla de acceso ---------------------------------------------------------------------------
 
@@ -101,6 +103,11 @@ function showApp() {
   go(routeFromHash());
 }
 
+const CONNECTION_BANDS = {
+  'server-down': 'Servidor no disponible: trabajas con lo guardado en este dispositivo.',
+  offline: 'Sin conexión: trabajas en local.',
+};
+
 function updateShell() {
   const cat = state.activeCatalog;
   const title = $('#signCatalog', root);
@@ -108,17 +115,20 @@ function updateShell() {
   title.textContent = cat ? cat.name : 'Sin catálogo activo';
   title.classList.toggle('is-empty', !cat);
 
-  render($('#conn', root), state.online
-    ? html`<span class="conn-dot"></span><span class="conn-label">En línea</span>`
-    : html`<span class="conn-dot off"></span><span class="conn-label">Sin conexión</span>`);
+  render($('#conn', root), html`<span class="conn-dot ${state.online ? '' : 'off'}"></span>
+    <span class="conn-label">${CONNECTION_LABELS[state.connection]}</span>`);
 
+  const band = CONNECTION_BANDS[state.connection];
   render($('#bands', root), html`
-    ${state.online ? '' : html`<p class="guard-band warn" role="status">Sin conexión: trabajas en local.</p>`}
+    ${band ? html`<p class="guard-band warn" role="status">${band}</p>` : ''}
     ${banner ? html`<p class="guard-band ${banner.kind}" role="status">
       <span>${banner.text}</span>
+      ${banner.action ? html`<button type="button" class="link-btn band-action">${banner.action.label}</button>` : ''}
       <button type="button" class="band-close" aria-label="Cerrar aviso">×</button></p>` : ''}`);
   const close = $('.band-close', root);
   if (close) close.addEventListener('click', () => { banner = null; updateShell(); });
+  const action = $('.band-action', root);
+  if (action) action.addEventListener('click', banner.action.run);
 }
 
 // --- Enrutado -------------------------------------------------------------------------------------
@@ -166,8 +176,9 @@ async function onLogout() {
 
 // --- Arranque -------------------------------------------------------------------------------------
 
-window.addEventListener('online', () => setOnline(true));
-window.addEventListener('offline', () => setOnline(false));
+// Volver a tener red no dice que el servidor conteste: se comprueba con /health.
+window.addEventListener('online', () => checkHealth());
+window.addEventListener('offline', () => setConnection('offline'));
 // El hash solo se lee al arrancar. Después lo escribe show(), y un cambio que llegue desde fuera es
 // casi siempre el history.go() de BioDexNav aterrizando en una entrada con el hash de antes: se
 // reescribe con la sección que se está viendo en vez de navegar (si no, cerrar Ajustes lo reabría).
@@ -185,6 +196,15 @@ window.addEventListener('biodex:unauthorized', () => {
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch((e) => console.info('SW no registrado:', e.message));
+  // El armazón sale de la caché (cache-first): una versión nueva se instala en segundo plano y toma el
+  // control, pero esta página sigue con el código viejo. Se avisa en vez de recargar sola (podría haber
+  // un formulario a medias). La primera instalación no avisa: no había versión anterior.
+  const hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadController) return;
+    banner = { kind: 'info', text: 'Hay una versión nueva.', action: { label: 'Recargar', run: () => location.reload() } };
+    updateShell();
+  });
 }
 
 Nav.init();

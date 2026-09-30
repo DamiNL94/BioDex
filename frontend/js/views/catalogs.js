@@ -7,19 +7,22 @@
 // editar la descripción y borrar (diálogo propio con el nombre escrito para confirmar).
 // ================================================================================================
 
-import { apiGetJson, apiPatchJson, apiDeleteJson } from '../api.js';
+import { apiGetWithCopy, apiPatchJson, apiDeleteJson } from '../api.js';
 import { state, subscribe, setActiveCatalog } from '../state.js';
-import { html, render, $, plural } from '../util.js';
+import { html, render, $, plural, savedCopyText } from '../util.js';
 import { confirmDialog } from '../components/overlay.js';
 import { iucnEntries, filterSpeciesByFamily } from './species.js';
 import { openCatalogBuilder, openAddSpecies } from './catalog-builder.js';
 
 export const ROLE_LABELS = { owner: 'Propietario', custodian: 'Custodio', editor: 'Editor', viewer: 'Lector' };
 const ADD_ROLES = ['owner', 'custodian', 'editor'];
+// TODO F5: con IndexedDB este texto cambia (los catálogos ya estarán en el dispositivo).
+const OFFLINE_EMPTY = 'Sin conexión con el servidor. Tus catálogos se guardarán en el dispositivo en F5.';
 const RANK_LABELS = { kingdom: 'Reino', phylum: 'Filo', class: 'Clase', order: 'Orden', family: 'Familia' };
 
 export function mount(el, { go }) {
   let catalogs = null;
+  let savedAt = null;       // fecha de la copia guardada si la lista no viene del servidor
   let loadError = null;
   let alive = true;
 
@@ -28,6 +31,7 @@ export function mount(el, { go }) {
       <h2>Catálogos</h2>
       <button type="button" class="btn-secondary" id="newCatalogBtn">Nuevo catálogo</button>
     </div>
+    <p class="copy-note" id="catalogNote" role="status" hidden></p>
     <div class="split">
       <ul class="rows" id="catalogList" aria-live="polite"></ul>
       <aside class="aside" id="catalogAside" aria-label="Datos del catálogo"></aside>
@@ -38,6 +42,9 @@ export function mount(el, { go }) {
 
   // --- Lista ------------------------------------------------------------------------------------
   function paintList() {
+    const note = $('#catalogNote', el);
+    note.hidden = !savedAt;
+    note.textContent = savedAt ? savedCopyText(savedAt) : '';
     if (loadError) {
       render(list, html`<li class="empty"><p>${loadError}</p>
         <button type="button" class="btn-secondary" id="retry">Reintentar</button></li>`);
@@ -76,15 +83,18 @@ export function mount(el, { go }) {
     loadError = null;
     paintList();
     try {
-      const data = await apiGetJson('/catalogs');
+      // TODO F5: sin servidor, leer los catálogos de IndexedDB en vez de la copia de localStorage.
+      const res = await apiGetWithCopy('/catalogs');
       if (!alive) return;
-      catalogs = data.catalogs;
-      syncActive();
+      catalogs = res.data.catalogs;
+      savedAt = res.savedAt;
+      // Con la copia no se sabe si el activo sigue siendo accesible: se comprueba al volver el servidor.
+      if (!savedAt) syncActive();
     } catch (e) {
       if (!alive) return;
-      // TODO F5: sin red, leer los catálogos guardados en IndexedDB en lugar de fallar.
-      loadError = e.status === 0 ? 'Sin conexión: la lista de catálogos necesita red por ahora.' : e.message;
+      loadError = e.offline ? OFFLINE_EMPTY : e.message;
       catalogs = null;
+      savedAt = null;
     }
     paintList();
     asideFor = null;
@@ -102,6 +112,7 @@ export function mount(el, { go }) {
 
   // --- Datos del catálogo activo -----------------------------------------------------------------
   let asideFor = null;
+  let asideSavedAt = null;
   let editing = false;
 
   function treeNode(node) {
@@ -129,14 +140,17 @@ export function mount(el, { go }) {
     render(aside, html`<div class="panel muted">Cargando datos del catálogo…</div>`);
     try {
       const id = encodeURIComponent(active.id);
-      const [{ catalog, summary }, { tree }] = await Promise.all([
-        apiGetJson('/catalogs/' + id), apiGetJson(`/catalogs/${id}/tree`),
+      // TODO F5: como la lista, desde IndexedDB.
+      const [one, tree] = await Promise.all([
+        apiGetWithCopy('/catalogs/' + id), apiGetWithCopy(`/catalogs/${id}/tree`),
       ]);
       if (!alive || asideFor !== active.id) return;
-      paintData(catalog, summary, tree);
+      asideSavedAt = one.savedAt || tree.savedAt;
+      paintData(one.data.catalog, one.data.summary, tree.data.tree);
     } catch (e) {
       if (alive && asideFor === active.id) {
-        render(aside, html`<div class="panel muted">${e.status === 0 ? 'Sin conexión: los datos del catálogo necesitan red por ahora.' : e.message}</div>`);
+        render(aside, html`<div class="panel muted">${e.offline
+          ? 'Sin conexión con el servidor. Los datos del catálogo se guardarán en el dispositivo en F5.' : e.message}</div>`);
       }
     }
   }
@@ -147,6 +161,7 @@ export function mount(el, { go }) {
     const isOwner = catalog.role === 'owner';
     render(aside, html`<div class="panel summary">
       <p class="eyebrow">Datos del catálogo · ${ROLE_LABELS[catalog.role] || catalog.role}</p>
+      ${asideSavedAt ? html`<p class="copy-note">${savedCopyText(asideSavedAt)}</p>` : ''}
       ${editing ? html`
         <form class="form edit-catalog" novalidate>
           <label class="field"><span>Nombre</span><input name="name" required maxlength="120" value="${catalog.name}"></label>
@@ -231,7 +246,7 @@ export function mount(el, { go }) {
 
   const unsubscribe = subscribe((key) => {
     if (key === 'activeCatalog') { paintList(); paintAside(); }
-    if (key === 'online' && state.online && loadError) load();
+    if (key === 'online' && state.online && (loadError || savedAt || asideSavedAt)) load();
   });
 
   load();

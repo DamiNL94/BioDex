@@ -6,15 +6,19 @@
  * precachear deja la app rota sin cobertura, y network-first no lo salva porque justo entonces no hay
  * red de la que tirar.)
  *
- * Estrategia: NETWORK-FIRST en todo lo del mismo origen. Con red se sirve siempre la versión fresca;
- * la caché solo responde cuando NO hay conexión. Las navegaciones sin red reciben index.html.
+ * Estrategia (F3b): CACHE-FIRST con revalidación en segundo plano (stale-while-revalidate). Es una app
+ * de campo: tiene que abrir al instante aunque la red esté caída o colgada. Lo que no está en caché va
+ * a la red con corte de NET_TIMEOUT_MS. Las versiones nuevas llegan subiendo VERSION; la app avisa
+ * «Hay una versión nueva · Recargar» cuando el SW nuevo toma el control.
+ * (Antes era network-first sin límite: con el servidor colgado la navegación no llegaba nunca a la caché.)
  *
  * /api/ NUNCA pasa por aquí: los datos de trabajo (catálogos, especies, marcas) irán a IndexedDB en
  * F5, con su propia fecha y su propia regla de sincronización. Una respuesta de la API cacheada aquí
  * sería una segunda copia, sin edad conocida, que el navegador serviría como si fuese fresca.
  */
-var VERSION = 'v2';
+var VERSION = 'v3';
 var CACHE = 'biodex-shell-' + VERSION;
+var NET_TIMEOUT_MS = 3000;
 
 var SHELL_ASSETS = [
   // Armazón
@@ -78,31 +82,46 @@ self.addEventListener('fetch', function (event) {
   // La API nunca se cachea en el SW (ver la cabecera).
   if (url.pathname.indexOf('/api/') === 0) return;
 
-  // El armazón (HTML/CSS/JS) se revalida siempre contra el servidor: sin esto la caché HTTP del móvil
-  // podía seguir sirviendo un app.js viejo aunque el SW fuese network-first.
+  // Abrir un fichero en una pestaña (/img/icon-512.png) no es una ruta del SPA: no recibe index.html.
+  if (req.mode === 'navigate' && /\.[a-z0-9]+$/i.test(url.pathname) && !/\.html$/i.test(url.pathname)) return;
+
+  // La revalidación del armazón (HTML/CSS/JS) salta la caché HTTP: sin esto el móvil podía seguir
+  // guardando un app.js viejo en la caché del SW aunque el servidor ya tuviese el nuevo.
   var isShell = req.mode === 'navigate' || req.destination === 'document' ||
                 req.destination === 'script' || req.destination === 'style';
   var netReq = isShell ? new Request(req, { cache: 'no-cache' }) : req;
 
+  // Una navegación siempre recibe index.html (try_files del SPA): se guarda y se busca con ESE nombre
+  // en vez de una entrada por cada URL visitada.
+  var key = req.mode === 'navigate' ? 'index.html' : req;
+
+  // Revalidación en paralelo: actualiza la caché para el próximo arranque.
+  var network = fetch(netReq).then(function (res) {
+    if (res && res.ok && res.status !== 206) {
+      var isPage = (res.headers.get('Content-Type') || '').indexOf('text/html') === 0;
+      if (req.mode === 'navigate' && !isPage) return res;   // abrir un .txt no pisa index.html
+      var copy = res.clone();
+      caches.open(CACHE).then(function (cache) { return cache.put(key, copy); })
+        .catch(function () { /* cuota llena o respuesta no almacenable: no es crítico */ });
+    }
+    return res;
+  });
+  network.catch(function () { /* sin red: se queda lo cacheado */ });
+  event.waitUntil(network.catch(function () {}));
+
   event.respondWith(
-    fetch(netReq).then(function (res) {
-      // Una navegación siempre recibe index.html (try_files del SPA): se guarda con ESE nombre, que
-      // es el respaldo sin red, en vez de una entrada por cada URL visitada.
-      if (res && res.ok && res.status !== 206) {
-        var copy = res.clone();
-        var isPage = (res.headers.get('Content-Type') || '').indexOf('text/html') === 0;
-        if (req.mode === 'navigate' && !isPage) return res;   // abrir un .txt no pisa index.html
-        var key = req.mode === 'navigate' ? 'index.html' : req;
-        caches.open(CACHE).then(function (cache) { cache.put(key, copy); })
-          .catch(function () { /* cuota llena o respuesta no almacenable: no es crítico */ });
-      }
-      return res;
-    }).catch(function () {
-      return caches.match(req).then(function (cached) {
-        if (cached) return cached;
-        if (req.mode === 'navigate') return caches.match('index.html');
-        return Promise.reject(new Error('sin red y sin caché para ' + req.url));
-      });
+    caches.match(key).then(function (cached) {
+      if (cached) return cached;
+      // Sin copia: red, pero con corte (una conexión colgada no puede dejar la ventana en blanco).
+      return withTimeout(network, NET_TIMEOUT_MS);
     })
   );
 });
+
+function withTimeout(promise, ms) {
+  return new Promise(function (resolve, reject) {
+    var timer = setTimeout(function () { reject(new Error('la red no responde')); }, ms);
+    promise.then(function (r) { clearTimeout(timer); resolve(r); },
+                 function (e) { clearTimeout(timer); reject(e); });
+  });
+}
