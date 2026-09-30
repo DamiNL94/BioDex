@@ -13,7 +13,9 @@
 //
 // Productos: dwca/ (occurrence.txt, measurementorfact.txt, meta.xml, eml.xml; Lib/dwc.php), hojas/
 // (un XLSX con Léeme · Observaciones · Especies · Evaluaciones UICN · Distribución · Notas, Lib/xlsx.php,
-// y los mismos datos en CSV para Excel en español) y LEEME.txt. Mapeo: docs/dwc.md.
+// y los mismos datos en CSV para Excel en español), pliniancore/ (F10c, fichas de especie en Plinian Core;
+// Lib/plinian.php) y LEEME.txt. Formatos a elegir en «formats»; por defecto dwca/ y hojas/, como en F10a.
+// Mapeo: docs/dwc.md y docs/plinian.md.
 // ================================================================================================
 
 require_once __DIR__ . "/sensitivity.php";
@@ -22,15 +24,22 @@ require_once __DIR__ . "/metrics.php";   // metricsStored()
 require_once __DIR__ . "/utm.php";
 require_once __DIR__ . "/dwc.php";
 require_once __DIR__ . "/xlsx.php";
+require_once __DIR__ . "/plinian.php";   // F10c: pliniancore/
 
 const EXPORT_MODES      = ["full", "public"];
+/** Formatos del ZIP (F10c). Sin «formats» en la petición, los de F10a: el ZIP sale igual que antes. */
+const EXPORT_FORMATS         = ["dwc", "plinian", "sheets"];
+const EXPORT_FORMATS_DEFAULT = ["dwc", "sheets"];
 const EXPORT_TZ         = "Europe/Madrid";
 const EXPORT_TITLE_MAX  = 200;
 const EXPORT_DESC_MAX   = 4000;
 const EXPORT_LIST_MAX   = 1000;   // especies u observadores elegidos
 const EXPORT_MODE_LABEL = ["full" => "completa (privada)", "public" => "para publicar"];
 const EXPORT_MODE_FILE  = ["full" => "completa", "public" => "publicar"];
-const EXPORT_WITHHELD_REMARKS = "Notas de campo y de georreferencia retenidas por sensibilidad de la especie";
+const EXPORT_PLINIAN_README = "Fichas de especie en Plinian Core " . PLIC_VERSION . " (especies.xml, validado contra su XSD): taxonomía, "
+    . "categorías de amenaza oficiales de EIDOS y, aparte, la evaluación BioDex de referencia (regional, preliminar, no oficial), y "
+    . "distribución en cifras (EOO, AOO, cuadrículas) de las presencias exportadas. No incluye observaciones ni coordenadas.";
+const EXPORT_WITHHELD_REMARKS ="Notas de campo y de georreferencia retenidas por sensibilidad de la especie";
 
 const EXPORT_STATUS_ES = ["present" => "Presencia", "absent" => "Ausencia"];
 const EXPORT_SEX_ES    = ["male" => "Macho", "female" => "Hembra", "hermaphrodite" => "Hermafrodita", "undetermined" => "Indeterminado"];
@@ -73,6 +82,12 @@ function exportOptions(array $b, array $catalog): array {
     $taxa = $list("taxonIDs", fn($x) => is_string($x) && $x !== "" && strlen($x) <= 64);
     $observers = $list("observers", fn($x) => is_int($x) && $x > 0);
 
+    $formats = $b["formats"] ?? EXPORT_FORMATS_DEFAULT;
+    if (!is_array($formats) || !array_is_list($formats) || array_diff($formats, EXPORT_FORMATS)) {
+        apiError("«formats» debe ser una lista con " . implode(", ", EXPORT_FORMATS) . ".", 400);
+    }
+    if (!$formats) apiError("Elige al menos un formato.", 400);
+
     $license = $b["license"] ?? array_key_first(DWC_LICENSES);
     if (!isset(DWC_LICENSES[$license])) apiError("Licencia no admitida: " . implode(", ", array_keys(DWC_LICENSES)) . ".", 400);
 
@@ -85,6 +100,7 @@ function exportOptions(array $b, array $catalog): array {
         "mode" => $mode, "dateFrom" => $from, "dateTo" => $to, "taxonIDs" => $taxa, "observers" => $observers,
         "includeAbsences" => ($b["includeAbsences"] ?? true) !== false, "license" => $license,
         "title" => $title, "description" => $description,
+        "formats" => array_values(array_intersect(EXPORT_FORMATS, $formats)),
     ];
 }
 
@@ -503,9 +519,12 @@ function exportReadme(array $catalog, array $o, array $prep, array $meta): array
         $kv("Distribución", "EOO y AOO definitivos calculados en el servidor con todas las presencias del catálogo (celda de 2 km), no solo las filtradas. Reflejan los registros, no la distribución completa de la especie."),
         $kv("Notas", "Notas de cuaderno por especie, con autor y fecha."),
         [],
-        $kv("dwca/", "Darwin Core Archive para GBIF u otras bases: occurrence.txt, measurementorfact.txt (individuos maduros), meta.xml y eml.xml. Para el validador de GBIF, comprime el CONTENIDO de dwca/ (meta.xml en la raíz del ZIP)."),
-        $kv("CSV", "Los mismos datos en CSV (UTF-8, separador «;», coma decimal) para abrir con doble clic en Excel en español."),
     ];
+    if (in_array("dwc", $o["formats"], true)) {
+        $rows[] = $kv("dwca/", "Darwin Core Archive para GBIF u otras bases: occurrence.txt, measurementorfact.txt (individuos maduros), meta.xml y eml.xml. Para el validador de GBIF, comprime el CONTENIDO de dwca/ (meta.xml en la raíz del ZIP).");
+    }
+    if (in_array("plinian", $o["formats"], true)) $rows[] = $kv("pliniancore/", EXPORT_PLINIAN_README);
+    $rows[] = $kv("CSV", "Los mismos datos en CSV (UTF-8, separador «;», coma decimal) para abrir con doble clic en Excel en español.");
     return $rows;
 }
 
@@ -610,21 +629,32 @@ function exportBuild(PDO $pdo, string $catalogId, array $catalog, array $o, arra
                   "measurementDeterminedDate" => $r["dwc"]["eventDate"], "measurementMethod" => "Conteo en campo (BioDex)"];
     }
 
-    $sheets = exportSheets($pdo, $catalogId, $catalog, $o, $prep, $userId, $meta);
+    $withDwc = in_array("dwc", $o["formats"], true);
+    $withSheets = in_array("sheets", $o["formats"], true);
+    // Plinian Core primero: si no valida, PlinianInvalidXml y no se genera nada más (no hay ZIP con PliC inválido).
+    $plinian = in_array("plinian", $o["formats"], true)
+        ? plinianXml($pdo, $catalogId, $catalog, $o, $prep, $meta, ["withDwc" => $withDwc, "zipName" => $zipName])
+        : null;
+    $sheets = $withSheets ? exportSheets($pdo, $catalogId, $catalog, $o, $prep, $userId, $meta) : [];
     $xlsxPath = tempnam(sys_get_temp_dir(), "bdx");
     $zipPath = tempnam(sys_get_temp_dir(), "bdz");
     try {
-        xlsxWrite($xlsxPath, $sheets, ["title" => $o["title"], "creator" => "BioDex " . $meta["version"]]);
         $zip = new ZipArchive();
         if ($zip->open($zipPath, ZipArchive::OVERWRITE) !== true) throw new RuntimeException("No se pudo crear el ZIP");
-        $zip->addFromString("dwca/occurrence.txt", dwcTsv(array_keys(DWC_OCCURRENCE_TERMS), array_column($prep["records"], "dwc")));
-        if ($mof) $zip->addFromString("dwca/measurementorfact.txt", dwcTsv(array_merge(["coreid"], array_keys(DWC_MOF_TERMS)), $mof));
-        $zip->addFromString("dwca/meta.xml", dwcMetaXml((bool) $mof));
-        $zip->addFromString("dwca/eml.xml", exportEml($catalog, $o, $prep, $meta));
-        $zip->addFile($xlsxPath, "hojas/{$xlsxName}");
-        foreach ($sheets as $sheet) {
-            if (!empty($sheet["csv"])) $zip->addFromString("hojas/{$sheet["csv"]}.csv", exportCsv($sheet));
+        if ($withDwc) {
+            $zip->addFromString("dwca/occurrence.txt", dwcTsv(array_keys(DWC_OCCURRENCE_TERMS), array_column($prep["records"], "dwc")));
+            if ($mof) $zip->addFromString("dwca/measurementorfact.txt", dwcTsv(array_merge(["coreid"], array_keys(DWC_MOF_TERMS)), $mof));
+            $zip->addFromString("dwca/meta.xml", dwcMetaXml((bool) $mof));
+            $zip->addFromString("dwca/eml.xml", exportEml($catalog, $o, $prep, $meta));
         }
+        if ($withSheets) {
+            xlsxWrite($xlsxPath, $sheets, ["title" => $o["title"], "creator" => "BioDex " . $meta["version"]]);
+            $zip->addFile($xlsxPath, "hojas/{$xlsxName}");
+            foreach ($sheets as $sheet) {
+                if (!empty($sheet["csv"])) $zip->addFromString("hojas/{$sheet["csv"]}.csv", exportCsv($sheet));
+            }
+        }
+        if ($plinian !== null) $zip->addFromString(PLIC_FILE, $plinian);
         $zip->addFromString("LEEME.txt", exportLeemeTxt($catalog, $o, $prep, $meta, $xlsxName));
         if (!$zip->close()) throw new RuntimeException("No se pudo escribir el ZIP");
     } finally {
@@ -651,11 +681,18 @@ function exportLeemeTxt(array $catalog, array $o, array $prep, array $meta, stri
         "Licencia:   " . DWC_LICENSES[$o["license"]][1],
         "Cita:       " . exportCitation($o, $prep, $meta["date"]),
         "",
+    ];
+    if (in_array("dwc", $o["formats"], true)) array_push($lines,
         "dwca/   Darwin Core Archive (occurrence.txt, measurementorfact.txt, meta.xml, eml.xml).",
         "        Para GBIF u otras bases. Al validador de GBIF se sube el CONTENIDO de dwca/ comprimido",
-        "        (meta.xml en la raíz del ZIP): https://www.gbif.org/tools/data-validator",
+        "        (meta.xml en la raíz del ZIP): https://www.gbif.org/tools/data-validator");
+    if (in_array("sheets", $o["formats"], true)) array_push($lines,
         "hojas/  {$xlsxName} (ábrelo con doble clic; empieza por la pestaña «Léeme»)",
-        "        y los mismos datos en CSV (UTF-8, «;», coma decimal) para Excel en español.",
-    ];
+        "        y los mismos datos en CSV (UTF-8, «;», coma decimal) para Excel en español.");
+    if (in_array("plinian", $o["formats"], true)) array_push($lines,
+        "pliniancore/  especies.xml: fichas de especie en Plinian Core " . PLIC_VERSION . " (TDWG), validado contra su XSD.",
+        "        Taxonomía, categorías de amenaza oficiales (EIDOS) y, aparte, la evaluación BioDex de",
+        "        referencia (regional, preliminar, NO oficial); EOO, AOO y cuadrículas en cifras.",
+        "        No incluye observaciones ni coordenadas.");
     return implode("\r\n", array_filter($lines, fn($l) => $l !== null)) . "\r\n";
 }

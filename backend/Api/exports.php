@@ -6,7 +6,8 @@
 //   POST /api/catalogs/{id}/export/preview   view (full: export_full) → resumen y opciones, JSON
 //   POST /api/catalogs/{id}/export           view (full: export_full) → application/zip
 // Cuerpo de las dos: {mode: full|public, dateFrom?, dateTo?, taxonIDs?, observers?, includeAbsences?,
-// license?, title?, description?} (Lib/export.php, exportOptions()).
+// license?, title?, description?, formats?: [dwc|plinian|sheets]} (Lib/export.php, exportOptions()).
+// Si Plinian Core no valida contra su XSD, 500 con un mensaje claro y sin ZIP (F10c).
 // «full» (coordenadas exactas) solo owner y custodio, y cada descarga va a access_log (export_full).
 // El ZIP es la única respuesta de /api que no es JSON; sus errores sí lo son.
 // ================================================================================================
@@ -47,7 +48,13 @@ if ($exportSub === "preview") {
 
 $stmt = $pdo->prepare("SELECT name FROM users WHERE id = ?");
 $stmt->execute([$userId]);
-[$zipPath, $zipName] = exportBuild($pdo, $exportCatalogId, $catalog, $opts, $prep, $userId, (string) $stmt->fetchColumn());
+try {
+    [$zipPath, $zipName] = exportBuild($pdo, $exportCatalogId, $catalog, $opts, $prep, $userId, (string) $stmt->fetchColumn());
+} catch (PlinianInvalidXml $e) {
+    // No se entrega un ZIP con Plinian Core inválido. El detalle (línea y mensaje de libxml) ya está en el log.
+    apiError("No se ha podido generar la ficha Plinian Core: no cumple el esquema oficial (" . PLIC_VERSION . "). "
+        . "Descarga sin Plinian Core o avisa a quien mantiene BioDex.", 500);
+}
 
 if ($opts["mode"] === "full") {
     $c = $prep["counts"];
