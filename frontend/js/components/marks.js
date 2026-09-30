@@ -4,7 +4,8 @@
 // «Marcar aquí» pide la posición (alta precisión, 30 s) y solo con ella deja guardar: nunca una marca
 // sin coordenadas. Sin GPS o sin permiso, aviso de guarda claro. La marca va a IndexedDB en
 // `pending` y sync.js la sube cuando haya red.
-// Lista: «Mis marcas» (fecha, ±m, estado, borrar) y «Del equipo» (con aviso si llegan generalizadas).
+// Lista: «Mis marcas» (fecha, ±m, estado, borrar) y, debajo, «Marcas del equipo» (F6: autor, fecha,
+// precisión y el aviso de generalización cuando el servidor no manda la coordenada exacta).
 // ================================================================================================
 
 import { state, subscribe } from '../state.js';
@@ -156,17 +157,19 @@ export function mountMarks(el, { species, catalog, levels = [], sensitivity = nu
           <button type="button" class="link-btn mark-del" data-del="${o.occurrenceID}">Borrar<span class="sr-only"> la marca del ${fmtWhen(o.eventDate)}</span></button>
         </li>`;
       })}</ul>` : html`<p class="muted">Aún no has marcado esta especie en «${catalog.name}».</p>`}
-      ${others.length ? html`<h5>Del equipo</h5><ul class="marks">${others.map((o) => html`<li class="mark">
+      <h5>Marcas del equipo</h5>
+      ${others.length ? html`<ul class="marks">${others.map((o) => html`<li class="mark">
           <div class="mark-main">
+            <span class="mark-author">${o.recordedBy || 'Otro miembro'}</span>
             <span class="mark-when">${fmtWhen(o.eventDate)}</span>
-            <span class="badge">${o.recordedBy || 'Otro miembro'}</span>
             ${o.coordinateUncertaintyInMeters !== null && o.coordinateUncertaintyInMeters !== undefined
-              ? html`<span class="badge">±${o.coordinateUncertaintyInMeters} m</span>` : ''}
+              ? html`<span class="badge" title="Precisión">±${o.coordinateUncertaintyInMeters} m</span>` : ''}
+            ${o.generalized ? '' : html`<span class="badge ok">Exacta</span>`}
           </div>
           ${o.generalized ? html`<p class="mark-generalized">${generalizedText(o)}</p>` : ''}
           ${fmtCoord(o) ? html`<span class="mark-coord">${fmtCoord(o)}</span>` : ''}
           ${o.occurrenceRemarks ? html`<p class="mark-note">${o.occurrenceRemarks}</p>` : ''}
-        </li>`)}</ul>` : ''}`);
+        </li>`)}</ul>` : html`<p class="muted">Nadie más del equipo ha marcado esta especie en «${catalog.name}» (o aún no se ha sincronizado).</p>`}`);
   }
 
   el.addEventListener('click', async (ev) => {

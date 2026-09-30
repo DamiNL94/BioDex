@@ -1,10 +1,12 @@
-// Vista Ajustes: cuenta, sincronización (F5), datos del dispositivo, tema, versión y cierre de sesión.
+// Vista Ajustes: perfil (F6: nombre y ORCID), sincronización (F5), datos del dispositivo, tema, versión
+// y cierre de sesión.
 // Sincronización: pendientes, última pasada, «Sincronizar ahora», marcas rechazadas (reintentar o
 // descartar a mano) y catálogos de los que te han sacado con marcas sin subir (exportar o descartar).
 // Dispositivo: espacio usado (storage.estimate), catálogos descargados y respaldo (exportar/importar).
 
-import { state, subscribe, setTheme, APP_VERSION, CONNECTION_LABELS } from '../state.js';
-import { html, render, $, plural } from '../util.js';
+import { state, subscribe, setTheme, setUser, APP_VERSION, CONNECTION_LABELS } from '../state.js';
+import { html, render, $, plural, normalizeOrcid } from '../util.js';
+import { apiPatchJson } from '../api.js';
 import { confirmDialog } from '../components/overlay.js';
 import { syncNow, refreshCounts } from '../sync.js';
 import { rejectedItems, retryRejected, discardRejected, downloadBackup, importBackup, outboxEntries } from '../marks.js';
@@ -19,6 +21,7 @@ export function mount(el, { onLogout }) {
   let storage = { usage: null, quota: null, persisted: null };
   let revokedPending = new Map();    // catalogId → nº de marcas sin subir
   let message = null;                // {kind, text} tras importar/exportar
+  let profileMsg = null;             // {kind, text} tras guardar el perfil
 
   async function loadLocal() {
     try {
@@ -44,20 +47,32 @@ export function mount(el, { onLogout }) {
   function paint() {
     const u = state.user || {};
     const s = state.sync;
+    // Ajustes se repinta con cada pasada de sincronización: lo que se esté escribiendo en el perfil se conserva.
+    const prev = $('.profile-form', el);
+    const draft = prev ? { name: prev.name.value, orcid: prev.orcid.value,
+      focus: prev.contains(document.activeElement) ? document.activeElement.name : null } : null;
     const sw = 'serviceWorker' in navigator && navigator.serviceWorker.controller;
     const downloaded = catalogs.filter((c) => c.downloadedAt);
     const revoked = catalogs.filter((c) => c.revoked);
     render(el, html`
       <div class="page-head"><h2>Ajustes</h2></div>
       <div class="settings">
-        <section class="panel">
-          <h3>Cuenta</h3>
+        <section class="panel" aria-labelledby="set-profile">
+          <h3 id="set-profile">Perfil</h3>
           <dl class="facts">
-            <div><dt>Nombre</dt><dd>${u.name || '—'}</dd></div>
             <div><dt>Email</dt><dd>${u.email}
-              ${u.emailVerified ? '' : html`<span class="badge warn">Email sin verificar</span>`}</dd></div>
-            ${u.orcid ? html`<div><dt>ORCID</dt><dd>${u.orcid}</dd></div>` : ''}
+              ${u.emailVerified ? html`<span class="badge ok">Verificado</span>` : html`<span class="badge warn">Email sin verificar</span>`}</dd></div>
           </dl>
+          ${u.emailVerified ? '' : html`<p class="hint">Sin verificar no podrás ser custodio de un catálogo. Abre el enlace del correo de BioDex.</p>`}
+          <form class="form profile-form" novalidate>
+            <label class="field"><span>Nombre</span><input name="name" required maxlength="120" autocomplete="name" value="${u.name || ''}"></label>
+            <label class="field"><span>ORCID <em>(opcional)</em></span><input name="orcid" maxlength="40" inputmode="text"
+              autocomplete="off" spellcheck="false" placeholder="0000-0000-0000-000X" value="${u.orcid || ''}"></label>
+            <p class="hint">Lo verá tu equipo junto a tu nombre, con enlace a orcid.org.</p>
+            ${profileMsg ? html`<p class="${profileMsg.kind === 'error' ? 'form-error' : 'guard-band info'}" role="${profileMsg.kind === 'error' ? 'alert' : 'status'}">${profileMsg.text}</p>` : ''}
+            <div class="form-actions"><button type="submit" class="btn-primary" ${state.online ? '' : html`disabled`}>Guardar perfil</button>
+              ${state.online ? '' : html`<span class="hint">Necesita conexión</span>`}</div>
+          </form>
         </section>
         <section class="panel" aria-labelledby="set-sync">
           <h3 id="set-sync">Sincronización</h3>
@@ -127,6 +142,37 @@ export function mount(el, { onLogout }) {
         </section>
       </div>`);
 
+    const profile = $('.profile-form', el);
+    if (draft) {
+      profile.name.value = draft.name;
+      profile.orcid.value = draft.orcid;
+      if (draft.focus && profile[draft.focus]) profile[draft.focus].focus();
+    }
+    profile.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const name = profile.name.value.trim();
+      const raw = profile.orcid.value.trim();
+      const orcid = raw ? normalizeOrcid(raw) : null;
+      if (!name) { profileMsg = { kind: 'error', text: 'Escribe tu nombre.' }; paint(); $('.profile-form', el).name.focus(); return; }
+      if (raw && !orcid) {
+        profileMsg = { kind: 'error', text: 'Ese ORCID no es válido: tiene la forma 0000-0000-0000-000X y el último carácter es un dígito de control.' };
+        paint();
+        $('.profile-form', el).orcid.focus();
+        return;
+      }
+      const button = $('button[type="submit"]', profile);
+      button.disabled = true;
+      try {
+        const res = await apiPatchJson('/auth/me', { name, orcid });
+        profileMsg = { kind: 'info', text: 'Perfil guardado.' };
+        profile.name.value = res.user.name;          // forma canónica (X mayúscula…) para el repintado
+        profile.orcid.value = res.user.orcid || '';
+        setUser(res.user);   // repinta (subscribe 'user')
+      } catch (e) {
+        profileMsg = { kind: 'error', text: e.message };
+        paint();
+      }
+    });
     el.querySelectorAll('[data-choice]').forEach((b) => b.addEventListener('click', () => setTheme(b.dataset.choice)));
     $('#syncNowBtn', el).addEventListener('click', () => syncNow());
     $('#logoutBtn', el).addEventListener('click', async (ev) => {

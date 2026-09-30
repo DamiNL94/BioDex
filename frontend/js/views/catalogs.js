@@ -7,6 +7,8 @@
 // editar la descripción y borrar (diálogo propio con el nombre escrito para confirmar).
 // F5: «Descargar para usar sin conexión» (tamaño estimado antes, progreso durante, fecha al terminar).
 // Sin servidor, la lista y los datos salen del dispositivo (IndexedDB) y lo que necesita red se oculta.
+// F6: el detalle tiene dos pestañas, «Resumen» y «Equipo» (catalog-team.js); el owner abre además
+// «Niveles de sensibilidad» y «Registro». «Tengo un código» abre la invitación (join.js).
 // ================================================================================================
 
 import { apiGetJson, apiPatchJson, apiDeleteJson } from '../api.js';
@@ -18,8 +20,10 @@ import { startDownload, handleNotMember } from '../sync.js';
 import { confirmDialog } from '../components/overlay.js';
 import { iucnEntries, filterSpeciesByFamily } from './species.js';
 import { openCatalogBuilder, openAddSpecies } from './catalog-builder.js';
+import { ROLE_LABELS, mountTeam, openLevels, openAudit } from './catalog-team.js';
+import { openJoin } from './join.js';
 
-export const ROLE_LABELS = { owner: 'Propietario', custodian: 'Custodio', editor: 'Editor', viewer: 'Lector' };
+export { ROLE_LABELS };
 const ADD_ROLES = ['owner', 'custodian', 'editor'];
 const OFFLINE_EMPTY = 'Sin conexión con el servidor y aún no hay catálogos en este dispositivo. Con red, elige uno y pulsa «Descargar para usar sin conexión».';
 const PHASES = { package: 'Descargando fichas y niveles…', marks: 'Descargando marcas del equipo…', images: 'Guardando imágenes' };
@@ -35,7 +39,14 @@ export function mount(el, { go }) {
   render(el, html`
     <div class="page-head">
       <h2>Catálogos</h2>
-      <button type="button" class="btn-secondary" id="newCatalogBtn">Nuevo catálogo</button>
+      <div class="page-tools">
+        <form class="join-code" id="joinForm" novalidate>
+          <label class="sr-only" for="joinCode">Tengo un código de invitación</label>
+          <input id="joinCode" name="code" placeholder="Tengo un código" autocomplete="off" autocapitalize="characters" spellcheck="false">
+          <button type="submit" class="btn-secondary">Unirme</button>
+        </form>
+        <button type="button" class="btn-secondary" id="newCatalogBtn">Nuevo catálogo</button>
+      </div>
     </div>
     <p class="copy-note" id="catalogNote" role="status" hidden></p>
     <div class="split">
@@ -135,6 +146,8 @@ export function mount(el, { go }) {
   let asideFor = null;
   let asideDevice = null;    // registro local si los datos salen del dispositivo
   let editing = false;
+  let asideTab = 'summary';  // 'summary' · 'team'
+  let teamCleanup = null;
 
   function treeNode(node) {
     const label = html`<span class="tree-rank">${RANK_LABELS[node.rank] || node.rank}</span>
@@ -156,6 +169,7 @@ export function mount(el, { go }) {
       return;
     }
     if (asideFor === active.id) return;
+    if (asideFor !== null) asideTab = 'summary';
     asideFor = active.id;
     editing = false;
     render(aside, html`<div class="panel muted">Cargando datos del catálogo…</div>`);
@@ -179,13 +193,29 @@ export function mount(el, { go }) {
     }
   }
 
+  let lastData = null;       // [catalog, summary, tree] pintados (para cambiar de pestaña sin recargar)
+
+  function tabs(catalog) {
+    return html`<div class="segmented aside-tabs" role="tablist" aria-label="Datos del catálogo">
+      ${[['summary', 'Resumen'], ['team', 'Equipo']].map(([k, label]) => html`<button type="button" role="tab" data-tab="${k}"
+        aria-selected="${asideTab === k}" class="${asideTab === k ? 'active' : ''}">${label}</button>`)}
+    </div>
+    ${catalog.role === 'owner' ? html`<div class="form-actions owner-panels">
+      <button type="button" class="link-btn" data-levels>Niveles de sensibilidad</button>
+      <button type="button" class="link-btn" data-audit>Registro</button></div>` : ''}`;
+  }
+
   function paintData(catalog, summary, tree) {
+    lastData = [catalog, summary, tree];
+    if (teamCleanup) { teamCleanup(); teamCleanup = null; }
+    if (asideTab === 'team') { paintTeam(catalog); return; }
     const groups = Object.entries(summary.byTaxonomicGroup);
     const cats = iucnEntries(summary.byIucnCategory);
     // Sin servidor no se edita: lo que necesita red no se ofrece.
     const isOwner = catalog.role === 'owner' && !asideDevice;
     render(aside, html`<div class="panel summary">
       <p class="eyebrow">Datos del catálogo · ${ROLE_LABELS[catalog.role] || catalog.role}</p>
+      ${tabs(catalog)}
       ${asideDevice ? html`<p class="copy-note">${localNote(asideDevice)}</p>` : ''}
       ${editing ? html`
         <form class="form edit-catalog" novalidate>
@@ -214,6 +244,7 @@ export function mount(el, { go }) {
     </div>`);
 
     const on = (sel, fn) => { const n = $(sel, aside); if (n) n.addEventListener('click', fn); };
+    wireTabs(catalog);
     paintOffline(catalog, summary.total);
     on('[data-add-species]', () => openAddSpecies(catalog, { onChanged: () => { asideFor = null; load(); } }));
     on('[data-edit]', () => { editing = true; paintData(catalog, summary, tree); $('.edit-catalog input', aside).focus(); });
@@ -247,6 +278,34 @@ export function mount(el, { go }) {
         }
       });
     }
+  }
+
+  function wireTabs(catalog) {
+    aside.querySelectorAll('[data-tab]').forEach((b) => b.addEventListener('click', () => {
+      if (asideTab === b.dataset.tab) return;
+      asideTab = b.dataset.tab;
+      paintData(...lastData);
+      const again = $(`[data-tab="${asideTab}"]`, aside);
+      if (again) again.focus();
+    }));
+    const on = (sel, fn) => { const n = $(sel, aside); if (n) n.addEventListener('click', fn); };
+    on('[data-levels]', () => openLevels(catalog, { onChanged: () => { asideFor = null; load(); } }));
+    on('[data-audit]', () => openAudit(catalog));
+  }
+
+  // --- Equipo -------------------------------------------------------------------------------------
+  function paintTeam(catalog) {
+    render(aside, html`<div class="panel summary team">
+      <p class="eyebrow">Datos del catálogo · ${ROLE_LABELS[catalog.role] || catalog.role}</p>
+      ${tabs(catalog)}
+      <h3>${catalog.name}</h3>
+      <div id="teamBox"></div>
+    </div>`);
+    wireTabs(catalog);
+    teamCleanup = mountTeam($('#teamBox', aside), catalog, {
+      // Salir o transferir: cambia el rol o desaparece el catálogo; se recarga todo.
+      onLeft: () => { asideTab = 'summary'; asideFor = null; load(); },
+    });
   }
 
   // --- «Llevar al campo» ---------------------------------------------------------------------------
@@ -314,6 +373,16 @@ export function mount(el, { go }) {
 
   // --- Nuevo catálogo ---------------------------------------------------------------------------
   $('#newCatalogBtn', el).addEventListener('click', () => openCatalogBuilder({ onSaved: () => load() }));
+  $('#joinForm', el).addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    const input = $('#joinCode', el);
+    const code = input.value.trim();
+    if (!code) { input.focus(); return; }
+    openJoin(code, { onJoined: () => { input.value = ''; } });
+  });
+  // Unirse a un catálogo (join.js) o cambios de equipo que cambian la lista.
+  const onCatalogsChanged = () => { asideFor = null; load(); };
+  window.addEventListener('biodex:catalogs-changed', onCatalogsChanged);
 
   const unsubscribe = subscribe((key) => {
     if (key === 'activeCatalog') { paintList(); paintAside(); }
@@ -329,5 +398,7 @@ export function mount(el, { go }) {
   return () => {
     alive = false;
     unsubscribe();
+    window.removeEventListener('biodex:catalogs-changed', onCatalogsChanged);
+    if (teamCleanup) teamCleanup();
   };
 }

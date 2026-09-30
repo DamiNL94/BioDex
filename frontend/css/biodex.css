@@ -494,6 +494,64 @@ body.has-overlay{overflow:hidden}
 .file-btn input{position:absolute;inset:0;opacity:0;cursor:pointer}
 .file-btn:focus-within{outline:3px solid var(--brass);outline-offset:2px}
 
+/* --- F6: equipo, invitaciones, niveles y registro --- */
+.page-tools{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.join-code{display:flex;gap:6px;flex:1 1 260px}
+.join-code input{flex:1;min-width:0;min-height:var(--tap-min);padding:0 12px;background:var(--panel);
+  border:1px solid var(--line-strong);border-radius:var(--radius-md);color:var(--ink);letter-spacing:.04em}
+.join-code input:focus{border-color:var(--leaf);outline:none;box-shadow:inset 0 0 0 1px var(--leaf)}
+.aside-tabs{display:flex;margin:4px 0 10px}
+.aside-tabs button{flex:1}
+.owner-panels{margin:-4px 0 10px}
+.owner-panels .link-btn{padding-left:0;min-height:36px}
+.members{list-style:none;margin:0 0 6px;padding:0;display:grid;gap:6px}
+.member,.invite{display:grid;gap:4px;padding:10px 12px;background:var(--panel);border:1px solid var(--line);
+  border-left:var(--rule) solid var(--line-strong);border-radius:var(--radius-sm)}
+.member-main{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:2px 10px}
+.member-name{font-weight:700;overflow-wrap:anywhere}
+.member-meta{display:flex;flex-wrap:wrap;align-items:center;gap:2px 12px;font-size:var(--fs-sm)}
+.member-email{overflow-wrap:anywhere}
+.member-flag{display:inline-flex;align-items:center;gap:4px}
+.member-flag.ok{color:var(--leaf)}
+.ico{width:16px;height:16px}
+.orcid{display:inline-flex;align-items:center;gap:4px;font-variant-numeric:tabular-nums}
+.orcid-id{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:#A6CE39;
+  color:#1A1A17;font-size:.625rem;font-weight:700;letter-spacing:0}
+.role-badge{color:var(--ink-soft)}
+.role-badge.role-owner{color:var(--leaf)}
+.role-badge.role-custodian{color:var(--sea)}
+.member-actions{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:8px;margin-top:4px}
+.field-inline{grid-template-columns:auto minmax(0,1fr);align-items:center;gap:8px;flex:1 1 180px}
+.field-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:10px}
+.invite-form .segmented{justify-self:start}
+.invite-flash{display:grid;gap:8px;padding:12px;background:var(--warn-bg);border-left:var(--rule) solid var(--warn);
+  border-radius:var(--radius-sm)}
+.invite-flash p{margin:0}
+.flash-warn{color:var(--warn-ink)}
+.copy-row{display:flex;gap:6px}
+.copy-input{flex:1;min-width:0;min-height:var(--tap-min);padding:0 10px;border:1px solid var(--line-strong);
+  border-radius:var(--radius-md);background:var(--panel);color:var(--ink);font-size:var(--fs-sm);font-variant-numeric:tabular-nums}
+.invite-flash .link-btn{justify-self:start;padding-left:0}
+.team h4:first-of-type{margin-top:8px}
+.table-scroll{overflow-x:auto;margin:10px 0 16px;-webkit-overflow-scrolling:touch}
+.table-scroll .data-table{min-width:640px}
+.data-table th[scope="row"]{text-align:left;font-weight:400;padding:6px 8px 6px 0;border-bottom:1px solid var(--line);vertical-align:top;
+  color:var(--ink);font-size:var(--fs-sm);letter-spacing:0;text-transform:none}
+.table-sub{display:block;font-size:var(--fs-xs)}
+.levels-table select,.levels-table input{min-height:36px;padding:4px 8px;background:var(--panel);border:1px solid var(--line-strong);
+  border-radius:var(--radius-md);color:var(--ink);font:inherit;max-width:100%}
+.levels-table input{width:100%;min-width:140px}
+.levels-table .form-error{display:block;margin-top:4px;padding:4px 8px}
+.audit-table .badge{white-space:normal}
+.nowrap{white-space:nowrap;font-variant-numeric:tabular-nums}
+.action-grant_role,.action-member_joined{color:var(--leaf)}
+.action-revoke_role,.action-member_removed,.action-login_failed,.action-view_exact{color:var(--danger)}
+.action-set_level,.action-invite_revoked,.action-export_full{color:var(--warn-ink)}
+.join-name{margin:0 0 4px}
+.join-desc{margin:0 0 10px;color:var(--ink-soft)}
+.join-dialog .facts{margin-bottom:6px}
+.mark-author{font-weight:700}
+
 /* ===== Escritorio (≥ 900 px): pestañas bajo el cartel y contenido a lo ancho =================== */
 @media (min-width:900px){
   .app-sign{padding:14px 32px;position:static}

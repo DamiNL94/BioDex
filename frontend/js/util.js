@@ -103,6 +103,20 @@ export function sciNameText(sp) {
   return nameParts(sp).canonical;
 }
 
+/**
+ * ORCID válido (0000-0000-0000-000X con dígito de control ISO 7064 11,2) → forma canónica, o null.
+ * Admite la URL https://orcid.org/…. El servidor lo vuelve a comprobar (Lib/teams.php).
+ */
+export function normalizeOrcid(raw) {
+  let v = String(raw || '').trim().toUpperCase().replace(/^HTTPS?:\/\/ORCID\.ORG\//, '');
+  if (!/^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/.test(v)) return null;
+  const digits = v.replace(/-/g, '');
+  let total = 0;
+  for (let i = 0; i < 15; i++) total = (total + Number(digits[i])) * 2;
+  const check = (12 - (total % 11)) % 11;
+  return digits[15] === (check === 10 ? 'X' : String(check)) ? v : null;
+}
+
 /** Función que retrasa `fn` hasta `ms` sin llamadas; `.cancel()` la anula. */
 export function debounce(fn, ms) {
   let t = null;

@@ -6,6 +6,8 @@
 // Ajustes sí se abre como nivel de BioDexNav, para que «atrás» devuelva a la sección de la que se vino.
 // F5: al entrar se abre la base local del usuario (db.js) y arranca el motor de sincronización
 // (sync.js); la cabecera muestra «n pendientes» junto al indicador de conexión mientras haya cola.
+// F6: #/unirse/<código> abre la invitación (join.js) sobre Catálogos; sin sesión, el código se guarda,
+// se pasa por la pantalla de acceso y se abre al entrar.
 // ================================================================================================
 
 import { state, subscribe, setConnection, setNotice, APP_VERSION, CONNECTION_LABELS } from './state.js';
@@ -18,6 +20,7 @@ import * as mapView from './views/map.js';
 import * as catalogsView from './views/catalogs.js';
 import * as speciesView from './views/species.js';
 import * as settingsView from './views/settings.js';
+import { codeFromHash, pendingJoin, openJoin } from './views/join.js';
 
 const Nav = window.BioDexNav;
 const root = document.getElementById('app');
@@ -54,6 +57,9 @@ function showAuth() {
   Nav.reset();
   Nav.setExitGuard(false);
   document.body.classList.remove('in-app');
+  if (pendingJoin.get() && !state.notice) {
+    setNotice({ kind: 'info', text: 'Te han invitado a un catálogo: entra o crea tu cuenta y lo verás al terminar.' });
+  }
   renderAuth(root, ({ registered, verificationSent }) => {
     if (registered) {
       const local = ['localhost', '127.0.0.1'].includes(location.hostname);
@@ -118,6 +124,15 @@ async function showApp() {
   current = null;
   go(routeFromHash());
   if (!dbError) startSync();
+  openPendingJoin();
+}
+
+/** Invitación guardada (enlace abierto sin sesión, o sin red): se abre sobre Catálogos. */
+function openPendingJoin() {
+  const code = pendingJoin.get();
+  if (!code) return;
+  go('catalogos');
+  openJoin(code);
 }
 
 const CONNECTION_BANDS = {
@@ -162,6 +177,7 @@ function updateShell() {
 // --- Enrutado -------------------------------------------------------------------------------------
 
 function routeFromHash() {
+  if (codeFromHash()) return 'catalogos';
   const key = (location.hash.match(/^#\/([a-z]+)/) || [])[1];
   return ROUTES[key] ? key : 'mapa';
 }
@@ -214,6 +230,16 @@ window.addEventListener('offline', () => setConnection('offline'));
 // casi siempre el history.go() de BioDexNav aterrizando en una entrada con el hash de antes: se
 // reescribe con la sección que se está viendo en vez de navegar (si no, cerrar Ajustes lo reabría).
 window.addEventListener('hashchange', () => {
+  // Un enlace de invitación abierto con la app ya en marcha.
+  const code = codeFromHash();
+  if (code) {
+    pendingJoin.set(code);
+    if (current) {
+      try { history.replaceState(history.state, '', '#/' + current); } catch (e) { /* file:// */ }
+      openPendingJoin();
+    }
+    return;
+  }
   if (current && routeFromHash() !== current) {
     try { history.replaceState(history.state, '', '#/' + current); } catch (e) { /* file:// */ }
   }
@@ -239,6 +265,7 @@ if ('serviceWorker' in navigator) {
 }
 
 clearLegacyCopies();
+{ const code = codeFromHash(); if (code) pendingJoin.set(code); }
 Nav.init();
 document.documentElement.dataset.version = APP_VERSION;
 bootSession().then((where) => (where === 'app' ? showApp() : showAuth()));
