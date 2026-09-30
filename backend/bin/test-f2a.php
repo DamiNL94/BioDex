@@ -4,7 +4,7 @@
 // Imprime OK/FAIL por comprobación y sale con código 1 si alguna falla.
 // Las pruebas HTTP van contra nginx dentro de la red de Docker (TEST_BASE_URL, por defecto http://nginx)
 // y el correo se lee de la API de Mailpit (TEST_MAILPIT_URL, por defecto http://mailpit:8025).
-// Crea usuarios *@biodex.test y los borra al terminar.
+// Crea usuarios f2a-*@biodex.test y los borra al terminar.
 // ================================================================================================
 
 if (PHP_SAPI !== "cli") exit(1);
@@ -49,7 +49,8 @@ function cleanup(PDO $pdo): void {
     $pdo->exec("DELETE FROM login_attempts WHERE email LIKE '%@biodex.test'");
     $pdo->exec("DELETE FROM access_log WHERE target LIKE '%@biodex.test' OR target LIKE 'test-f2a:%'");
     $pdo->exec("DELETE FROM catalogs WHERE name LIKE 'test-f2a %'");
-    $pdo->exec("DELETE FROM users WHERE email LIKE '%@biodex.test'");
+    // Solo sus cuentas: los recorridos de otras fases dejan catálogos de otros @biodex.test (FK fk_catalogs_owner).
+    $pdo->exec("DELETE FROM users WHERE email LIKE 'f2a-%@biodex.test'");
 }
 cleanup($pdo);
 
