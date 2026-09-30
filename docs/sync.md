@@ -1,7 +1,21 @@
 # Sincronización
 
 Código: `backend/Api/sync.php` (rutas) y `backend/Lib/sync.php` (validación, `server_seq`, salida). Pruebas:
-`docker compose exec php php bin/test-f5.php`.
+`docker compose exec php php bin/test-f5.php` y `bin/test-f8a.php` (marcas completas y notas).
+
+## Tipos de entidad (F8a)
+Push y pull llevan varios tipos, todos con las **mismas reglas**: id UUID v4 del cliente, `clientUpdatedAt` decide,
+solo el autor edita o borra, `server_seq` del contador común tomado en la misma transacción y tombstones.
+Se declaran en `SYNC_ENTITIES` (`Api/sync.php`); añadir uno (F8b: `assessments`) es añadir una entrada.
+
+| Tipo | Tabla | Id | Push: lista · borrados | Respuesta | Pull | Coordenadas |
+|---|---|---|---|---|---|---|
+| marcas | `occurrences` | `occurrenceID` | `occurrences` · `deletes` | `results` | `items` | sí: `applyVisibility()` |
+| notas de especie | `species_notes` | `noteID` | `notes` · `noteDeletes` | `noteResults` | `notes` | no |
+
+Las notas no llevan coordenadas y no pasan por `applyVisibility()`, pero **solo las recibe quien tiene permiso
+`view`** en el catálogo (el pull lo exige; un no miembro recibe 403 `not_member` y nada más). Subirlas exige
+`mark`, como las marcas: el lector solo las lee.
 
 ## Principios
 - **Nunca se pierde una marca**: cada elemento de un push vuelve con su estado; nada se descarta en silencio.
@@ -14,23 +28,38 @@ Código: `backend/Api/sync.php` (rutas) y `backend/Lib/sync.php` (validación, `
 1. `POST /api/species` con las especies creadas sin conexión (`taxonID` = `biodex:<uuid v4>` propio). 201 o
    200 si ya existía con ese id; **409 `{taxonID}`** si el nombre ya existe: reasignar las marcas a ese id.
 2. Si hace falta, `POST /api/catalogs/{id}/species` (la especie tiene que estar en el catálogo).
-3. `POST /api/sync/push` en lotes de ≤ 200 (marcas + borrados) hasta vaciar la cola.
+3. `POST /api/sync/push` en lotes de ≤ 200 (marcas, notas y sus borrados) hasta vaciar la cola.
 4. `GET /api/sync/pull` desde el último `cursor` guardado hasta `hasMore: false`.
 5. Si `catalogContentSeq` ≠ el `contentSeq` guardado → volver a bajar `GET /api/catalogs/{id}/offline`.
 
 Push antes que pull: así el pull ya trae los `server_seq` de lo propio y no hay que reconciliar dos veces.
 
 ## Push
-`{catalogId, deviceId, occurrences:[…], deletes:[{occurrenceID, clientUpdatedAt}]}`. Permiso `mark`
-(owner/custodian/editor). Sin rol → 403 `code: not_member`; rol sin permiso → 403 `code: forbidden`.
+`{catalogId, deviceId, occurrences:[…], deletes:[{occurrenceID, clientUpdatedAt}], notes:[…],
+noteDeletes:[{noteID, clientUpdatedAt}]}` (todas las listas opcionales; ≤ 200 elementos entre todas). Permiso
+`mark` (owner/custodian/editor). Sin rol → 403 `code: not_member`; rol sin permiso → 403 `code: forbidden`.
 
 Marca: `occurrenceID` (UUID v4 en minúsculas), `taxonID`, `eventDate` (ISO 8601 **con zona**; se guarda en
-UTC), `decimalLatitude`, `decimalLongitude`, `coordinateUncertaintyInMeters` (entero ≥ 0), `individualCount?`,
-`lifeStage?` (≤ 64), `occurrenceRemarks?` (≤ 4000), `mature_count?`, `iucn_assessment?` (objeto),
-`clientUpdatedAt` (ISO 8601 con zona; se guarda en UTC con milisegundos). Los campos desconocidos se ignoran.
+UTC), `decimalLatitude`, `decimalLongitude`, `coordinateUncertaintyInMeters` (entero ≥ 0), `clientUpdatedAt`
+(ISO 8601 con zona; se guarda en UTC con milisegundos) y, opcionales (F8a, nombres DwC exactos):
 
-Respuesta `{results:[{occurrenceID, status, reason?, detail?, serverSeq?, occurrence?}]}`, primero las marcas y
-luego los borrados, en el orden recibido.
+| Término | Valores |
+|---|---|
+| `occurrenceStatus` | `present` (por defecto) · `absent` — una ausencia en un punto prospectado también es dato |
+| `individualCount`, `mature_count` | enteros ≥ 0; `mature_count ≤ individualCount` y exige `individualCount` |
+| `lifeStage` | `adult` `juvenile` `subadult` `larva` `egg` `seedling` `flowering` `fruiting` `vegetative` `undetermined` |
+| `sex` | `male` `female` `hermaphrodite` `undetermined` (vocabulario de GBIF) |
+| `habitat` (≤ 500), `occurrenceRemarks` (≤ 4000), `georeferenceRemarks` (≤ 255) | texto |
+| `georeferenceProtocol` | `GPS del dispositivo` (por defecto) · `Punto marcado en el mapa` (exige precisión ≥ 1 m) |
+
+Una **ausencia** lleva `individualCount` 0 o nulo y ningún `mature_count`. Los campos desconocidos se ignoran
+(también el antiguo `iucn_assessment`: la evaluación UICN es de la especie, F8b).
+
+Nota: `noteID` (UUID v4), `taxonID` (del catálogo), `text` (1–4000 caracteres, no vacío), `clientUpdatedAt`.
+
+Respuesta `{results:[{occurrenceID, status, reason?, detail?, serverSeq?, occurrence?}], noteResults:[{noteID,
+status, reason?, detail?, serverSeq?, note?}]}`: por tipo, primero las altas y ediciones y luego los borrados, en
+el orden recibido. En un `stale`, la versión del servidor va en `occurrence` o `note`.
 
 | status | Cuándo | Qué hace el móvil |
 |---|---|---|
@@ -40,9 +69,11 @@ luego los borrados, en el orden recibido.
 | `rejected` | Ver `reason` | Avisar al usuario y conservar la marca local |
 
 `reason`: `invalid_item`, `invalid_uuid`, `invalid_taxon`, `invalid_date`, `future_date` (> 24 h en el
-futuro), `missing_field`, `invalid_coordinates`, `invalid_integer`, `invalid_field`, `taxon_not_in_catalog`,
-`forbidden` (la marca es de otro autor), `catalog_mismatch` (es de otro catálogo), `not_found` (borrado de algo
-que el servidor nunca tuvo: se puede olvidar). `detail` explica el motivo en castellano.
+futuro), `missing_field`, `invalid_coordinates`, `invalid_integer`, `invalid_field`, `invalid_vocabulary` (valor
+fuera de su lista cerrada), `invalid_mature_count` (maduros > individuos, o sin individuos), `invalid_absence`
+(ausencia con individuos o maduros), `taxon_not_in_catalog`, `forbidden` (es de otro autor), `catalog_mismatch`
+(es de otro catálogo), `not_found` (borrado de algo que el servidor nunca tuvo: se puede olvidar). `detail`
+explica el motivo en castellano.
 
 ## Reglas de conflicto
 - Gana la `clientUpdatedAt` más reciente (última escritura gana). Con relojes muy desviados puede ganar
@@ -54,11 +85,17 @@ que el servidor nunca tuvo: se puede olvidar). `detail` explica el motivo en cas
 
 ## Pull
 `GET /api/sync/pull?catalogId=&since=0&limit=500` (1–500). Permiso `view`. Devuelve
-`{items, cursor, hasMore, catalogContentSeq, role, visibilityEpoch}` con las marcas de `server_seq > since` en orden,
-**incluidas las borradas** (`{occurrenceID, taxonID, userId, clientUpdatedAt, serverSeq, deleted: true}`, sin
-coordenadas ni datos). El resto lleva los términos DwC, `recordedBy` (nombre del autor), `userId`,
-`generalized` y, si es `true`, `dataGeneralizations` e `informationWithheld`. Nivel 1 generalizado: sin
-coordenadas (`null`). Guardar `cursor` y seguir mientras `hasMore`.
+`{items, notes, cursor, hasMore, catalogContentSeq, role, visibilityEpoch}`. Una página son los `limit` primeros
+`server_seq > since` **de todos los tipos** (el contador es común), repartidos en `items` (marcas) y `notes`, cada
+lista en orden; `cursor` es el último `server_seq` de la página y vale para los dos. **Incluidas las borradas**
+(`{occurrenceID | noteID, taxonID, userId, clientUpdatedAt, serverSeq, deleted: true}`, sin coordenadas, texto ni
+datos). Una marca lleva los términos DwC (los de F8a incluidos), `recordedBy` (nombre del autor), `userId`,
+`generalized` y, si es `true`, `dataGeneralizations` e `informationWithheld`; nivel 1 generalizado: sin
+coordenadas (`null`). Una nota: `text`, `recordedBy`, `userId`, `clientUpdatedAt`. Guardar `cursor` y seguir
+mientras `hasMore`.
+
+Móvil de antes de F8a: su cursor pudo pasar por encima de notas que no guardaba. `sync.js` guarda la versión del
+pull aplicada por catálogo (`meta syncv:<id>`, ahora 2) y, con una menor, vuelve a pedir desde 0 una vez.
 
 - Sin rol (expulsado o catálogo borrado) → **403 `{error, code: "not_member"}`**: el móvil borra sus datos de
   ese catálogo.
@@ -116,3 +153,8 @@ cola, respaldo) y `sync.js` (motor).
   importa la misma cuenta y es idempotente por `occurrenceID`.
 - **Zonas del mapa (F7)**: la base sube a la versión 2 con el almacén `zones`; sus teselas van a las cachés
   `biodex-tiles-<zoneId>`, que cerrar sesión también borra. Detalle en `docs/mapa.md`.
+- **Notas (F8a)**: versión 3 con el almacén `notes` (índices `catalogId`, `taxonID`). Cola `note` / `noteDelete`,
+  una entrada por nota como las marcas; el respaldo pasa a `version: 2` con `notes` (importa también los de la 1).
+  Expulsión o catálogo borrado: sus notas salen del dispositivo con el resto.
+- **Editar una marca** (F8a, «Mis marcas»): cambia los datos, nunca la posición ni `eventDate`; sube
+  `clientUpdatedAt` y el push la acepta por ser la más reciente.

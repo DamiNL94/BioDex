@@ -75,8 +75,8 @@ rol insuficiente → 403 `{error, code: "forbidden"}`.
 
 | Método · ruta | Rol mínimo | Qué hace |
 |---|---|---|
-| `POST /api/sync/push` | editor | `{catalogId, deviceId, occurrences:[…], deletes:[{occurrenceID, clientUpdatedAt}]}`, ≤ 200 elementos (400). → `{results:[{occurrenceID, status: accepted·unchanged·stale·rejected, reason?, detail?, serverSeq?, occurrence?}]}`. Validación por elemento; idempotente |
-| `GET /api/sync/pull?catalogId=&since=0&limit=500` | viewer | Marcas con `server_seq > since` en orden, incluidas las borradas (`deleted: true`, sin coordenadas), pasadas por `applyVisibility()` (`generalized`, `dataGeneralizations`). → `{items, cursor, hasMore, catalogContentSeq, role, visibilityEpoch}` (F6: si cambia, el móvil rehace las marcas ajenas; `docs/sync.md`). Owner/custodian: una fila `view_exact` por petición si recibe exactas ajenas |
+| `POST /api/sync/push` | editor | `{catalogId, deviceId, occurrences:[…], deletes:[{occurrenceID, clientUpdatedAt}], notes:[…], noteDeletes:[{noteID, clientUpdatedAt}]}`, ≤ 200 elementos entre todos (400). → `{results:[{occurrenceID, status: accepted·unchanged·stale·rejected, reason?, detail?, serverSeq?, occurrence?}], noteResults:[{noteID, …, note?}]}`. Validación por elemento (F8a: vocabularios cerrados, maduros ≤ individuos, ausencias sin individuos); idempotente |
+| `GET /api/sync/pull?catalogId=&since=0&limit=500` | viewer | Marcas y notas de especie con `server_seq > since` en orden (un solo cursor), incluidas las borradas (`deleted: true`, sin coordenadas ni texto); las marcas pasan por `applyVisibility()` (`generalized`, `dataGeneralizations`). → `{items, notes, cursor, hasMore, catalogContentSeq, role, visibilityEpoch}` (F6: si cambia, el móvil rehace las marcas ajenas; `docs/sync.md`). Owner/custodian: una fila `view_exact` por petición si recibe exactas ajenas |
 
 ## Imágenes (nginx)
 `GET /img/fototeca/<ruta>.<jpg·png·webp·gif>` → proxy a `https://www.miteco.gob.es/content/dam/fototeca/` con caché
