@@ -1,6 +1,6 @@
 # API
 
-Solo JSON bajo `/api` (única excepción: el ZIP de `POST /api/catalogs/{id}/export`, F10a). Errores: `{"error": "mensaje"}` con el código HTTP correspondiente.
+Solo JSON bajo `/api` (única excepción: el ZIP de `POST /api/catalogs/{id}/export`, F10a). Errores: `{"error": "mensaje"}` con el código HTTP correspondiente; un 500 no capturado dice siempre un mensaje llano (en `APP_ENV=dev`, el detalle aparte en `detail`, F10b).
 Sesión por cookie (`biodex_session` + `biodex_remember`, `HttpOnly`, `SameSite=Lax`).
 
 ## Salud
