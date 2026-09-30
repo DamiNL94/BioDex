@@ -5,7 +5,8 @@
 //   GET  /api/species?q=&group=&origin=&scope=&legal=&category=&limit=20&offset=0
 //   GET  /api/species/filters     opciones de los filtros (shared/eidos-filters.json) y niveles de sensibilidad
 //   GET  /api/species/{taxonID}   ficha completa (la trae de EIDOS si falta o tiene > 30 días)
-//   POST /api/species             {scientificName, scientificNameAuthorship, taxonRank, vernacularName?}
+//   POST /api/species             {scientificName, scientificNameAuthorship, taxonRank, vernacularName?, taxonID?}
+//                                 taxonID = biodex:<uuid v4> propuesto por el móvil (especie creada sin conexión)
 //
 // Búsqueda con `q`: EIDOS en vivo (grupo, origen y ámbito se filtran allí) + especies de usuario de la
 // caché. Sin `q`: solo la caché. `legal` y `category` se aplican sobre la caché: la categoría llega ya con
@@ -209,7 +210,7 @@ function gbifClassification(string $name, string $genus): ?array {
 }
 
 function handleCreate(PDO $pdo, int $userId): never {
-    $body = requireJsonBody("{scientificName, scientificNameAuthorship, taxonRank, vernacularName?}");
+    $body = requireJsonBody("{scientificName, scientificNameAuthorship, taxonRank, vernacularName?, taxonID?}");
     $name   = trim(preg_replace('/\s+/u', " ", (string) ($body["scientificName"] ?? "")));
     $author = trim((string) ($body["scientificNameAuthorship"] ?? ""));
     $rank   = (string) ($body["taxonRank"] ?? "");
@@ -227,6 +228,24 @@ function handleCreate(PDO $pdo, int $userId): never {
     if ($author === "" || mb_strlen($author) > 200) apiError("«scientificNameAuthorship» es obligatorio (≤ 200 caracteres).", 400);
     if ($vernacular !== null && mb_strlen($vernacular) > 255) apiError("«vernacularName» admite 255 caracteres.", 400);
 
+    $markers = ["Subspecies" => "subsp.", "Variety" => "var.", "Form" => "f."];
+    $infra = $rank === "Species" ? null : $parts[3];
+    $canonical = $infra === null ? $name : "{$parts[1]} {$parts[2]} {$markers[$rank]} {$infra}";
+
+    // Especie creada sin conexión: el móvil propone el id (y ya lo usa en sus marcas). Reenviarla es
+    // idempotente: con ese id ya creado para el mismo nombre → 200.
+    $taxonID = null;
+    if (isset($body["taxonID"])) {
+        $taxonID = is_string($body["taxonID"]) ? strtolower($body["taxonID"]) : "";
+        if (!preg_match('/^biodex:[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/', $taxonID)) {
+            apiError("«taxonID» debe tener la forma biodex:<uuid v4>.", 400);
+        }
+        if ($same = speciesFind($pdo, $taxonID)) {
+            if ($same["source"] === "user" && $same["canonical_name"] === $canonical) respond(["species" => speciesFullOut($same)]);
+            apiError("«taxonID» ya está en uso por otra especie.", 422);
+        }
+    }
+
     // ¿Ya existe? Primero la caché (incluye especies de usuario), luego EIDOS.
     $stmt = $pdo->prepare("SELECT taxonID FROM species WHERE canonical_name = ? LIMIT 1");
     $stmt->execute([$name]);
@@ -243,10 +262,7 @@ function handleCreate(PDO $pdo, int $userId): never {
     $cls = $genusRow ? speciesClassificationColumns($genusRow) + ["classification_source" => "eidos"]
                      : gbifClassification($name, $genus);
 
-    $taxonID = "biodex:" . uuidV4();
-    $markers = ["Subspecies" => "subsp.", "Variety" => "var.", "Form" => "f."];
-    $infra = $rank === "Species" ? null : $parts[3];
-    $canonical = $infra === null ? $name : "{$parts[1]} {$parts[2]} {$markers[$rank]} {$infra}";
+    $taxonID ??= "biodex:" . uuidV4();
     speciesUpsert($pdo, $taxonID, ($cls ?? []) + [
         "scientificName"           => "{$canonical} {$author}",
         "scientificNameAuthorship" => $author,
