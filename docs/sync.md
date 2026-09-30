@@ -54,7 +54,7 @@ que el servidor nunca tuvo: se puede olvidar). `detail` explica el motivo en cas
 
 ## Pull
 `GET /api/sync/pull?catalogId=&since=0&limit=500` (1–500). Permiso `view`. Devuelve
-`{items, cursor, hasMore, catalogContentSeq, role}` con las marcas de `server_seq > since` en orden,
+`{items, cursor, hasMore, catalogContentSeq, role, visibilityEpoch}` con las marcas de `server_seq > since` en orden,
 **incluidas las borradas** (`{occurrenceID, taxonID, userId, clientUpdatedAt, serverSeq, deleted: true}`, sin
 coordenadas ni datos). El resto lleva los términos DwC, `recordedBy` (nombre del autor), `userId`,
 `generalized` y, si es `true`, `dataGeneralizations` e `informationWithheld`. Nivel 1 generalizado: sin
@@ -64,6 +64,25 @@ coordenadas (`null`). Guardar `cursor` y seguir mientras `hasMore`.
   ese catálogo.
 - Owner/custodian que reciben coordenadas exactas ajenas de especies de nivel < 4: **una** fila `view_exact`
   en `access_log` por petición, con el número de registros en `target`.
+
+## Revocar confianza también en el móvil (F6)
+El pull solo manda lo que cambió desde el cursor: si a alguien le quitan el custodio, las coordenadas exactas que
+ya bajó se quedarían en su dispositivo. Para eso está `catalog_members.visibility_epoch` (`Lib/teams.php`):
+
+- **Sube** cuando cambia lo que ese miembro puede ver de las marcas **ajenas**: gana o pierde custodio (acceso a
+  exactas, `exactAccess.roles` de `shared/sensitivity.json`) o el owner cambia el nivel de una especie y él no
+  es de confianza (sube la de todos los miembros sin exactas). Subir el nivel le quita detalle; bajarlo se lo da,
+  y sin la época tampoco le llegaría. Editor ↔ lector y la transferencia de propiedad no la tocan.
+- El pull devuelve `visibilityEpoch`, leída junto con el rol en la misma consulta: la página corresponde a ella.
+- **Móvil** (`sync.js`, `pullAll`): si no coincide con la guardada en `meta` (`epoch:<catalogId>`; también si no
+  hay ninguna, p. ej. datos de antes de F6), borra de IndexedDB **todas las marcas ajenas** de ese catálogo,
+  pone el cursor a 0, guarda la época nueva y vuelve a pedir desde 0 (si la página ya venía desde 0, la aplica
+  tal cual). Las propias no se tocan nunca, tampoco las de la cola. Si la época cambia más de 3 veces en una
+  misma pasada, se deja para el reintento.
+- Comprobado en el recorrido de F6 leyendo la base, no la pantalla: tras quitar el custodio no queda ninguna
+  marca ajena exacta en `biodex-<userId>` (`docs/prompts/F6-checklist.md`).
+
+Expulsar, salir o borrar el catálogo no usa la época: el pull da 403 `not_member` y el catálogo sale entero.
 
 ## Paquete offline
 `GET /api/catalogs/{id}/offline` (permiso `view`): `{catalog, role, contentSeq, species:[ficha]}`. Ficha =
@@ -78,7 +97,8 @@ Código: `frontend/js/db.js` (IndexedDB), `offline.js` (descarga y lecturas loca
 cola, respaldo) y `sync.js` (motor).
 
 - **Una base por usuario**: `biodex-<userId>` con `catalogs`, `species`, `catalogSpecies`, `occurrences`,
-  `outbox` y `meta` (cursor por catálogo, `deviceId`, última sincronización). Cerrar sesión la borra, junto
+  `outbox` y `meta` (cursor y época por catálogo, `deviceId`, última sincronización y, F6, lo último de
+  Equipo, Invitaciones, Registro y Niveles para verlos sin red: `team:`, `invites:`, `audit:`, `levels:`). Cerrar sesión la borra, junto
   con las cachés `biodex-img-<catalogId>`, pero **solo** si no hay nada en la cola o el usuario lo decide
   (diálogo «Tienes n marcas sin sincronizar» → sincronizar · exportar respaldo · cancelar).
 - **Descargar un catálogo** = paquete offline + pull completo + la primera foto de cada especie en Cache
@@ -89,8 +109,8 @@ cola, respaldo) y `sync.js` (motor).
 - **Motor**: al entrar, al volver «En línea», cada 5 min, tras guardar y con «Sincronizar ahora». Candado
   en memoria + Web Locks (`biodex-sync`) entre pestañas. Red caída → reintento a 30 s, 1, 2 y 5 min.
   401 → se conserva la cola y la pantalla de acceso dice «Inicia sesión para sincronizar (n pendientes)».
-- **Pull**: lo que tenga un cambio local en cola no se pisa (lo decide el push). 403 `not_member` → el
-  catálogo sale del dispositivo; si hay marcas propias sin subir queda como `revoked` y Ajustes ofrece
+- **Pull**: lo que tenga un cambio local en cola no se pisa (lo decide el push). `visibilityEpoch` distinta →
+  fuera las marcas ajenas y desde 0 (arriba). 403 `not_member` → el catálogo sale del dispositivo; si hay marcas propias sin subir queda como `revoked` y Ajustes ofrece
   exportarlas o descartarlas.
 - **Respaldo**: JSON `{format: "biodex-backup", version: 1, userId, catalogs, species, occurrences}`; solo lo
   importa la misma cuenta y es idempotente por `occurrenceID`.
