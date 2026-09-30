@@ -155,9 +155,9 @@ function evalB(inp, ctx) {
     lv.reasons.push(`(a) ${fragmented ? 'severamente fragmentada ✓' : loc.value !== undefined
       ? `${loc.value} localidades ${aByLoc ? '≤' : '>'} ${maxLoc} ${aByLoc ? '✓' : '✗'}` : 'sin fragmentación ni localidades ✗'}`);
     if (decline.length) subs.push(withItems('b', decline));
-    lv.reasons.push(`(b) ${decline.length ? withItems('disminución continua', decline) + ' ✓' : 'sin disminución continua ✗'}`);
+    lv.reasons.push(`(b) ${decline.length ? `disminución continua ${withItems('', decline)} ✓` : 'sin disminución continua ✗'}`);
     if (fluct.length) subs.push(withItems('c', fluct));
-    lv.reasons.push(`(c) ${fluct.length ? withItems('fluctuaciones extremas', fluct) + ' ✓' : 'sin fluctuaciones extremas ✗'}`);
+    lv.reasons.push(`(c) ${fluct.length ? `fluctuaciones extremas ${withItems('', fluct)} ✓` : 'sin fluctuaciones extremas ✗'}`);
     const enough = subs.length >= need;
     lv.reasons.push(`${subs.length} de ${need} subcriterios en el umbral de ${c}${enough ? ' ✓' : ' ✗'}`);
 

@@ -19,6 +19,8 @@
  * Fotos de especies (/img/fototeca/, F5): CACHE-FIRST en las cachés `biodex-img-<catalogId>` que llena
  * la app al descargar un catálogo; lo que no esté ahí va a la red y NO se guarda en la del armazón.
  *
+ * Motor y umbrales UICN (/shared/, F8b): van en SHELL_ASSETS como el resto del armazón.
+ *
  * Teselas del mapa (/tiles/, F7): CACHE-FIRST en todas las cachés `biodex-tiles-*` (las zonas descargadas
  * y la de uso, `biodex-tiles-runtime`). Si no está: red con corte de TILE_TIMEOUT_MS, y lo que llega se
  * guarda en la de uso, con tope de RUNTIME_TILES_MAX entradas (fuera las más antiguas). Sin red ni copia:
@@ -26,7 +28,7 @@
  * Las peticiones de la descarga de zonas (cabecera X-BioDex-Zone) van directas a la red: allí un fallo
  * tiene que ser un fallo, no una tesela vacía.
  */
-var VERSION = 'v7';
+var VERSION = 'v8';
 var CACHE = 'biodex-shell-' + VERSION;
 var NET_TIMEOUT_MS = 3000;
 var TILE_TIMEOUT_MS = 5000;
@@ -71,11 +73,15 @@ var SHELL_ASSETS = [
 
   // js/components/
   'js/components/overlay.js', 'js/components/species-card.js', 'js/components/marks.js', 'js/components/species-notes.js',
+  'js/components/species-assessments.js',
 
   // js/views/
   'js/views/map.js', 'js/views/catalogs.js', 'js/views/species.js', 'js/views/settings.js',
   'js/views/search.js', 'js/views/catalog-builder.js', 'js/views/species-new.js', 'js/views/species-detail.js',
-  'js/views/catalog-team.js', 'js/views/join.js', 'js/views/mark-sheet.js'
+  'js/views/catalog-team.js', 'js/views/join.js', 'js/views/mark-sheet.js', 'js/views/iucn-wizard.js',
+
+  // shared/ (F8b): motor UICN y sus umbrales, servidos por nginx en /shared/ — el asistente funciona sin red
+  'shared/iucn-engine.js', 'shared/iucn-criteria.json'
 ];
 
 self.addEventListener('install', function (event) {

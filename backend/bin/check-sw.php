@@ -4,8 +4,12 @@
 // deja la app rota sin cobertura y nadie se entera hasta estar en el monte).
 //   · Cada entrada de SHELL_ASSETS existe y no está repetida.
 //   · Todo .js/.css de frontend/ (salvo el propio sw.js) está en SHELL_ASSETS.
+//   · El motor y los umbrales UICN de shared/ (F8b) también (rutas shared/…, servidas por nginx).
 // Uso: docker compose exec php php bin/check-sw.php   (o `php backend/bin/check-sw.php` en el anfitrión)
 // ================================================================================================
+
+// Ficheros de shared/ que sirve nginx (location /shared/ de biodex-app.conf) y que la app usa sin red.
+const SHARED_SERVED = ["shared/iucn-engine.js", "shared/iucn-criteria.json"];
 
 $front = realpath(__DIR__ . "/../../frontend");
 if ($front === false || !is_file("{$front}/sw.js")) {
@@ -32,8 +36,14 @@ echo "sw.js VERSION " . ($v[1] ?? "?") . " · " . count($assets) . " ficheros en
 foreach (array_count_values($assets) as $a => $n) {
     if ($n > 1) $fail("repetido en SHELL_ASSETS: {$a}");
 }
+// shared/ (F8b): el motor UICN y sus umbrales, servidos por nginx en /shared/ desde la carpeta shared/.
+$shared = dirname($front) . "/shared";
 foreach ($assets as $a) {
-    if (!is_file("{$front}/{$a}")) $fail("en SHELL_ASSETS pero no existe: {$a}");
+    $file = str_starts_with($a, "shared/") ? "{$shared}/" . substr($a, 7) : "{$front}/{$a}";
+    if (!is_file($file)) $fail("en SHELL_ASSETS pero no existe: {$a}");
+}
+foreach (SHARED_SERVED as $a) {
+    if (!in_array($a, $assets, true)) $fail("{$a} no está en SHELL_ASSETS (el asistente UICN tiene que abrir sin red)");
 }
 
 $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($front, FilesystemIterator::SKIP_DOTS));

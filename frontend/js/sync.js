@@ -6,9 +6,10 @@
 // Orden de cada pasada:
 //   1. especies creadas sin red (POST /species con su taxonID; 409 → se reasignan sus marcas) y su
 //      alta en el catálogo;
-//   2. push de marcas, notas de especie (F8a) y sus borrados en lotes de 200, por catálogo;
+//   2. push de marcas, notas de especie (F8a), evaluaciones UICN (F8b) y sus borrados en lotes de 200,
+//      por catálogo;
 //   3. pull de cada catálogo descargado hasta `hasMore: false` (marcas en `items`, notas en `notes`,
-//      un solo cursor); si `catalogContentSeq` cambió, se vuelve a bajar el paquete.
+//      evaluaciones en `assessments`, un solo cursor); si `catalogContentSeq` cambió, se vuelve a bajar el paquete.
 // Red caída a mitad → reintento con espera creciente (30 s, 1, 2, 5 min). 401 → la cola se conserva
 // (la app pide entrar de nuevo). Pull 403 not_member → el catálogo se borra del dispositivo; si tenía
 // marcas propias sin subir, antes se ofrecen para exportar (Ajustes). Pull con otra `visibilityEpoch`
@@ -18,14 +19,15 @@
 import { apiGetJson, apiPostJson } from './api.js';
 import { state, subscribe, setSync, setDownload, setActiveCatalog } from './state.js';
 import { tx, getAll, get, put, getMeta, setMeta, hasDb } from './db.js';
-import { deviceId, pushPayload, notePayload, storeOf, queueCounts, outboxEntries } from './marks.js';
+import { deviceId, pushPayload, notePayload, assessmentPayload, assessmentFromServer, storeOf, queueCounts, outboxEntries,
+  RECORD_STORES } from './marks.js';
 import { downloadCatalog, forgetCatalog, isDownloading } from './offline.js';
 
 const PERIOD_MS = 5 * 60 * 1000;
 // Versión del protocolo de pull que tiene aplicada cada catálogo (meta `syncv:<id>`). 2 (F8a): el pull
 // trae también `notes`. Un cursor de antes pudo saltarse notas (se lo comía una versión anterior de la
-// app que no las guardaba): con una versión menor se vuelve a pedir desde 0.
-const PULL_VERSION = 2;
+// app que no las guardaba): con una versión menor se vuelve a pedir desde 0. 3 (F8b): + `assessments`.
+const PULL_VERSION = 3;
 const BACKOFF_S = [30, 60, 120, 300];
 const PUSH_BATCH = 200;
 const PULL_LIMIT = 500;
@@ -110,7 +112,7 @@ async function pushSpecies(entry) {
 }
 
 async function reject(entry, reason, detail) {
-  await tx(['outbox', 'occurrences', 'notes'], 'readwrite', async (t) => {
+  await tx(['outbox', ...RECORD_STORES], 'readwrite', async (t) => {
     await t.put('outbox', { ...entry, attempts: (entry.attempts || 0) + 1, lastError: detail, rejected: { reason, detail } });
     const store = storeOf(entry.kind);
     if (store) {
@@ -126,11 +128,12 @@ async function reject(entry, reason, detail) {
 const ENTITIES = {
   occurrences: { id: 'occurrenceID', results: 'results', stale: 'occurrence', deleteKind: 'delete' },
   notes: { id: 'noteID', results: 'noteResults', stale: 'note', deleteKind: 'noteDelete' },
+  assessments: { id: 'assessmentID', results: 'assessmentResults', stale: 'assessment', deleteKind: 'assessmentDelete' },
 };
 
 async function applyResults(catalogId, entries, res) {
   const byRef = new Map(entries.map((e) => [e.ref, e]));
-  await tx(['outbox', 'occurrences', 'notes'], 'readwrite', async (t) => {
+  await tx(['outbox', ...RECORD_STORES], 'readwrite', async (t) => {
     for (const [store, ent] of Object.entries(ENTITIES)) {
       for (const r of res[ent.results] || []) {
         const id = r[ent.id];
@@ -148,7 +151,7 @@ async function applyResults(catalogId, entries, res) {
           await t.del('outbox', entry.id);
           const srv = r[ent.stale];
           if (!srv || srv.deleted) await t.del(store, id);
-          else await t.put(store, { ...srv, catalogId, authorId: srv.userId, status: 'synced', reason: null, deletedAt: null });
+          else await t.put(store, fromServer(store, srv, catalogId));
         } else if (r.reason === 'not_found' && isDelete) {
           // Borrado de algo que el servidor nunca tuvo: no hay nada que borrar.
           await t.del('outbox', entry.id);
@@ -166,7 +169,8 @@ async function applyResults(catalogId, entries, res) {
 async function pushCatalog(catalogId, entries, device) {
   for (let i = 0; i < entries.length; i += PUSH_BATCH) {
     const batch = entries.slice(i, i + PUSH_BATCH);
-    const body = { catalogId, deviceId: device, occurrences: [], deletes: [], notes: [], noteDeletes: [] };
+    const body = { catalogId, deviceId: device, occurrences: [], deletes: [], notes: [], noteDeletes: [],
+      assessments: [], assessmentDeletes: [] };
     const sent = [];
     for (const e of batch) {
       const store = storeOf(e.kind);
@@ -174,7 +178,9 @@ async function pushCatalog(catalogId, entries, device) {
       if (!rec) { await tx('outbox', 'readwrite', (t) => t.del('outbox', e.id)); continue; }
       if (e.kind === 'delete') body.deletes.push({ occurrenceID: e.ref, clientUpdatedAt: rec.clientUpdatedAt });
       else if (e.kind === 'noteDelete') body.noteDeletes.push({ noteID: e.ref, clientUpdatedAt: rec.clientUpdatedAt });
+      else if (e.kind === 'assessmentDelete') body.assessmentDeletes.push({ assessmentID: e.ref, clientUpdatedAt: rec.clientUpdatedAt });
       else if (e.kind === 'note') body.notes.push(notePayload(rec));
+      else if (e.kind === 'assessment') body.assessments.push(assessmentPayload(rec));
       else body.occurrences.push(pushPayload(rec));
       sent.push(e);
     }
@@ -196,15 +202,22 @@ async function pushCatalog(catalogId, entries, device) {
 
 // --- 3. Pull -----------------------------------------------------------------------------------------
 
+/** Elemento del servidor (pull o «stale») → registro local sincronizado. */
+function fromServer(store, it, catalogId) {
+  if (store === 'assessments') return assessmentFromServer(it, catalogId);
+  return { ...it, catalogId, authorId: it.userId, status: 'synced', reason: null, deletedAt: null };
+}
+
 /** Aplica un lote del pull. Lo que tenga un cambio local en cola no se pisa (el push decide). */
 async function applyPulled(catalogId, res) {
   const { cursor, role } = res;
-  await tx(['occurrences', 'notes', 'outbox', 'meta', 'catalogs'], 'readwrite', async (t) => {
-    for (const [store, list, idKey] of [['occurrences', res.items || [], 'occurrenceID'], ['notes', res.notes || [], 'noteID']]) {
+  await tx([...RECORD_STORES, 'outbox', 'meta', 'catalogs'], 'readwrite', async (t) => {
+    for (const [store, list, idKey] of [['occurrences', res.items || [], 'occurrenceID'], ['notes', res.notes || [], 'noteID'],
+      ['assessments', res.assessments || [], 'assessmentID']]) {
       for (const it of list) {
         if ((await t.byIndex('outbox', 'ref', it[idKey])).length) continue;
         if (it.deleted) { await t.del(store, it[idKey]); continue; }
-        await t.put(store, { ...it, catalogId, authorId: it.userId, status: 'synced', reason: null, deletedAt: null });
+        await t.put(store, fromServer(store, it, catalogId));
       }
     }
     await t.put('meta', { key: 'cursor:' + catalogId, value: cursor });

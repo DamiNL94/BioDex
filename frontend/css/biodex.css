@@ -875,3 +875,88 @@ path.zone-draft{stroke:var(--sea);fill:var(--sea);fill-opacity:.08}
 :root[data-theme="dark"] .leaflet-control-scale-line{background:rgba(22,24,15,.8)}
 :root[data-theme="dark"] .leaflet-control-attribution{background:rgba(22,24,15,.85) !important}
 :root[data-theme="dark"] .me-dot{stroke:#16180F}
+
+/* ===== I. F8b: asistente UICN y «Evaluación BioDex» ============================================= */
+/* Asistente (views/iucn-wizard.js): pasos A–E + Resultado, tabla de umbrales y resultado parcial en vivo.
+   Objetivos de 48 px como en la hoja de marca: se rellena en el campo. */
+.iucn-wizard .sheet-body{padding-bottom:0}
+.iucn-wizard .btn-primary,.iucn-wizard .btn-secondary,.iucn-wizard .link-btn,.iucn-wizard .field input,
+.iucn-wizard .check{min-height:var(--tap-big)}
+.iucn-wizard .sheet-close{width:var(--tap-big);height:var(--tap-big)}
+.wz-notice{margin:0 0 10px;padding:8px 12px;background:var(--warn-bg);color:var(--warn-ink);border-left:var(--rule) solid var(--warn);
+  font-size:var(--fs-sm);font-weight:600}
+.wz-species{margin:0 0 8px}
+.wz-steps ol{list-style:none;margin:0 0 12px;padding:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr)) minmax(0,2.2fr);gap:4px}
+.wz-step-btn{width:100%;min-height:var(--tap-big);border:1px solid var(--line-strong);border-bottom:4px solid var(--line-strong);
+  border-radius:var(--radius-sm);background:var(--surface);color:var(--ink-soft);font-weight:800;cursor:pointer}
+.wz-step-btn.is-met{border-bottom-color:var(--danger)}
+.wz-step-btn.is-data{border-bottom-color:var(--sea)}
+.wz-step-btn.is-skipped{color:var(--muted);border-bottom-style:dashed}
+.wz-step-btn[aria-current="step"]{background:var(--leaf-fill);border-color:var(--leaf-fill);color:var(--cream)}
+.wz-form{gap:14px}
+.wz-step{display:grid;gap:12px}
+.wz-step h3{margin:0}
+.wz-thr .data-table{min-width:0}
+.wz-thr th[scope="col"]{text-align:right}
+.wz-thr td{text-align:right;font-variant-numeric:tabular-nums}
+.wz-thr-note{margin:0}
+.wz-fields{margin:0;padding:0;border:0;display:grid;gap:14px;min-width:0}
+.wz-fields:disabled{opacity:.5}
+.wz-group{margin:0;padding:8px 12px 10px;border:1px solid var(--line);border-radius:var(--radius-sm);display:grid;gap:4px;min-width:0}
+.wz-group legend{padding:0 4px;font-weight:700;font-size:var(--fs-sm)}
+.wz-radio span,.wz-group .check span{font-size:var(--fs-sm)}
+.wz-pair{display:grid;gap:12px}
+.wz-num input{max-width:14rem;font-variant-numeric:tabular-nums}
+.wz-suggest{display:grid;gap:6px;padding:10px 12px;background:var(--surface);border:1px dashed var(--line-strong);border-radius:var(--radius-sm)}
+.wz-suggest p{margin:0}
+.wz-origin{margin:0;color:var(--sea)}
+.wz-live{display:grid;gap:6px;padding:10px 12px;background:var(--surface);border:1px solid var(--line);
+  border-left:var(--rule) solid var(--brass);border-radius:var(--radius-sm)}
+.wz-live p,.wz-live ul{margin:0}
+.wz-live-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
+.wz-levels,.wz-notes,.wz-warnings{list-style:none;padding:0;display:grid;gap:4px;font-size:var(--fs-sm)}
+.wz-levels li{display:grid;grid-template-columns:2.6rem minmax(0,1fr);gap:6px;align-items:baseline;color:var(--muted)}
+.wz-levels li.is-met{color:var(--ink)}
+.wz-verdict{display:block;font-weight:700;overflow-wrap:anywhere}
+.wz-reasons{overflow-wrap:anywhere}
+.wz-notes li{color:var(--muted)}
+.wz-warnings li{padding-left:10px;border-left:3px solid var(--warn);color:var(--warn-ink);font-weight:600}
+.wz-live-total{padding-top:6px;border-top:1px solid var(--line);font-size:var(--fs-sm)}
+.wz-actions{flex-wrap:wrap;row-gap:8px}
+.wz-actions [data-save="final"]{flex:1 1 100%}
+.wz-actions .btn-secondary{min-height:var(--tap-big)}
+/* Pantalla final: la categoría en grande */
+.wz-final{display:grid;gap:10px}
+.wz-cat-box{padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-left:8px solid var(--line-strong);
+  border-radius:var(--radius-sm)}
+.wz-cat-box p{margin:0}
+.wz-cat{font-family:var(--font-display);font-size:4rem;font-weight:700;line-height:1;letter-spacing:.02em}
+.wz-cat-label{font-weight:700;font-size:var(--fs-lg)}
+.wz-criteria{margin-top:6px !important;font-family:var(--font-display);font-size:var(--fs-lg);font-weight:600;overflow-wrap:anywhere}
+.wz-adjust,.wz-determines{margin-top:6px !important}
+.wz-by .is-determining th,.wz-by .is-determining td{font-weight:800}
+/* Ficha: «Evaluación BioDex» */
+.assessments{list-style:none;margin:0 0 12px;padding:0;display:grid;gap:6px}
+.assess{display:grid;gap:2px;padding:8px 10px;background:var(--surface);border:1px solid var(--line);
+  border-left:var(--rule) solid var(--line-strong);border-radius:var(--radius-sm)}
+.assess.is-reference{border-width:2px;border-left-width:8px;background:var(--panel)}
+.assess-ref{margin:0;color:var(--leaf)}
+.assess-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px}
+.assess-cat{font-family:var(--font-display);font-size:var(--fs-xl);font-weight:700;line-height:1.1}
+.assess-string{font-weight:600;overflow-wrap:anywhere}
+.assess-just{margin:6px 0 0;white-space:pre-line;overflow-wrap:anywhere}
+.assess-detail .data-table{margin-top:4px}
+.assess-detail .is-determining th,.assess-detail .is-determining td{font-weight:800}
+@media (min-width:480px){
+  .wz-pair{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .wz-actions [data-save="final"]{flex:1 1 auto}
+}
+/* El filete de categoría (.iucn-edge-*) va antes en la hoja: aquí, con más especificidad. */
+.assess.iucn-edge-CR,.wz-cat-box.iucn-edge-CR{border-left-color:var(--iucn-cr)}
+.assess.iucn-edge-EN,.wz-cat-box.iucn-edge-EN{border-left-color:var(--iucn-en)}
+.assess.iucn-edge-VU,.wz-cat-box.iucn-edge-VU{border-left-color:var(--iucn-vu)}
+.assess.iucn-edge-NT,.wz-cat-box.iucn-edge-NT{border-left-color:var(--iucn-nt)}
+.assess.iucn-edge-LC,.wz-cat-box.iucn-edge-LC{border-left-color:var(--iucn-lc)}
+.assess.iucn-edge-DD,.wz-cat-box.iucn-edge-DD{border-left-color:var(--iucn-dd)}
+/* El título del paso recibe el foco al cambiar de paso (lectores de pantalla); no es un control. */
+.wz-step h3:focus{outline:none}

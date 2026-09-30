@@ -11,7 +11,7 @@
 import { store } from './util.js';
 
 export const API_BASE = '/api';
-export const APP_VERSION = '0.8.0 · F8a';
+export const APP_VERSION = '0.8.1 · F8b';
 
 const listeners = new Set();
 

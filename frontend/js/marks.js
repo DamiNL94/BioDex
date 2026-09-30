@@ -1,5 +1,5 @@
 // ================================================================================================
-// marks.js — marcas (observaciones) y notas de especie en el dispositivo, su cola de envío y el respaldo.
+// marks.js — marcas (observaciones), notas y evaluaciones UICN de especie en el dispositivo, su cola de envío y el respaldo.
 // ------------------------------------------------------------------------------------------------
 // Una marca se guarda en `occurrences` con `status: pending` y deja una entrada en `outbox`; sync.js
 // la sube. Nunca hay una marca sin coordenadas: o la posición del GPS o un punto marcado en el mapa con
@@ -7,6 +7,7 @@
 // Borrar es lógico: `deletedAt` + entrada `delete` en la cola (el servidor la borra para el equipo).
 // Hay como mucho UNA entrada de cola por marca o nota: la última intención (crear/editar o borrar) gana.
 // Notas (F8a): almacén `notes`, cola `note` / `noteDelete`, mismas reglas que las marcas.
+// Evaluaciones UICN (F8b): almacén `assessments`, cola `assessment` / `assessmentDelete`, mismas reglas.
 // ================================================================================================
 
 import { state } from './state.js';
@@ -199,6 +200,77 @@ export async function deleteNote(noteID) {
   });
 }
 
+// --- Evaluaciones UICN (F8b) --------------------------------------------------------------------------
+// De la especie en el catálogo, no de una marca. En el dispositivo, borrador/final va en
+// `assessmentStatus` (en la API es `status`); `status` es, como en las marcas, el de sincronización.
+
+export const JUSTIFICATION_MAX = 4000;
+
+/** Evaluación del almacén → cuerpo del push. */
+export function assessmentPayload(a) {
+  const out = { assessmentID: a.assessmentID, taxonID: a.taxonID, inputs: a.inputs || {}, result: a.result || {},
+    status: a.assessmentStatus, clientUpdatedAt: a.clientUpdatedAt };
+  if (a.regionalAdjustment) out.regionalAdjustment = a.regionalAdjustment;
+  if (a.justification) out.justification = a.justification;
+  return out;
+}
+
+/** Evaluación tal como la manda el servidor (pull o «stale») → registro local. */
+export function assessmentFromServer(it, catalogId) {
+  const { status, ...rest } = it;
+  return { ...rest, catalogId, assessmentStatus: status, authorId: it.userId, status: 'synced', reason: null, deletedAt: null };
+}
+
+/**
+ * Guarda (sin red también) una evaluación propia: nueva si no hay `assessmentID`. `result` es el de
+ * evaluateIucn(); el ajuste regional cuenta solo si el motor lo aplicó. Mismas reglas que el servidor:
+ * una final necesita categoría y un ajuste regional, justificación. Devuelve el registro guardado.
+ */
+export async function saveAssessment({ assessmentID = null, catalogId, taxonID, inputs, result, justification, final }) {
+  const just = String(justification || '').trim();
+  if (just.length > JUSTIFICATION_MAX) throw new Error(`La justificación pasa de ${JUSTIFICATION_MAX} caracteres.`);
+  const adjust = result && result.regional && result.regional.applied ? result.regional.direction : null;
+  if (adjust && !just) throw new Error('El ajuste regional exige una justificación.');
+  if (final && !(result && result.category)) {
+    throw new Error('Para guardarla como final hace falta una categoría: si no alcanza umbrales, elige NT, LC o DD.');
+  }
+  return tx(['assessments', 'outbox'], 'readwrite', async (t) => {
+    const old = assessmentID ? await t.get('assessments', assessmentID) : null;
+    if (old && (old.authorId !== state.user.id || old.deletedAt)) throw new Error('Solo su autor puede editar esta evaluación.');
+    const rec = {
+      ...(old || { assessmentID: uuid(), catalogId, taxonID, authorId: state.user.id,
+        recordedBy: state.user.name || state.user.email, serverSeq: null, isReference: false }),
+      inputs, result, category: result ? result.category || null : null,
+      regionalAdjustment: adjust, justification: just || null,
+      assessmentStatus: final ? 'final' : 'draft',
+      clientUpdatedAt: isoNow(), status: 'pending', reason: null, deletedAt: null,
+    };
+    // Pasarla a borrador le quita la referencia en el servidor; aquí también, para no mostrar lo que ya no es.
+    if (!final) rec.isReference = false;
+    await t.put('assessments', rec);
+    await enqueue(t, { kind: 'assessment', ref: rec.assessmentID, catalogId: rec.catalogId });
+    return rec;
+  });
+}
+
+/** Borrado lógico de una evaluación propia; se sincroniza. */
+export async function deleteAssessment(assessmentID) {
+  await tx(['assessments', 'outbox'], 'readwrite', async (t) => {
+    const a = await t.get('assessments', assessmentID);
+    if (!a || a.authorId !== state.user.id) return;
+    const now = isoNow();
+    await t.put('assessments', { ...a, deletedAt: now, clientUpdatedAt: now, isReference: false, status: 'pending', reason: null });
+    await enqueue(t, { kind: 'assessmentDelete', ref: assessmentID, catalogId: a.catalogId });
+  });
+}
+
+/** Evaluaciones visibles de una especie en un catálogo: la de referencia primero, después las más recientes. */
+export async function assessmentsFor(catalogId, taxonID) {
+  return (await byIndex('assessments', 'taxonID', taxonID))
+    .filter((a) => a.catalogId === catalogId && !a.deletedAt)
+    .sort((a, b) => (b.isReference - a.isReference) || (Date.parse(b.clientUpdatedAt) - Date.parse(a.clientUpdatedAt)));
+}
+
 /** Notas visibles de una especie en un catálogo, en orden cronológico (las más antiguas primero). */
 export async function notesFor(catalogId, taxonID) {
   return (await byIndex('notes', 'taxonID', taxonID))
@@ -227,22 +299,30 @@ export async function queueCounts() {
 
 /** Almacén del registro al que apunta una entrada de la cola (null para especies). */
 export const storeOf = (kind) => (kind === 'note' || kind === 'noteDelete' ? 'notes'
-  : kind === 'species' ? null : 'occurrences');
+  : kind === 'assessment' || kind === 'assessmentDelete' ? 'assessments'
+    : kind === 'species' ? null : 'occurrences');
 
-/** Rechazadas con su marca o nota, para Ajustes › Sincronización. */
+/** Entrada de cola que es un borrado (de marca, nota o evaluación). */
+export const isDeleteKind = (kind) => kind === 'delete' || kind === 'noteDelete' || kind === 'assessmentDelete';
+
+/** Almacenes con registros en cola (para las transacciones que los tocan todos). */
+export const RECORD_STORES = ['occurrences', 'notes', 'assessments'];
+
+/** Rechazadas con su marca, nota o evaluación, para Ajustes › Sincronización. */
 export async function rejectedItems() {
   const entries = (await outboxEntries()).filter((e) => e.rejected);
   return Promise.all(entries.map(async (e) => ({
     entry: e,
     occurrence: storeOf(e.kind) === 'occurrences' ? await get('occurrences', e.ref) : null,
     note: storeOf(e.kind) === 'notes' ? await get('notes', e.ref) : null,
+    assessment: storeOf(e.kind) === 'assessments' ? await get('assessments', e.ref) : null,
     species: e.kind === 'species' ? await get('species', e.ref) : null,
   })));
 }
 
 /** Vuelve a poner en cola una rechazada. */
 export async function retryRejected(entryId) {
-  await tx(['outbox', 'occurrences', 'notes'], 'readwrite', async (t) => {
+  await tx(['outbox', ...RECORD_STORES], 'readwrite', async (t) => {
     const e = await t.get('outbox', entryId);
     if (!e) return;
     await t.put('outbox', { ...e, rejected: null, attempts: 0, lastError: null });
@@ -254,7 +334,7 @@ export async function retryRejected(entryId) {
 
 /** Descarta a mano una rechazada: la marca o nota nueva se borra del dispositivo; un borrado se deshace. */
 export async function discardRejected(entryId) {
-  await tx(['outbox', 'occurrences', 'notes', 'species', 'catalogSpecies'], 'readwrite', async (t) => {
+  await tx(['outbox', ...RECORD_STORES, 'species', 'catalogSpecies'], 'readwrite', async (t) => {
     const e = await t.get('outbox', entryId);
     if (!e) return;
     await t.del('outbox', entryId);
@@ -266,7 +346,7 @@ export async function discardRejected(entryId) {
     const store = storeOf(e.kind);
     const rec = await t.get(store, e.ref);
     if (!rec) return;
-    const isDelete = e.kind === 'delete' || e.kind === 'noteDelete';
+    const isDelete = isDeleteKind(e.kind);
     if (isDelete && rec.serverSeq) await t.put(store, { ...rec, deletedAt: null, status: 'synced', reason: null });
     else await t.del(store, e.ref);
   });
@@ -295,18 +375,25 @@ export async function createLocalSpecies(body, catalogId) {
 
 // --- Respaldo -------------------------------------------------------------------------------------
 
-/** JSON con las marcas y notas sin sincronizar (DwC) y sus catálogos. `catalogId` limita a uno. */
+/** JSON con las marcas, notas y evaluaciones sin sincronizar (DwC) y sus catálogos. `catalogId` limita a uno. */
 export async function buildBackup(catalogId = null) {
   const entries = (await outboxEntries()).filter((e) => !catalogId || e.catalogId === catalogId);
   const occurrences = [];
   const species = [];
   const notes = [];
+  const assessments = [];
   const catalogIds = new Set();
   for (const e of entries) {
     catalogIds.add(e.catalogId);
     if (e.kind === 'species') {
       const sp = await get('species', e.ref);
       if (sp && sp.pendingBody) species.push({ catalogId: e.catalogId, ...sp.pendingBody });
+      continue;
+    }
+    if (storeOf(e.kind) === 'assessments') {
+      const a = await get('assessments', e.ref);
+      if (a) assessments.push({ catalogId: a.catalogId, action: e.kind === 'assessmentDelete' ? 'delete' : 'upsert',
+        ...assessmentPayload(a), recordedBy: a.recordedBy, deletedAt: a.deletedAt || null });
       continue;
     }
     if (storeOf(e.kind) === 'notes') {
@@ -325,10 +412,10 @@ export async function buildBackup(catalogId = null) {
     const c = await get('catalogs', id);
     catalogs.push({ id, name: c ? c.name : null });
   }
-  // version 2 (F8a): + notes. El importador acepta también los de la versión 1 (sin notes).
+  // version 2 (F8a): + notes · 3 (F8b): + assessments. El importador acepta también los anteriores.
   return {
-    format: BACKUP_FORMAT, version: 2, exportedAt: isoNow(), userId: state.user.id, userEmail: state.user.email,
-    catalogs, species, occurrences, notes,
+    format: BACKUP_FORMAT, version: 3, exportedAt: isoNow(), userId: state.user.id, userEmail: state.user.email,
+    catalogs, species, occurrences, notes, assessments,
   };
 }
 
@@ -357,7 +444,7 @@ export async function importBackup(backup) {
   if (backup.userId !== state.user.id) throw new Error('Ese respaldo es de otra cuenta: las marcas llevan su autoría.');
   let added = 0;
   let skipped = 0;
-  await tx(['occurrences', 'notes', 'outbox', 'catalogs', 'species', 'catalogSpecies'], 'readwrite', async (t) => {
+  await tx([...RECORD_STORES, 'outbox', 'catalogs', 'species', 'catalogSpecies'], 'readwrite', async (t) => {
     for (const c of backup.catalogs || []) {
       if (!(await t.get('catalogs', c.id))) await t.put('catalogs', { id: c.id, name: c.name || 'Catálogo', role: 'editor' });
     }
@@ -384,6 +471,14 @@ export async function importBackup(backup) {
       await t.put('notes', { ...fields, status: 'pending', reason: null, authorId: state.user.id,
         serverSeq: null, deletedAt: n.deletedAt || null });
       await enqueue(t, { kind: action === 'delete' ? 'noteDelete' : 'note', ref: n.noteID, catalogId: n.catalogId });
+      added++;
+    }
+    for (const a of Array.isArray(backup.assessments) ? backup.assessments : []) {
+      if (!a || !a.assessmentID || !a.catalogId || await t.get('assessments', a.assessmentID)) { skipped++; continue; }
+      const { action, status, ...fields } = a;
+      await t.put('assessments', { ...fields, assessmentStatus: status, category: a.result ? a.result.category || null : null,
+        isReference: false, status: 'pending', reason: null, authorId: state.user.id, serverSeq: null, deletedAt: a.deletedAt || null });
+      await enqueue(t, { kind: action === 'delete' ? 'assessmentDelete' : 'assessment', ref: a.assessmentID, catalogId: a.catalogId });
       added++;
     }
   });

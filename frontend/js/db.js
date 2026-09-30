@@ -8,7 +8,8 @@
 //   catalogSpecies  [catalogId, taxonID] → {sensitivity, localOnly?}
 //   occurrences     occurrenceID → marca DwC + status (pending · synced · rejected), reason, authorId,
 //                   generalized, serverSeq, clientUpdatedAt, deletedAt, catalogId
-//   outbox          id autoincremental → {kind: species · occurrence · delete · note · noteDelete, ref,
+//   outbox          id autoincremental → {kind: species · occurrence · delete · note · noteDelete ·
+//                   assessment · assessmentDelete, ref,
 //                   catalogId, attempts, lastError, rejected?}
 //   meta            key → value (cursor:<catalogId>, syncv:<catalogId>, deviceId, lastSync, persistAsked…)
 //   zones           id → zona de mapa para usar sin conexión (F7, js/map/zones.js): {id, name, bounds,
@@ -16,9 +17,14 @@
 //                   createdAt, completedAt}. Las teselas van a Cache Storage `biodex-tiles-<id>`.
 //   notes           noteID → nota de cuaderno de una especie (F8a): {noteID, catalogId, taxonID, text,
 //                   authorId, recordedBy, clientUpdatedAt, status, reason, serverSeq, deletedAt}
+//   assessments     assessmentID → evaluación UICN de una especie en un catálogo (F8b): {assessmentID, catalogId,
+//                   taxonID, inputs, result, category, regionalAdjustment, justification, assessmentStatus
+//                   (draft · final; en la API se llama `status`), isReference, referenceSetBy, referenceSetAt,
+//                   authorId, recordedBy, clientUpdatedAt, status (de sincronización, como las marcas), reason,
+//                   serverSeq, deletedAt}
 // ================================================================================================
 
-const DB_VERSION = 3;   // 2 (F7): almacén zones · 3 (F8a): almacén notes
+const DB_VERSION = 4;   // 2 (F7): almacén zones · 3 (F8a): almacén notes · 4 (F8b): almacén assessments
 let current = null;       // {name, db}
 
 const req = (r) => new Promise((resolve, reject) => {
@@ -35,6 +41,11 @@ function upgrade(db, oldVersion) {
     const notes = db.createObjectStore('notes', { keyPath: 'noteID' });
     notes.createIndex('catalogId', 'catalogId');
     notes.createIndex('taxonID', 'taxonID');
+  }
+  if (oldVersion < 4) {
+    const assessments = db.createObjectStore('assessments', { keyPath: 'assessmentID' });
+    assessments.createIndex('catalogId', 'catalogId');
+    assessments.createIndex('taxonID', 'taxonID');
   }
 }
 
