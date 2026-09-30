@@ -152,7 +152,8 @@ export function mount(el, { onLogout }) {
         </section>
         <section class="panel" aria-labelledby="set-downloads">
           <h3 id="set-downloads">Descargas</h3>
-          <p class="hint">Los datos de un catálogo en un ZIP: Darwin Core Archive para GBIF y hojas en castellano (Excel y CSV).
+          <p class="hint">Los datos de un catálogo en un ZIP: Darwin Core Archive para GBIF, fichas de especie en Plinian Core
+            y hojas en castellano (Excel y CSV).
             «Para publicar» generaliza las coordenadas de las especies sensibles; la «completa» es solo para propietario y custodios.</p>
           ${!state.online ? html`<p class="guard-band warn">La exportación se genera en el servidor y necesita conexión. Sin red, «Exportar respaldo»
               (arriba) guarda en JSON tus marcas sin sincronizar.</p>`

@@ -990,6 +990,9 @@ path.metric-gen-cell{stroke:var(--muted);stroke-width:2;stroke-dasharray:4 4;fil
 .export-picks{max-height:240px;overflow:auto;padding:4px 10px;border:1px solid var(--line);border-radius:var(--radius-md);background:var(--panel)}
 .export-picks .check{align-items:flex-start;padding:4px 0;min-height:0}
 .export-picks .check input{margin-top:1px}
+.export-formats .check{align-items:flex-start}
+.export-formats .check input{margin-top:2px}
+.export-formats .check .hint{display:block;margin:2px 0 0}
 .export-summary h3{margin:0 0 6px}
 .export-summary p{margin:4px 0}
 .export-summary .guard-band{display:block;margin-top:8px}

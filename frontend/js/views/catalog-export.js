@@ -6,7 +6,8 @@
 // miembro; coordenadas generalizadas según el nivel de cada especie) y «Completa (privada)» (owner y
 // custodio; exactas, y cada descarga queda en el Registro del catálogo).
 // POST /catalogs/{id}/export/preview da las opciones y el resumen; POST /catalogs/{id}/export, el ZIP.
-// Se abre desde el catálogo (Datos del catálogo) y desde Ajustes › Descargas.
+// Se abre desde el catálogo (Datos del catálogo) y desde Ajustes › Descargas. F10c: «Formatos» (DwC-A, Plinian
+// Core, hojas; al menos uno), que van en «formats».
 // ================================================================================================
 
 import { apiFetch, apiPostJson, ApiError } from '../api.js';
@@ -16,6 +17,12 @@ import { openOverlay } from '../components/overlay.js';
 
 const EXPORT_TIMEOUT_MS = 180000;   // un catálogo grande tarda: hojas, CSV y EOO/AOO de cada especie
 const MODES = [['public', 'Para publicar'], ['full', 'Completa (privada)']];
+// Formatos del ZIP (F10c): [valor, rótulo, marcado por defecto, ayuda, carpeta]. Al menos uno.
+const FORMATS = [
+  ['dwc', 'Darwin Core (DwC-A)', true, 'Observaciones, para GBIF u otras bases de datos.', 'dwca/ (Darwin Core Archive)'],
+  ['plinian', 'Plinian Core', false, 'Fichas de especie: estado de amenaza y distribución. No incluye observaciones.', 'pliniancore/ (Plinian Core)'],
+  ['sheets', 'Hojas (XLSX/CSV)', true, 'Para abrir con doble clic en Excel o LibreOffice.', 'hojas/ (Excel y CSV)'],
+];
 
 const catPath = (catalog) => '/catalogs/' + encodeURIComponent(catalog.id);
 
@@ -47,7 +54,8 @@ export function openExport(catalog) {
   let downloading = false;
   let seq = 0;                // descarta resúmenes que llegan tarde
   const opts = { mode: 'public', dateFrom: '', dateTo: '', speciesAll: true, taxonIDs: new Set(), observersAll: true,
-    observers: new Set(), includeAbsences: true, license: null, title: '', description: '' };
+    observers: new Set(), includeAbsences: true, license: null, title: '', description: '',
+    formats: new Set(FORMATS.filter((f) => f[2]).map((f) => f[0])) };
 
   const ov = openOverlay({ key: 'exportar', title: `Descargar datos · ${catalog.name}`, variant: 'full', className: 'export-panel',
     onClose: () => { alive = false; } });
@@ -72,6 +80,7 @@ export function openExport(catalog) {
       license: opts.license,
       title: opts.title.trim() || null,
       description: opts.description.trim() || null,
+      formats: FORMATS.map((f) => f[0]).filter((f) => opts.formats.has(f)),
     };
   }
 
@@ -125,7 +134,7 @@ export function openExport(catalog) {
               s.withheld ? html` (${s.withheld} sin coordenadas, nivel 1)` : ''}; en ellas tampoco salen las notas de campo.`
             : 'Ninguna observación necesita generalizarse: todas son de especies sin restricción.'}</p>`}` : ''}`);
     const btn = $('[data-download]', ov.body);
-    if (btn) btn.disabled = downloading || loading || !s || s.occurrences === 0 || !!summaryError;
+    if (btn) btn.disabled = downloading || loading || !s || s.occurrences === 0 || !!summaryError || opts.formats.size === 0;
     const empty = $('#exportEmpty', ov.body);
     if (empty) empty.hidden = !s || s.occurrences > 0 || loading;
   }
@@ -134,8 +143,14 @@ export function openExport(catalog) {
     const av = info.available;
     const full = opts.mode === 'full';
     render(ov.body, html`<form class="form export-form" novalidate>
-      <p class="hint">Un ZIP con dos productos: un <strong>Darwin Core Archive</strong> para GBIF u otras bases y <strong>hojas en
-        castellano</strong> (Excel y CSV) para abrir con doble clic. Se genera en el servidor.</p>
+      <p class="hint">Un ZIP con los formatos que elijas: un <strong>Darwin Core Archive</strong> para GBIF u otras bases, fichas
+        de especie en <strong>Plinian Core</strong> y <strong>hojas en castellano</strong> (Excel y CSV). Se genera en el servidor.</p>
+      <fieldset class="checks export-formats">
+        <legend>Formatos</legend>${FORMATS.map(([value, label, , help]) => html`
+        <label class="check"><input type="checkbox" data-format="${value}" ${opts.formats.has(value) ? html`checked` : ''}>
+          <span>${label}<span class="hint">${help}</span></span></label>`)}
+        ${opts.formats.size === 0 ? html`<p class="form-error" role="alert">Elige al menos un formato.</p>` : ''}
+      </fieldset>
       <fieldset class="checks">
         <legend>Modo</legend>
         <div class="segmented" role="radiogroup" aria-label="Modo de la exportación">${MODES.map(([value, label]) => html`
@@ -211,6 +226,12 @@ export function openExport(catalog) {
       else if (t.name === 'speciesAll') { opts.speciesAll = t.value === 'all'; repaint(); $(`input[name="speciesAll"][value="${t.value}"]`, ov.body).focus(); }
       else if (t.name === 'observersAll') { opts.observersAll = t.value === 'all'; repaint(); $(`input[name="observersAll"][value="${t.value}"]`, ov.body).focus(); }
       else if (t.dataset.taxon) { t.checked ? opts.taxonIDs.add(t.dataset.taxon) : opts.taxonIDs.delete(t.dataset.taxon); refreshSummary(); }
+      else if (t.dataset.format) {
+        t.checked ? opts.formats.add(t.dataset.format) : opts.formats.delete(t.dataset.format);
+        status = null;
+        paint();
+        $(`[data-format="${t.dataset.format}"]`, ov.body).focus();
+      }
       else if (t.dataset.observer) { const id = Number(t.dataset.observer); t.checked ? opts.observers.add(id) : opts.observers.delete(id); refreshSummary(); }
       else if (t.name === 'includeAbsences') { opts.includeAbsences = t.checked; refreshSummary(); }
       else if (t.name === 'license') opts.license = t.value;
@@ -235,7 +256,8 @@ export function openExport(catalog) {
       const blob = await res.blob();
       const name = filenameFrom(res.headers.get('Content-Disposition')) || 'BioDex.zip';
       saveBlob(blob, name);
-      status = { kind: 'info', text: `Descargado ${name}. Dentro: dwca/ (Darwin Core Archive), hojas/ (Excel y CSV) y LEEME.txt.` };
+      const inside = FORMATS.filter((f) => opts.formats.has(f[0])).map((f) => f[4]).join(', ');
+      status = { kind: 'info', text: `Descargado ${name}. Dentro: ${inside} y LEEME.txt.` };
     } catch (e) {
       status = { kind: 'error', text: e.status === 0 ? `${e.message} La exportación necesita conexión.` : e.message };
     }
