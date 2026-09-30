@@ -123,5 +123,7 @@ maduros (6 + 3 individuos, 4 + 2 maduros, el mismo día). Red cortada con `Netwo
 - [ ] **(Damián)** Revisar con alguien que evalúe para la Lista Roja la redacción de los pasos, los textos de las bases
       y la notación de las cadenas combinadas contra ejemplos oficiales.
 - [ ] Actualizar en un móvil real de v7 a v8 con datos (IndexedDB 3 → 4) y evaluar sin red de verdad.
-- [ ] F9: rellenar EOO y AOO desde las marcas del catálogo en el paso B (hueco preparado).
+- [x] **Hecho en F9:** rellenar EOO y AOO desde las marcas del catálogo en el paso B (hueco preparado).
 - [ ] ¿Avisar si una evaluación de referencia se edita después de marcarla? Ahora sigue siendo la referencia.
+
+> **F10b (2026-09-30):** los puntos que siguen abiertos están recogidos en `docs/limitaciones.md`.

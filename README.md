@@ -2,25 +2,65 @@
 
 PWA de campo para biólogos: catálogos de especies (EIDOS), observaciones offline geolocalizadas, evaluación UICN y exportación Darwin Core.
 
-## Requisitos
-- Docker y Docker Compose v2
+Prototipo (1.0.0 · demo): servidor local, sin publicar. Lo que aún no hace o no se ha probado:
+[`docs/limitaciones.md`](docs/limitaciones.md). Guion de la demostración: [`docs/demo.md`](docs/demo.md).
 
-## Arrancar
-```bash
-cp .env.example .env   # y ajusta DB_PASS
-docker compose up -d
-```
+## Instalación desde cero (10 pasos)
+Necesitas Docker Desktop (Compose v2), Git, Edge o Chrome y conexión a internet (EIDOS y las teselas del IGN).
 
-- App: http://localhost:8090
-- Comprobación: http://localhost:8090/api/health → `{"ok":true,"db":true}`
-- Adminer: http://localhost:8081 (servidor `mysql`, usuario/contraseña de `.env`)
-- Correo de desarrollo (Mailpit): http://localhost:8025
+1. `git clone <repositorio> BioDex` y `cd BioDex`.
+2. `cp .env.example .env` y cambia `DB_PASS`. Deja `APP_ENV=dev` para poder cargar la demo.
+3. `docker compose up -d` (la primera vez construye la imagen de PHP: unos minutos).
+4. `docker compose exec php php bin/migrate.php` → crea las tablas (un segundo pase dice «Nada que aplicar»).
+5. Abre http://localhost:8090/api/health → `{"ok":true,"db":true}`.
+6. `docker compose exec php php bin/seed-demo.php` → datos de demostración (trae 10 fichas de EIDOS la primera vez).
+7. Abre http://localhost:8090 y entra con una de las cuentas de abajo.
+8. Instala la app: icono «Instalar» de la barra de direcciones de Edge o Chrome (`localhost` cuenta como contexto seguro).
+9. En la app instalada: Catálogos › «Descargar para usar sin conexión» y Mapa › Zonas › «Descargar esta zona».
+10. Comprueba que todo está en verde: `docker compose exec php php bin/check-sw.php` y `bin/test-f10b.php` (lista completa abajo).
+
+Otras direcciones: Adminer http://localhost:8081 (servidor `mysql`, usuario y contraseña de `.env`) · correo de
+desarrollo (Mailpit) http://localhost:8025.
+
+## Cuentas de demostración
+`bin/seed-demo.php` (solo con `APP_ENV=dev`; idempotente) crea tres cuentas verificadas y el catálogo
+**«DEMO — Flora amenazada de Sierra Nevada (datos ficticios)»**: 10 especies reales de EIDOS con su nivel de
+sensibilidad, 60 marcas **inventadas** de los tres (5 ausencias, 2 marcadas en el mapa), notas y la evaluación UICN
+de referencia de *Artemisia granatensis* (EN B1ab(iii)+2ab(iii)).
+
+| Rol | Email | Contraseña | Nombre |
+|---|---|---|---|
+| owner | `owner@biodex.demo` | `SierraNevada-owner` | Lucía Ortega |
+| custodio | `custodio@biodex.demo` | `SierraNevada-custodio` | Carlos Molina |
+| editor | `editor@biodex.demo` | `SierraNevada-editor` | Elena Ruiz |
+
+`bin/reset-demo.php` borra solo lo de la demo (el catálogo, lo que esas cuentas hayan creado al ensayar y las
+cuentas); después, `seed-demo.php` lo deja como nuevo. Las exportaciones del catálogo dicen «Datos ficticios para
+demostración: no publicar».
+
+## Probar sin red
+- **Servidor caído** (lo que pasa en el campo): con el catálogo y una zona descargados, `docker compose stop nginx`.
+  La app sigue abriendo (cabecera «Servidor no disponible»), se puede marcar y las marcas quedan «pendientes».
+  `docker compose start nginx` → se sincronizan solas en ≤ 30 s, sin tocar nada.
+- **Sin conexión**: DevTools › Network › *Offline* (o el wifi apagado) → «Sin conexión».
+- **GPS simulado**: DevTools › ⋮ › More tools › *Sensors* › *Location* › posición propia, p. ej. 37.0806, −3.3996
+  (Borreguiles, Sierra Nevada). Sin GPS, «Marcar aquí» no deja guardar.
 
 ## Comprobaciones
 ```bash
-docker compose exec php php bin/check-sw.php   # SHELL_ASSETS de frontend/sw.js al día
-docker compose exec php php bin/test-f2a.php   # autenticación
-docker compose exec php php bin/test-f2b.php   # especies y catálogos
+docker compose exec php php bin/check-sw.php    # SHELL_ASSETS de frontend/sw.js al día
+docker compose exec php php bin/test-f2a.php    # autenticación
+docker compose exec php php bin/test-f2b.php    # especies y catálogos
+docker compose exec php php bin/test-f4.php     # buscador y constructor
+docker compose exec php php bin/test-f5.php     # sincronización
+docker compose exec php php bin/test-f6.php     # equipos y roles
+docker compose exec php php bin/test-f7.php     # mapa y generalización
+docker compose exec php php bin/test-f8a.php    # marcas y notas
+docker compose exec php php bin/test-f8b.php    # evaluaciones UICN
+docker compose exec php php bin/test-f9.php     # EOO y AOO
+docker compose exec php php bin/test-f10a.php   # exportación
+docker compose exec php php bin/test-f10b.php   # datos de demostración (reinicia la demo y la deja cargada)
+node shared/iucn-engine.test.js && node shared/geo-metrics.test.js && node frontend/tests/utm.test.mjs
 ```
 Los iconos de la PWA salen de `backend/bin/make-icons.php` (necesita ext-gd, que el contenedor no trae):
 `php -d extension=gd backend/bin/make-icons.php` en el anfitrión.

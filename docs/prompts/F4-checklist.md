@@ -33,3 +33,5 @@ provocados a propósito no cuentan). Capturas en `docs/design/f4-*.png` (escrito
 - Bug encontrado en el recorrido y corregido: cerrar un panel con cambios sin guardar reapilaba su nivel
   dentro del bucle de desapilado de `BioDexNav` y colgaba la página. Ahora `isDirty()` no tiene efectos y
   reapilar + preguntar van en una microtarea (`components/overlay.js`).
+
+> **F10b (2026-09-30):** los puntos que siguen abiertos están recogidos en `docs/limitaciones.md`.

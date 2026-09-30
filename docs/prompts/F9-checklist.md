@@ -63,3 +63,5 @@ Servidor tras el recorrido: `species_metrics` con 3 filas (equipo 2 km: 48/48, 1
 - [ ] Con cientos de marcas: tiempo del cálculo en el servidor y del provisional en un móvil modesto.
 - [ ] En la ficha, las cifras del ámbito «Equipo» para un editor sin red solo cuentan sus marcas: el rótulo lo dice,
       pero conviene validarlo con usuarios.
+
+> **F10b (2026-09-30):** los puntos que siguen abiertos están recogidos en `docs/limitaciones.md`.

@@ -47,3 +47,5 @@ Con la app instalada en Edge y un catálogo activo:
 - d: `VERSION` cambiado + `registration.update()` → banda «Hay una versión nueva · Recargar».
 - e: tokens borrados → la app pinta, `/auth/me` da 401 → acceso con «Tu sesión ha caducado…».
 - **Pendiente a mano:** a–e con la app instalada de verdad (ventana de Edge) y c con el wifi real.
+
+> **F10b (2026-09-30):** los puntos que siguen abiertos están recogidos en `docs/limitaciones.md`.

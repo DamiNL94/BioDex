@@ -45,9 +45,12 @@ ajeno). Consola sin excepciones de JS. Capturas en `docs/design/f7-*.png`.
 - El globo quedaba bajo el zoom y los botones flotantes en el móvil: más estrecho y con margen de encuadre.
 
 ## Pendiente de mirar a mano
-- [ ] **(Damián)** App instalada en Edge, descargar una zona, `docker compose stop nginx`, mover el mapa por
-      la zona y marcar; al volver (`docker compose start nginx`), que la marca se sincronice.
+- [x] **(Damián)** App instalada en Edge, descargar una zona, `docker compose stop nginx`, mover el mapa por
+      la zona y marcar; al volver (`docker compose start nginx`), que la marca se sincronice. **F10b:** hecho por CDP
+      con nginx parado de verdad (zona de 28 teselas, 2 marcas, sincronizadas solas en 21–29 s); en ventana instalada, en la lista previa de `docs/demo.md`.
 - [ ] GPS real en el móvil (HTTPS en :8443): precisión, «Seguir» caminando y consumo de batería.
 - [ ] La estimación de MB usa medias provinciales: en ciudad se queda corta (Alhambra: 1,2 estimados, 1,6 reales).
 - [ ] Descargas largas (miles de teselas) con el móvil bloqueado: el navegador puede congelar la pestaña; la zona
       queda «En pausa» y se reanuda sin repetir lo bajado.
+
+> **F10b (2026-09-30):** los puntos que siguen abiertos están recogidos en `docs/limitaciones.md`.

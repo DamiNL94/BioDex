@@ -38,10 +38,12 @@ Capturas en `docs/design/f6-*.png`. Usuarios `f6b-*@biodex.test` borrados al ter
 - Invitar pide email o enlace; custodio no se invita: se concede a un miembro con el email verificado.
 
 ## Pendiente de mirar a mano
-- [ ] `test-f2a.php` borra todos los usuarios `@biodex.test` y choca con el catálogo «Sierra Nevada F5b …» de
+- [x] **Resuelto en F10b:** `test-f2a.php` borra solo sus cuentas `f2a-*`. Antes: `test-f2a.php` borra todos los usuarios `@biodex.test` y choca con el catálogo «Sierra Nevada F5b …» de
       `f5b-a-munh4bi7@biodex.test` que dejó el recorrido de F5b (FK `fk_catalogs_owner`). Borrar esos datos de
       prueba (o hacer que su limpieza borre antes los catálogos de esos usuarios) y volver a lanzarlo.
 - [ ] Correo real (no Mailpit): `Lib/mail.php` no hace AUTH ni STARTTLS; el enlace usa `APP_URL`.
 - [ ] Copiar el enlace en un móvil real (`navigator.clipboard` exige HTTPS o localhost; si falla, se selecciona
       el texto y el botón dice «Selecciónalo y cópialo»).
 - [ ] La lista de miembros no se refresca sola: al cambiar algo en otro dispositivo, cambiar de pestaña la recarga.
+
+> **F10b (2026-09-30):** los puntos que siguen abiertos están recogidos en `docs/limitaciones.md`.

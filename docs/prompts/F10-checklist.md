@@ -31,3 +31,22 @@ del ZIP) y subirlo a https://www.gbif.org/tools/data-validator.
 - [ ] Resultado del validador de GBIF (arriba).
 - [ ] Abrir el XLSX en Excel y en LibreOffice (en esta máquina no hay Python/openpyxl ni ofimática para comprobarlo).
 - [ ] `datasetID` registrado en GBIF.ES y correo de contacto en el EML al publicar en el IPT.
+
+> **F10b (2026-09-30):** los puntos que siguen abiertos están recogidos en `docs/limitaciones.md`.
+
+## F10b · Demo (2026-09-30)
+Automático, todo en verde: `test-f10b.php` (20: `reset-demo` y `seed-demo` dos veces seguidas cada uno, nada con
+`APP_ENV=prod`, contenido del seed, el editor recibe generalizada la Artemisia ajena, exportación con el aviso de datos
+ficticios), `test-f2a` … `test-f10a`, `check-sw.php` (SW v11), motor UICN (74), `geo-metrics` (17) y `utm`.
+
+Recorrido del guion (`docs/demo.md`) en Edge headless por CDP, dos perfiles (owner 1280 px, editora 390 px móvil):
+62 comprobaciones OK, sin excepciones de JS. nginx parado de verdad (`docker compose stop nginx`): la app abre con
+«Servidor no disponible», zona de 28 teselas visible, 2 marcas pendientes (presencia 6/4 maduros y ausencia) con el
+GPS simulado; al arrancar nginx se sincronizan **solas en 21–29 s**. EOO 62,46 km² y AOO 12 km² en el mapa y en el
+asistente → EN B1ab(iii)+2ab(iii). ZIP «para publicar» con `dwca/`, `hojas/` y `LEEME.txt`. Capturas `docs/design/f10b-*.png`.
+
+Accesibilidad (auditoría automática en cada pantalla del recorrido: objetivos ≥ 44 px en móvil, contraste ≥ 4,5:1,
+foco visible con el teclado, erratas de espacio antes de puntuación). Corregido: tabla de niveles, «Niveles» y
+«Registro», acciones de marcas y notas y selección del constructor a 36/32 px → 44 px; título de la tarjeta de
+especie (única forma de abrir la ficha) a 21 px → 44 px; «no se calcula : depende» y «de su especie ; en ellas».
+Mensajes: el 500 ya no enseña la excepción en dev (va aparte en `detail`) y los de respaldo no dicen «(HTTP nnn)».

@@ -24,7 +24,7 @@ Capturas en `docs/design/f5-*.png`.
 | 8 | **A mano (Damián):** app instalada en Edge, `docker compose stop nginx`, marcar, `start` → se sincroniza sola | Pendiente | — |
 
 ## Pendiente de mirar a mano
-- [ ] Punto 8 (app instalada, nginx parado). Con nginx caído el estado es «Servidor no disponible» (no
+- [x] Punto 8 (app instalada, nginx parado). **F10b:** comprobado por CDP (paso 3–4 de `docs/demo.md`). Con nginx caído el estado es «Servidor no disponible» (no
       «Sin conexión»): la vuelta la detecta `/health` cada 30 s y el reintento del motor (30 s, 1, 2, 5 min),
       así que puede tardar hasta ~30 s en sincronizar tras `docker compose start nginx`.
 - [ ] Móvil real: permiso de ubicación denegado → aviso de guarda y ninguna marca; GPS sin señal (30 s).
@@ -32,3 +32,5 @@ Capturas en `docs/design/f5-*.png`.
       instalada Edge/Chrome suelen concederlo.
 - [ ] Rechazadas: no se provocó ninguna en el recorrido (el servidor las cubre en `test-f5.php`); revisar en
       Ajustes › Sincronización que «Reintentar» y «Descartar» se ven bien con una real.
+
+> **F10b (2026-09-30):** los puntos que siguen abiertos están recogidos en `docs/limitaciones.md`.
