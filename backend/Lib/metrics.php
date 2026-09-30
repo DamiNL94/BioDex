@@ -196,6 +196,52 @@ function metricsGeneralizedCells(array $used, float $grid): array {
  */
 function speciesMetrics(PDO $pdo, string $catalogId, string $taxonID, int $userId, string $role, int $level,
                         string $scope, int $cellKm): array {
+    ["m" => $m, "rows" => $rows, "computedAt" => $computedAt, "cached" => $cached, "maxSeq" => $maxSeq]
+        = metricsStored($pdo, $catalogId, $taxonID, $userId, $scope, $cellKm);
+
+    $access = metricsGeometryAccess($role, $level, $scope);
+    $geometry = ["access" => $access];
+    if ($access === "full") {
+        $geometry += ["crs" => "EPSG:25830", "cellSizeKm" => $cellKm,
+                      "hull" => array_map(fn($p) => [$p["lat"], $p["lon"]], $m["hull"]), "cells" => $m["cells"]];
+        // Casco y celdas de registros exactos ajenos de una especie sensible: como view_exact del pull.
+        $foreign = count(array_filter($rows, fn($r) => (int) $r["user_id"] !== $userId));
+        if ($level < 4 && $foreign > 0 && $scope === "team" && canSeeExact($role, false) && $m["nRecords"] > 0) {
+            logAccess($pdo, $userId, "view_exact", $catalogId, "EOO/AOO {$taxonID}: {$foreign}");
+        }
+    } elseif ($access === "generalized") {
+        $grid = (float) sensitivityConfig()["levels"][(string) $level]["gridDeg"];
+        $used = metricsSelectRecords($rows, $cellKm)["used"];
+        $geometry += ["gridDeg" => $grid, "generalizedCells" => metricsGeneralizedCells($used, $grid)];
+    }
+
+    return [
+        "taxonID"     => $taxonID,
+        "scope"       => $scope,
+        "cellSizeKm"  => $cellKm,
+        "eooKm2"      => $m["eooKm2"],
+        "eooAdjusted" => $m["eooAdjusted"],
+        "aooKm2"      => $m["aooKm2"],
+        "aooCells"    => $m["aooCells"],
+        "aooRange"    => $m["aooRange"],
+        "nRecords"    => $m["nRecords"],
+        "nExcluded"   => $m["nExcluded"],
+        "excluded"    => $m["excluded"],
+        "warnings"    => $m["warnings"],
+        "computedAt"  => syncIsoUtc($computedAt),
+        "cached"      => $cached,
+        "sourceSeq"   => $maxSeq,
+        "geometry"    => $geometry,
+    ];
+}
+
+/**
+ * Cálculo con las exactas, guardado en species_metrics (solo se renueva si hay marcas nuevas, editadas o
+ * borradas) → {m (computeMetrics), rows (las exactas: NO salen del servidor), computedAt, cached, maxSeq}.
+ * Solo cifras y registros: qué geometría puede salir lo decide quien llama (speciesMetrics; la
+ * exportación F10a no saca ninguna).
+ */
+function metricsStored(PDO $pdo, string $catalogId, string $taxonID, int $userId, string $scope, int $cellKm): array {
     $stmt = $pdo->prepare("SELECT COALESCE(MAX(server_seq), 0) FROM occurrences WHERE catalog_id = ? AND taxonID = ?");
     $stmt->execute([$catalogId, $taxonID]);
     $maxSeq = (int) $stmt->fetchColumn();
@@ -234,39 +280,5 @@ function speciesMetrics(PDO $pdo, string $catalogId, string $taxonID, int $userI
         $stmt->execute([$catalogId, $taxonID, $scope, $ownerKey, $cellKm]);
         $computedAt = $stmt->fetchColumn();
     }
-
-    $access = metricsGeometryAccess($role, $level, $scope);
-    $geometry = ["access" => $access];
-    if ($access === "full") {
-        $geometry += ["crs" => "EPSG:25830", "cellSizeKm" => $cellKm,
-                      "hull" => array_map(fn($p) => [$p["lat"], $p["lon"]], $m["hull"]), "cells" => $m["cells"]];
-        // Casco y celdas de registros exactos ajenos de una especie sensible: como view_exact del pull.
-        $foreign = count(array_filter($rows, fn($r) => (int) $r["user_id"] !== $userId));
-        if ($level < 4 && $foreign > 0 && $scope === "team" && canSeeExact($role, false) && $m["nRecords"] > 0) {
-            logAccess($pdo, $userId, "view_exact", $catalogId, "EOO/AOO {$taxonID}: {$foreign}");
-        }
-    } elseif ($access === "generalized") {
-        $grid = (float) sensitivityConfig()["levels"][(string) $level]["gridDeg"];
-        $used = metricsSelectRecords($rows, $cellKm)["used"];
-        $geometry += ["gridDeg" => $grid, "generalizedCells" => metricsGeneralizedCells($used, $grid)];
-    }
-
-    return [
-        "taxonID"     => $taxonID,
-        "scope"       => $scope,
-        "cellSizeKm"  => $cellKm,
-        "eooKm2"      => $m["eooKm2"],
-        "eooAdjusted" => $m["eooAdjusted"],
-        "aooKm2"      => $m["aooKm2"],
-        "aooCells"    => $m["aooCells"],
-        "aooRange"    => $m["aooRange"],
-        "nRecords"    => $m["nRecords"],
-        "nExcluded"   => $m["nExcluded"],
-        "excluded"    => $m["excluded"],
-        "warnings"    => $m["warnings"],
-        "computedAt"  => syncIsoUtc($computedAt),
-        "cached"      => $cached,
-        "sourceSeq"   => $maxSeq,
-        "geometry"    => $geometry,
-    ];
+    return ["m" => $m, "rows" => $rows, "computedAt" => $computedAt, "cached" => $cached, "maxSeq" => $maxSeq];
 }

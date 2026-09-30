@@ -17,6 +17,7 @@
 //          → evaluación UICN de referencia de la especie en el catálogo (F8b), a access_log
 //   GET    /api/catalogs/{id}/species/{taxonID}/metrics?scope=team|me&cell=2|1  view: EOO/AOO (F9)
 // Miembros, invitaciones, salir, transferir y registro (F6): Api/teams.php, incluido desde aquí.
+// Exportación (F10a): POST /api/catalogs/{id}/export[/preview] → Api/exports.php, incluido desde aquí.
 // content_seq sube con cada cambio de lo que lleva el paquete offline (especies, niveles, nombre):
 // el pull de /api/sync lo devuelve y el móvil vuelve a descargar el paquete si no coincide.
 // ================================================================================================
@@ -42,6 +43,12 @@ $path   = parse_url($_SERVER["REQUEST_URI"] ?? "/", PHP_URL_PATH);
 if (preg_match('#^/api/catalogs/([0-9a-f-]{36})/(members|invites|leave|transfer|audit)(?:/([^/]+))?/?$#', $path, $tm)) {
     $teamRoute = [$tm[1], $tm[2], $tm[3] ?? null];
     require __DIR__ . "/teams.php";
+    exit;
+}
+// Exportación DwC-A + hojas (F10a): Api/exports.php.
+if (preg_match('#^/api/catalogs/([0-9a-f-]{36})/export(?:/(preview))?/?$#', $path, $em)) {
+    $exportRoute = [$em[1], $em[2] ?? null];
+    require __DIR__ . "/exports.php";
     exit;
 }
 if (!preg_match('#^/api/catalogs(?:/([0-9a-f-]{36})(?:/(tree|species|offline)(?:/([^/]+)(?:/(sensitivity|reference-assessment|metrics))?)?)?)?/?$#', $path, $m)) {

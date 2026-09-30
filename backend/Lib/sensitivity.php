@@ -155,3 +155,12 @@ function applyVisibility(array $occ, int $level, string $role, int $viewerId): a
     );
     return array_merge($occ, $g);
 }
+
+/**
+ * Copia para PUBLICAR (F10a, exportación «para publicar»): como la vería alguien que no es el autor ni
+ * tiene acceso a exactas, sea quien sea quien exporta. Pasa por applyVisibility() para que la regla de
+ * generalización siga siendo una sola.
+ */
+function applyPublicVisibility(array $occ, int $level): array {
+    return applyVisibility($occ, $level, "public", 0);
+}

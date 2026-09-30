@@ -33,6 +33,8 @@ services:
       - ./shared:/var/www/shared:ro
       # Solo lectura, para bin/check-sw.php (SHELL_ASSETS de sw.js contra el disco)
       - ./frontend:/var/www/frontend:ro
+      # Versión de la app (F10a: va en el EML y en la hoja Léeme de la exportación)
+      - ./VERSION:/var/www/VERSION:ro
     depends_on:
       - mysql
       - mailpit
