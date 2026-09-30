@@ -19,7 +19,7 @@
  * Fotos de especies (/img/fototeca/, F5): CACHE-FIRST en las cachés `biodex-img-<catalogId>` que llena
  * la app al descargar un catálogo; lo que no esté ahí va a la red y NO se guarda en la del armazón.
  */
-var VERSION = 'v5';
+var VERSION = 'v6';
 var CACHE = 'biodex-shell-' + VERSION;
 var NET_TIMEOUT_MS = 3000;
 
@@ -44,6 +44,9 @@ var SHELL_ASSETS = [
   // js/ (nav.js es script clásico; el resto, módulos ES)
   'js/nav.js', 'js/util.js', 'js/state.js', 'js/api.js', 'js/auth.js', 'js/app.js',
   'js/db.js', 'js/offline.js', 'js/marks.js', 'js/sync.js',
+
+  // js/geo/ (F7)
+  'js/geo/utm.js',
 
   // js/components/
   'js/components/overlay.js', 'js/components/species-card.js', 'js/components/marks.js',
