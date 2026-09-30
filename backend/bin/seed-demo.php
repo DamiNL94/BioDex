@@ -114,11 +114,13 @@ expect($code, [200], "hacer custodio", $r);
 [$code, $r] = http("GET", "/api/catalogs/{$cat}", null, $jar["owner"]);
 expect($code, [200], "leer el catálogo", $r);
 $levels = [];
+// La owner confirma los sugeridos y protege más la Plantago (un caso de nivel subido a mano para enseñar).
+const DEMO_LEVEL_OVERRIDES = ["7171" => [3, "Población junto a la pista del Veleta: riesgo de expolio"]];
 foreach ($r["species"] as $s) {
-    $lv = (int) $s["sensitivity"]["level"];
+    [$lv, $reason] = DEMO_LEVEL_OVERRIDES[$s["taxonID"]] ?? [(int) $s["sensitivity"]["level"], "Confirmado: el sugerido por BioDex"];
     $levels[$s["taxonID"]] = [$lv, $s["canonicalName"] ?? $s["scientificName"]];
     [$code, $r2] = http("PUT", "/api/catalogs/{$cat}/species/{$s["taxonID"]}/sensitivity",
-        ["level" => $lv, "reason" => "Nivel sugerido por BioDex, revisado para la demo"], $jar["owner"]);
+        ["level" => $lv, "reason" => $reason], $jar["owner"]);
     expect($code, [200], "confirmar el nivel de {$s["taxonID"]}", $r2);
 }
 
