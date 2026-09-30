@@ -1,21 +1,23 @@
 # Sincronización
 
 Código: `backend/Api/sync.php` (rutas) y `backend/Lib/sync.php` (validación, `server_seq`, salida). Pruebas:
-`docker compose exec php php bin/test-f5.php` y `bin/test-f8a.php` (marcas completas y notas).
+`docker compose exec php php bin/test-f5.php`, `bin/test-f8a.php` (marcas completas y notas) y `bin/test-f8b.php`
+(evaluaciones UICN y referencia).
 
-## Tipos de entidad (F8a)
+## Tipos de entidad (F8a, F8b)
 Push y pull llevan varios tipos, todos con las **mismas reglas**: id UUID v4 del cliente, `clientUpdatedAt` decide,
 solo el autor edita o borra, `server_seq` del contador común tomado en la misma transacción y tombstones.
-Se declaran en `SYNC_ENTITIES` (`Api/sync.php`); añadir uno (F8b: `assessments`) es añadir una entrada.
+Se declaran en `SYNC_ENTITIES` (`Api/sync.php`); añadir uno es añadir una entrada (F8b añadió `assessments`).
 
 | Tipo | Tabla | Id | Push: lista · borrados | Respuesta | Pull | Coordenadas |
 |---|---|---|---|---|---|---|
 | marcas | `occurrences` | `occurrenceID` | `occurrences` · `deletes` | `results` | `items` | sí: `applyVisibility()` |
 | notas de especie | `species_notes` | `noteID` | `notes` · `noteDeletes` | `noteResults` | `notes` | no |
+| evaluaciones UICN (F8b) | `species_assessments` | `assessmentID` | `assessments` · `assessmentDeletes` | `assessmentResults` | `assessments` | no |
 
-Las notas no llevan coordenadas y no pasan por `applyVisibility()`, pero **solo las recibe quien tiene permiso
-`view`** en el catálogo (el pull lo exige; un no miembro recibe 403 `not_member` y nada más). Subirlas exige
-`mark`, como las marcas: el lector solo las lee.
+Las notas y las evaluaciones no llevan coordenadas y no pasan por `applyVisibility()`, pero **solo las recibe quien
+tiene permiso `view`** en el catálogo (el pull lo exige; un no miembro recibe 403 `not_member` y nada más). Subirlas
+exige `mark`, como las marcas: el lector solo las lee.
 
 ## Principios
 - **Nunca se pierde una marca**: cada elemento de un push vuelve con su estado; nada se descarta en silencio.
@@ -57,9 +59,17 @@ Una **ausencia** lleva `individualCount` 0 o nulo y ningún `mature_count`. Los 
 
 Nota: `noteID` (UUID v4), `taxonID` (del catálogo), `text` (1–4000 caracteres, no vacío), `clientUpdatedAt`.
 
+Evaluación (F8b): `assessmentID` (UUID v4), `taxonID`, `inputs` y `result` (objetos de `shared/iucn-engine.js`, ≤ 32 KB
+cada uno; el servidor no recalcula), `status` `draft` · `final` (una final exige `result.category`),
+`regionalAdjustment` `down` · `up` (exige `justification`), `justification` (≤ 4000), `clientUpdatedAt`. En el
+dispositivo borrador/final va en `assessmentStatus`, porque `status` es allí el estado de sincronización.
+**Referencia del owner**: `PUT /api/catalogs/{id}/species/{taxonID}/reference-assessment` (`docs/api.md`) pone
+`isReference` en la fila con `server_seq` nuevo, así que llega a todos por el pull; el push del autor no toca esas
+columnas. Si el autor la borra o la pasa a borrador, deja de ser la referencia (queda en `access_log`).
+
 Respuesta `{results:[{occurrenceID, status, reason?, detail?, serverSeq?, occurrence?}], noteResults:[{noteID,
-status, reason?, detail?, serverSeq?, note?}]}`: por tipo, primero las altas y ediciones y luego los borrados, en
-el orden recibido. En un `stale`, la versión del servidor va en `occurrence` o `note`.
+status, reason?, detail?, serverSeq?, note?}], assessmentResults:[{assessmentID, …, assessment?}]}`: por tipo, primero las altas y ediciones y luego los borrados, en
+el orden recibido. En un `stale`, la versión del servidor va en `occurrence`, `note` o `assessment`.
 
 | status | Cuándo | Qué hace el móvil |
 |---|---|---|
@@ -85,9 +95,9 @@ explica el motivo en castellano.
 
 ## Pull
 `GET /api/sync/pull?catalogId=&since=0&limit=500` (1–500). Permiso `view`. Devuelve
-`{items, notes, cursor, hasMore, catalogContentSeq, role, visibilityEpoch}`. Una página son los `limit` primeros
-`server_seq > since` **de todos los tipos** (el contador es común), repartidos en `items` (marcas) y `notes`, cada
-lista en orden; `cursor` es el último `server_seq` de la página y vale para los dos. **Incluidas las borradas**
+`{items, notes, assessments, cursor, hasMore, catalogContentSeq, role, visibilityEpoch}`. Una página son los `limit`
+primeros `server_seq > since` **de todos los tipos** (el contador es común), repartidos en `items` (marcas), `notes` y
+`assessments`, cada lista en orden; `cursor` es el último `server_seq` de la página y vale para todos. **Incluidas las borradas**
 (`{occurrenceID | noteID, taxonID, userId, clientUpdatedAt, serverSeq, deleted: true}`, sin coordenadas, texto ni
 datos). Una marca lleva los términos DwC (los de F8a incluidos), `recordedBy` (nombre del autor), `userId`,
 `generalized` y, si es `true`, `dataGeneralizations` e `informationWithheld`; nivel 1 generalizado: sin
@@ -95,7 +105,8 @@ coordenadas (`null`). Una nota: `text`, `recordedBy`, `userId`, `clientUpdatedAt
 mientras `hasMore`.
 
 Móvil de antes de F8a: su cursor pudo pasar por encima de notas que no guardaba. `sync.js` guarda la versión del
-pull aplicada por catálogo (`meta syncv:<id>`, ahora 2) y, con una menor, vuelve a pedir desde 0 una vez.
+pull aplicada por catálogo (`meta syncv:<id>`: 2 en F8a, 3 en F8b con `assessments`) y, con una menor, vuelve a pedir
+desde 0 una vez.
 
 - Sin rol (expulsado o catálogo borrado) → **403 `{error, code: "not_member"}`**: el móvil borra sus datos de
   ese catálogo.
@@ -156,5 +167,8 @@ cola, respaldo) y `sync.js` (motor).
 - **Notas (F8a)**: versión 3 con el almacén `notes` (índices `catalogId`, `taxonID`). Cola `note` / `noteDelete`,
   una entrada por nota como las marcas; el respaldo pasa a `version: 2` con `notes` (importa también los de la 1).
   Expulsión o catálogo borrado: sus notas salen del dispositivo con el resto.
+- **Evaluaciones UICN (F8b)**: versión 4 con el almacén `assessments` (índices `catalogId`, `taxonID`). Cola
+  `assessment` / `assessmentDelete`; el respaldo pasa a `version: 3` con `assessments` (importa también 1 y 2).
+  Expulsión o catálogo borrado: salen con el resto. El asistente guarda sin red (`docs/iucn.md`).
 - **Editar una marca** (F8a, «Mis marcas»): cambia los datos, nunca la posición ni `eventDate`; sube
   `clientUpdatedAt` y el push la acepta por ser la más reciente.

@@ -37,7 +37,8 @@ y `backend/Lib/sensitivity.php`.
 |---|---|---|
 | `occurrences` | Marcas de campo | PK `occurrenceID` (UUID v4 del cliente), `catalog_id`, `user_id` (autor), `taxonID`; DwC exactos: `eventDate` (UTC), `decimalLatitude`/`decimalLongitude` DECIMAL(10,7) **exactas, nunca se modifican**, `coordinateUncertaintyInMeters`, `occurrenceStatus` present/absent (F8a), `individualCount`, `lifeStage` y `sex` (vocabularios cerrados de GBIF, F8a), `habitat`, `georeferenceRemarks`, `georeferenceProtocol` («GPS del dispositivo» · «Punto marcado en el mapa»), `occurrenceRemarks`, `basisOfRecord`, `geodeticDatum`; `mature_count`, `client_updated_at` DATETIME(3) UTC (última edición en el dispositivo: decide los conflictos), `device_id`, `deleted_at`, `server_seq` único. `iucn_assessment` se quitó en 009 (la evaluación es de la especie, F8b) |
 | `species_notes` | Notas de cuaderno por especie y catálogo (F8a) | PK `noteID` (UUID v4 del cliente), `catalog_id`, `taxonID`, `user_id` (autor: solo él edita), `text` (≤ 4000), `client_updated_at` DATETIME(3), `device_id`, `deleted_at`, `server_seq` único (del mismo `sync_seq`) |
-| `sync_seq` | Contador global de sincronización (una fila) | `value`; cada insert/update de `occurrences` y `species_notes` toma el siguiente |
+| `species_assessments` | Evaluaciones UICN de una especie en un catálogo (F8b, `docs/iucn.md`) | PK `assessmentID` (UUID v4 del cliente), `catalog_id`, `taxonID`, `user_id` (autor: solo él edita), `inputs` y `result` JSON (≤ 32 KB cada uno; el servidor no recalcula), `category` CR·EN·VU·NT·LC·DD (tras el ajuste), `regional_adjustment` down·up, `justification` (≤ 4000, obligatoria con ajuste), `status` draft·final; referencia del owner: `is_reference`, `reference_set_by`, `reference_set_at` y `reference_key` generada y **única** (una por especie y catálogo); `client_updated_at`, `device_id`, `deleted_at`, `server_seq` único |
+| `sync_seq` | Contador global de sincronización (una fila) | `value`; cada insert/update de `occurrences`, `species_notes` y `species_assessments` toma el siguiente |
 | `species_metrics` | EOO/AOO calculados en el servidor | `catalog_id`, `taxonID`, `scope` me/team, `user_id` (NULL en team), `eoo_km2`, `aoo_km2`, `aoo_cells`, `cell_size_km`, `n_records`; único por (catálogo, taxón, scope, usuario) vía `owner_key` |
 
 Siguiente `server_seq` (`syncNextSeq()` en `Lib/sync.php`), dentro de la misma transacción que la escritura
@@ -54,11 +55,11 @@ el resto, generalizada según `species_sensitivity.level`).
 ## Auditoría
 | Tabla | Propósito | Campos clave |
 |---|---|---|
-| `access_log` | Rastro de accesos sensibles | `action` view_exact/export_full/set_level/grant_role/revoke_role/login_failed y (F6) invite_created/invite_revoked/member_joined/member_removed/member_left, `user_id`, `catalog_id`, `target` (`user:<id> editor → custodian`, `invite:<id> …`), `ip`, `created_at`; las FK pasan a NULL al borrar, el rastro se conserva. `GET /catalogs/{id}/audit` lo devuelve legible |
+| `access_log` | Rastro de accesos sensibles | `action` view_exact/export_full/set_level/grant_role/revoke_role/login_failed (F6) invite_created/invite_revoked/member_joined/member_removed/member_left y (F8b) set_reference, `user_id`, `catalog_id`, `target` (`user:<id> editor → custodian`, `invite:<id> …`), `ip`, `created_at`; las FK pasan a NULL al borrar, el rastro se conserva. `GET /catalogs/{id}/audit` lo devuelve legible |
 
 ## Borrados
-- Lógicos (`deleted_at`) en `catalogs`, `catalog_species`, `occurrences` y `species_notes`.
-- `occurrences` y `species_notes` → `catalogs`/`users`/`species` con `ON DELETE RESTRICT`: una marca o una nota
-  nunca desaparece en cascada.
+- Lógicos (`deleted_at`) en `catalogs`, `catalog_species`, `occurrences`, `species_notes` y `species_assessments`.
+- `occurrences`, `species_notes` y `species_assessments` → `catalogs`/`users`/`species` con `ON DELETE RESTRICT`: una
+  marca, una nota o una evaluación nunca desaparece en cascada.
 - Tokens, verificaciones, miembros, invitaciones, intentos de invitación y métricas se borran en cascada con su usuario o catálogo.
 - Salir o ser expulsado borra la fila de `catalog_members` (no hay rol «ex-miembro»); sus marcas se quedan.

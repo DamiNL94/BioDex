@@ -59,3 +59,69 @@ A crea por API el catálogo con el lince (nivel 2) y la *Artemisia granatensis* 
       en Chrome; en iOS depende de `tap`/`tapHold` y puede necesitar un temporizador propio.
 - [ ] Con guantes y al sol: tamaño de «−»/«+» y del conmutador Presente/Ausente.
 - [ ] Varios dispositivos editando la misma nota a la vez (gana la última escritura, como en las marcas).
+
+## F8b · Asistente de evaluación UICN
+
+Automático (todo en verde al cerrar F8b): `node shared/iucn-engine.test.js` (74 comprobaciones: 53 casos de tabla con
+cada umbral en su borde —EOO 99 → CR y 100 → EN en B1, AOO 9/10 en B2, 5 localidades → EN y 6 → VU, 10/11 en VU,
+A1 90/89/49 %, A2 80/79/30/29 %, C 249/250 maduros, C1 con plazo en generaciones, C2a(i) 50/51, D 49/50/999/1000,
+D2 AOO 19/20, E 50/49 % y 20 % a 20/21 años—; el caso de la Artemisia → `EN B1ab(iii)+2ab(iii)` y su variante de 1
+localidad → `CR B1ab(iii)`; B con un solo subcriterio → no cumple; A3 con (a) rechazado; D2 solo VU; cadenas
+combinadas `VU A2bc; D2` y `EN A2c; B1ab(iii)+2ab(iii); C2a(i)`; EOO < AOO; DD, NT por juicio experto; ajuste regional
+con y sin justificación y en los extremos; datos no válidos; y que con otros umbrales en el JSON sale otro resultado).
+`docker compose exec php php bin/test-f8b.php` (57: push, idempotencia sin consumir `sync_seq`, `stale`, autoría,
+lector 403, no miembro, 10 rechazos de validación, pull con autor y detalle, tombstone; referencia: solo owner —custodio,
+editor autor, lector y no miembro 403 sin registro—, borrador 422, 404, una por especie con clave única, se conserva si
+el autor edita, deja de serlo si la pasa a borrador o la borra, quitarla con `null`, siempre en `access_log` y en el
+Registro con el nombre de la especie; lotes mixtos). Siguen en verde `test-f8a` (68), `test-f7` (35), `test-f6` (89),
+`test-f5` (58), `test-f4` (31), `node frontend/tests/utm.test.mjs` y `check-sw.php` (`VERSION v8`, 62 ficheros).
+
+Recorrido en Edge headless por CDP con dos perfiles: A (propietaria, escritorio 1280 px) y B (editor, móvil 390 px),
+tema claro. A crea por API el catálogo con la *Artemisia granatensis* y el lince y sube 2 marcas de la Artemisia con
+maduros (6 + 3 individuos, 4 + 2 maduros, el mismo día). Red cortada con `Network.emulateNetworkConditions`.
+47 comprobaciones; consola sin excepciones de JS. Capturas en `docs/design/f8b-*.png`.
+
+| # | Punto | Resultado | Captura |
+|---|---|---|---|
+| 1 | Asistente sin red | OK. SW `v8` con `/shared/iucn-engine.js`, `/shared/iucn-criteria.json` y el asistente precacheados; IndexedDB v4 con `assessments`. Sin red, la ficha muestra «Evaluación BioDex» después de las evaluaciones de EIDOS y aparte, con «Evaluar (UICN)» | `f8b-1a-ficha-evaluar.png` |
+| 2 | Pasos, umbrales y resultado parcial | OK. Aviso fijo arriba; en cada paso la tabla CR/EN/VU de ese criterio. A3 deshabilita la base (a). «Sin datos para este criterio» salta A, C, D y E (el paso queda con filete discontinuo) | `f8b-2a-paso-A.png`, `f8b-2b-paso-B.png` |
+| 3 | Artemisia: EOO 80, AOO 12, 3 localidades, b(iii) | OK. Solo con la EOO: «No alcanza umbrales». Con todo: **`EN · B1ab(iii)+2ab(iii)`**; CR «No: (a) 3 localidades > 1 ✗ … 1 de 2 subcriterios en el umbral de CR ✗». Resultado: **EN** en grande, «En peligro», `EN B1ab(iii)+2ab(iii)`, «La determina: B»; NT/LC/DD ocultos | `f8b-2c-paso-B-en-vivo.png`, `f8b-2e-resultado.png` |
+| 4 | Datos sugeridos | OK. Paso C: «Suma de maduros: 6» y «Máx. en un día: 9» con el aviso de doble conteo; al usarla rellena 6 y dice «Origen: suma de maduros de las marcas del catálogo»; se puede cambiar. Paso B: «Calcular desde las marcas · Disponible en F9» | `f8b-2d-paso-C-sugerencia.png` |
+| 5 | Ajuste regional | OK. Rebajar sin justificación: no se aplica y avisa (sigue EN). Con justificación: «Antes del ajuste regional: EN → después: VU». Sin ajuste vuelve a EN | `f8b-2f-ajuste-regional.png` |
+| 6 | Guardar final sin red | OK. Ficha: «Tú · Final · Pendiente». IndexedDB: `assessmentStatus final`, `status pending`, `category EN`, `inputs.B` {eoo 80, locations 3}, `inputs.C.skip`; en la cola como `assessment` | `f8b-2g-ficha-pendiente.png` |
+| 7 | Sincronizar y verla en el otro perfil | OK. Con red, B la sube sola: `synced` con `serverSeq`, cola vacía. A la recibe en el pull: «Bruno Editor · EN B1ab(iii)+2ab(iii) · Final», sin Editar ni Borrar; el detalle trae el resultado por criterio y la justificación | `f8b-3a-owner-ve-evaluacion.png` |
+| 8 | Referencia con la owner | OK. «Marcar como referencia» → «Evaluación de referencia del catálogo · Marcada por Ana Propietaria», con «Quitar referencia». Servidor: `is_reference 1`, `reference_set_by` A; `access_log` `set_reference` «9918: EN B1ab(iii)+2ab(iii) [id] de user:B (antes: ninguna)». B, tras «Sincronizar ahora», la ve como referencia y sin los botones del owner | `f8b-3b-referencia-owner.png`, `f8b-4a-referencia-en-B.png`, `f8b-4b-referencia-oscuro.png` |
+
+## Decisiones (F8b)
+- **Umbrales servidos por nginx** desde `shared/` (`location` solo para `iucn-engine.js` e `iucn-criteria.json`; el
+  resto de `/shared/` → 404), no copiados a `frontend/`: una sola fuente para el navegador y para Node. `check-sw.php`
+  resuelve las entradas `shared/…` de `SHELL_ASSETS` y exige esas dos.
+- `iucn-criteria.json` gana los umbrales que solo estaban en texto (C1, C2a(ii), D2, E, periodo de A, bases vetadas en
+  A3, categorías de salida y ajuste regional); los campos de antes no cambian.
+- La cadena lista los criterios cumplidos en la categoría propuesta; con ajuste regional, la de antes del ajuste.
+- En el dispositivo borrador/final es `assessmentStatus` (`status` ya es el estado de sincronización que usa el código
+  común de la cola); en la API es `status`.
+- Referencia = columnas en la propia fila (`is_reference` + `reference_key` generada y única). Cambiarla sube el
+  `server_seq` de las filas afectadas, así que viaja por el pull sin tocar el paquete offline. Solo finales; si el autor
+  la borra o la pasa a borrador deja de serlo, y queda registrado. Si el autor la edita (sigue final), sigue siéndolo.
+- El servidor no recalcula (el motor es JS): valida forma, tamaños, vocabularios, final con categoría y ajuste con
+  justificación.
+- Una sola justificación por evaluación (sirve también para el ajuste regional). Pull `syncv` 3; respaldo `version: 3`.
+
+## Encontrado y corregido durante el recorrido
+- En el resultado en vivo la notación (`Sí · B1ab(iii)+2ab(iii)`) se salía de su columna y pisaba los motivos: ahora
+  va encima de ellos. «disminución continua(iii)» sin espacio en los motivos del motor.
+- «Guardar como final» se partía en dos líneas a 390 px junto a «Guardar borrador»: ocupa su propia fila en el móvil.
+- El filete de color de la categoría no salía en la tarjeta ni en el resultado (el `border-left` propio pisaba el de
+  `.iucn-edge-*`); anillo de foco sobre el título del paso al cambiar de paso (el foco es para lectores de pantalla).
+- Del propio recorrido, no de la app: la sonda de IndexedDB abría la base sin versión antes que la app (una base v1
+  vacía); y la emulación «sin red» de CDP se cae al cerrar la sesión, así que la evaluación de la primera pasada se
+  subió sola entre scripts (se borró la fila y se repitió el paso). En la segunda pasada, 1 FAIL del script por
+  mayúsculas («No» frente a /no/): el texto capturado era el esperado.
+
+## Pendiente de mirar a mano
+- [ ] **(Damián)** Revisar con alguien que evalúe para la Lista Roja la redacción de los pasos, los textos de las bases
+      y la notación de las cadenas combinadas contra ejemplos oficiales.
+- [ ] Actualizar en un móvil real de v7 a v8 con datos (IndexedDB 3 → 4) y evaluar sin red de verdad.
+- [ ] F9: rellenar EOO y AOO desde las marcas del catálogo en el paso B (hueco preparado).
+- [ ] ¿Avisar si una evaluación de referencia se edita después de marcarla? Ahora sigue siendo la referencia.
