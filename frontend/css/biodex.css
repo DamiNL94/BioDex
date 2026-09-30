@@ -980,3 +980,23 @@ path.metric-gen-cell{stroke:var(--muted);stroke-width:2;stroke-dasharray:4 4;fil
 .legend-gen{border:2px dashed var(--muted);background:rgba(106,106,97,.18)}
 .map-btn.is-active{background:var(--bark);color:#F2E5CE}
 .map-metrics{margin:0}
+
+/* --- Exportación (F10a): «Descargar datos» del catálogo y Ajustes › Descargas --- */
+.export-panel .sheet-body{max-width:720px;margin:0 auto;width:100%}
+.export-form{display:grid;gap:14px}
+.export-form .segmented{justify-self:start;flex-wrap:wrap}
+.export-form .segmented button:disabled{opacity:.5;cursor:not-allowed}
+.export-dates{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.export-picks{max-height:240px;overflow:auto;padding:4px 10px;border:1px solid var(--line);border-radius:var(--radius-md);background:var(--panel)}
+.export-picks .check{align-items:flex-start;padding:4px 0;min-height:0}
+.export-picks .check input{margin-top:1px}
+.export-summary h3{margin:0 0 6px}
+.export-summary p{margin:4px 0}
+.export-summary .guard-band{display:block;margin-top:8px}
+.export-count strong{font-family:var(--font-display);font-size:2rem;margin-right:4px}
+.export-count.is-loading{opacity:.55}
+.export-offline{display:grid;gap:12px;max-width:640px}
+.export-offline .guard-band{display:block}
+.download-list{list-style:none;padding:0;display:grid;gap:4px}
+.download-list li{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 12px;
+  border-bottom:1px solid var(--line);padding:4px 0}

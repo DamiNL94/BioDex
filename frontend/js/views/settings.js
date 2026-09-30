@@ -4,16 +4,19 @@
 // descartar a mano) y catálogos de los que te han sacado con marcas sin subir (exportar o descartar).
 // Dispositivo: espacio usado (storage.estimate), catálogos descargados, zonas del mapa (F7: tamaño,
 // reanudar y borrar) y respaldo (exportar/importar).
+// Descargas (F10a): «Descargar datos» de cada catálogo (catalog-export.js); necesita conexión.
 
 import { state, subscribe, setTheme, setUser, APP_VERSION, CONNECTION_LABELS } from '../state.js';
 import { html, render, $, plural, normalizeOrcid } from '../util.js';
-import { apiPatchJson } from '../api.js';
+import { apiPatchJson, apiGetJson } from '../api.js';
 import { confirmDialog } from '../components/overlay.js';
 import { syncNow, refreshCounts } from '../sync.js';
 import { rejectedItems, retryRejected, discardRejected, downloadBackup, importBackup, outboxEntries } from '../marks.js';
 import { localCatalogs, storageInfo, formatBytes, shortDate, forgetCatalog } from '../offline.js';
 import { listZones, onZones } from '../map/zones.js';
 import { zoneRow, bindZoneRows } from '../map/zone-ui.js';
+import { openExport } from './catalog-export.js';
+import { ROLE_LABELS } from './catalog-team.js';
 
 const THEMES = [['system', 'Sistema'], ['light', 'Claro'], ['dark', 'Oscuro']];
 
@@ -26,6 +29,9 @@ export function mount(el, { onLogout }) {
   let revokedPending = new Map();    // catalogId → nº de marcas sin subir
   let message = null;                // {kind, text} tras importar/exportar
   let profileMsg = null;             // {kind, text} tras guardar el perfil
+  let serverCatalogs = null;         // Descargas: GET /catalogs (una vez, con red)
+  let serverError = null;
+  let serverLoading = false;         // una sola petición a la vez (loadLocal se llama a menudo)
 
   async function loadLocal() {
     try {
@@ -34,6 +40,18 @@ export function mount(el, { onLogout }) {
       revokedPending = new Map(catalogs.filter((c) => c.revoked)
         .map((c) => [c.id, entries.filter((e) => e.catalogId === c.id).length]));
     } catch (e) { /* sin base local: se pinta lo demás */ }
+    if (alive) paint();
+    loadServerCatalogs();
+  }
+
+  async function loadServerCatalogs() {
+    if (serverCatalogs || serverLoading || !state.online) return;
+    serverLoading = true;
+    try {
+      serverCatalogs = (await apiGetJson('/catalogs')).catalogs;
+      serverError = null;
+    } catch (e) { serverError = e.message; }
+    serverLoading = false;
     if (alive) paint();
   }
 
@@ -131,6 +149,19 @@ export function mount(el, { onLogout }) {
             <button type="button" class="btn-secondary" id="exportBtn" ${s.unsynced ? '' : html`disabled`}>Exportar respaldo</button>
             <label class="btn-secondary file-btn">Importar respaldo<input type="file" id="importInput" accept="application/json,.json"></label>
           </div>
+        </section>
+        <section class="panel" aria-labelledby="set-downloads">
+          <h3 id="set-downloads">Descargas</h3>
+          <p class="hint">Los datos de un catálogo en un ZIP: Darwin Core Archive para GBIF y hojas en castellano (Excel y CSV).
+            «Para publicar» generaliza las coordenadas de las especies sensibles; la «completa» es solo para propietario y custodios.</p>
+          ${!state.online ? html`<p class="guard-band warn">La exportación se genera en el servidor y necesita conexión. Sin red, «Exportar respaldo»
+              (arriba) guarda en JSON tus marcas sin sincronizar.</p>`
+            : serverError ? html`<p class="form-error">${serverError}</p>`
+            : !serverCatalogs ? html`<p class="muted">Cargando catálogos…</p>`
+            : serverCatalogs.length ? html`<ul class="plain-list download-list">${serverCatalogs.map((c) => html`<li>
+                <span><strong>${c.name}</strong> <span class="muted">· ${ROLE_LABELS[c.role] || c.role}</span></span>
+                <button type="button" class="link-btn" data-export-data="${c.id}">Descargar datos</button></li>`)}</ul>`
+            : html`<p class="hint">Aún no tienes catálogos.</p>`}
         </section>
         <section class="panel">
           <h3>Apariencia</h3>
@@ -230,6 +261,10 @@ export function mount(el, { onLogout }) {
       message = { kind: 'info', text: `Respaldo descargado (${plural(n, 'marca', 'marcas')}).` };
       paint();
     }));
+    el.querySelectorAll('[data-export-data]').forEach((b) => b.addEventListener('click', () => {
+      const cat = (serverCatalogs || []).find((c) => c.id === b.dataset.exportData);
+      if (cat) openExport(cat);
+    }));
     el.querySelectorAll('[data-forget]').forEach((b) => b.addEventListener('click', async () => {
       const cat = catalogs.find((c) => c.id === b.dataset.forget);
       const ok = await confirmDialog({ key: 'descartar-catalogo', title: 'Borrar del dispositivo', danger: true,
@@ -249,6 +284,7 @@ export function mount(el, { onLogout }) {
 
   const unsubscribe = subscribe((key) => {
     if (key === 'theme' || key === 'online' || key === 'user') paint();
+    if (key === 'online') loadServerCatalogs();
     if (key === 'sync' || key === 'download') loadLocal();
   });
   // La línea «se reintentará en …» cuenta hacia atrás.

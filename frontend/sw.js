@@ -28,7 +28,7 @@
  * Las peticiones de la descarga de zonas (cabecera X-BioDex-Zone) van directas a la red: allí un fallo
  * tiene que ser un fallo, no una tesela vacía.
  */
-var VERSION = 'v9';
+var VERSION = 'v10';
 var CACHE = 'biodex-shell-' + VERSION;
 var NET_TIMEOUT_MS = 3000;
 var TILE_TIMEOUT_MS = 5000;
@@ -79,6 +79,7 @@ var SHELL_ASSETS = [
   'js/views/map.js', 'js/views/catalogs.js', 'js/views/species.js', 'js/views/settings.js',
   'js/views/search.js', 'js/views/catalog-builder.js', 'js/views/species-new.js', 'js/views/species-detail.js',
   'js/views/catalog-team.js', 'js/views/join.js', 'js/views/mark-sheet.js', 'js/views/iucn-wizard.js',
+  'js/views/catalog-export.js',
 
   // shared/ (F8b): motor UICN y sus umbrales, servidos por nginx en /shared/ — el asistente funciona sin red
   'shared/iucn-engine.js', 'shared/iucn-criteria.json',

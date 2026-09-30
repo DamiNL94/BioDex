@@ -9,6 +9,7 @@
 // Sin servidor, la lista y los datos salen del dispositivo (IndexedDB) y lo que necesita red se oculta.
 // F6: el detalle tiene dos pestañas, «Resumen» y «Equipo» (catalog-team.js); el owner abre además
 // «Niveles de sensibilidad» y «Registro». «Tengo un código» abre la invitación (join.js).
+// F10a: «Descargar datos» (catalog-export.js): Darwin Core Archive y hojas; sin red explica el respaldo JSON.
 // ================================================================================================
 
 import { apiGetJson, apiPatchJson, apiDeleteJson } from '../api.js';
@@ -22,6 +23,7 @@ import { iucnEntries, filterSpeciesByFamily } from './species.js';
 import { openCatalogBuilder, openAddSpecies } from './catalog-builder.js';
 import { ROLE_LABELS, mountTeam, openLevels, openAudit } from './catalog-team.js';
 import { openJoin } from './join.js';
+import { openExport } from './catalog-export.js';
 
 export { ROLE_LABELS };
 const ADD_ROLES = ['owner', 'custodian', 'editor'];
@@ -232,6 +234,7 @@ export function mount(el, { go }) {
       <div class="form-actions aside-actions">
         ${ADD_ROLES.includes(catalog.role) && !asideDevice ? html`<button type="button" class="btn-primary" data-add-species>Añadir especies</button>` : ''}
         ${isOwner && !editing ? html`<button type="button" class="link-btn" data-edit>Renombrar o editar descripción</button>` : ''}
+        <button type="button" class="btn-secondary" data-export>Descargar datos</button>
       </div>
       ${cats.length ? html`<h4>Por categoría UICN</h4><dl class="counts">${cats.map(([k, n]) => html`
         <div><dt class="iucn iucn-${k}">${k === 'none' ? 'Sin evaluar' : k}</dt><dd>${n}</dd></div>`)}</dl>` : ''}
@@ -250,6 +253,7 @@ export function mount(el, { go }) {
     on('[data-edit]', () => { editing = true; paintData(catalog, summary, tree); $('.edit-catalog input', aside).focus(); });
     on('[data-cancel-edit]', () => { editing = false; paintData(catalog, summary, tree); $('[data-edit]', aside).focus(); });
     on('[data-delete]', () => removeCatalog(catalog));
+    on('[data-export]', () => openExport(catalog));
     aside.querySelectorAll('[data-family]').forEach((b) => b.addEventListener('click', () => {
       filterSpeciesByFamily(b.dataset.family || null);
       go('especies');
