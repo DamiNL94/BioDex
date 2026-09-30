@@ -15,6 +15,7 @@
 //   PUT    /api/catalogs/{id}/species/{taxonID}/sensitivity  set_level {level, reason} → access_log
 //   PUT    /api/catalogs/{id}/species/{taxonID}/reference-assessment  set_reference (owner) {assessmentID|null}
 //          → evaluación UICN de referencia de la especie en el catálogo (F8b), a access_log
+//   GET    /api/catalogs/{id}/species/{taxonID}/metrics?scope=team|me&cell=2|1  view: EOO/AOO (F9)
 // Miembros, invitaciones, salir, transferir y registro (F6): Api/teams.php, incluido desde aquí.
 // content_seq sube con cada cambio de lo que lleva el paquete offline (especies, niveles, nombre):
 // el pull de /api/sync lo devuelve y el móvil vuelve a descargar el paquete si no coincide.
@@ -26,6 +27,7 @@ require_once __DIR__ . "/../Lib/audit.php";
 require_once __DIR__ . "/../Lib/species.php";
 require_once __DIR__ . "/../Lib/teams.php";
 require_once __DIR__ . "/../Lib/sync.php";      // syncNextSeq(), assessmentOut() (F8b)
+require_once __DIR__ . "/../Lib/metrics.php";   // speciesMetrics() (F9)
 
 const CATALOG_NAME_MAX = 120;
 // Especies por alta de catálogo: cada una sin ficha en caché son ~7 peticiones a EIDOS (~1,5 s).
@@ -42,7 +44,7 @@ if (preg_match('#^/api/catalogs/([0-9a-f-]{36})/(members|invites|leave|transfer|
     require __DIR__ . "/teams.php";
     exit;
 }
-if (!preg_match('#^/api/catalogs(?:/([0-9a-f-]{36})(?:/(tree|species|offline)(?:/([^/]+)(?:/(sensitivity|reference-assessment))?)?)?)?/?$#', $path, $m)) {
+if (!preg_match('#^/api/catalogs(?:/([0-9a-f-]{36})(?:/(tree|species|offline)(?:/([^/]+)(?:/(sensitivity|reference-assessment|metrics))?)?)?)?/?$#', $path, $m)) {
     apiError("Recurso no encontrado.", 404);
 }
 $catalogId = $m[1] ?? null;
@@ -50,6 +52,7 @@ $sub       = $m[2] ?? null;
 $taxonID   = isset($m[3]) ? rawurldecode($m[3]) : null;
 $sensPath  = isset($m[4]);
 $refPath   = ($m[4] ?? null) === "reference-assessment";
+$metricsPath = ($m[4] ?? null) === "metrics";
 
 // ------------------------------------------------------------------------------------------------
 
@@ -348,6 +351,22 @@ if (!$sensPath) {
 // de esa especie en este catálogo (de cualquier autor); {assessmentID: null} la quita. Una por especie
 // (reference_key única). Las filas que cambian toman server_seq nuevo: el pull lleva la referencia a
 // todos los móviles. El contenido de la evaluación no se toca (sigue siendo de su autor).
+
+// --- /api/catalogs/{id}/species/{taxonID}/metrics (F9) --------------------------------------------
+// EOO y AOO definitivos, con las coordenadas exactas. Cifras para cualquier miembro; la geometría,
+// según la confianza (metricsGeometryAccess() en Lib/metrics.php, docs/iucn.md).
+
+if ($metricsPath) {
+    if ($method !== "GET") apiMethodNotAllowed("GET");
+    $role = requireCatalogPermission($pdo, $catalogId, $userId, "view");
+    $scope = (string) ($_GET["scope"] ?? "team");
+    if (!in_array($scope, ["team", "me"], true)) apiError("«scope» debe ser team o me.", 400);
+    $cell = filter_var($_GET["cell"] ?? METRICS_DEFAULT_CELL_KM, FILTER_VALIDATE_INT);
+    if (!in_array($cell, METRICS_CELL_OPTIONS_KM, true)) apiError("«cell» debe ser 2 o 1 (km).", 400);
+    $row = catalogSpeciesRow($pdo, $catalogId, $taxonID);
+    $level = normalizeSensitivityLevel($row["sens_level"]);
+    respond(speciesMetrics($pdo, $catalogId, $taxonID, $userId, $role, $level, $scope, $cell));
+}
 
 if ($refPath) {
     if ($method !== "PUT") apiMethodNotAllowed("PUT");

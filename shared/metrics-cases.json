@@ -1,0 +1,112 @@
+{
+  "about": "Casos compartidos de EOO/AOO (F9). Los ejecutan shared/geo-metrics.test.js (JS) y backend/bin/test-f9.php (PHP) con la misma tolerancia. Casos «points»: puntos ya en EPSG:25830 (metros). Casos «records»: lat/lon ETRS89 que proyecta utm.js / Lib/utm.php. expect.eooKm2 null = sin EOO. Cada campo de expect que aparece se comprueba; el resto no.",
+  "toleranceKm2": 0.01,
+  "cases": [
+    {
+      "name": "Cuadrado de 10 km de lado → EOO 100 km²",
+      "cellKm": 2,
+      "points": [[440000, 4100000], [450000, 4100000], [450000, 4110000], [440000, 4110000]],
+      "expect": { "eooKm2": 100, "aooCells": 4, "aooKm2": 16, "eooAdjusted": false }
+    },
+    {
+      "name": "Mismo cuadrado con un punto interior: el casco sigue siendo el cuadrado",
+      "cellKm": 2,
+      "points": [[440000, 4100000], [450000, 4100000], [450000, 4110000], [440000, 4110000], [445100, 4105100]],
+      "expect": { "eooKm2": 100, "aooCells": 5, "hullVertices": 4 }
+    },
+    {
+      "name": "3 puntos colineales → sin EOO",
+      "cellKm": 2,
+      "points": [[440000, 4100000], [445000, 4105000], [450000, 4110000]],
+      "expect": { "eooKm2": null, "aooCells": 3, "aooKm2": 12, "warningIncludes": "no colineales" }
+    },
+    {
+      "name": "2 puntos → sin EOO",
+      "cellKm": 2,
+      "points": [[440000, 4100000], [450000, 4110000]],
+      "expect": { "eooKm2": null, "aooCells": 2, "aooKm2": 8 }
+    },
+    {
+      "name": "3 puntos en la misma celda de 2 km → AOO 4 km², 1 celda; EOO (1,22) < AOO → EOO = 4",
+      "cellKm": 2,
+      "points": [[440100, 4100100], [441500, 4100200], [440900, 4101900]],
+      "expect": { "aooCells": 1, "aooKm2": 4, "eooKm2": 4, "eooAdjusted": true, "cells": [[220, 2050]], "warningIncludes": "EOO = AOO" }
+    },
+    {
+      "name": "Los mismos 3 puntos con celda de 1 km → 3 celdas, EOO igualada a 3 y aviso de 1 km",
+      "cellKm": 1,
+      "points": [[440100, 4100100], [441500, 4100200], [440900, 4101900]],
+      "expect": { "aooCells": 3, "aooKm2": 3, "eooKm2": 3, "eooAdjusted": true, "warningIncludes": "calibrados para celdas de 2 km" }
+    },
+    {
+      "name": "Punto justo en el borde (esquina) de celda: cuenta en la celda de arriba a la derecha",
+      "cellKm": 2,
+      "points": [[442000, 4100000], [441999.999, 4099999.999]],
+      "expect": { "aooCells": 2, "cells": [[220, 2049], [221, 2050]] }
+    },
+    {
+      "name": "Rejilla desplazada: 2 celdas en la anclada, 1 desplazando medio tamaño en x",
+      "cellKm": 2,
+      "points": [[441900, 4100500], [442100, 4100500]],
+      "expect": { "aooCells": 2, "aooKm2": 8, "aooRangeMin": 4, "aooRangeMax": 8 }
+    },
+    {
+      "name": "Ausencias, registros imprecisos (> 2 km) y sin coordenadas: excluidos",
+      "cellKm": 2,
+      "records": [
+        { "decimalLatitude": 37.0931, "decimalLongitude": -3.3950, "coordinateUncertaintyInMeters": 10, "occurrenceStatus": "present" },
+        { "decimalLatitude": 37.0876, "decimalLongitude": -3.3712, "coordinateUncertaintyInMeters": 2000, "occurrenceStatus": "present" },
+        { "decimalLatitude": 37.0802, "decimalLongitude": -3.3481, "coordinateUncertaintyInMeters": 2001, "occurrenceStatus": "present" },
+        { "decimalLatitude": 37.0754, "decimalLongitude": -3.3210, "coordinateUncertaintyInMeters": 10, "occurrenceStatus": "absent" },
+        { "decimalLatitude": null, "decimalLongitude": null, "coordinateUncertaintyInMeters": null, "occurrenceStatus": "present" }
+      ],
+      "expect": { "nRecords": 2, "nExcluded": 3, "excluded": { "absent": 1, "imprecise": 1, "noCoordinates": 1 }, "eooKm2": null, "aooCells": 2 }
+    },
+    {
+      "name": "Los mismos con celda de 1 km: el de 2000 m también es impreciso",
+      "cellKm": 1,
+      "records": [
+        { "decimalLatitude": 37.0931, "decimalLongitude": -3.3950, "coordinateUncertaintyInMeters": 10, "occurrenceStatus": "present" },
+        { "decimalLatitude": 37.0876, "decimalLongitude": -3.3712, "coordinateUncertaintyInMeters": 2000, "occurrenceStatus": "present" },
+        { "decimalLatitude": 37.0754, "decimalLongitude": -3.3210, "coordinateUncertaintyInMeters": 10, "occurrenceStatus": "absent" }
+      ],
+      "expect": { "nRecords": 1, "nExcluded": 2, "excluded": { "absent": 1, "imprecise": 1, "noCoordinates": 0 }, "aooCells": 1, "aooKm2": 1 }
+    },
+    {
+      "name": "Registro fuera del huso 30 (6,5° O): se calcula con aviso de deformación",
+      "cellKm": 2,
+      "records": [
+        { "decimalLatitude": 37.0931, "decimalLongitude": -3.3950, "coordinateUncertaintyInMeters": 10, "occurrenceStatus": "present" },
+        { "decimalLatitude": 37.2000, "decimalLongitude": -6.5000, "coordinateUncertaintyInMeters": 10, "occurrenceStatus": "present" }
+      ],
+      "expect": { "nRecords": 2, "aooCells": 2, "warningIncludes": "fuera del huso 30" }
+    },
+    {
+      "name": "Sierra Nevada, 15 puntos, celda de 2 km (EOO 31,83 < AOO 56 → EOO = 56)",
+      "cellKm": 2,
+      "reference": "Proyección con PROJ (cs2cs EPSG:4258 → EPSG:25830, imagen osgeo/proj, 30/09/2026) y casco por envoltura de Jarvis, un algoritmo distinto del de geo-metrics.js; EOO sin igualar 31,8294 km². Pendiente contrastar con shapely + pyproj (backend/bin/metrics-reference.py): en esta máquina no hay Python.",
+      "recordsRef": "sierraNevada",
+      "expect": { "nRecords": 15, "aooCells": 14, "aooKm2": 56, "eooKm2": 56, "eooAdjusted": true, "hullVertices": 11, "aooRangeMin": 56, "aooRangeMax": 56 }
+    },
+    {
+      "name": "Sierra Nevada, 15 puntos, celda de 1 km (EOO 31,83 > AOO 15)",
+      "cellKm": 1,
+      "reference": "Como el anterior.",
+      "recordsRef": "sierraNevada",
+      "expect": { "nRecords": 15, "aooCells": 15, "aooKm2": 15, "eooKm2": 31.829, "eooAdjusted": false, "hullVertices": 11 }
+    },
+    {
+      "name": "Sierra Nevada: la proyección coincide con PROJ (primer y último punto, ±1 cm)",
+      "cellKm": 2,
+      "recordsRef": "sierraNevada",
+      "expect": { "projected": [[0, 464897.2733, 4105273.3144], [14, 466124.2186, 4103193.7748]] }
+    }
+  ],
+  "records": {
+    "sierraNevada": [
+      [37.0931, -3.3950], [37.0876, -3.3712], [37.0802, -3.3481], [37.0754, -3.3210], [37.0668, -3.3035],
+      [37.0590, -3.2877], [37.0512, -3.3128], [37.0467, -3.3420], [37.0535, -3.3689], [37.0610, -3.3904],
+      [37.0712, -3.4105], [37.0845, -3.4188], [37.0659, -3.3561], [37.0621, -3.3302], [37.0744, -3.3811]
+    ]
+  }
+}
