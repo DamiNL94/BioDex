@@ -23,23 +23,37 @@ Sesión por cookie (`biodex_session` + `biodex_remember`, `HttpOnly`, `SameSite=
 | `GET /api/species?q=&group=&origin=&scope=&legal=&category=&limit=20&offset=0` | sesión | Buscador. Con `q` (≥ 2): EIDOS en vivo sin acentos + especies de usuario; `group`/`origin`/`scope` (T·M·MT) se filtran en EIDOS. `legal` (`rd139`,`habitats`,`aves`,`rd630`,`ue1143`) y `category` (códigos UICN, lista con comas) sobre la caché, entre los 100 primeros candidatos; como mucho 5 estados legales pedidos por petición, el resto con `detailPending: true`. Sin `q`: solo la caché. → `{total, truncated, items:[tarjeta]}` (ver abajo) |
 | `GET /api/species/filters` | sesión | Opciones de los filtros: `shared/eidos-filters.json` (`groups`, `origins`, `scopes`, `legal`, `iucn`, `art17`, cada una `{value, label}`) + `sensitivityLevels [{level, name, approxKm, display, displayText}]` de `shared/sensitivity.json`. `Cache-Control: private, max-age=86400`. El JSON lo genera a mano `bin/build-filters.php` |
 | `GET /api/species/{taxonID}` | sesión | Ficha completa; la trae de EIDOS si falta o tiene > 30 días. Añade clasificación, sinónimos, `iucnAssessments`, `legalStatus {national, other, andalucia}`, descripción, `images` (con `attribution`), `suggestedSensitivity {level, reason}`. 404 si no existe |
-| `POST /api/species` | sesión | `{scientificName (sin autor), scientificNameAuthorship, taxonRank (Species·Subspecies·Variety·Form), vernacularName?}` → 201 `{species}` con `taxonID biodex:<uuid>` y clasificación del género en EIDOS o, si no, GBIF (`classification.source`). 409 `{error, taxonID}` si ya está en la caché o en EIDOS |
+| `POST /api/species` | sesión | `{scientificName (sin autor), scientificNameAuthorship, taxonRank (Species·Subspecies·Variety·Form), vernacularName?, taxonID?}` → 201 `{species}` con `taxonID biodex:<uuid>` y clasificación del género en EIDOS o, si no, GBIF (`classification.source`). `taxonID` opcional = `biodex:<uuid v4>` propuesto por el móvil (400 si no tiene esa forma): si ya existe con ese nombre → 200 `{species}` (idempotente); con otro nombre → 422. 409 `{error, taxonID}` si el nombre ya está en la caché o en EIDOS |
 
 UICN principal: la vigente más reciente del ámbito más específico: Península > España > Mundial.
 
-**Tarjeta** (resultados, especies de un catálogo): `{taxonID, source, scientificName, canonicalName, scientificNameAuthorship, vernacularName, taxonomicGroup, family, taxonRank, iucnPrimary:{code,scope,year}, iucnAssessments:[{code,scope,year}] (la principal primero), descriptionExcerpt (≤ ~320 car.), thumbnail, eidosUrl}`. El nombre se pinta con `canonicalName` en cursiva y el autor en redonda. Foto y descripción llegan con la búsqueda (dos peticiones por lotes a EIDOS) y la ficha las completa.
+**Tarjeta** (resultados, especies de un catálogo): `{taxonID, source, scientificName, canonicalName, scientificNameAuthorship, vernacularName, taxonomicGroup, family, taxonRank, iucnPrimary:{code,scope,year}, iucnAssessments:[{code,scope,year}] (la principal primero), descriptionExcerpt (≤ ~320 car.), thumbnail, eidosUrl}`. Las imágenes (`thumbnail`, `images[].url`) salen siempre como `/img/fototeca/...` (proxy de nginx a la Fototeca del MITECO; las de otro origen se omiten). El nombre se pinta con `canonicalName` en cursiva y el autor en redonda. Foto y descripción llegan con la búsqueda (dos peticiones por lotes a EIDOS) y la ficha las completa.
 
 ## Catálogos (`Api/catalogs.php`) — requieren sesión
 Rol mínimo según `CATALOG_PERMISSIONS` (`Lib/authz.php`); sin rol o catálogo borrado → 403.
 
 | Método · ruta | Rol mínimo | Qué hace |
 |---|---|---|
-| `GET /api/catalogs` | sesión | Mis catálogos y los compartidos: `{catalogs:[{id, name, description, ownerId, role, speciesCount, …}]}` |
+| `GET /api/catalogs` | sesión | Mis catálogos y los compartidos: `{catalogs:[{id, name, description, ownerId, role, contentSeq, speciesCount, …}]}`. `contentSeq` sube al añadir o quitar especies, cambiar niveles o editar el catálogo |
 | `POST /api/catalogs` | sesión | `{name, description?, taxonIDs?: []}` → 201 `{catalog}` con `speciesCount`; me inserta como `owner` y da de alta las especies con su nivel sugerido, todo en una transacción (las fichas se traen de EIDOS antes). Repetidos fuera; ≤ 200 por alta (400). Si alguna no existe: 404 `{error, missing:[…]}` y no se crea nada |
 | `GET /api/catalogs/{id}` | viewer | Datos, mi rol, especies (tarjeta) con `sensitivity {level, suggestedLevel, reason, confirmed, setBy, setAt}` (`setBy` = nombre de quien lo fijó a mano, null si es el sugerido) y `summary {total, byTaxonomicGroup, byIucnCategory}` (`none` = sin evaluación) |
 | `GET /api/catalogs/{id}/tree` | viewer | Árbol reino › filo › clase › orden › familia › `species`; cada nodo `{rank, id, name, count}` con `id` de EIDOS (o `name:<nombre>` si no lo hay) |
+| `GET /api/catalogs/{id}/offline` | viewer | Paquete para el campo: `{catalog, role, contentSeq, species:[ficha de /api/species/{id} sin extracto ni nivel sugerido + sensitivity]}`. Sale de la caché, sin llamar a EIDOS |
 | `PATCH /api/catalogs/{id}` | owner | `{name?, description?}` |
 | `DELETE /api/catalogs/{id}` | owner | Borrado lógico |
 | `POST /api/catalogs/{id}/species` | editor | `{taxonID}` → 201 (200 si ya estaba). Crea `species_sensitivity` con el nivel sugerido; no pisa un nivel ya fijado |
 | `DELETE /api/catalogs/{id}/species/{taxonID}` | owner | Borrado lógico |
 | `PUT /api/catalogs/{id}/species/{taxonID}/sensitivity` | owner | `{level 1–4, reason}`; `reason` obligatorio (422) si el nivel es mayor (menos protección) que el sugerido. Registra `set_level` en `access_log` |
+
+## Sincronización (`Api/sync.php`) — requieren sesión
+Protocolo, estados y reglas de conflicto: `docs/sync.md`. Sin rol en el catálogo → 403 `{error, code: "not_member"}`;
+rol insuficiente → 403 `{error, code: "forbidden"}`.
+
+| Método · ruta | Rol mínimo | Qué hace |
+|---|---|---|
+| `POST /api/sync/push` | editor | `{catalogId, deviceId, occurrences:[…], deletes:[{occurrenceID, clientUpdatedAt}]}`, ≤ 200 elementos (400). → `{results:[{occurrenceID, status: accepted·unchanged·stale·rejected, reason?, detail?, serverSeq?, occurrence?}]}`. Validación por elemento; idempotente |
+| `GET /api/sync/pull?catalogId=&since=0&limit=500` | viewer | Marcas con `server_seq > since` en orden, incluidas las borradas (`deleted: true`, sin coordenadas), pasadas por `applyVisibility()` (`generalized`, `dataGeneralizations`). → `{items, cursor, hasMore, catalogContentSeq, role}`. Owner/custodian: una fila `view_exact` por petición si recibe exactas ajenas |
+
+## Imágenes (nginx)
+`GET /img/fototeca/<ruta>.<jpg·png·webp·gif>` → proxy a `https://www.miteco.gob.es/content/dam/fototeca/` con caché
+de 30 días. Otra forma de ruta, `..` o parámetros → 400.

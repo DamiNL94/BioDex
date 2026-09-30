@@ -22,7 +22,7 @@ Mapeo columna ← vista de EIDOS: `docs/eidos.md`. `order` es palabra reservada:
 ## Catálogos
 | Tabla | Propósito | Campos clave |
 |---|---|---|
-| `catalogs` | Catálogo compartido | `id` UUID, `owner_id`, `deleted_at` (borrado lógico) |
+| `catalogs` | Catálogo compartido | `id` UUID, `owner_id`, `content_seq` (sube con cada cambio de especies, niveles o datos: el móvil vuelve a bajar el paquete offline), `deleted_at` (borrado lógico) |
 | `catalog_members` | Rol de cada usuario | PK (`catalog_id`, `user_id`), `role` owner/custodian/editor/viewer, `granted_by` |
 | `catalog_invites` | Invitaciones por código | PK `code`, `email` (NULL = enlace abierto), `role` editor/viewer, `expires_at`, `used_at`/`used_by` |
 | `catalog_species` | Especies del catálogo | PK (`catalog_id`, `taxonID`), `added_by`, `deleted_at` |
@@ -34,11 +34,12 @@ y `backend/Lib/sensitivity.php`.
 ## Observaciones
 | Tabla | Propósito | Campos clave |
 |---|---|---|
-| `occurrences` | Marcas de campo | PK `occurrenceID` (UUID v4 del cliente), `catalog_id`, `user_id` (autor), `taxonID`; DwC exactos: `eventDate` (UTC), `decimalLatitude`/`decimalLongitude` DECIMAL(10,7) **exactas, nunca se modifican**, `coordinateUncertaintyInMeters`, `individualCount`, `lifeStage`, `occurrenceRemarks`, `basisOfRecord`, `geodeticDatum`; `mature_count`, `iucn_assessment` JSON, `deleted_at`, `server_seq` único |
+| `occurrences` | Marcas de campo | PK `occurrenceID` (UUID v4 del cliente), `catalog_id`, `user_id` (autor), `taxonID`; DwC exactos: `eventDate` (UTC), `decimalLatitude`/`decimalLongitude` DECIMAL(10,7) **exactas, nunca se modifican**, `coordinateUncertaintyInMeters`, `individualCount`, `lifeStage`, `occurrenceRemarks`, `basisOfRecord`, `geodeticDatum`; `mature_count`, `iucn_assessment` JSON, `client_updated_at` DATETIME(3) UTC (última edición en el dispositivo: decide los conflictos), `device_id`, `deleted_at`, `server_seq` único |
 | `sync_seq` | Contador global de sincronización (una fila) | `value`; cada insert/update de `occurrences` toma el siguiente |
 | `species_metrics` | EOO/AOO calculados en el servidor | `catalog_id`, `taxonID`, `scope` me/team, `user_id` (NULL en team), `eoo_km2`, `aoo_km2`, `aoo_cells`, `cell_size_km`, `n_records`; único por (catálogo, taxón, scope, usuario) vía `owner_key` |
 
-Siguiente `server_seq` (F5), dentro de la misma transacción que la escritura:
+Siguiente `server_seq` (`syncNextSeq()` en `Lib/sync.php`), dentro de la misma transacción que la escritura
+(protocolo en `docs/sync.md`):
 
 ```sql
 UPDATE sync_seq SET value = LAST_INSERT_ID(value + 1) WHERE id = 1;
