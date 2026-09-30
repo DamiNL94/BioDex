@@ -26,7 +26,7 @@ PWA de campo para biólogos: catálogos de especies (EIDOS) → observaciones of
 - Commits pequeños, mensaje en español, prefijo de fase: `F2: login y registro`.
 
 ## Documentación (leer SOLO la del módulo que se toca)
-- `docs/api.md` endpoints · `docs/db.md` esquema · `docs/dwc.md` mapeo Darwin Core · `docs/iucn.md` criterios
+- `docs/api.md` endpoints · `docs/db.md` esquema · `docs/dwc.md` mapeo Darwin Core · `docs/iucn.md` criterios · `docs/mapa.md` mapa, teselas y zonas
 - `docs/prompts/Fx-*.md` tarea de cada fase
 
 ## Reutilizar de NaturDex (`../NaturDex`, solo lectura; copiar y adaptar, nunca importar)

@@ -114,3 +114,5 @@ cola, respaldo) y `sync.js` (motor).
   exportarlas o descartarlas.
 - **Respaldo**: JSON `{format: "biodex-backup", version: 1, userId, catalogs, species, occurrences}`; solo lo
   importa la misma cuenta y es idempotente por `occurrenceID`.
+- **Zonas del mapa (F7)**: la base sube a la versión 2 con el almacén `zones`; sus teselas van a las cachés
+  `biodex-tiles-<zoneId>`, que cerrar sesión también borra. Detalle en `docs/mapa.md`.
