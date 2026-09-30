@@ -7,12 +7,15 @@
 //   POST   /api/catalogs                                   {name, description?, taxonIDs?} → owner
 //   GET    /api/catalogs/{id}                              view: datos, especies y resumen
 //   GET    /api/catalogs/{id}/tree                         view: reino › filo › clase › orden › familia
+//   GET    /api/catalogs/{id}/offline                      view: paquete para el campo (fichas + niveles)
 //   PATCH  /api/catalogs/{id}                              edit_catalog (owner)
 //   DELETE /api/catalogs/{id}                              edit_catalog (owner), borrado lógico
 //   POST   /api/catalogs/{id}/species                      add_species {taxonID}, idempotente
 //   DELETE /api/catalogs/{id}/species/{taxonID}            remove_species (owner), borrado lógico
 //   PUT    /api/catalogs/{id}/species/{taxonID}/sensitivity  set_level {level, reason} → access_log
 // Miembros e invitaciones: F6.
+// content_seq sube con cada cambio de lo que lleva el paquete offline (especies, niveles, nombre):
+// el pull de /api/sync lo devuelve y el móvil vuelve a descargar el paquete si no coincide.
 // ================================================================================================
 
 require_once __DIR__ . "/../Lib/session.php";
@@ -30,7 +33,7 @@ $userId = requireUserId();
 
 $method = $_SERVER["REQUEST_METHOD"];
 $path   = parse_url($_SERVER["REQUEST_URI"] ?? "/", PHP_URL_PATH);
-if (!preg_match('#^/api/catalogs(?:/([0-9a-f-]{36})(?:/(tree|species)(?:/([^/]+)(?:/(sensitivity))?)?)?)?/?$#', $path, $m)) {
+if (!preg_match('#^/api/catalogs(?:/([0-9a-f-]{36})(?:/(tree|species|offline)(?:/([^/]+)(?:/(sensitivity))?)?)?)?/?$#', $path, $m)) {
     apiError("Recurso no encontrado.", 404);
 }
 $catalogId = $m[1] ?? null;
@@ -43,7 +46,7 @@ $sensPath  = isset($m[4]);
 function catalogOut(array $c, string $role, ?int $speciesCount = null): array {
     return [
         "id" => $c["id"], "name" => $c["name"], "description" => $c["description"],
-        "ownerId" => (int) $c["owner_id"], "role" => $role,
+        "ownerId" => (int) $c["owner_id"], "role" => $role, "contentSeq" => (int) $c["content_seq"],
         "createdAt" => $c["created_at"], "updatedAt" => $c["updated_at"],
     ] + ($speciesCount === null ? [] : ["speciesCount" => $speciesCount]);
 }
@@ -99,6 +102,11 @@ function sensitivityOut(array $r): array {
     ];
 }
 
+/** El paquete offline del catálogo ha cambiado. Dentro de la transacción del cambio, si la hay. */
+function catalogBumpContent(PDO $pdo, string $catalogId): void {
+    $pdo->prepare("UPDATE catalogs SET content_seq = content_seq + 1 WHERE id = ?")->execute([$catalogId]);
+}
+
 /** Taxones pedidos en el alta: lista de ids sin repetir, como mucho CATALOG_CREATE_MAX_SPECIES. */
 function catalogTaxonIDs(array $body): array {
     if (!isset($body["taxonIDs"])) return [];
@@ -138,7 +146,9 @@ function catalogAddSpecies(PDO $pdo, string $catalogId, array $species, int $use
     // Idempotente: si ya hay nivel (sugerido o fijado por el owner) se conserva.
     $pdo->prepare("INSERT IGNORE INTO species_sensitivity (catalog_id, taxonID, level, suggested_level, reason) VALUES (?, ?, ?, ?, ?)")
         ->execute([$catalogId, $taxonID, $level, $level, mb_substr($reason, 0, 255)]);
-    return $existing === false || $existing["deleted_at"] !== null;
+    $changed = $existing === false || $existing["deleted_at"] !== null;
+    if ($changed) catalogBumpContent($pdo, $catalogId);
+    return $changed;
 }
 
 /** Especie vigente del catálogo con su sensibilidad, o 404. */
@@ -255,7 +265,7 @@ if ($sub === null) {
         requireCatalogPermission($pdo, $catalogId, $userId, "edit_catalog");
         $f = catalogFields(requireJsonBody("{name?, description?}"), true);
         $sets = implode(", ", array_map(fn($k) => "`{$k}` = ?", array_keys($f)));
-        $pdo->prepare("UPDATE catalogs SET {$sets} WHERE id = ?")->execute([...array_values($f), $catalogId]);
+        $pdo->prepare("UPDATE catalogs SET {$sets}, content_seq = content_seq + 1 WHERE id = ?")->execute([...array_values($f), $catalogId]);
         respond(["catalog" => catalogOut(catalogRow($pdo, $catalogId), "owner")]);
     }
     if ($method === "DELETE") {
@@ -270,6 +280,23 @@ if ($sub === "tree") {
     if ($method !== "GET") apiMethodNotAllowed("GET");
     requireCatalogPermission($pdo, $catalogId, $userId, "view");
     respond(["tree" => catalogTree(catalogSpecies($pdo, $catalogId))]);
+}
+
+if ($sub === "offline") {
+    if ($method !== "GET") apiMethodNotAllowed("GET");
+    if ($taxonID !== null) apiError("Recurso no encontrado.", 404);
+    $role = requireCatalogPermission($pdo, $catalogId, $userId, "view");
+    $catalog = catalogRow($pdo, $catalogId);
+    $rows = catalogSpecies($pdo, $catalogId);
+    // Ficha para usar sin red: la de /api/species/{id} con el nivel del catálogo en lugar del sugerido.
+    // Sale de la caché tal cual (las fichas se trajeron de EIDOS al dar de alta cada especie).
+    $drop = array_flip(["descriptionExcerpt", "suggestedSensitivity"]);
+    respond([
+        "catalog"    => catalogOut($catalog, $role, count($rows)),
+        "role"       => $role,
+        "contentSeq" => (int) $catalog["content_seq"],
+        "species"    => array_map(fn($r) => array_diff_key(speciesFullOut($r), $drop) + ["sensitivity" => sensitivityOut($r)], $rows),
+    ]);
 }
 
 // --- /api/catalogs/{id}/species -----------------------------------------------------------------
@@ -298,8 +325,11 @@ if (!$sensPath) {
     if ($method !== "DELETE") apiMethodNotAllowed("DELETE");
     requireCatalogPermission($pdo, $catalogId, $userId, "remove_species");
     catalogSpeciesRow($pdo, $catalogId, $taxonID);
+    $pdo->beginTransaction();
     $pdo->prepare("UPDATE catalog_species SET deleted_at = NOW() WHERE catalog_id = ? AND taxonID = ?")
         ->execute([$catalogId, $taxonID]);
+    catalogBumpContent($pdo, $catalogId);
+    $pdo->commit();
     respond(["ok" => true]);
 }
 
@@ -327,6 +357,7 @@ $pdo->prepare(
      VALUES (?, ?, ?, ?, ?, ?, NOW())
      ON DUPLICATE KEY UPDATE level = VALUES(level), reason = VALUES(reason), set_by = VALUES(set_by), set_at = NOW()"
 )->execute([$catalogId, $taxonID, $level, $suggested, $reason === "" ? null : $reason, $userId]);
+catalogBumpContent($pdo, $catalogId);
 logAccess($pdo, $userId, "set_level", $catalogId, "{$taxonID}: " . ($old ?? "-") . " → {$level}" . ($reason !== "" ? " ({$reason})" : ""));
 $pdo->commit();
 
