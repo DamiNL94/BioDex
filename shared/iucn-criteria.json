@@ -32,6 +32,17 @@
         "c": "reducción de AOO, EOO y/o calidad del hábitat",
         "d": "niveles de explotación reales o potenciales",
         "e": "taxones introducidos, hibridación, patógenos, contaminantes, competidores o parásitos"
+      },
+      "period": {
+        "minYears": 10,
+        "generations": 3,
+        "maxYears": 100,
+        "note": "El periodo es el más largo de 10 años y 3 generaciones; en A3 y A4 con un máximo de 100 años hacia el futuro"
+      },
+      "basisNotAllowed": {
+        "A3": [
+          "a"
+        ]
       }
     },
     "B": {
@@ -56,13 +67,27 @@
             "CR": 1,
             "EN": 5,
             "VU": 10
-          }
+          },
+          "severeFragmentationAnyCategory": true
         },
         "b": {
-          "text": "Disminución continua en: (i) EOO; (ii) AOO; (iii) área/extensión/calidad del hábitat; (iv) nº localidades o subpoblaciones; (v) nº individuos maduros"
+          "text": "Disminución continua en: (i) EOO; (ii) AOO; (iii) área/extensión/calidad del hábitat; (iv) nº localidades o subpoblaciones; (v) nº individuos maduros",
+          "items": [
+            "i",
+            "ii",
+            "iii",
+            "iv",
+            "v"
+          ]
         },
         "c": {
-          "text": "Fluctuaciones extremas en: (i) EOO; (ii) AOO; (iii) nº localidades o subpoblaciones; (iv) nº individuos maduros"
+          "text": "Fluctuaciones extremas en: (i) EOO; (ii) AOO; (iii) nº localidades o subpoblaciones; (iv) nº individuos maduros",
+          "items": [
+            "i",
+            "ii",
+            "iii",
+            "iv"
+          ]
         }
       },
       "metrics": {
@@ -93,6 +118,26 @@
           "CR": "25% en 3 años o 1 generación",
           "EN": "20% en 5 años o 2 generaciones",
           "VU": "10% en 10 años o 3 generaciones"
+        },
+        "thresholds": {
+          "CR": {
+            "pct": 25,
+            "years": 3,
+            "generations": 1,
+            "maxYears": 100
+          },
+          "EN": {
+            "pct": 20,
+            "years": 5,
+            "generations": 2,
+            "maxYears": 100
+          },
+          "VU": {
+            "pct": 10,
+            "years": 10,
+            "generations": 3,
+            "maxYears": 100
+          }
         }
       },
       "C2": {
@@ -107,7 +152,12 @@
           "EN": "95–100%",
           "VU": "100%"
         },
-        "b": "Fluctuaciones extremas en el número de individuos maduros"
+        "b": "Fluctuaciones extremas en el número de individuos maduros",
+        "a_ii_minPctInOneSubpop": {
+          "CR": 90,
+          "EN": 95,
+          "VU": 100
+        }
       }
     },
     "D": {
@@ -117,7 +167,19 @@
         "EN": 250,
         "VU": 1000
       },
-      "D2_VU_only": "AOO < 20 km² o nº de localidades ≤ 5, con amenaza futura plausible"
+      "D2_VU_only": "AOO < 20 km² o nº de localidades ≤ 5, con amenaza futura plausible",
+      "D2": {
+        "aooLessThanKm2": 20,
+        "maxLocations": 5,
+        "categories": [
+          "VU"
+        ]
+      },
+      "notation": {
+        "CR": "D",
+        "EN": "D",
+        "VU": "D1"
+      }
     },
     "E": {
       "name": "Análisis cuantitativo (probabilidad de extinción en estado silvestre)",
@@ -125,6 +187,24 @@
         "CR": "≥ 50% en 10 años o 3 generaciones (máx. 100)",
         "EN": "≥ 20% en 20 años o 5 generaciones (máx. 100)",
         "VU": "≥ 10% en 100 años"
+      },
+      "thresholds": {
+        "CR": {
+          "pct": 50,
+          "years": 10,
+          "generations": 3,
+          "maxYears": 100
+        },
+        "EN": {
+          "pct": 20,
+          "years": 20,
+          "generations": 5,
+          "maxYears": 100
+        },
+        "VU": {
+          "pct": 10,
+          "years": 100
+        }
       }
     }
   },
@@ -134,5 +214,35 @@
       "C",
       "D"
     ]
+  },
+  "outcomes": {
+    "order": [
+      "CR",
+      "EN",
+      "VU",
+      "NT",
+      "LC"
+    ],
+    "expertJudgement": [
+      "NT",
+      "LC"
+    ],
+    "dataDeficient": "DD",
+    "labels": {
+      "CR": "En peligro crítico",
+      "EN": "En peligro",
+      "VU": "Vulnerable",
+      "NT": "Casi amenazada",
+      "LC": "Preocupación menor",
+      "DD": "Datos insuficientes"
+    },
+    "regionalAdjustment": {
+      "steps": 1,
+      "directions": {
+        "down": "Rebajar un escalón (p. ej. inmigración desde fuera de la región)",
+        "up": "Subir un escalón (p. ej. la región es sumidero dependiente de fuera)"
+      },
+      "justificationRequired": true
+    }
   }
 }

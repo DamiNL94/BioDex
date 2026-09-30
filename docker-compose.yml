@@ -16,6 +16,9 @@ services:
       - ./docker/nginx/entrypoint.sh:/etc/nginx/biodex/entrypoint.sh:ro
       - ./docker/nginx/certs:/etc/nginx/certs:ro
       - ./frontend:/var/www/frontend:ro
+      # Motor y umbrales UICN compartidos con Node (F8b): solo se sirven /shared/iucn-engine.js y
+      # /shared/iucn-criteria.json (biodex-app.conf)
+      - ./shared:/var/www/shared:ro
     depends_on:
       - php
 
