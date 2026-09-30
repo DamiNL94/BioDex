@@ -12,11 +12,14 @@
  * «Hay una versión nueva · Recargar» cuando el SW nuevo toma el control.
  * (Antes era network-first sin límite: con el servidor colgado la navegación no llegaba nunca a la caché.)
  *
- * /api/ NUNCA pasa por aquí: los datos de trabajo (catálogos, especies, marcas) irán a IndexedDB en
- * F5, con su propia fecha y su propia regla de sincronización. Una respuesta de la API cacheada aquí
+ * /api/ NUNCA pasa por aquí: los datos de trabajo (catálogos, especies, marcas) viven en IndexedDB
+ * (F5), con su propia fecha y su propia regla de sincronización. Una respuesta de la API cacheada aquí
  * sería una segunda copia, sin edad conocida, que el navegador serviría como si fuese fresca.
+ *
+ * Fotos de especies (/img/fototeca/, F5): CACHE-FIRST en las cachés `biodex-img-<catalogId>` que llena
+ * la app al descargar un catálogo; lo que no esté ahí va a la red y NO se guarda en la del armazón.
  */
-var VERSION = 'v3';
+var VERSION = 'v4';
 var CACHE = 'biodex-shell-' + VERSION;
 var NET_TIMEOUT_MS = 3000;
 
@@ -40,9 +43,10 @@ var SHELL_ASSETS = [
 
   // js/ (nav.js es script clásico; el resto, módulos ES)
   'js/nav.js', 'js/util.js', 'js/state.js', 'js/api.js', 'js/auth.js', 'js/app.js',
+  'js/db.js', 'js/offline.js', 'js/marks.js', 'js/sync.js',
 
   // js/components/
-  'js/components/overlay.js', 'js/components/species-card.js',
+  'js/components/overlay.js', 'js/components/species-card.js', 'js/components/marks.js',
 
   // js/views/
   'js/views/map.js', 'js/views/catalogs.js', 'js/views/species.js', 'js/views/settings.js',
@@ -63,7 +67,7 @@ self.addEventListener('install', function (event) {
 self.addEventListener('activate', function (event) {
   event.waitUntil(
     caches.keys().then(function (names) {
-      // Solo cachés del armazón de versiones anteriores. Las de teselas (F6) tendrán otro prefijo.
+      // Solo cachés del armazón de versiones anteriores. Las de imágenes (biodex-img-*) no se tocan.
       return Promise.all(names.map(function (name) {
         if (name.indexOf('biodex-shell-') === 0 && name !== CACHE) return caches.delete(name);
         return null;
@@ -81,6 +85,14 @@ self.addEventListener('fetch', function (event) {
   if (url.origin !== self.location.origin) return;
   // La API nunca se cachea en el SW (ver la cabecera).
   if (url.pathname.indexOf('/api/') === 0) return;
+
+  // Fotos de especies: las guardadas al descargar un catálogo (caches.match busca en todas las cachés).
+  if (url.pathname.indexOf('/img/fototeca/') === 0) {
+    event.respondWith(caches.match(req, { ignoreVary: true }).then(function (cached) {
+      return cached || fetch(req);
+    }));
+    return;
+  }
 
   // Abrir un fichero en una pestaña (/img/icon-512.png) no es una ruta del SPA: no recibe index.html.
   if (req.mode === 'navigate' && /\.[a-z0-9]+$/i.test(url.pathname) && !/\.html$/i.test(url.pathname)) return;

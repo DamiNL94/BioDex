@@ -5,14 +5,13 @@
 //   biodex.user           último `user` de la API: permite entrar sin red (días en el campo)
 //   biodex.activeCatalog  {id, name, role} del catálogo con el que se trabaja
 //   biodex.theme          'system' | 'light' | 'dark'
-//   biodex.copy:<ruta>    última respuesta buena de GET /catalogs y /catalogs/{id} (api.js; TODO F5)
-// Las observaciones y el resto de datos de trabajo NO van aquí: van a IndexedDB en F5.
+// Catálogos, especies, marcas y la cola de envío NO van aquí: van a IndexedDB (db.js), una base por usuario.
 // ================================================================================================
 
 import { store } from './util.js';
 
 export const API_BASE = '/api';
-export const APP_VERSION = '0.4.1 · F3b';
+export const APP_VERSION = '0.5.0 · F5';
 
 const listeners = new Set();
 
@@ -26,6 +25,12 @@ export const state = {
   get online() { return this.connection === 'online'; },
   // Aviso de sesión caducada / correo enviado que la pantalla siguiente tiene que mostrar.
   notice: null,
+  // Sincronización (sync.js): pending = en cola sin rechazar; unsynced = todo lo que aún no está en el
+  // servidor (incluidas las rechazadas); revoked = catálogos de los que te han sacado con marcas sin subir.
+  sync: { pending: 0, rejected: 0, unsynced: 0, running: false, lastSync: null, error: null,
+    unauthorized: false, nextRetryAt: null, revoked: [] },
+  // Descargas en curso: catalogId → {phase, done, total}.
+  downloads: {},
 };
 
 /** Suscripción a cambios: fn(clave) cada vez que algo cambia. Devuelve la función para darse de baja. */
@@ -59,6 +64,20 @@ export function setConnection(connection) {
   if (state.connection === connection) return;
   state.connection = connection;
   emit('online');
+}
+
+/** Actualiza el estado de sincronización; avisa con la clave 'sync'. */
+export function setSync(patch) {
+  state.sync = { ...state.sync, ...patch };
+  emit('sync');
+}
+
+/** Progreso de la descarga de un catálogo (null = terminada); avisa con la clave 'download'. */
+export function setDownload(catalogId, progress) {
+  const next = { ...state.downloads };
+  if (progress) next[catalogId] = progress; else delete next[catalogId];
+  state.downloads = next;
+  emit('download');
 }
 
 export function setNotice(notice) {
