@@ -8,7 +8,8 @@
 // Sin servidor, la ficha y el nivel salen del catálogo descargado (IndexedDB) y las fotos, de Cache
 // Storage (las sirve el SW). Debajo del nivel, las marcas de la especie en el catálogo activo (F5) con
 // su resumen, y las notas de cuaderno de la especie (F8a). Tras las evaluaciones UICN oficiales de EIDOS,
-// aparte y rotulada «Evaluación BioDex», la del asistente del equipo (F8b; no las sustituye).
+// aparte y rotulada «Evaluación BioDex», la del asistente del equipo (F8b; no las sustituye). Tras las
+// marcas, «Distribución»: EOO y AOO de la especie en el catálogo (F9).
 // ================================================================================================
 
 import { apiGetJson, apiPutJson } from '../api.js';
@@ -19,6 +20,7 @@ import { iucnBadge, iucnClass } from '../components/species-card.js';
 import { mountMarks } from '../components/marks.js';
 import { mountNotes } from '../components/species-notes.js';
 import { mountAssessments } from '../components/species-assessments.js';
+import { mountDistribution } from '../components/species-distribution.js';
 import { remoteOrLocal, localSpecies, localCatalogData, sensitivityLevels, localNote } from '../offline.js';
 
 // --- Estado legal en versalitas: «CEEA · VULNERABLE», «DIR. HÁBITATS · ANEXO II» -------------------
@@ -89,9 +91,10 @@ export function openSpeciesDetail(taxonID, { onChanged } = {}) {
   let marks = null;
   let notes = null;
   let assessments = null;
+  let distribution = null;
   let fromDevice = false;   // sin servidor: el nivel no se puede cambiar
   const ov = openOverlay({ key: 'ficha-especie', title: 'Ficha de especie', variant: 'side', className: 'species-detail',
-    onClose: () => { alive = false; for (const m of [marks, notes, assessments]) if (m) m.destroy(); } });
+    onClose: () => { alive = false; for (const m of [marks, notes, assessments, distribution]) if (m) m.destroy(); } });
   render(ov.body, html`<p class="muted">Cargando ficha…</p>`);
 
   const active = state.activeCatalog;
@@ -145,6 +148,8 @@ export function openSpeciesDetail(taxonID, { onChanged } = {}) {
 
         ${inCatalog ? html`<section class="detail-sec" aria-labelledby="d-marks"><h4 id="d-marks">Marcas en «${catalogData.catalog.name}»</h4>
           <div class="marks-box"></div></section>
+        <section class="detail-sec dist-sec" aria-labelledby="d-dist"><h4 id="d-dist">Distribución</h4>
+          <div class="dist-box"></div></section>
         <section class="detail-sec" aria-labelledby="d-notes"><h4 id="d-notes">Notas de la especie</h4>
           <div class="notes-box"></div></section>` : ''}
 
@@ -192,11 +197,12 @@ export function openSpeciesDetail(taxonID, { onChanged } = {}) {
       if (fig) fig.remove();
     }, true);
     if (inCatalog) {
-      for (const m of [marks, notes, assessments]) if (m) m.destroy();
+      for (const m of [marks, notes, assessments, distribution]) if (m) m.destroy();
       const catalog = { ...catalogData.catalog, role: catalogData.catalog.role };
       marks = mountMarks($('.marks-box', ov.body), { species: sp, catalog, levels, sensitivity: inCatalog.sensitivity });
       notes = mountNotes($('.notes-box', ov.body), { species: sp, catalog });
       assessments = mountAssessments($('.assess-box', ov.body), { species: sp, catalog });
+      distribution = mountDistribution($('.dist-box', ov.body), { species: sp, catalog });
     }
   }
 

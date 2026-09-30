@@ -7,7 +7,9 @@
 // funciona SIN RED y guarda en IndexedDB + cola (marks.js › saveAssessment), como las marcas.
 // BioDex PROPONE y explica; la decisión es del investigador (aviso fijo arriba).
 // Datos que BioDex sugiere (siempre editables, con su origen): maduros desde el resumen de las marcas
-// (F8a, con el aviso de doble conteo); EOO/AOO desde las marcas, en F9 (hueco preparado).
+// (F8a, con el aviso de doble conteo); EOO/AOO desde las marcas (F9, js/metrics.js: el definitivo del
+// servidor o, sin red, el provisional del dispositivo), con su tamaño de celda.
+
 // Todo el HTML pasa por html`` (la justificación y los nombres vienen de usuarios).
 // ================================================================================================
 
@@ -17,6 +19,8 @@ import { openOverlay, confirmDialog } from '../components/overlay.js';
 import { saveAssessment, marksFor, JUSTIFICATION_MAX } from '../marks.js';
 import { speciesSummary } from '../components/marks.js';
 import { requestSync } from '../sync.js';
+import { speciesMetrics, PROVISIONAL_TEXT, fmtMetricsDate } from '../metrics.js';
+import { CELL_1KM_WARNING } from '../../shared/geo-metrics.js';
 
 export const DISCLAIMER = 'Propuesta orientativa. Una evaluación formal requiere las Directrices de uso de las ' +
   'Categorías y Criterios de la Lista Roja de la UICN.';
@@ -44,7 +48,8 @@ export function blankInputs() {
   return {
     generationLength: null,
     A: { skip: false, reductionPct: null, subcriterion: null, basis: [] },
-    B: { skip: false, eoo: null, aoo: null, severelyFragmented: false, locations: null, decline: [], fluctuation: [] },
+    B: { skip: false, eoo: null, aoo: null, aooCellKm: null, metricsOrigin: null, eooEdited: false, aooEdited: false,
+      severelyFragmented: false, locations: null, decline: [], fluctuation: [] },
     C: { skip: false, mature: null, matureSource: null, c1DeclinePct: null, c1Years: null, continuingDecline: false,
       maxPerSubpop: null, pctInOneSubpop: null, extremeFluctuation: false },
     D: { skip: false, mature: null, matureSource: null, plausibleThreat: false, aoo: null, locations: null },
@@ -135,6 +140,7 @@ export function openIucnWizard({ catalog, species, assessment = null, onSaved } 
   let step = 0;
   let dirty = false;
   let summary = null;          // resumen de marcas (F8a) para las sugerencias de C y D
+  let calcState = null;        // cálculo de EOO/AOO en curso o fallido (F9)
   const inputs = mergeInputs(assessment && assessment.inputs);
   let justification = assessment ? assessment.justification || '' : '';
 
@@ -275,13 +281,20 @@ export function openIucnWizard({ catalog, species, assessment = null, onSaved } 
       const flu = romanItems(B.conditions.c.text);
       return html`
         <div class="wz-suggest">
-          <p><strong>Calcular EOO y AOO desde las marcas del catálogo</strong> · <span class="badge">Disponible en F9</span></p>
-          <p class="hint">${B.metrics.note}</p>
-          <button type="button" class="btn-secondary" disabled>Calcular desde las marcas</button>
+          <p><strong>Calcular EOO y AOO desde las marcas de «${catalog.name}»</strong></p>
+          <div class="form-actions">
+            ${B.metrics.aooCellSizeKmOptions.map((k) => html`<button type="button" class="btn-secondary" data-calc-b="${k}">${
+              k === B.metrics.aooCellSizeKmDefault ? `Calcular (celdas de ${k} km)` : `Con celdas de ${k} km`}</button>`)}
+          </div>
+          <div class="wz-calc">${calcOriginHtml()}</div>
+          <p class="hint">La UICN mide la AOO en celdas de ${B.metrics.aooCellSizeKmDefault} × ${B.metrics.aooCellSizeKmDefault} km: los
+            umbrales de B2 están calibrados para esa escala. Se guarda el tamaño de celda usado.</p>
+          <p class="hint">El nº de localidades no se calcula
+: depende de las amenazas y lo introduces tú, abajo.</p>
         </div>
         <div class="wz-pair">
           ${num('B.eoo', 'EOO · extensión de presencia', b.eoo, { unit: 'km²' })}
-          ${num('B.aoo', 'AOO · área de ocupación', b.aoo, { unit: 'km²', hint: `Celdas de ${B.metrics.aooCellSizeKmDefault}×${B.metrics.aooCellSizeKmDefault} km.` })}
+          ${num('B.aoo', 'AOO · área de ocupación', b.aoo, { unit: 'km²', hint: `Celdas de ${b.aooCellKm || B.metrics.aooCellSizeKmDefault}×${b.aooCellKm || B.metrics.aooCellSizeKmDefault} km.` })}
         </div>
         <fieldset class="wz-group"><legend>(a) ${B.conditions.a.text}</legend>
           ${box('B.severelyFragmented', 'Severamente fragmentada', b.severelyFragmented)}
@@ -334,6 +347,41 @@ export function openIucnWizard({ catalog, species, assessment = null, onSaved } 
         </div>`;
     },
   };
+
+  /** Origen de EOO/AOO calculados desde las marcas (F9): servidor con fecha o provisional; editables. */
+  function calcOriginHtml() {
+    const b = inputs.B;
+    const o = b.metricsOrigin;
+    if (calcState && calcState.loading) return html`<p class="hint">Calculando…</p>`;
+    if (calcState && calcState.error) return html`<p class="guard-band warn">${calcState.error}</p>`;
+    if (!o) return '';
+    const edited = [b.eooEdited ? 'EOO' : null, b.aooEdited ? 'AOO' : null].filter(Boolean);
+    return html`<p class="hint wz-origin">Origen: ${o.source === 'server'
+      ? `servidor, ${fmtMetricsDate(o.computedAt)}` : PROVISIONAL_TEXT(o.nExact)} · celdas de ${o.cellSizeKm} km ·
+      ${o.nRecords} ${o.nRecords === 1 ? 'registro' : 'registros'}${o.nExcluded ? ` (${o.nExcluded} excluidos)` : ''}${
+      edited.length ? ` · ${edited.join(' y ')} ${edited.length > 1 ? 'cambiadas' : 'cambiada'} a mano` : ''}.</p>
+      ${o.cellSizeKm !== crit.criteria.B.metrics.aooCellSizeKmDefault ? html`<ul class="wz-warnings"><li>${CELL_1KM_WARNING}</li></ul>` : ''}
+      ${o.eooKm2 === null ? html`<p class="hint">Sin EOO: menos de 3 puntos no colineales.</p>` : ''}`;
+  }
+
+  async function calcB(cellKm) {
+    readStep();
+    calcState = { loading: true };
+    const box = $('.wz-calc', ov.body);
+    if (box) render(box, calcOriginHtml());
+    try {
+      const res = await speciesMetrics(catalog.id, species.taxonID, { scope: 'team', cellKm });
+      const m = res.data;
+      Object.assign(inputs.B, { eoo: m.eooKm2, aoo: m.aooKm2, aooCellKm: m.cellSizeKm, eooEdited: false, aooEdited: false,
+        metricsOrigin: { source: res.source, computedAt: m.computedAt, cellSizeKm: m.cellSizeKm, nRecords: m.nRecords,
+          nExcluded: m.nExcluded, nExact: m.nExact ?? null, eooKm2: m.eooKm2 } });
+      calcState = null;
+      dirty = true;
+    } catch (e) {
+      calcState = { error: e.message };
+    }
+    if (ov.isOpen() && STEPS[step] === 'B') paintStep();
+  }
 
   /** Maduros (C y D) con lo que BioDex puede sugerir desde las marcas, siempre editable y con su origen. */
   function matureField(key) {
@@ -389,6 +437,9 @@ export function openIucnWizard({ catalog, species, assessment = null, onSaved } 
     const key = STEPS[step];
     // Un maduro escrito a mano deja de ser «sugerido».
     if (/^[CD]\.mature$/.test(el.name) && ev.type === 'input') inputs[el.name[0]].matureSource = null;
+    // EOO/AOO calculados y luego cambiados a mano: se dice en el origen.
+    if (el.name === 'B.eoo' && ev.type === 'input' && inputs.B.metricsOrigin) inputs.B.eooEdited = true;
+    if (el.name === 'B.aoo' && ev.type === 'input' && inputs.B.metricsOrigin) inputs.B.aooEdited = true;
     readStep();
     if (el.name === `${key}.skip`) { const fs = $('.wz-fields', ov.body); if (fs) fs.disabled = el.checked; }
     // A3 no admite (a): se repinta para deshabilitarla.
@@ -415,6 +466,8 @@ export function openIucnWizard({ catalog, species, assessment = null, onSaved } 
     const t = ev.target;
     if (t.closest('[data-next]')) { go(step + 1); return; }
     if (t.closest('[data-prev]')) { go(step - 1); return; }
+    const calc = t.closest('[data-calc-b]');
+    if (calc) { calcB(Number(calc.dataset.calcB)); return; }
     const sug = t.closest('[data-suggest]');
     if (sug) {
       const [key, source, value] = sug.dataset.suggest.split(':');

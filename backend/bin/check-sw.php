@@ -9,7 +9,7 @@
 // ================================================================================================
 
 // Ficheros de shared/ que sirve nginx (location /shared/ de biodex-app.conf) y que la app usa sin red.
-const SHARED_SERVED = ["shared/iucn-engine.js", "shared/iucn-criteria.json"];
+const SHARED_SERVED = ["shared/iucn-engine.js", "shared/iucn-criteria.json", "shared/geo-metrics.js"];
 
 $front = realpath(__DIR__ . "/../../frontend");
 if ($front === false || !is_file("{$front}/sw.js")) {

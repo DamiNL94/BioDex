@@ -960,3 +960,23 @@ path.zone-draft{stroke:var(--sea);fill:var(--sea);fill-opacity:.08}
 .assess.iucn-edge-DD,.wz-cat-box.iucn-edge-DD{border-left-color:var(--iucn-dd)}
 /* El título del paso recibe el foco al cambiar de paso (lectores de pantalla); no es un control. */
 .wz-step h3:focus{outline:none}
+
+/* ===== J. F9: EOO y AOO ======================================================================== */
+/* Ficha: «Distribución» */
+.dist-controls{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.dist-counts{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:16px;margin:0 0 8px;padding:10px 12px;background:var(--surface);
+  border:1px solid var(--line);border-left:var(--rule) solid var(--sea);border-radius:var(--radius-sm)}
+.dist-counts dd{text-align:right;font-variant-numeric:tabular-nums}
+.dist-origin{margin:0;font-size:var(--fs-sm)}
+.dist-origin .badge{margin-right:6px}
+@media (min-width:900px){ .dist-counts{grid-template-columns:repeat(3,minmax(0,1fr))} }
+/* Mapa: capa «EOO / AOO» (map/metrics-layer.js). Por debajo de las marcas, sin interacción. */
+path.eoo-hull{stroke:var(--brass);stroke-width:3;stroke-dasharray:8 5;fill:var(--brass);fill-opacity:.10}
+path.aoo-cell{stroke:var(--sea);stroke-width:1.5;fill:var(--sea);fill-opacity:.28}
+path.metric-gen-cell{stroke:var(--muted);stroke-width:2;stroke-dasharray:4 4;fill:var(--muted);fill-opacity:.18}
+.legend-eoo,.legend-aoo,.legend-gen{display:inline-block;width:18px;height:12px}
+.legend-eoo{border:2px dashed var(--brass);background:rgba(196,161,94,.12)}
+.legend-aoo{border:1.5px solid var(--sea);background:rgba(46,109,142,.35)}
+.legend-gen{border:2px dashed var(--muted);background:rgba(106,106,97,.18)}
+.map-btn.is-active{background:var(--bark);color:#F2E5CE}
+.map-metrics{margin:0}

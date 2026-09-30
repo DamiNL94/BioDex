@@ -13,6 +13,8 @@
 // · Marcas: IndexedDB (map/marks-layer.js), filtros y «Ver como lista». Se repintan al terminar cada
 //   sincronización.
 // · Zonas: map/zone-ui.js (editor y lista) sobre map/zones.js (descarga).
+// · «EOO / AOO» (F9): con una especie elegida en Filtros, su polígono convexo y sus celdas (o las celdas
+//   generalizadas, según la confianza), con cifras y origen (servidor o provisional). map/metrics-layer.js.
 // ================================================================================================
 
 import { state, subscribe } from '../state.js';
@@ -27,6 +29,8 @@ import { LAYERS, tileTemplate, attributionFor, MAP_MAX_ZOOM } from '../map/layer
 import { createMarksLayer, applyFilters, activeFilterCount, markShape, observerColors } from '../map/marks-layer.js';
 import { listZones, onZones, pauseZone, deleteZone } from '../map/zones.js';
 import { openZoneEditor, openZonesList, boundsOf, progressText } from '../map/zone-ui.js';
+import { createMetricsLayer } from '../map/metrics-layer.js';
+import { speciesMetrics, PROVISIONAL_TEXT, fmtMetricsDate, fmtKm2 } from '../metrics.js';
 
 const GRANADA = [[36.7, -4.3], [38.0, -2.2]];
 const VIEW_KEY = 'biodex.mapView';
@@ -35,6 +39,7 @@ const LOW_ACCURACY_M = 50;
 // Filtros: sobreviven a cambiar de pestaña (no a recargar).
 let filters = { taxonID: '', observer: '', who: 'all', from: '', to: '' };
 let filtersCatalog = null;
+let showMetrics = false;   // capa «EOO / AOO» (F9), también sobrevive a cambiar de pestaña
 
 const ICON = {
   locate: html`<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></svg>`,
@@ -76,6 +81,7 @@ export function mount(el) {
           <button type="button" class="btn-secondary map-btn" data-filters aria-expanded="false" aria-controls="mapFilters">Filtros</button>
           <button type="button" class="btn-secondary map-btn" data-list>Ver como lista</button>
           <button type="button" class="btn-secondary map-btn" data-zones>Zonas</button>
+          <button type="button" class="btn-secondary map-btn" data-metrics aria-pressed="false">EOO / AOO</button>
         </div>
       </div>
       <form class="map-filters panel" id="mapFilters" hidden novalidate></form>
@@ -230,6 +236,63 @@ export function mount(el) {
     onOpenSpecies: (taxonID) => openSpeciesDetail(taxonID),
   });
 
+  // --- EOO / AOO de la especie elegida (F9) -----------------------------------------------------
+  const metricsLayer = createMetricsLayer(map);
+  let metrics = null;        // {res, drawn, taxonID} | {error} | {loading}
+  let metricsSeq = 0;
+
+  async function refreshMetrics({ fitAfter = false } = {}) {
+    const cat = state.activeCatalog;
+    const btn = $('[data-metrics]', el);
+    btn.setAttribute('aria-pressed', String(showMetrics));
+    btn.classList.toggle('is-active', showMetrics);
+    const mine = ++metricsSeq;
+    if (!showMetrics || !cat || !filters.taxonID) {
+      metricsLayer.clear();
+      metrics = null;
+      paintNote();
+      paintLegend();
+      return;
+    }
+    const taxonID = filters.taxonID;
+    metrics = { loading: true };
+    paintNote();
+    try {
+      const res = await speciesMetrics(cat.id, taxonID, { scope: 'team', cellKm: 2 });
+      if (!alive || mine !== metricsSeq) return;
+      metrics = { res, taxonID, drawn: metricsLayer.set(res.data.geometry) };
+      if (fitAfter) metricsLayer.fitTo();
+    } catch (e) {
+      if (!alive || mine !== metricsSeq) return;
+      metricsLayer.clear();
+      metrics = { error: e.message };
+    }
+    paintNote();
+    paintLegend();
+  }
+  $('[data-metrics]', el).addEventListener('click', () => {
+    showMetrics = !showMetrics;
+    if (showMetrics && !filters.taxonID) {
+      const form = $('#mapFilters', el);
+      if (form.hidden) $('[data-filters]', el).click();
+    }
+    refreshMetrics({ fitAfter: true });
+  });
+
+  function metricsNote() {
+    if (!showMetrics) return '';
+    if (!filters.taxonID) return html`<p class="hint map-metrics">EOO / AOO: elige una especie en Filtros.</p>`;
+    if (!metrics || metrics.loading) return html`<p class="hint map-metrics">Calculando EOO y AOO…</p>`;
+    if (metrics.error) return html`<p class="guard-band warn">EOO / AOO: ${metrics.error}</p>`;
+    const { res } = metrics;
+    const m = res.data;
+    return html`<p class="hint map-metrics"><strong>EOO ${fmtKm2(m.eooKm2)} · AOO ${fmtKm2(m.aooKm2)}</strong>
+      (${m.aooCells} ${m.aooCells === 1 ? 'celda' : 'celdas'} de ${m.cellSizeKm} km, ${m.nRecords} registros) ·
+      ${res.source === 'server' ? `Servidor, ${fmtMetricsDate(m.computedAt)}` : PROVISIONAL_TEXT(m.nExact)}
+      ${m.geometry && m.geometry.access === 'generalized' ? ' · geometría generalizada según el nivel de la especie' : ''}
+      ${m.geometry && m.geometry.access === 'none' ? ' · nivel 1: solo cifras, sin geometría' : ''}</p>`;
+  }
+
   async function loadMarks() {
     const cat = state.activeCatalog;
     if (filtersCatalog !== (cat && cat.id)) {
@@ -261,6 +324,7 @@ export function mount(el) {
 
   function repaintMarks() {
     const me = state.user && state.user.id;
+    if (showMetrics && (!metrics || metrics.taxonID !== filters.taxonID) && !(metrics && metrics.loading)) refreshMetrics({ fitAfter: true });
     visible = applyFilters(marks, filters, me);
     colors = layer.set(visible);
     paintNote();
@@ -285,7 +349,8 @@ export function mount(el) {
         el mapa solo muestra las marcas hechas en este dispositivo. Descárgalo en Catálogos para ver las del equipo sin conexión.</p>`}
       <p class="hint map-count">${plural(visible.length - withheld, 'marca', 'marcas')} en el mapa${n ? ` (${plural(n, 'filtro', 'filtros')})` : ''}
         ${cells ? html` · ${plural(cells, 'ubicación generalizada', 'ubicaciones generalizadas')}, dibujadas como su celda` : ''}
-        ${withheld ? html` · ${plural(withheld, 'retenida', 'retenidas')} (nivel 1, sin ubicación)` : ''}</p>`);
+        ${withheld ? html` · ${plural(withheld, 'retenida', 'retenidas')} (nivel 1, sin ubicación)` : ''}</p>
+      ${metricsNote()}`);
   }
 
   function paintLegend() {
@@ -296,8 +361,12 @@ export function mount(el) {
     const hasMapPoints = visible.some((o) => o.georeferenceProtocol === 'Punto marcado en el mapa' && markShape(o, me) === 'point');
     const hasAbsent = visible.some((o) => o.occurrenceStatus === 'absent' && markShape(o, me) === 'point');
     const legend = $('#mapLegend', el);
-    if (!visible.length) { render(legend, html``); return; }
+    const drawn = showMetrics && metrics && metrics.drawn;
+    if (!visible.length && !drawn) { render(legend, html``); return; }
     render(legend, html`<ul class="legend" aria-label="Leyenda">
+      ${drawn && drawn.hasHull ? html`<li><span class="legend-eoo" aria-hidden="true"></span>EOO · polígono convexo mínimo</li>` : ''}
+      ${drawn && drawn.access === 'full' ? html`<li><span class="legend-aoo" aria-hidden="true"></span>AOO · celdas de ${drawn.cellSizeKm} km ocupadas</li>` : ''}
+      ${drawn && drawn.access === 'generalized' ? html`<li><span class="legend-gen" aria-hidden="true"></span>Celdas de ${String(drawn.gridDeg).replace('.', ',')}° con registros (generalizadas)</li>` : ''}
       ${hasOwn ? html`<li><span class="mk mk-own" aria-hidden="true"></span>Mis marcas</li>` : ''}
       ${[...colors.values()].map((c) => html`<li><span class="mk mk-obs obs-${c.color}" aria-hidden="true"></span>${c.name}</li>`)}
       ${hasCells ? html`<li><span class="legend-cell" aria-hidden="true"></span>Ubicación generalizada (celda)</li>` : ''}
@@ -486,7 +555,8 @@ export function mount(el) {
     if (!zonesTimer) zonesTimer = setTimeout(() => { zonesTimer = null; loadZones(); }, 250);
   });
   const unsubscribe = subscribe((key) => {
-    if (key === 'sync' && !state.sync.running) loadMarks();
+    if (key === 'sync' && !state.sync.running) { loadMarks(); refreshMetrics(); }
+    if (key === 'online' && state.online) refreshMetrics();
     // Descarga del catálogo terminada: ya hay fichas y marcas del equipo en el dispositivo.
     if (key === 'activeCatalog' || key === 'user' || key === 'download') loadMarks();
   });
@@ -496,6 +566,7 @@ export function mount(el) {
   startWatch();
   loadMarks();
   loadZones();
+  refreshMetrics();
   requestAnimationFrame(fit);
 
   return () => {
@@ -509,6 +580,7 @@ export function mount(el) {
     unsubscribe();
     if (editor) editor.close();
     layer.destroy();
+    metricsLayer.clear();
     map.remove();
   };
 }

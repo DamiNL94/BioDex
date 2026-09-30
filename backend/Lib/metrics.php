@@ -91,7 +91,13 @@ function metricsOccupiedCells(array $points, float $cellM, float $ox = 0.0, floa
     return $cells;
 }
 
+/** «31,829»: coma decimal, con el mismo texto que String(v) de JS (48.0 → «48»). */
+function metricsDecimalEs(float $v): string {
+    return str_replace(".", ",", (string) ($v == floor($v) ? (int) $v : $v));
+}
+
 /** Como Math.round(v * 1000) / 1000 de JS para valores ≥ 0. */
+
 function metricsRound3(float $v): float {
     return floor($v * 1000 + 0.5) / 1000;
 }
@@ -124,7 +130,7 @@ function metricsFromPoints(array $points, int $cellKm = METRICS_DEFAULT_CELL_KM)
     } else {
         $eooKm2 = metricsRound3(metricsPolygonArea($hull) / 1e6);
         if ($eooKm2 < $aooKm2) {
-            $warnings[] = "EOO ({$eooKm2} km²) menor que AOO ({$aooKm2} km²): se toma EOO = AOO.";
+            $warnings[] = "EOO (" . metricsDecimalEs($eooKm2) . " km²) menor que AOO (" . metricsDecimalEs($aooKm2) . " km²): se toma EOO = AOO.";
             $eooKm2 = $aooKm2;
             $adjusted = true;
         }

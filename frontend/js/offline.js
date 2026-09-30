@@ -219,6 +219,8 @@ export async function forgetCatalog(catalogId) {
     for (const a of await t.byIndex('assessments', 'catalogId', catalogId)) await t.del('assessments', a.assessmentID);
     for (const o of await t.getAll('outbox')) if (o.catalogId === catalogId) await t.del('outbox', o.id);
     for (const prefix of CATALOG_META) await t.del('meta', prefix + catalogId);
+    // EOO/AOO guardados (F9, js/metrics.js): metrics:<catálogo>:<taxón>:<ámbito>:<celda>
+    for (const row of await t.getAll('meta')) if (String(row.key).startsWith(`metrics:${catalogId}:`)) await t.del('meta', row.key);
   });
   if ('caches' in window) await caches.delete(IMG_CACHE_PREFIX + catalogId).catch(() => {});
   if (state.activeCatalog && state.activeCatalog.id === catalogId) setActiveCatalog(null);

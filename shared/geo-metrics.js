@@ -93,6 +93,9 @@ export function occupiedCells(points, cellM, ox = 0, oy = 0) {
 }
 
 const round3 = (v) => Math.round(v * 1000) / 1000;
+/** «31,829» (coma decimal, como en PHP: str_replace sobre el número). */
+const decimalEs = (v) => String(v).replace('.', ',');
+
 
 /**
  * Métricas a partir de puntos YA proyectados [{x, y, lat?, lon?}] (metros, EPSG:25830).
@@ -123,7 +126,7 @@ export function metricsFromPoints(points, cellKm = DEFAULT_CELL_KM) {
   } else {
     eooKm2 = round3(polygonArea(hull) / 1e6);
     if (eooKm2 < aooKm2) {
-      warnings.push(`EOO (${eooKm2} km²) menor que AOO (${aooKm2} km²): se toma EOO = AOO.`);
+      warnings.push(`EOO (${decimalEs(eooKm2)} km²) menor que AOO (${decimalEs(aooKm2)} km²): se toma EOO = AOO.`);
       eooKm2 = aooKm2;
       eooAdjusted = true;
     }

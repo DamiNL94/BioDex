@@ -19,7 +19,7 @@
  * Fotos de especies (/img/fototeca/, F5): CACHE-FIRST en las cachés `biodex-img-<catalogId>` que llena
  * la app al descargar un catálogo; lo que no esté ahí va a la red y NO se guarda en la del armazón.
  *
- * Motor y umbrales UICN (/shared/, F8b): van en SHELL_ASSETS como el resto del armazón.
+ * Motor y umbrales UICN (/shared/, F8b) y EOO/AOO (F9): van en SHELL_ASSETS como el resto del armazón.
  *
  * Teselas del mapa (/tiles/, F7): CACHE-FIRST en todas las cachés `biodex-tiles-*` (las zonas descargadas
  * y la de uso, `biodex-tiles-runtime`). Si no está: red con corte de TILE_TIMEOUT_MS, y lo que llega se
@@ -28,7 +28,7 @@
  * Las peticiones de la descarga de zonas (cabecera X-BioDex-Zone) van directas a la red: allí un fallo
  * tiene que ser un fallo, no una tesela vacía.
  */
-var VERSION = 'v8';
+var VERSION = 'v9';
 var CACHE = 'biodex-shell-' + VERSION;
 var NET_TIMEOUT_MS = 3000;
 var TILE_TIMEOUT_MS = 5000;
@@ -58,11 +58,11 @@ var SHELL_ASSETS = [
 
   // js/ (nav.js es script clásico; el resto, módulos ES)
   'js/nav.js', 'js/util.js', 'js/state.js', 'js/api.js', 'js/auth.js', 'js/app.js',
-  'js/db.js', 'js/offline.js', 'js/marks.js', 'js/sync.js',
+  'js/db.js', 'js/offline.js', 'js/marks.js', 'js/sync.js', 'js/metrics.js',
 
   // js/geo/ y js/map/ (F7)
   'js/geo/utm.js',
-  'js/map/layers.js', 'js/map/zones.js', 'js/map/zone-ui.js', 'js/map/marks-layer.js',
+  'js/map/layers.js', 'js/map/zones.js', 'js/map/zone-ui.js', 'js/map/marks-layer.js', 'js/map/metrics-layer.js',
 
   // vendor/leaflet/ y vendor/markercluster/ (F7) — el mapa tiene que abrir sin red
   'vendor/leaflet/leaflet.js', 'vendor/leaflet/leaflet.css',
@@ -73,7 +73,7 @@ var SHELL_ASSETS = [
 
   // js/components/
   'js/components/overlay.js', 'js/components/species-card.js', 'js/components/marks.js', 'js/components/species-notes.js',
-  'js/components/species-assessments.js',
+  'js/components/species-assessments.js', 'js/components/species-distribution.js',
 
   // js/views/
   'js/views/map.js', 'js/views/catalogs.js', 'js/views/species.js', 'js/views/settings.js',
@@ -81,7 +81,10 @@ var SHELL_ASSETS = [
   'js/views/catalog-team.js', 'js/views/join.js', 'js/views/mark-sheet.js', 'js/views/iucn-wizard.js',
 
   // shared/ (F8b): motor UICN y sus umbrales, servidos por nginx en /shared/ — el asistente funciona sin red
-  'shared/iucn-engine.js', 'shared/iucn-criteria.json'
+  'shared/iucn-engine.js', 'shared/iucn-criteria.json',
+  // shared/ (F9): EOO y AOO provisionales sin red
+  'shared/geo-metrics.js'
+
 ];
 
 self.addEventListener('install', function (event) {
