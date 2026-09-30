@@ -121,8 +121,8 @@ export function openExport(catalog) {
         ${full ? html`<p class="guard-band warn">Coordenadas <strong>exactas</strong> de todas las especies. No la publiques ni la
             compartas fuera del equipo: la descarga queda en el Registro del catálogo.</p>`
           : html`<p class="guard-band info">${s.generalized
-            ? html`${plural(s.generalized, 'observación se generaliza', 'observaciones se generalizan')} por la sensibilidad de su especie
-              ${s.withheld ? html` (${s.withheld} sin coordenadas, nivel 1)` : ''}; en ellas tampoco salen las notas de campo.`
+            ? html`${plural(s.generalized, 'observación se generaliza', 'observaciones se generalizan')} por la sensibilidad de su especie${
+              s.withheld ? html` (${s.withheld} sin coordenadas, nivel 1)` : ''}; en ellas tampoco salen las notas de campo.`
             : 'Ninguna observación necesita generalizarse: todas son de especies sin restricción.'}</p>`}` : ''}`);
     const btn = $('[data-download]', ov.body);
     if (btn) btn.disabled = downloading || loading || !s || s.occurrences === 0 || !!summaryError;
@@ -230,7 +230,7 @@ export function openExport(catalog) {
       const res = await apiFetch(`${catPath(catalog)}/export`, { method: 'POST', body: body(), timeoutMs: EXPORT_TIMEOUT_MS });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        throw new ApiError(data && data.error ? data.error : `No se pudo generar la exportación (HTTP ${res.status}).`, res.status);
+        throw new ApiError(data && data.error ? data.error : 'No se pudo generar la exportación. Inténtalo de nuevo en un momento.', res.status);
       }
       const blob = await res.blob();
       const name = filenameFrom(res.headers.get('Content-Disposition')) || 'BioDex.zip';

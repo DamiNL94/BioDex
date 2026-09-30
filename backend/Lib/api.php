@@ -18,9 +18,11 @@ function apiBoot(): void {
     set_exception_handler(function (Throwable $e) {
         // El detalle va al log del servidor, nunca al cliente (revelaría infraestructura).
         error_log("BioDex: " . get_class($e) . ": " . $e->getMessage());
-        $message = biodex_env(["APP_ENV"]) === "dev" ? $e->getMessage() : "Error interno.";
+        // «error» es lo que enseña la app: nunca técnico. En dev, el detalle va aparte («detail»), para depurar.
+        $out = ["error" => "El servidor ha tenido un problema. Inténtalo de nuevo en un momento."];
+        if (biodex_env(["APP_ENV"]) === "dev") $out["detail"] = get_class($e) . ": " . $e->getMessage();
         http_response_code(500);
-        echo json_encode(["error" => $message], JSON_UNESCAPED_UNICODE);
+        echo json_encode($out, JSON_UNESCAPED_UNICODE);
     });
 }
 

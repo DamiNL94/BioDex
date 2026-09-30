@@ -289,8 +289,7 @@ export function openIucnWizard({ catalog, species, assessment = null, onSaved } 
           <div class="wz-calc">${calcOriginHtml()}</div>
           <p class="hint">La UICN mide la AOO en celdas de ${B.metrics.aooCellSizeKmDefault} × ${B.metrics.aooCellSizeKmDefault} km: los
             umbrales de B2 están calibrados para esa escala. Se guarda el tamaño de celda usado.</p>
-          <p class="hint">El nº de localidades no se calcula
-: depende de las amenazas y lo introduces tú, abajo.</p>
+          <p class="hint">El nº de localidades no se calcula: depende de las amenazas y lo introduces tú, abajo.</p>
         </div>
         <div class="wz-pair">
           ${num('B.eoo', 'EOO · extensión de presencia', b.eoo, { unit: 'km²' })}

@@ -101,7 +101,7 @@ async function errorFrom(res, fallback) {
   const retry = parseInt(res.headers.get('Retry-After') || '', 10);
   const message = data && data.error ? data.error
     : res.status >= 500 ? 'El servidor ha tenido un problema. Inténtalo más tarde.'
-    : `${fallback} (HTTP ${res.status}).`;
+    : `${fallback}. Inténtalo de nuevo en un momento.`;
   return new ApiError(message, res.status, Number.isFinite(retry) ? retry : null, data);
 }
 
