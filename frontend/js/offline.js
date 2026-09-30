@@ -4,6 +4,7 @@
 // Descargar un catálogo = GET /catalogs/{id}/offline (fichas y niveles) + pull completo de sus marcas
 // (sync.js) + imágenes en Cache Storage `biodex-img-<catalogId>` (la primera foto de cada especie,
 // que es también su miniatura). Sin red, Catálogos, Especies y la ficha leen de aquí.
+// F6: también se guardan miembros, invitaciones y registro (cachedRemote) para verlos sin red.
 //
 // Las lecturas locales devuelven la MISMA forma que la API (GET /catalogs/{id}, /tree, /species/{id})
 // para que las vistas no tengan dos caminos de pintado: el resumen y el árbol se calculan aquí.
@@ -145,6 +146,40 @@ async function cacheImages(catalogId, species, onProgress) {
 
 const downloads = new Map();   // catalogId → promesa en curso (no dos descargas del mismo)
 
+// Claves de meta que son de un catálogo (se borran con él): cursor y época del pull, y las últimas
+// respuestas de Equipo, Invitaciones, Registro y Niveles (F6) para verlas sin red.
+const CATALOG_META = ['cursor:', 'epoch:', 'team:', 'invites:', 'audit:', 'levels:'];
+
+/**
+ * Servidor con copia en el dispositivo: con red, `remote()` y se guarda en meta `key` con su hora; sin
+ * servidor, lo último guardado. → {data, at, fromDevice}. Sin copia y sin servidor lanza el ApiError
+ * con `offline = true` (como remoteOrLocal).
+ */
+export async function cachedRemote(key, remote) {
+  const local = async () => {
+    const row = await getMeta(key).catch(() => null);
+    return row && row.data !== undefined ? row : null;
+  };
+  const res = await remoteOrLocal(async () => {
+    const data = await remote();
+    const at = Date.now();
+    setMeta(key, { data, at }).catch(() => {});
+    return { data, at };
+  }, local);
+  return { ...res.data, fromDevice: res.fromDevice };
+}
+
+/** Lo del equipo que conviene tener sin red: miembros y, para el owner, invitaciones y registro. */
+async function prefetchTeam(catalogId, role) {
+  const id = encodeURIComponent(catalogId);
+  const jobs = [cachedRemote('team:' + catalogId, () => apiGetJson(`/catalogs/${id}/members`))];
+  if (role === 'owner') {
+    jobs.push(cachedRemote('invites:' + catalogId, () => apiGetJson(`/catalogs/${id}/invites`)));
+    jobs.push(cachedRemote('audit:' + catalogId, () => apiGetJson(`/catalogs/${id}/audit?limit=50`)));
+  }
+  await Promise.all(jobs.map((p) => p.catch(() => null)));
+}
+
 /**
  * «Descargar para usar sin conexión». `onProgress({phase: 'package'|'marks'|'images', done, total})`.
  * `pullAll(catalogId)` lo inyecta sync.js (evita la dependencia circular). Devuelve el catálogo local.
@@ -161,6 +196,7 @@ export function downloadCatalog(catalogId, { onProgress = () => {}, pullAll, ima
       if ((await pullAll(catalogId)) === null) throw new Error('Ya no eres miembro de este catálogo.');
     }
     if (images) await cacheImages(catalogId, await localSpeciesOf(catalogId), onProgress);
+    await prefetchTeam(catalogId, pkg.role);
     const cat = await get('catalogs', catalogId);
     cat.downloadedAt = Date.now();
     await put('catalogs', cat);
@@ -173,14 +209,14 @@ export function downloadCatalog(catalogId, { onProgress = () => {}, pullAll, ima
 
 export const isDownloading = (catalogId) => downloads.has(catalogId);
 
-/** Borra un catálogo del dispositivo (expulsado o borrado): fichas, marcas, cursor e imágenes. */
+/** Borra un catálogo del dispositivo (expulsado, salido o borrado): fichas, marcas, meta e imágenes. */
 export async function forgetCatalog(catalogId) {
   await tx(['catalogs', 'catalogSpecies', 'occurrences', 'outbox', 'meta'], 'readwrite', async (t) => {
     await t.del('catalogs', catalogId);
     for (const r of await t.byIndex('catalogSpecies', 'catalogId', catalogId)) await t.del('catalogSpecies', [catalogId, r.taxonID]);
     for (const o of await t.byIndex('occurrences', 'catalogId', catalogId)) await t.del('occurrences', o.occurrenceID);
     for (const o of await t.getAll('outbox')) if (o.catalogId === catalogId) await t.del('outbox', o.id);
-    await t.del('meta', 'cursor:' + catalogId);
+    for (const prefix of CATALOG_META) await t.del('meta', prefix + catalogId);
   });
   if ('caches' in window) await caches.delete(IMG_CACHE_PREFIX + catalogId).catch(() => {});
   if (state.activeCatalog && state.activeCatalog.id === catalogId) setActiveCatalog(null);

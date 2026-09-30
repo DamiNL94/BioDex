@@ -11,7 +11,8 @@
 //      vuelve a bajar el paquete.
 // Red caída a mitad → reintento con espera creciente (30 s, 1, 2, 5 min). 401 → la cola se conserva
 // (la app pide entrar de nuevo). Pull 403 not_member → el catálogo se borra del dispositivo; si tenía
-// marcas propias sin subir, antes se ofrecen para exportar (Ajustes).
+// marcas propias sin subir, antes se ofrecen para exportar (Ajustes). Pull con otra `visibilityEpoch`
+// (F6) → se borran las marcas ajenas de ese catálogo y se vuelven a bajar desde 0.
 // ================================================================================================
 
 import { apiGetJson, apiPostJson } from './api.js';
@@ -192,9 +193,27 @@ async function applyPulled(catalogId, items, cursor, role) {
   });
 }
 
+/**
+ * Cambió lo que este usuario puede ver de las marcas ajenas (F6: le quitaron o dieron custodio, o el
+ * owner cambió el nivel de una especie): se borran del dispositivo TODAS las marcas ajenas del catálogo
+ * y el cursor vuelve a 0, para que ninguna coordenada exacta que ya no le toca se quede aquí. Las propias
+ * no se tocan (tampoco las de la cola).
+ */
+async function resetForeignMarks(catalogId, epoch) {
+  const me = state.user && state.user.id;
+  await tx(['occurrences', 'meta'], 'readwrite', async (t) => {
+    for (const o of await t.byIndex('occurrences', 'catalogId', catalogId)) {
+      if (o.authorId !== me) await t.del('occurrences', o.occurrenceID);
+    }
+    await t.put('meta', { key: 'cursor:' + catalogId, value: 0 });
+    await t.put('meta', { key: 'epoch:' + catalogId, value: epoch });
+  });
+}
+
 /** Pull completo de un catálogo desde su cursor. Devuelve catalogContentSeq, o null si ya no eres miembro. */
 export async function pullAll(catalogId) {
   let since = await getMeta('cursor:' + catalogId, 0);
+  let resets = 0;
   for (;;) {
     let res;
     try {
@@ -203,7 +222,20 @@ export async function pullAll(catalogId) {
       if (e.status === 403 && e.data && e.data.code === 'not_member') { await handleNotMember(catalogId); return null; }
       throw stopFor(e) || e;
     }
+    // Otra época de visibilidad (o ninguna guardada, p. ej. datos de antes de F6): fuera las marcas
+    // ajenas y otra vez desde 0. Si esta página ya venía desde 0, vale tal cual con la época nueva.
+    if (res.visibilityEpoch !== undefined && res.visibilityEpoch !== await getMeta('epoch:' + catalogId, null)) {
+      await resetForeignMarks(catalogId, res.visibilityEpoch);
+      if (since > 0) {
+        if (resets++ >= 3) throw new Error('Los permisos del catálogo cambian mientras se sincroniza; se reintentará.');
+        since = 0;
+        continue;
+      }
+    }
     await applyPulled(catalogId, res.items, res.cursor, res.role);
+    // El rol cambió en el servidor (custodio, editor…): el catálogo activo también.
+    const active = state.activeCatalog;
+    if (active && active.id === catalogId && res.role && active.role !== res.role) setActiveCatalog({ ...active, role: res.role });
     since = res.cursor;
     if (!res.hasMore) return res.catalogContentSeq;
   }
