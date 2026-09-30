@@ -10,3 +10,6 @@ Frontend PWA de BioDex: JS sin framework ni build (módulos ES nativos), servido
   sincronización · `js/components/marks.js` «Marcar aquí» y «Mis marcas». Protocolo: `docs/sync.md`.
 - Equipos (F6): `js/views/catalog-team.js` Equipo (pestaña del catálogo), Niveles y Registro · `js/views/join.js`
   unirse con invitación (`#/unirse/<código>` y «Tengo un código»).
+- Marcas completas (F8a): `js/views/mark-sheet.js` hoja de marca (GPS o punto del mapa, presente/ausente,
+  individuos, maduros, estado vital, sexo, hábitat; también editar) · `js/components/marks.js` resumen y «Mis
+  marcas» · `js/components/species-notes.js` notas de la especie.

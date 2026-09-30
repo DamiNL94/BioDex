@@ -8,6 +8,7 @@
 //   sensitivity.php); la celda sale de ese centro y del paso de rejilla. Nivel 1 (retenida): el
 //   servidor no manda coordenadas y no se dibuja nada.
 // · Pendientes de sincronizar: distintivo ámbar.
+// · F8a: punto marcado a mano en el mapa → borde DISCONTINUO; ausencia → marcador hueco con aspa.
 // Todo el HTML de marcadores y globos pasa por html`` (los nombres y notas vienen de usuarios).
 // ================================================================================================
 
@@ -15,6 +16,7 @@ import { html, sciName, sciNameText } from '../util.js';
 
 const L = () => window.L;
 export const OBS_COLORS = 8;
+const MAP_POINT = 'Punto marcado en el mapa';   // georeferenceProtocol (marks.js GEOREF_MAP)
 
 const fmtWhen = (iso) => {
   const d = new Date(iso);
@@ -107,6 +109,10 @@ export function createMarksLayer(map, { ctx, onOpenSpecies }) {
       <p class="mk-pop-name">${sp ? sciName(sp) : html`<em class="sci">${o.taxonID}</em>`}</p>
       <p class="mk-pop-meta">${fmtWhen(o.eventDate)} · ${author}
         ${o.coordinateUncertaintyInMeters !== null && o.coordinateUncertaintyInMeters !== undefined ? html` · ±${o.coordinateUncertaintyInMeters} m` : ''}</p>
+      ${o.occurrenceStatus === 'absent' ? html`<p class="mk-pop-gen">Ausencia (prospectado, no encontrada)</p>`
+        : Number.isInteger(o.individualCount) ? html`<p class="mk-pop-meta">${o.individualCount} ${o.individualCount === 1 ? 'individuo' : 'individuos'}${
+          Number.isInteger(o.mature_count) && o.mature_count > 0 ? ` · ${o.mature_count} ${o.mature_count === 1 ? 'maduro' : 'maduros'}` : ''}</p>` : ''}
+      ${o.georeferenceProtocol === MAP_POINT ? html`<p class="mk-pop-meta">Punto marcado en el mapa${o.georeferenceRemarks ? html` · ${o.georeferenceRemarks}` : ''}</p>` : ''}
       ${shape === 'cell' ? html`<p class="mk-pop-gen">Ubicación generalizada${km ? ` (~${km} km)` : ''}</p>` : ''}
       ${o.status === 'pending' ? html`<p class="mk-pop-pending">Pendiente de sincronizar</p>` : ''}
       ${o.status === 'rejected' ? html`<p class="mk-pop-pending">Rechazada por el servidor (ver Ajustes)</p>` : ''}
@@ -117,7 +123,8 @@ export function createMarksLayer(map, { ctx, onOpenSpecies }) {
   function markerClass(o, colors) {
     const { me } = ctx();
     const who = o.authorId === me ? 'mk-own' : `mk-obs obs-${(colors.get(o.authorId) || { color: 1 }).color}`;
-    return `mk ${who}${o.status === 'pending' ? ' is-pending' : ''}${o.status === 'rejected' ? ' is-rejected' : ''}`;
+    return `mk ${who}${o.status === 'pending' ? ' is-pending' : ''}${o.status === 'rejected' ? ' is-rejected' : ''}` +
+      `${o.georeferenceProtocol === MAP_POINT ? ' is-mappoint' : ''}${o.occurrenceStatus === 'absent' ? ' is-absent' : ''}`;
   }
 
   function set(marks) {
@@ -132,7 +139,8 @@ export function createMarksLayer(map, { ctx, onOpenSpecies }) {
       if (shape === 'withheld' || shape === 'none') continue;
       const level = levelOf(o.taxonID);
       const sp = speciesById.get(o.taxonID);
-      const label = `${sp ? sciNameText(sp) : o.taxonID}, ${fmtWhen(o.eventDate)}${o.status === 'pending' ? ', pendiente' : ''}`;
+      const label = `${sp ? sciNameText(sp) : o.taxonID}, ${fmtWhen(o.eventDate)}${o.occurrenceStatus === 'absent' ? ', ausencia' : ''}` +
+        `${o.georeferenceProtocol === MAP_POINT ? ', punto del mapa' : ''}${o.status === 'pending' ? ', pendiente' : ''}`;
       let layer;
       if (shape === 'cell') {
         const grid = gridOf(o, level);

@@ -26,7 +26,7 @@
  * Las peticiones de la descarga de zonas (cabecera X-BioDex-Zone) van directas a la red: allí un fallo
  * tiene que ser un fallo, no una tesela vacía.
  */
-var VERSION = 'v6';
+var VERSION = 'v7';
 var CACHE = 'biodex-shell-' + VERSION;
 var NET_TIMEOUT_MS = 3000;
 var TILE_TIMEOUT_MS = 5000;
@@ -70,12 +70,12 @@ var SHELL_ASSETS = [
   'vendor/markercluster/MarkerCluster.css', 'vendor/markercluster/MarkerCluster.Default.css',
 
   // js/components/
-  'js/components/overlay.js', 'js/components/species-card.js', 'js/components/marks.js',
+  'js/components/overlay.js', 'js/components/species-card.js', 'js/components/marks.js', 'js/components/species-notes.js',
 
   // js/views/
   'js/views/map.js', 'js/views/catalogs.js', 'js/views/species.js', 'js/views/settings.js',
   'js/views/search.js', 'js/views/catalog-builder.js', 'js/views/species-new.js', 'js/views/species-detail.js',
-  'js/views/catalog-team.js', 'js/views/join.js'
+  'js/views/catalog-team.js', 'js/views/join.js', 'js/views/mark-sheet.js'
 ];
 
 self.addEventListener('install', function (event) {

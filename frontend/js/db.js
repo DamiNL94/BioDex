@@ -8,15 +8,17 @@
 //   catalogSpecies  [catalogId, taxonID] → {sensitivity, localOnly?}
 //   occurrences     occurrenceID → marca DwC + status (pending · synced · rejected), reason, authorId,
 //                   generalized, serverSeq, clientUpdatedAt, deletedAt, catalogId
-//   outbox          id autoincremental → {kind: species · occurrence · delete, ref, catalogId, attempts,
-//                   lastError, rejected?}
-//   meta            key → value (cursor:<catalogId>, deviceId, lastSync, persistAsked…)
+//   outbox          id autoincremental → {kind: species · occurrence · delete · note · noteDelete, ref,
+//                   catalogId, attempts, lastError, rejected?}
+//   meta            key → value (cursor:<catalogId>, syncv:<catalogId>, deviceId, lastSync, persistAsked…)
 //   zones           id → zona de mapa para usar sin conexión (F7, js/map/zones.js): {id, name, bounds,
 //                   layers: [{key, minZoom, maxZoom}], tileCount, doneCount, failedCount, bytes, status,
 //                   createdAt, completedAt}. Las teselas van a Cache Storage `biodex-tiles-<id>`.
+//   notes           noteID → nota de cuaderno de una especie (F8a): {noteID, catalogId, taxonID, text,
+//                   authorId, recordedBy, clientUpdatedAt, status, reason, serverSeq, deletedAt}
 // ================================================================================================
 
-const DB_VERSION = 2;   // 2 (F7): almacén zones
+const DB_VERSION = 3;   // 2 (F7): almacén zones · 3 (F8a): almacén notes
 let current = null;       // {name, db}
 
 const req = (r) => new Promise((resolve, reject) => {
@@ -29,6 +31,11 @@ export const dbName = (userId) => `biodex-${userId}`;
 function upgrade(db, oldVersion) {
   if (oldVersion < 1) createV1(db);
   if (oldVersion < 2) db.createObjectStore('zones', { keyPath: 'id' });
+  if (oldVersion < 3) {
+    const notes = db.createObjectStore('notes', { keyPath: 'noteID' });
+    notes.createIndex('catalogId', 'catalogId');
+    notes.createIndex('taxonID', 'taxonID');
+  }
 }
 
 function createV1(db) {

@@ -799,6 +799,79 @@ path.zone-draft{stroke:var(--sea);fill:var(--sea);fill-opacity:.08}
   .mark-fab{bottom:40px;right:14px}
 }
 
+/* ===== H. F8a: hoja de marca, resumen y notas ================================================== */
+/* Hoja de marca (views/mark-sheet.js): se usa con una mano, con guantes o al sol → objetivos de 48 px
+   y «Guardar» fijo abajo, siempre visible. */
+.mark-sheet .sheet-body{padding-bottom:0}
+.mark-form{gap:16px}
+.mark-form .mark-species{margin:0;font-size:var(--fs-md)}
+.mark-form .mark-gps{margin:0}
+.mark-pos{display:grid;gap:14px}
+.mark-pos .hint{margin:0}
+.mark-sheet .btn-primary,.mark-sheet .link-btn,.mark-sheet .field input,.mark-sheet .check{min-height:var(--tap-big)}
+.mark-sheet .sheet-close{width:var(--tap-big);height:var(--tap-big)}
+.status-toggle{display:grid;grid-template-columns:1fr 1fr;border:2px solid var(--line-strong);border-radius:var(--radius-md);overflow:hidden}
+.status-toggle button{min-height:56px;border:0;background:var(--surface-alt);color:var(--ink-soft);font-weight:800;font-size:var(--fs-md);
+  letter-spacing:.06em;text-transform:uppercase;cursor:pointer}
+.status-toggle button+button{border-left:2px solid var(--line-strong)}
+.status-toggle button.active[data-status="present"]{background:var(--leaf-fill);color:var(--cream)}
+.status-toggle button.active[data-status="absent"]{background:var(--danger);color:var(--cream)}
+.present-only{display:grid;gap:16px}
+.stepper{display:grid;grid-template-columns:var(--tap-big) minmax(0,9rem) var(--tap-big);gap:6px;align-items:stretch}
+.stepper input{min-height:var(--tap-big);padding:0 8px;text-align:center;font-size:var(--fs-lg);font-weight:700;font-variant-numeric:tabular-nums;
+  background:var(--panel);border:1px solid var(--line-strong);border-radius:var(--radius-md);color:var(--ink)}
+.stepper input:focus{border-color:var(--leaf);outline:none;box-shadow:inset 0 0 0 1px var(--leaf)}
+.step-btn{min-width:var(--tap-big);min-height:var(--tap-big);border:2px solid var(--bark);border-radius:var(--radius-md);background:var(--panel);
+  color:var(--ink);font-size:1.5rem;font-weight:700;line-height:1;cursor:pointer}
+.step-btn:active{background:var(--surface-alt)}
+.big-check{font-size:var(--fs-md);font-weight:700}
+.big-check input{width:26px;height:26px}
+.chip-pick{display:flex;flex-wrap:wrap;gap:6px}
+.chip-pick button{min-height:var(--tap-big);padding:0 14px;border:1px solid var(--line-strong);border-radius:var(--radius-md);
+  background:var(--surface);color:var(--ink-soft);font-weight:700;cursor:pointer}
+.chip-pick button.active{background:var(--leaf-fill);border-color:var(--leaf-fill);color:var(--cream)}
+.sheet-actions{position:sticky;bottom:0;z-index:1;display:flex;align-items:center;gap:12px;margin:0 -16px;
+  padding:10px 16px calc(12px + env(safe-area-inset-bottom));background:var(--paper);border-top:1px solid var(--line);
+  box-shadow:0 -6px 16px rgba(26,26,23,.08)}
+.sheet-actions .btn-primary{flex:1;min-height:56px;font-size:var(--fs-md)}
+/* Marcas: ausencias, puntos del mapa, datos */
+.mark.is-absent{border-left-color:var(--danger)}
+.mark-facts{font-size:var(--fs-sm);font-weight:600;color:var(--ink-soft)}
+.mark-label{font-size:var(--fs-xs);font-weight:700;letter-spacing:var(--tracking-caps);text-transform:uppercase;color:var(--muted)}
+.mark-actions{gap:4px}
+.mark-actions .link-btn{padding-left:0;min-height:36px}
+.mk.is-mappoint{width:24px;height:24px;border:3px dashed var(--ink);background-clip:padding-box;
+  box-shadow:0 0 0 2px #FFFFFF,0 1px 4px rgba(0,0,0,.45)}
+.legend .mk.is-mappoint{width:16px;height:16px;border-width:2px;border-color:var(--ink)}
+.mk.is-absent{background:#FFFFFF;border:3px solid var(--danger)}
+.mk.is-absent::before{content:"×";position:absolute;inset:-4px 0 0;text-align:center;color:var(--danger);font-weight:800;font-size:15px;line-height:18px}
+.mk.is-absent.is-mappoint{border-style:dashed}
+.mk.is-draft{width:22px;height:22px;opacity:.85}
+/* Resumen de la especie */
+.species-summary{margin:4px 0 12px;padding:10px 12px;background:var(--surface);border:1px solid var(--line);
+  border-left:var(--rule) solid var(--brass);border-radius:var(--radius-sm)}
+.summary-counts{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:16px}
+.summary-counts dd{text-align:right}
+.dd-sub,.dd-date{display:block;font-size:var(--fs-xs);font-weight:600;color:var(--muted)}
+.summary-counts .dd-date{font-size:var(--fs-sm);color:var(--ink)}
+.species-summary .hint{margin-top:8px}
+/* Notas de la especie */
+.notes{list-style:none;margin:0 0 12px;padding:0;display:grid;gap:6px}
+.note{display:grid;gap:2px;padding:8px 10px;background:var(--surface);border:1px solid var(--line);
+  border-left:var(--rule) solid var(--sea);border-radius:var(--radius-sm)}
+.note-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px}
+.note-text{margin:2px 0 0;white-space:pre-line;overflow-wrap:anywhere}
+.note-actions{gap:4px}
+.note-actions .link-btn{padding-left:0;min-height:36px}
+.note-new{gap:8px}
+@media (min-width:900px){
+  .summary-counts{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+:root[data-theme="dark"] .step-btn{border-color:var(--brass)}
+:root[data-theme="dark"] .mk.is-absent{background:#16180F}
+:root[data-theme="dark"] .mk.is-mappoint{border-color:#F5EEDD;box-shadow:0 0 0 2px #16180F,0 1px 4px rgba(0,0,0,.6)}
+:root[data-theme="dark"] .sheet-actions{box-shadow:0 -6px 16px rgba(0,0,0,.4)}
+
 :root[data-theme="dark"] .leaflet-control-scale-line{background:rgba(22,24,15,.8)}
 :root[data-theme="dark"] .leaflet-control-attribution{background:rgba(22,24,15,.85) !important}
 :root[data-theme="dark"] .me-dot{stroke:#16180F}

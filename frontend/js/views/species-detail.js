@@ -6,7 +6,8 @@
 // Andalucía) y el NIVEL DE SENSIBILIDAD dentro del catálogo activo: todos lo ven; solo el owner lo
 // cambia. Bajar respecto al sugerido exige motivo: lo valida el servidor (422) y aquí se muestra.
 // Sin servidor, la ficha y el nivel salen del catálogo descargado (IndexedDB) y las fotos, de Cache
-// Storage (las sirve el SW). Debajo del nivel, las marcas de la especie en el catálogo activo (F5).
+// Storage (las sirve el SW). Debajo del nivel, las marcas de la especie en el catálogo activo (F5) con
+// su resumen, y las notas de cuaderno de la especie (F8a).
 // ================================================================================================
 
 import { apiGetJson, apiPutJson } from '../api.js';
@@ -15,6 +16,7 @@ import { html, render, $, sciName, sciNameText } from '../util.js';
 import { openOverlay } from '../components/overlay.js';
 import { iucnBadge, iucnClass } from '../components/species-card.js';
 import { mountMarks } from '../components/marks.js';
+import { mountNotes } from '../components/species-notes.js';
 import { remoteOrLocal, localSpecies, localCatalogData, sensitivityLevels, localNote } from '../offline.js';
 
 // --- Estado legal en versalitas: «CEEA · VULNERABLE», «DIR. HÁBITATS · ANEXO II» -------------------
@@ -83,9 +85,10 @@ function fmtDate(s) {
 export function openSpeciesDetail(taxonID, { onChanged } = {}) {
   let alive = true;
   let marks = null;
+  let notes = null;
   let fromDevice = false;   // sin servidor: el nivel no se puede cambiar
   const ov = openOverlay({ key: 'ficha-especie', title: 'Ficha de especie', variant: 'side', className: 'species-detail',
-    onClose: () => { alive = false; if (marks) marks.destroy(); } });
+    onClose: () => { alive = false; if (marks) marks.destroy(); if (notes) notes.destroy(); } });
   render(ov.body, html`<p class="muted">Cargando ficha…</p>`);
 
   const active = state.activeCatalog;
@@ -138,7 +141,9 @@ export function openSpeciesDetail(taxonID, { onChanged } = {}) {
           <div class="sens-box"></div></section>
 
         ${inCatalog ? html`<section class="detail-sec" aria-labelledby="d-marks"><h4 id="d-marks">Marcas en «${catalogData.catalog.name}»</h4>
-          <div class="marks-box"></div></section>` : ''}
+          <div class="marks-box"></div></section>
+        <section class="detail-sec" aria-labelledby="d-notes"><h4 id="d-notes">Notas de la especie</h4>
+          <div class="notes-box"></div></section>` : ''}
 
         <section class="detail-sec" aria-labelledby="d-cls"><h4 id="d-cls">Clasificación</h4>
           <ol class="crumbs">${ranks.map(([r, v]) => html`<li><span class="crumb-rank">${r}</span> ${v || '—'}</li>`)}</ol>
@@ -182,8 +187,10 @@ export function openSpeciesDetail(taxonID, { onChanged } = {}) {
     }, true);
     if (inCatalog) {
       if (marks) marks.destroy();
-      marks = mountMarks($('.marks-box', ov.body), { species: sp, catalog: { ...catalogData.catalog, role: catalogData.catalog.role },
-        levels, sensitivity: inCatalog.sensitivity });
+      if (notes) notes.destroy();
+      const catalog = { ...catalogData.catalog, role: catalogData.catalog.role };
+      marks = mountMarks($('.marks-box', ov.body), { species: sp, catalog, levels, sensitivity: inCatalog.sensitivity });
+      notes = mountNotes($('.notes-box', ov.body), { species: sp, catalog });
     }
   }
 

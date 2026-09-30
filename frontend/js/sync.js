@@ -6,9 +6,9 @@
 // Orden de cada pasada:
 //   1. especies creadas sin red (POST /species con su taxonID; 409 → se reasignan sus marcas) y su
 //      alta en el catálogo;
-//   2. push de marcas y borrados en lotes de 200, por catálogo;
-//   3. pull de cada catálogo descargado hasta `hasMore: false`; si `catalogContentSeq` cambió, se
-//      vuelve a bajar el paquete.
+//   2. push de marcas, notas de especie (F8a) y sus borrados en lotes de 200, por catálogo;
+//   3. pull de cada catálogo descargado hasta `hasMore: false` (marcas en `items`, notas en `notes`,
+//      un solo cursor); si `catalogContentSeq` cambió, se vuelve a bajar el paquete.
 // Red caída a mitad → reintento con espera creciente (30 s, 1, 2, 5 min). 401 → la cola se conserva
 // (la app pide entrar de nuevo). Pull 403 not_member → el catálogo se borra del dispositivo; si tenía
 // marcas propias sin subir, antes se ofrecen para exportar (Ajustes). Pull con otra `visibilityEpoch`
@@ -18,10 +18,14 @@
 import { apiGetJson, apiPostJson } from './api.js';
 import { state, subscribe, setSync, setDownload, setActiveCatalog } from './state.js';
 import { tx, getAll, get, put, getMeta, setMeta, hasDb } from './db.js';
-import { deviceId, pushPayload, queueCounts, outboxEntries } from './marks.js';
+import { deviceId, pushPayload, notePayload, storeOf, queueCounts, outboxEntries } from './marks.js';
 import { downloadCatalog, forgetCatalog, isDownloading } from './offline.js';
 
 const PERIOD_MS = 5 * 60 * 1000;
+// Versión del protocolo de pull que tiene aplicada cada catálogo (meta `syncv:<id>`). 2 (F8a): el pull
+// trae también `notes`. Un cursor de antes pudo saltarse notas (se lo comía una versión anterior de la
+// app que no las guardaba): con una versión menor se vuelve a pedir desde 0.
+const PULL_VERSION = 2;
 const BACKOFF_S = [30, 60, 120, 300];
 const PUSH_BATCH = 200;
 const PULL_LIMIT = 500;
@@ -106,43 +110,54 @@ async function pushSpecies(entry) {
 }
 
 async function reject(entry, reason, detail) {
-  await tx(['outbox', 'occurrences'], 'readwrite', async (t) => {
+  await tx(['outbox', 'occurrences', 'notes'], 'readwrite', async (t) => {
     await t.put('outbox', { ...entry, attempts: (entry.attempts || 0) + 1, lastError: detail, rejected: { reason, detail } });
-    if (entry.kind !== 'species') {
-      const occ = await t.get('occurrences', entry.ref);
-      if (occ) await t.put('occurrences', { ...occ, status: 'rejected', reason: detail || reason });
+    const store = storeOf(entry.kind);
+    if (store) {
+      const rec = await t.get(store, entry.ref);
+      if (rec) await t.put(store, { ...rec, status: 'rejected', reason: detail || reason });
     }
   });
 }
 
 // --- 2. Push -----------------------------------------------------------------------------------------
 
-async function applyResults(catalogId, entries, results) {
+// Tipos de entidad del push (docs/sync.md): clave del id, de la respuesta y de la versión «stale».
+const ENTITIES = {
+  occurrences: { id: 'occurrenceID', results: 'results', stale: 'occurrence', deleteKind: 'delete' },
+  notes: { id: 'noteID', results: 'noteResults', stale: 'note', deleteKind: 'noteDelete' },
+};
+
+async function applyResults(catalogId, entries, res) {
   const byRef = new Map(entries.map((e) => [e.ref, e]));
-  await tx(['outbox', 'occurrences'], 'readwrite', async (t) => {
-    for (const r of results) {
-      const entry = byRef.get(r.occurrenceID);
-      if (!entry) continue;
-      byRef.delete(r.occurrenceID);
-      const occ = await t.get('occurrences', r.occurrenceID);
-      if (r.status === 'accepted' || r.status === 'unchanged') {
-        await t.del('outbox', entry.id);
-        if (entry.kind === 'delete') await t.del('occurrences', r.occurrenceID);
-        else if (occ) await t.put('occurrences', { ...occ, status: 'synced', reason: null, serverSeq: r.serverSeq });
-      } else if (r.status === 'stale') {
-        // Gana el servidor: se sustituye la local por su versión.
-        await t.del('outbox', entry.id);
-        const srv = r.occurrence;
-        if (!srv || srv.deleted) await t.del('occurrences', r.occurrenceID);
-        else await t.put('occurrences', { ...srv, catalogId, authorId: srv.userId, status: 'synced', reason: null, deletedAt: null });
-      } else if (r.reason === 'not_found' && entry.kind === 'delete') {
-        // Borrado de algo que el servidor nunca tuvo: no hay nada que borrar.
-        await t.del('outbox', entry.id);
-        await t.del('occurrences', r.occurrenceID);
-      } else {
-        await t.put('outbox', { ...entry, attempts: (entry.attempts || 0) + 1, lastError: r.detail || r.reason,
-          rejected: { reason: r.reason, detail: r.detail || null } });
-        if (occ) await t.put('occurrences', { ...occ, status: 'rejected', reason: r.detail || r.reason });
+  await tx(['outbox', 'occurrences', 'notes'], 'readwrite', async (t) => {
+    for (const [store, ent] of Object.entries(ENTITIES)) {
+      for (const r of res[ent.results] || []) {
+        const id = r[ent.id];
+        const entry = byRef.get(id);
+        if (!entry || storeOf(entry.kind) !== store) continue;
+        byRef.delete(id);
+        const rec = await t.get(store, id);
+        const isDelete = entry.kind === ent.deleteKind;
+        if (r.status === 'accepted' || r.status === 'unchanged') {
+          await t.del('outbox', entry.id);
+          if (isDelete) await t.del(store, id);
+          else if (rec) await t.put(store, { ...rec, status: 'synced', reason: null, serverSeq: r.serverSeq });
+        } else if (r.status === 'stale') {
+          // Gana el servidor: se sustituye la local por su versión.
+          await t.del('outbox', entry.id);
+          const srv = r[ent.stale];
+          if (!srv || srv.deleted) await t.del(store, id);
+          else await t.put(store, { ...srv, catalogId, authorId: srv.userId, status: 'synced', reason: null, deletedAt: null });
+        } else if (r.reason === 'not_found' && isDelete) {
+          // Borrado de algo que el servidor nunca tuvo: no hay nada que borrar.
+          await t.del('outbox', entry.id);
+          await t.del(store, id);
+        } else {
+          await t.put('outbox', { ...entry, attempts: (entry.attempts || 0) + 1, lastError: r.detail || r.reason,
+            rejected: { reason: r.reason, detail: r.detail || null } });
+          if (rec) await t.put(store, { ...rec, status: 'rejected', reason: r.detail || r.reason });
+        }
       }
     }
   });
@@ -151,20 +166,22 @@ async function applyResults(catalogId, entries, results) {
 async function pushCatalog(catalogId, entries, device) {
   for (let i = 0; i < entries.length; i += PUSH_BATCH) {
     const batch = entries.slice(i, i + PUSH_BATCH);
-    const occurrences = [];
-    const deletes = [];
+    const body = { catalogId, deviceId: device, occurrences: [], deletes: [], notes: [], noteDeletes: [] };
     const sent = [];
     for (const e of batch) {
-      const occ = await get('occurrences', e.ref);
-      if (!occ) { await tx('outbox', 'readwrite', (t) => t.del('outbox', e.id)); continue; }
-      if (e.kind === 'delete') deletes.push({ occurrenceID: e.ref, clientUpdatedAt: occ.clientUpdatedAt });
-      else occurrences.push(pushPayload(occ));
+      const store = storeOf(e.kind);
+      const rec = store ? await get(store, e.ref) : null;
+      if (!rec) { await tx('outbox', 'readwrite', (t) => t.del('outbox', e.id)); continue; }
+      if (e.kind === 'delete') body.deletes.push({ occurrenceID: e.ref, clientUpdatedAt: rec.clientUpdatedAt });
+      else if (e.kind === 'noteDelete') body.noteDeletes.push({ noteID: e.ref, clientUpdatedAt: rec.clientUpdatedAt });
+      else if (e.kind === 'note') body.notes.push(notePayload(rec));
+      else body.occurrences.push(pushPayload(rec));
       sent.push(e);
     }
     if (!sent.length) continue;
     let res;
     try {
-      res = await apiPostJson('/sync/push', { catalogId, deviceId: device, occurrences, deletes }, { timeoutMs: 30000 });
+      res = await apiPostJson('/sync/push', body, { timeoutMs: 30000 });
     } catch (e) {
       const stop = stopFor(e);
       if (stop) throw stop;
@@ -173,21 +190,25 @@ async function pushCatalog(catalogId, entries, device) {
       for (const entry of sent) await reject(entry, e.data && e.data.code ? e.data.code : 'invalid_item', e.message);
       continue;
     }
-    await applyResults(catalogId, sent, res.results || []);
+    await applyResults(catalogId, sent, res || {});
   }
 }
 
 // --- 3. Pull -----------------------------------------------------------------------------------------
 
 /** Aplica un lote del pull. Lo que tenga un cambio local en cola no se pisa (el push decide). */
-async function applyPulled(catalogId, items, cursor, role) {
-  await tx(['occurrences', 'outbox', 'meta', 'catalogs'], 'readwrite', async (t) => {
-    for (const it of items) {
-      if ((await t.byIndex('outbox', 'ref', it.occurrenceID)).length) continue;
-      if (it.deleted) { await t.del('occurrences', it.occurrenceID); continue; }
-      await t.put('occurrences', { ...it, catalogId, authorId: it.userId, status: 'synced', reason: null, deletedAt: null });
+async function applyPulled(catalogId, res) {
+  const { cursor, role } = res;
+  await tx(['occurrences', 'notes', 'outbox', 'meta', 'catalogs'], 'readwrite', async (t) => {
+    for (const [store, list, idKey] of [['occurrences', res.items || [], 'occurrenceID'], ['notes', res.notes || [], 'noteID']]) {
+      for (const it of list) {
+        if ((await t.byIndex('outbox', 'ref', it[idKey])).length) continue;
+        if (it.deleted) { await t.del(store, it[idKey]); continue; }
+        await t.put(store, { ...it, catalogId, authorId: it.userId, status: 'synced', reason: null, deletedAt: null });
+      }
     }
     await t.put('meta', { key: 'cursor:' + catalogId, value: cursor });
+    await t.put('meta', { key: 'syncv:' + catalogId, value: PULL_VERSION });
     const cat = await t.get('catalogs', catalogId);
     if (cat && role && cat.role !== role) await t.put('catalogs', { ...cat, role });
   });
@@ -213,6 +234,7 @@ async function resetForeignMarks(catalogId, epoch) {
 /** Pull completo de un catálogo desde su cursor. Devuelve catalogContentSeq, o null si ya no eres miembro. */
 export async function pullAll(catalogId) {
   let since = await getMeta('cursor:' + catalogId, 0);
+  if ((await getMeta('syncv:' + catalogId, 1)) < PULL_VERSION) since = 0;
   let resets = 0;
   for (;;) {
     let res;
@@ -232,7 +254,7 @@ export async function pullAll(catalogId) {
         continue;
       }
     }
-    await applyPulled(catalogId, res.items, res.cursor, res.role);
+    await applyPulled(catalogId, res);
     // El rol cambió en el servidor (custodio, editor…): el catálogo activo también.
     const active = state.activeCatalog;
     if (active && active.id === catalogId && res.role && active.role !== res.role) setActiveCatalog({ ...active, role: res.role });

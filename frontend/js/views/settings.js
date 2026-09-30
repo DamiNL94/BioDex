@@ -89,10 +89,13 @@ export function mount(el, { onLogout }) {
             ${s.running || !state.online ? html`disabled` : ''}>Sincronizar ahora</button></div>
           ${state.online ? '' : html`<p class="hint">${CONNECTION_LABELS[state.connection]}: se sincronizará sola al volver.</p>`}
           ${rejected.length ? html`<h4>Rechazadas por el servidor</h4>
-            <ul class="marks rejected-list">${rejected.map(({ entry, occurrence, species }) => html`<li class="mark">
+            <ul class="marks rejected-list">${rejected.map(({ entry, occurrence, note, species }) => html`<li class="mark">
               <div class="mark-main"><span class="mark-when">${entry.kind === 'species'
                 ? html`Especie ${species ? species.canonicalName || species.scientificName : entry.ref}`
-                : entry.kind === 'delete' ? 'Borrado de marca' : html`Marca del ${occurrence ? new Date(occurrence.eventDate).toLocaleString('es-ES') : '?'}`}</span></div>
+                : entry.kind === 'delete' ? 'Borrado de marca'
+                  : entry.kind === 'noteDelete' ? 'Borrado de nota'
+                    : entry.kind === 'note' ? html`Nota «${note ? note.text.slice(0, 60) : '?'}»`
+                      : html`Marca del ${occurrence ? new Date(occurrence.eventDate).toLocaleString('es-ES') : '?'}`}</span></div>
               <p class="hint mark-reason">${(entry.rejected && (entry.rejected.detail || entry.rejected.reason)) || entry.lastError || ''}</p>
               <div class="form-actions"><button type="button" class="link-btn" data-retry="${entry.id}">Reintentar</button>
                 <button type="button" class="link-btn danger-link" data-discard="${entry.id}">Descartar</button></div>

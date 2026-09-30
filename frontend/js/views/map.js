@@ -7,7 +7,9 @@
 // · Posición: watchPosition SOLO mientras la pestaña Mapa está montada y visible (batería). Punto azul
 //   con círculo de precisión, «Centrar en mí» y modo seguir (se suelta al arrastrar el mapa). Pie con
 //   lat/lon, UTM 30N ETRS89 (geo/utm.js) y ±precisión.
-// · «Marcar aquí»: createMark (marks.js) con la ÚLTIMA posición del GPS; peor de 50 m → confirmación.
+// · «Marcar aquí»: la hoja de marca (views/mark-sheet.js) con la ÚLTIMA posición del GPS; peor de 50 m →
+//   confirmación. Mantener pulsado (o clic derecho): marca en ese punto del mapa (F8a), con la precisión
+//   estimada por el usuario; el marcador lo distingue con borde discontinuo.
 // · Marcas: IndexedDB (map/marks-layer.js), filtros y «Ver como lista». Se repintan al terminar cada
 //   sincronización.
 // · Zonas: map/zone-ui.js (editor y lista) sobre map/zones.js (descarga).
@@ -15,13 +17,10 @@
 
 import { state, subscribe } from '../state.js';
 import { html, render, $, $$, plural, store, sciName, sciNameText } from '../util.js';
-import { apiGetJson } from '../api.js';
 import { hasDb, byIndex, get } from '../db.js';
-import { createMark } from '../marks.js';
-import { requestSync } from '../sync.js';
-import { remoteOrLocal, localCatalogData, localCatalog, localSpeciesOf, sensitivityLevels } from '../offline.js';
+import { localCatalog, localSpeciesOf, sensitivityLevels } from '../offline.js';
 import { openOverlay, confirmDialog } from '../components/overlay.js';
-import { canMark } from '../components/marks.js';
+import { openMarkSheet, canMark } from './mark-sheet.js';
 import { openSpeciesDetail } from './species-detail.js';
 import { toUtm, formatUtm } from '../geo/utm.js';
 import { LAYERS, tileTemplate, attributionFor, MAP_MAX_ZOOM } from '../map/layers.js';
@@ -32,7 +31,6 @@ import { openZoneEditor, openZonesList, boundsOf, progressText } from '../map/zo
 const GRANADA = [[36.7, -4.3], [38.0, -2.2]];
 const VIEW_KEY = 'biodex.mapView';
 const LOW_ACCURACY_M = 50;
-const ROLE_LABELS = { viewer: 'Lector' };
 
 // Filtros: sobreviven a cambiar de pestaña (no a recargar).
 let filters = { taxonID: '', observer: '', who: 'all', from: '', to: '' };
@@ -67,7 +65,6 @@ export function mount(el) {
   let colors = new Map();
   let zones = [];
   let editor = null;
-  const posListeners = new Set();
 
   render(el, html`
     <section class="map-view" aria-label="Mapa">
@@ -183,7 +180,6 @@ export function mount(el) {
     if (!map.hasLayer(meDot)) { meAccuracy.addTo(map); meDot.addTo(map); }
     if (follow) map.panTo(ll, { animate: true });
     paintFoot();
-    posListeners.forEach((fn) => fn());
   }
   function onPositionError(e) {
     if (!alive) return;
@@ -191,7 +187,6 @@ export function mount(el) {
       : e.code === 3 ? 'El GPS no da posición todavía (busca cielo abierto).'
         : 'No se puede obtener la posición.';
     paintFoot();
-    posListeners.forEach((fn) => fn());
   }
 
   function paintFoot() {
@@ -298,12 +293,16 @@ export function mount(el) {
     const hasOwn = visible.some((o) => o.authorId === me);
     const hasPending = visible.some((o) => o.status === 'pending');
     const hasCells = visible.some((o) => markShape(o, me) === 'cell');
+    const hasMapPoints = visible.some((o) => o.georeferenceProtocol === 'Punto marcado en el mapa' && markShape(o, me) === 'point');
+    const hasAbsent = visible.some((o) => o.occurrenceStatus === 'absent' && markShape(o, me) === 'point');
     const legend = $('#mapLegend', el);
     if (!visible.length) { render(legend, html``); return; }
     render(legend, html`<ul class="legend" aria-label="Leyenda">
       ${hasOwn ? html`<li><span class="mk mk-own" aria-hidden="true"></span>Mis marcas</li>` : ''}
       ${[...colors.values()].map((c) => html`<li><span class="mk mk-obs obs-${c.color}" aria-hidden="true"></span>${c.name}</li>`)}
       ${hasCells ? html`<li><span class="legend-cell" aria-hidden="true"></span>Ubicación generalizada (celda)</li>` : ''}
+      ${hasMapPoints ? html`<li><span class="mk mk-own is-mappoint" aria-hidden="true"></span>Punto marcado en el mapa</li>` : ''}
+      ${hasAbsent ? html`<li><span class="mk mk-own is-absent" aria-hidden="true"></span>Ausencia</li>` : ''}
       ${hasPending ? html`<li><span class="mk mk-own is-pending" aria-hidden="true"></span>Pendiente de sincronizar</li>` : ''}
     </ul>`);
   }
@@ -396,106 +395,27 @@ export function mount(el) {
     });
   }
 
-  // --- Marcar aquí ------------------------------------------------------------------------------
-  $('[data-mark]', el).addEventListener('click', () => openMapMark());
+  // --- Marcar aquí y marcar en un punto --------------------------------------------------------
+  // «Marcar aquí»: la hoja de marca (views/mark-sheet.js) con la última posición del GPS; la hoja sigue
+  // su propia vigilancia mientras está abierta. Mantener pulsado en el mapa (clic derecho en escritorio):
+  // la misma hoja para ESE punto (individuo visto a distancia), con la precisión estimada obligatoria.
+  $('[data-mark]', el).addEventListener('click', () => {
+    openMarkSheet({ catalog: state.activeCatalog, initialPos: pos, taxonHint: filters.taxonID, onSaved: loadMarks });
+  });
 
-  function openMapMark() {
+  let pointMarker = null;
+  function clearPointMarker() { if (pointMarker) { pointMarker.remove(); pointMarker = null; } }
+  map.on('contextmenu', (ev) => {
+    if (editor) return;   // editando una zona, la pulsación larga es suya
     const catalog = state.activeCatalog;
-    const ov = openOverlay({ key: 'marcar-mapa', title: 'Marcar aquí', variant: 'dialog', className: 'mark-dialog',
-      onClose: () => posListeners.delete(paintPos) });
-    if (!canMark(catalog)) {
-      render(ov.body, html`<p class="guard-band warn">${catalog
-        ? `Tu rol en «${catalog.name}» (${ROLE_LABELS[catalog.role] || catalog.role}) no permite marcar.`
-        : 'Elige un catálogo activo en Catálogos para marcar.'}</p>
-        <div class="form-actions dialog-actions"><button type="button" class="btn-primary" data-close>Entendido</button></div>`);
-      $('[data-close]', ov.body).addEventListener('click', () => ov.close());
-      $('[data-close]', ov.body).focus();
-      return;
-    }
-    let species = [];
-    let chosen = filters.taxonID || '';
-    render(ov.body, html`
-      <p class="mark-gps" role="status" aria-live="polite"></p>
-      <form class="form" novalidate>
-        <div class="field"><span>Especie</span>
-          <input type="search" name="q" placeholder="Buscar en «${catalog.name}»…" autocomplete="off" aria-label="Buscar especie">
-          <div class="pick-list" role="radiogroup" aria-label="Especie"><p class="muted">Cargando especies…</p></div></div>
-        <label class="field"><span>Nota <em>(opcional)</em></span>
-          <textarea name="note" rows="2" maxlength="4000" placeholder="Nº de individuos, hábitat, fenología…"></textarea></label>
-        <p class="form-error" role="alert" hidden></p>
-        <div class="form-actions dialog-actions">
-          <button type="submit" class="btn-primary" disabled>Guardar marca</button>
-          <button type="button" class="link-btn" data-cancel>Cancelar</button>
-        </div>
-      </form>`);
-    const form = $('form', ov.body);
-    const save = $('button[type="submit"]', form);
-    const err = $('.form-error', form);
-    const list = $('.pick-list', form);
-
-    function paintPos() {
-      const gps = $('.mark-gps', ov.body);
-      if (!gps) return;
-      if (!pos) {
-        render(gps, html`<span class="${posError ? 'guard-band warn' : 'gps-wait'}">${posError || 'Esperando al GPS…'}</span>`);
-      } else {
-        const acc = Math.round(pos.coords.accuracy);
-        render(gps, html`<span class="badge ${acc > LOW_ACCURACY_M ? 'warn' : 'ok'}">Posición</span>
-          ${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)} · <strong>±${acc} m</strong>
-          ${acc > LOW_ACCURACY_M ? html`<span class="hint"> · precisión baja: se pedirá confirmación</span>` : ''}`);
-      }
-      save.disabled = !pos || !chosen;
-    }
-    posListeners.add(paintPos);
-
-    function paintList() {
-      const q = form.q.value.trim().toLowerCase();
-      const match = species.filter((s) => !q || sciNameText(s).toLowerCase().includes(q) ||
-        String(s.vernacularName || '').toLowerCase().includes(q));
-      const shown = match.slice(0, 60);
-      render(list, shown.length ? html`${shown.map((s) => html`<label class="check pick-row">
-          <input type="radio" name="taxon" value="${s.taxonID}" ${s.taxonID === chosen ? html`checked` : ''}>
-          <span>${sciName(s)}${s.vernacularName ? html`<span class="muted"> · ${s.vernacularName}</span>` : ''}</span></label>`)}
-        ${match.length > shown.length ? html`<p class="hint">y ${match.length - shown.length} más: afina la búsqueda.</p>` : ''}`
-        : html`<p class="muted">${species.length ? 'Ninguna especie coincide.' : 'Este catálogo no tiene especies en el dispositivo.'}</p>`);
-    }
-    remoteOrLocal(() => apiGetJson('/catalogs/' + encodeURIComponent(catalog.id)), () => localCatalogData(catalog.id))
-      .then((res) => {
-        species = [...res.data.species].sort((a, b) => sciNameText(a).localeCompare(sciNameText(b), 'es'));
-        if (chosen && !species.some((s) => s.taxonID === chosen)) chosen = '';
-        if (ov.isOpen()) { paintList(); paintPos(); }
-      })
-      .catch(() => { if (ov.isOpen()) render(list, html`<p class="guard-band warn">Sin conexión y sin el catálogo descargado no hay especies que elegir.</p>`); });
-
-    form.q.addEventListener('input', paintList);
-    list.addEventListener('change', (ev) => { if (ev.target.name === 'taxon') { chosen = ev.target.value; paintPos(); } });
-    $('[data-cancel]', form).addEventListener('click', () => ov.close());
-    form.addEventListener('submit', async (ev) => {
-      ev.preventDefault();
-      if (!pos || !chosen) return;
-      const usePos = pos;   // la posición del momento de pulsar, aunque el GPS siga llegando
-      const acc = Math.round(usePos.coords.accuracy);
-      if (acc > LOW_ACCURACY_M) {
-        const ok = await confirmDialog({ key: 'precision-baja', title: 'Precisión baja', confirmLabel: 'Guardar igualmente',
-          text: html`<p>El GPS da ahora <strong>±${acc} m</strong>, peor que ${LOW_ACCURACY_M} m. La marca quedará con esa
-            incertidumbre. Si puedes, espera unos segundos a cielo abierto.</p>` });
-        if (!ok || !ov.isOpen()) return;
-      }
-      save.disabled = true;
-      try {
-        await createMark({ catalogId: catalog.id, taxonID: chosen, pos: usePos, note: form.note.value });
-        requestSync();
-        ov.close(true);
-        loadMarks();
-      } catch (e) {
-        err.textContent = e.message;
-        err.hidden = false;
-        save.disabled = false;
-      }
-    });
-    paintPos();
-    form.q.focus();
-  }
+    if (!canMark(catalog)) { openMarkSheet({ catalog }); return; }
+    clearPointMarker();
+    pointMarker = Lf.marker(ev.latlng, { interactive: false, keyboard: false,
+      icon: Lf.divIcon({ className: 'mk-wrap', html: html`<span class="mk mk-own is-mappoint is-draft"></span>`.str,
+        iconSize: [44, 44], iconAnchor: [22, 22] }) }).addTo(map);
+    openMarkSheet({ catalog, point: { lat: ev.latlng.lat, lng: ev.latlng.lng }, taxonHint: filters.taxonID,
+      onSaved: loadMarks, onClose: clearPointMarker });
+  });
 
   // --- Zonas -----------------------------------------------------------------------------------
   const zoneOutlines = Lf.featureGroup().addTo(map);
@@ -588,7 +508,6 @@ export function mount(el) {
     offZones();
     unsubscribe();
     if (editor) editor.close();
-    posListeners.clear();
     layer.destroy();
     map.remove();
   };

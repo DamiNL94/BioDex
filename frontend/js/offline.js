@@ -148,7 +148,7 @@ const downloads = new Map();   // catalogId → promesa en curso (no dos descarg
 
 // Claves de meta que son de un catálogo (se borran con él): cursor y época del pull, y las últimas
 // respuestas de Equipo, Invitaciones, Registro y Niveles (F6) para verlas sin red.
-const CATALOG_META = ['cursor:', 'epoch:', 'team:', 'invites:', 'audit:', 'levels:'];
+const CATALOG_META = ['cursor:', 'syncv:', 'epoch:', 'team:', 'invites:', 'audit:', 'levels:'];
 
 /**
  * Servidor con copia en el dispositivo: con red, `remote()` y se guarda en meta `key` con su hora; sin
@@ -209,12 +209,13 @@ export function downloadCatalog(catalogId, { onProgress = () => {}, pullAll, ima
 
 export const isDownloading = (catalogId) => downloads.has(catalogId);
 
-/** Borra un catálogo del dispositivo (expulsado, salido o borrado): fichas, marcas, meta e imágenes. */
+/** Borra un catálogo del dispositivo (expulsado, salido o borrado): fichas, marcas, notas, meta e imágenes. */
 export async function forgetCatalog(catalogId) {
-  await tx(['catalogs', 'catalogSpecies', 'occurrences', 'outbox', 'meta'], 'readwrite', async (t) => {
+  await tx(['catalogs', 'catalogSpecies', 'occurrences', 'notes', 'outbox', 'meta'], 'readwrite', async (t) => {
     await t.del('catalogs', catalogId);
     for (const r of await t.byIndex('catalogSpecies', 'catalogId', catalogId)) await t.del('catalogSpecies', [catalogId, r.taxonID]);
     for (const o of await t.byIndex('occurrences', 'catalogId', catalogId)) await t.del('occurrences', o.occurrenceID);
+    for (const n of await t.byIndex('notes', 'catalogId', catalogId)) await t.del('notes', n.noteID);
     for (const o of await t.getAll('outbox')) if (o.catalogId === catalogId) await t.del('outbox', o.id);
     for (const prefix of CATALOG_META) await t.del('meta', prefix + catalogId);
   });
