@@ -18,7 +18,18 @@ const SYNC_PULL_MAX_LIMIT   = 500;
 const SYNC_REMARKS_MAX      = 4000;
 const SYNC_FUTURE_TOLERANCE = 86400;   // eventDate / clientUpdatedAt: como mucho 24 h en el futuro
 const SYNC_UINT_MAX         = 4294967295;
-const SYNC_IUCN_JSON_MAX    = 16384;
+const SYNC_HABITAT_MAX      = 500;
+const SYNC_GEOREF_REMARKS_MAX = 255;
+const SYNC_NOTE_MAX         = 4000;
+
+// Vocabularios cerrados (F8a). lifeStage y sex: vocabulario de GBIF; las etiquetas en castellano son
+// cosa de la interfaz (frontend/js/views/mark-sheet.js).
+const OCC_STATUS      = ["present", "absent"];
+const OCC_LIFE_STAGES = ["adult", "juvenile", "subadult", "larva", "egg", "seedling", "flowering", "fruiting", "vegetative", "undetermined"];
+const OCC_SEXES       = ["male", "female", "hermaphrodite", "undetermined"];
+const GEOREF_GPS      = "GPS del dispositivo";
+const GEOREF_MAP      = "Punto marcado en el mapa";
+const GEOREF_PROTOCOLS = [GEOREF_GPS, GEOREF_MAP];
 const UUID_V4_RE = '/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/';
 // ISO 8601 con zona obligatoria: una hora sin zona no se puede pasar a UTC sin adivinar.
 const ISO_DATETIME_ZONED_RE = '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,6})?)?(?:Z|[+-]\d{2}:?\d{2})$/';
@@ -85,31 +96,59 @@ function syncCoordinate(array $o, string $field, float $limit): float {
     return (float) $v;
 }
 
+/** Texto opcional de como mucho $max caracteres: null si falta o está vacío. */
+function syncText(array $o, string $field, int $max): ?string {
+    $v = $o[$field] ?? null;
+    if ($v === null) return null;
+    if (!is_string($v) || mb_strlen($v) > $max) syncReject("invalid_field", "«{$field}» debe ser texto de {$max} caracteres como mucho.");
+    return trim($v) === "" ? null : $v;
+}
+
+/** Valor de un vocabulario cerrado; null si falta (y $default no se da). */
+function syncEnum(array $o, string $field, array $allowed, ?string $default = null): ?string {
+    $v = $o[$field] ?? null;
+    if ($v === null || $v === "") return $default;
+    if (!is_string($v) || !in_array($v, $allowed, true)) {
+        syncReject("invalid_vocabulary", "«{$field}» debe ser uno de: " . implode(", ", $allowed) . ".");
+    }
+    return $v;
+}
+
+/** taxonID obligatorio (entero de EIDOS como texto o biodex:<uuid>). */
+function syncTaxonID(array $o): string {
+    $taxonID = $o["taxonID"] ?? null;
+    if (is_int($taxonID)) $taxonID = (string) $taxonID;
+    if (!is_string($taxonID) || $taxonID === "" || strlen($taxonID) > 64) syncReject("invalid_taxon", "«taxonID» es obligatorio.");
+    return $taxonID;
+}
+
 /**
  * Marca del cuerpo de un push → columnas de occurrences. Lanza SyncRejection si algo no vale.
- * Los términos llegan con su nombre DwC exacto; los que no se conocen se ignoran.
+ * Los términos llegan con su nombre DwC exacto; los que no se conocen se ignoran (también el antiguo
+ * iucn_assessment: la evaluación UICN es de la especie, F8b).
+ * Reglas entre campos (F8a): mature_count ≤ individualCount (y exige individualCount); una ausencia
+ * lleva individualCount 0 o nulo y ningún maduro; un punto marcado en el mapa, precisión ≥ 1 m.
  */
 function syncValidateOccurrence(mixed $o): array {
     if (!is_array($o) || array_is_list($o)) syncReject("invalid_item", "Cada marca debe ser un objeto.");
     if (!isUuidV4($o["occurrenceID"] ?? null)) syncReject("invalid_uuid", "«occurrenceID» debe ser un UUID v4 en minúsculas.");
+    $taxonID = syncTaxonID($o);
 
-    $taxonID = $o["taxonID"] ?? null;
-    if (is_int($taxonID)) $taxonID = (string) $taxonID;
-    if (!is_string($taxonID) || $taxonID === "" || strlen($taxonID) > 64) syncReject("invalid_taxon", "«taxonID» es obligatorio.");
+    $status    = syncEnum($o, "occurrenceStatus", OCC_STATUS, "present");
+    $protocol  = syncEnum($o, "georeferenceProtocol", GEOREF_PROTOCOLS, GEOREF_GPS);
+    $count     = syncUint($o, "individualCount", false);
+    $mature    = syncUint($o, "mature_count", false);
+    $uncertain = syncUint($o, "coordinateUncertaintyInMeters", true);
 
-    $lifeStage = $o["lifeStage"] ?? null;
-    if ($lifeStage !== null && (!is_string($lifeStage) || mb_strlen($lifeStage) > 64)) {
-        syncReject("invalid_field", "«lifeStage» debe ser texto de 64 caracteres como mucho.");
+    if ($status === "absent") {
+        if ($count !== null && $count !== 0) syncReject("invalid_absence", "Una ausencia no puede tener individuos («individualCount» 0 o vacío).");
+        if ($mature !== null) syncReject("invalid_absence", "Una ausencia no puede tener individuos maduros («mature_count»).");
+    } elseif ($mature !== null) {
+        if ($count === null) syncReject("invalid_mature_count", "«mature_count» exige «individualCount».");
+        if ($mature > $count) syncReject("invalid_mature_count", "«mature_count» ({$mature}) no puede ser mayor que «individualCount» ({$count}).");
     }
-    $remarks = $o["occurrenceRemarks"] ?? null;
-    if ($remarks !== null && (!is_string($remarks) || mb_strlen($remarks) > SYNC_REMARKS_MAX)) {
-        syncReject("invalid_field", "«occurrenceRemarks» debe ser texto de " . SYNC_REMARKS_MAX . " caracteres como mucho.");
-    }
-    $iucn = $o["iucn_assessment"] ?? null;
-    if ($iucn !== null) {
-        if (!is_array($iucn)) syncReject("invalid_field", "«iucn_assessment» debe ser un objeto JSON.");
-        $iucn = json_encode($iucn, JSON_UNESCAPED_UNICODE);
-        if ($iucn === false || strlen($iucn) > SYNC_IUCN_JSON_MAX) syncReject("invalid_field", "«iucn_assessment» no es serializable o es demasiado grande.");
+    if ($protocol === GEOREF_MAP && $uncertain < 1) {
+        syncReject("missing_field", "Un punto marcado en el mapa necesita la precisión estimada («coordinateUncertaintyInMeters» ≥ 1).");
     }
 
     return [
@@ -118,21 +157,39 @@ function syncValidateOccurrence(mixed $o): array {
         "eventDate"                     => syncUtcDate($o["eventDate"] ?? null, "eventDate")->format("Y-m-d H:i:s"),
         "decimalLatitude"               => syncCoordinate($o, "decimalLatitude", 90),
         "decimalLongitude"              => syncCoordinate($o, "decimalLongitude", 180),
-        "coordinateUncertaintyInMeters" => syncUint($o, "coordinateUncertaintyInMeters", true),
-        "individualCount"               => syncUint($o, "individualCount", false),
-        "lifeStage"                     => $lifeStage === null || trim($lifeStage) === "" ? null : trim($lifeStage),
-        "occurrenceRemarks"             => $remarks === null || trim($remarks) === "" ? null : $remarks,
-        "mature_count"                  => syncUint($o, "mature_count", false),
-        "iucn_assessment"               => $iucn,
+        "coordinateUncertaintyInMeters" => $uncertain,
+        "occurrenceStatus"              => $status,
+        "individualCount"               => $count,
+        "lifeStage"                     => syncEnum($o, "lifeStage", OCC_LIFE_STAGES),
+        "sex"                           => syncEnum($o, "sex", OCC_SEXES),
+        "habitat"                       => syncText($o, "habitat", SYNC_HABITAT_MAX),
+        "georeferenceRemarks"           => syncText($o, "georeferenceRemarks", SYNC_GEOREF_REMARKS_MAX),
+        "georeferenceProtocol"          => $protocol,
+        "occurrenceRemarks"             => syncText($o, "occurrenceRemarks", SYNC_REMARKS_MAX),
+        "mature_count"                  => $mature,
         "client_updated_at"             => syncClientUpdatedAt($o["clientUpdatedAt"] ?? null),
     ];
 }
 
-/** Borrado del cuerpo de un push → [occurrenceID, client_updated_at]. */
-function syncValidateDelete(mixed $d): array {
+/** Nota de especie del cuerpo de un push → columnas de species_notes. */
+function syncValidateNote(mixed $n): array {
+    if (!is_array($n) || array_is_list($n)) syncReject("invalid_item", "Cada nota debe ser un objeto.");
+    if (!isUuidV4($n["noteID"] ?? null)) syncReject("invalid_uuid", "«noteID» debe ser un UUID v4 en minúsculas.");
+    $text = syncText($n, "text", SYNC_NOTE_MAX);
+    if ($text === null) syncReject("missing_field", "La nota está vacía («text»).");
+    return [
+        "noteID"            => $n["noteID"],
+        "taxonID"           => syncTaxonID($n),
+        "text"              => $text,
+        "client_updated_at" => syncClientUpdatedAt($n["clientUpdatedAt"] ?? null),
+    ];
+}
+
+/** Borrado del cuerpo de un push → [id, client_updated_at]. $idField: occurrenceID, noteID… */
+function syncValidateDelete(mixed $d, string $idField = "occurrenceID"): array {
     if (!is_array($d) || array_is_list($d)) syncReject("invalid_item", "Cada borrado debe ser un objeto.");
-    if (!isUuidV4($d["occurrenceID"] ?? null)) syncReject("invalid_uuid", "«occurrenceID» debe ser un UUID v4 en minúsculas.");
-    return [$d["occurrenceID"], syncClientUpdatedAt($d["clientUpdatedAt"] ?? null)];
+    if (!isUuidV4($d[$idField] ?? null)) syncReject("invalid_uuid", "«{$idField}» debe ser un UUID v4 en minúsculas.");
+    return [$d[$idField], syncClientUpdatedAt($d["clientUpdatedAt"] ?? null)];
 }
 
 function syncIsoUtc(?string $mysqlDatetime): ?string {
@@ -171,14 +228,38 @@ function occurrenceOut(array $row, int $level, string $role, int $viewerId): arr
         "coordinateUncertaintyInMeters" => $int($v["coordinateUncertaintyInMeters"]),
         "geodeticDatum"                 => $v["geodeticDatum"],
         "basisOfRecord"                 => $v["basisOfRecord"],
+        "occurrenceStatus"              => $v["occurrenceStatus"],
         "individualCount"               => $int($v["individualCount"]),
         "lifeStage"                     => $v["lifeStage"],
+        "sex"                           => $v["sex"],
+        "habitat"                       => $v["habitat"],
+        "georeferenceProtocol"          => $v["georeferenceProtocol"],
+        "georeferenceRemarks"           => $v["georeferenceRemarks"],
         "occurrenceRemarks"             => $v["occurrenceRemarks"],
         "mature_count"                  => $int($v["mature_count"]),
-        "iucn_assessment"               => $v["iucn_assessment"] === null ? null : json_decode($v["iucn_assessment"], true),
         "generalized"                   => $generalized,
     ] + ($generalized ? [
         "dataGeneralizations" => $v["dataGeneralizations"],
         "informationWithheld" => $v["informationWithheld"],
     ] : []);
+}
+
+/**
+ * Nota de especie tal como sale. No lleva coordenadas (no pasa por applyVisibility); el pull solo la
+ * manda a miembros con permiso view. Borradas: solo identidad y metadatos. $row necesita `recorded_by`.
+ */
+function noteOut(array $row): array {
+    $meta = [
+        "noteID"          => $row["noteID"],
+        "taxonID"         => $row["taxonID"],
+        "userId"          => (int) $row["user_id"],
+        "clientUpdatedAt" => syncIsoUtc($row["client_updated_at"]),
+        "serverSeq"       => (int) $row["server_seq"],
+    ];
+    if ($row["deleted_at"] !== null) return $meta + ["deleted" => true];
+    return $meta + [
+        "deleted"    => false,
+        "recordedBy" => $row["recorded_by"] ?? null,
+        "text"       => $row["text"],
+    ];
 }

@@ -1,11 +1,13 @@
 <?php
 // ================================================================================================
-// /api/sync — sincronización de marcas en dos sentidos (protocolo completo: docs/sync.md).
+// /api/sync — sincronización en dos sentidos de marcas y notas de especie (protocolo: docs/sync.md).
 // ------------------------------------------------------------------------------------------------
-//   POST /api/sync/push   {catalogId, deviceId, occurrences:[…], deletes:[{occurrenceID, clientUpdatedAt}]}
-//                         permiso mark → {results:[{occurrenceID, status, reason?, detail?, serverSeq?, occurrence?}]}
+//   POST /api/sync/push   {catalogId, deviceId, occurrences:[…], deletes:[{occurrenceID, clientUpdatedAt}],
+//                          notes:[…], noteDeletes:[{noteID, clientUpdatedAt}]}
+//                         permiso mark → {results:[{occurrenceID, status, …}], noteResults:[{noteID, status, …}]}
 //   GET  /api/sync/pull?catalogId=&since=&limit=500
-//                         permiso view → {items, cursor, hasMore, catalogContentSeq, role, visibilityEpoch}
+//                         permiso view → {items, notes, cursor, hasMore, catalogContentSeq, role, visibilityEpoch}
+// Cada tipo de entidad (SYNC_ENTITIES) sigue las mismas reglas y comparte el contador server_seq.
 // Sin rol en el catálogo (expulsado o catálogo borrado): 403 {error, code: "not_member"}; el móvil
 // borra entonces sus datos de ese catálogo. Si visibilityEpoch no es la que tiene guardada, borra las
 // marcas AJENAS de ese catálogo y vuelve a bajarlas desde 0 (F6: cambió lo que puede ver; Lib/teams.php).
@@ -62,16 +64,36 @@ function syncWithRetry(PDO $pdo, callable $fn): array {
     }
 }
 
-/** Fila actual de la marca, bloqueada hasta el final de la transacción; null si no existe. */
-function syncLockOccurrence(PDO $pdo, string $occurrenceID): ?array {
-    $stmt = $pdo->prepare("SELECT occurrenceID, catalog_id, user_id, client_updated_at, server_seq, deleted_at
-                             FROM occurrences WHERE occurrenceID = ? FOR UPDATE");
-    $stmt->execute([$occurrenceID]);
+/**
+ * Tipos de entidad que se sincronizan (F8a). Todos con las mismas reglas: UUID del cliente,
+ * clientUpdatedAt decide, solo el autor edita o borra, server_seq del contador común y tombstones.
+ *   list/deletes/results  claves del cuerpo del push y de su respuesta
+ *   pull                  clave de la lista en el pull
+ *   noun                  para los mensajes («la marca es de otro autor…»)
+ * F8b añade `assessments`.
+ */
+const SYNC_ENTITIES = [
+    "occurrence" => ["table" => "occurrences", "id" => "occurrenceID", "list" => "occurrences", "deletes" => "deletes",
+                     "results" => "results", "pull" => "items", "validate" => "syncValidateOccurrence", "noun" => "La marca"],
+    "note"       => ["table" => "species_notes", "id" => "noteID", "list" => "notes", "deletes" => "noteDeletes",
+                     "results" => "noteResults", "pull" => "notes", "validate" => "syncValidateNote", "noun" => "La nota"],
+];
+
+/** Fila actual del elemento, bloqueada hasta el final de la transacción; null si no existe. */
+function syncLockRow(PDO $pdo, array $ent, string $id): ?array {
+    $stmt = $pdo->prepare("SELECT `{$ent["id"]}`, catalog_id, user_id, client_updated_at, server_seq, deleted_at
+                             FROM `{$ent["table"]}` WHERE `{$ent["id"]}` = ? FOR UPDATE");
+    $stmt->execute([$id]);
     return $stmt->fetch() ?: null;
 }
 
-/** La marca tal como la ve su autor (para devolver la versión ganadora en un «stale»). */
-function syncCurrent(PDO $pdo, string $occurrenceID, string $role, int $userId): array {
+/** El elemento tal como lo ve su autor (para devolver la versión ganadora en un «stale»). */
+function syncCurrent(PDO $pdo, array $ent, string $id, string $role, int $userId): array {
+    if ($ent["table"] === "species_notes") {
+        $stmt = $pdo->prepare("SELECT n.*, u.name AS recorded_by FROM species_notes n JOIN users u ON u.id = n.user_id WHERE n.noteID = ?");
+        $stmt->execute([$id]);
+        return noteOut($stmt->fetch());
+    }
     $stmt = $pdo->prepare(
         "SELECT o.*, u.name AS recorded_by, ss.level AS sens_level
            FROM occurrences o
@@ -79,139 +101,152 @@ function syncCurrent(PDO $pdo, string $occurrenceID, string $role, int $userId):
            LEFT JOIN species_sensitivity ss ON ss.catalog_id = o.catalog_id AND ss.taxonID = o.taxonID
           WHERE o.occurrenceID = ?"
     );
-    $stmt->execute([$occurrenceID]);
+    $stmt->execute([$id]);
     $row = $stmt->fetch();
     return occurrenceOut($row, normalizeSensitivityLevel($row["sens_level"]), $role, $userId);
 }
 
-/**
- * Comprobaciones comunes a marca y borrado sobre la fila existente: autor y catálogo. Devuelve el
- * resultado de rechazo, o null si se puede seguir. Deshace la transacción si rechaza.
- */
-function syncOwnershipRejection(PDO $pdo, array $existing, string $catalogId, int $userId): ?array {
-    $reason = null;
-    if ((int) $existing["user_id"] !== $userId) $reason = ["forbidden", "La marca es de otro autor: solo él puede editarla o borrarla."];
-    elseif ($existing["catalog_id"] !== $catalogId) $reason = ["catalog_mismatch", "La marca pertenece a otro catálogo."];
-    if ($reason === null) return null;
-    $pdo->rollBack();
-    return ["occurrenceID" => $existing["occurrenceID"], "status" => "rejected", "reason" => $reason[0], "detail" => $reason[1]];
+/** Clave de la versión del servidor en un «stale»: `occurrence` o `note`. */
+function syncStaleKey(array $ent): string {
+    return $ent["table"] === "species_notes" ? "note" : "occurrence";
 }
 
-function syncPushOccurrence(PDO $pdo, string $catalogId, int $userId, ?string $deviceId, string $role, array $c): array {
-    $id = $c["occurrenceID"];
+/**
+ * Comprobaciones comunes a alta, edición y borrado sobre la fila existente: autor y catálogo. Devuelve
+ * el resultado de rechazo, o null si se puede seguir. Deshace la transacción si rechaza.
+ */
+function syncOwnershipRejection(PDO $pdo, array $ent, array $existing, string $catalogId, int $userId): ?array {
+    $reason = null;
+    if ((int) $existing["user_id"] !== $userId) $reason = ["forbidden", "{$ent["noun"]} es de otro autor: solo él puede editarla o borrarla."];
+    elseif ($existing["catalog_id"] !== $catalogId) $reason = ["catalog_mismatch", "{$ent["noun"]} pertenece a otro catálogo."];
+    if ($reason === null) return null;
+    $pdo->rollBack();
+    return [$ent["id"] => $existing[$ent["id"]], "status" => "rejected", "reason" => $reason[0], "detail" => $reason[1]];
+}
+
+function syncPushItem(PDO $pdo, array $ent, string $catalogId, int $userId, ?string $deviceId, string $role, array $c): array {
+    $idField = $ent["id"];
+    $table = $ent["table"];
+    $id = $c[$idField];
     $pdo->beginTransaction();
-    $existing = syncLockOccurrence($pdo, $id);
+    $existing = syncLockRow($pdo, $ent, $id);
 
     if ($existing === null) {
         $c += ["catalog_id" => $catalogId, "user_id" => $userId, "device_id" => $deviceId, "server_seq" => syncNextSeq($pdo)];
         $cols = array_keys($c);
-        $pdo->prepare("INSERT INTO occurrences (`" . implode("`, `", $cols) . "`) VALUES (" . rtrim(str_repeat("?, ", count($cols)), ", ") . ")")
+        $pdo->prepare("INSERT INTO `{$table}` (`" . implode("`, `", $cols) . "`) VALUES (" . rtrim(str_repeat("?, ", count($cols)), ", ") . ")")
             ->execute(array_values($c));
         $pdo->commit();
-        return ["occurrenceID" => $id, "status" => "accepted", "serverSeq" => $c["server_seq"]];
+        return [$idField => $id, "status" => "accepted", "serverSeq" => $c["server_seq"]];
     }
 
-    if ($rejected = syncOwnershipRejection($pdo, $existing, $catalogId, $userId)) return $rejected;
+    if ($rejected = syncOwnershipRejection($pdo, $ent, $existing, $catalogId, $userId)) return $rejected;
 
     $cmp = strcmp($c["client_updated_at"], $existing["client_updated_at"]);
     if ($cmp === 0) {
         $pdo->rollBack();
-        return ["occurrenceID" => $id, "status" => "unchanged", "serverSeq" => (int) $existing["server_seq"]];
+        return [$idField => $id, "status" => "unchanged", "serverSeq" => (int) $existing["server_seq"]];
     }
     if ($cmp < 0) {
         $pdo->rollBack();
-        return ["occurrenceID" => $id, "status" => "stale", "serverSeq" => (int) $existing["server_seq"],
-                "occurrence" => syncCurrent($pdo, $id, $role, $userId)];
+        return [$idField => $id, "status" => "stale", "serverSeq" => (int) $existing["server_seq"],
+                syncStaleKey($ent) => syncCurrent($pdo, $ent, $id, $role, $userId)];
     }
 
     // Más reciente: gana. Una edición posterior a un borrado lo deshace (última escritura gana).
-    unset($c["occurrenceID"]);
+    unset($c[$idField]);
     $c += ["device_id" => $deviceId, "server_seq" => syncNextSeq($pdo)];
     $sets = implode(", ", array_map(fn($k) => "`{$k}` = ?", array_keys($c)));
-    $pdo->prepare("UPDATE occurrences SET {$sets}, deleted_at = NULL WHERE occurrenceID = ?")
+    $pdo->prepare("UPDATE `{$table}` SET {$sets}, deleted_at = NULL WHERE `{$idField}` = ?")
         ->execute([...array_values($c), $id]);
     $pdo->commit();
-    return ["occurrenceID" => $id, "status" => "accepted", "serverSeq" => $c["server_seq"]];
+    return [$idField => $id, "status" => "accepted", "serverSeq" => $c["server_seq"]];
 }
 
-function syncPushDelete(PDO $pdo, string $catalogId, int $userId, ?string $deviceId, string $role, string $id, string $clientUpdatedAt): array {
+function syncPushDelete(PDO $pdo, array $ent, string $catalogId, int $userId, ?string $deviceId, string $role, string $id, string $clientUpdatedAt): array {
+    $idField = $ent["id"];
     $pdo->beginTransaction();
-    $existing = syncLockOccurrence($pdo, $id);
+    $existing = syncLockRow($pdo, $ent, $id);
     if ($existing === null) {
         $pdo->rollBack();
-        return ["occurrenceID" => $id, "status" => "rejected", "reason" => "not_found",
-                "detail" => "El servidor no tiene esa marca: no hay nada que borrar."];
+        return [$idField => $id, "status" => "rejected", "reason" => "not_found",
+                "detail" => "El servidor no lo tiene: no hay nada que borrar."];
     }
-    if ($rejected = syncOwnershipRejection($pdo, $existing, $catalogId, $userId)) return $rejected;
+    if ($rejected = syncOwnershipRejection($pdo, $ent, $existing, $catalogId, $userId)) return $rejected;
 
     $cmp = strcmp($clientUpdatedAt, $existing["client_updated_at"]);
     if ($cmp < 0) {
         $pdo->rollBack();
-        return ["occurrenceID" => $id, "status" => "stale", "serverSeq" => (int) $existing["server_seq"],
-                "occurrence" => syncCurrent($pdo, $id, $role, $userId)];
+        return [$idField => $id, "status" => "stale", "serverSeq" => (int) $existing["server_seq"],
+                syncStaleKey($ent) => syncCurrent($pdo, $ent, $id, $role, $userId)];
     }
     if ($existing["deleted_at"] !== null) {
         $pdo->rollBack();
-        return ["occurrenceID" => $id, "status" => "unchanged", "serverSeq" => (int) $existing["server_seq"]];
+        return [$idField => $id, "status" => "unchanged", "serverSeq" => (int) $existing["server_seq"]];
     }
 
     // A igualdad de hora, el borrado gana a la edición.
     $seq = syncNextSeq($pdo);
-    $pdo->prepare("UPDATE occurrences SET deleted_at = NOW(), client_updated_at = ?, device_id = ?, server_seq = ? WHERE occurrenceID = ?")
+    $pdo->prepare("UPDATE `{$ent["table"]}` SET deleted_at = NOW(), client_updated_at = ?, device_id = ?, server_seq = ? WHERE `{$idField}` = ?")
         ->execute([$clientUpdatedAt, $deviceId, $seq, $id]);
     $pdo->commit();
-    return ["occurrenceID" => $id, "status" => "accepted", "serverSeq" => $seq];
+    return [$idField => $id, "status" => "accepted", "serverSeq" => $seq];
 }
 
-function syncRejected(mixed $item, SyncRejection $e): array {
-    $id = is_array($item) && is_string($item["occurrenceID"] ?? null) ? $item["occurrenceID"] : null;
-    return ["occurrenceID" => $id, "status" => "rejected", "reason" => $e->reason, "detail" => $e->getMessage()];
+function syncRejected(array $ent, mixed $item, SyncRejection $e): array {
+    $id = is_array($item) && is_string($item[$ent["id"]] ?? null) ? $item[$ent["id"]] : null;
+    return [$ent["id"] => $id, "status" => "rejected", "reason" => $e->reason, "detail" => $e->getMessage()];
 }
 
 // --- POST /api/sync/push ------------------------------------------------------------------------
 
 if ($action === "push") {
     if ($method !== "POST") apiMethodNotAllowed("POST");
-    $body = requireJsonBody("{catalogId, deviceId, occurrences, deletes}");
+    $body = requireJsonBody("{catalogId, deviceId, occurrences, deletes, notes, noteDeletes}");
     $catalogId = $body["catalogId"] ?? null;
     if (!is_string($catalogId) || !preg_match(UUID_RE, $catalogId)) apiError("«catalogId» debe ser el id del catálogo.", 400);
     $deviceId = $body["deviceId"] ?? null;
     if ($deviceId !== null && !isUuidV4($deviceId)) apiError("«deviceId» debe ser un UUID v4.", 400);
-    $occurrences = $body["occurrences"] ?? [];
-    $deletes = $body["deletes"] ?? [];
-    if (!is_array($occurrences) || !array_is_list($occurrences) || !is_array($deletes) || !array_is_list($deletes)) {
-        apiError("«occurrences» y «deletes» deben ser listas.", 400);
+    $total = 0;
+    foreach (SYNC_ENTITIES as $ent) {
+        foreach ([$ent["list"], $ent["deletes"]] as $key) {
+            $list = $body[$key] ?? [];
+            if (!is_array($list) || !array_is_list($list)) apiError("«{$key}» debe ser una lista.", 400);
+            $total += count($list);
+        }
     }
-    if (count($occurrences) + count($deletes) > SYNC_MAX_ITEMS) {
-        apiError("Como mucho " . SYNC_MAX_ITEMS . " elementos por lote (marcas + borrados).", 400);
-    }
+    if ($total > SYNC_MAX_ITEMS) apiError("Como mucho " . SYNC_MAX_ITEMS . " elementos por lote (de todos los tipos, con los borrados).", 400);
 
     $role = syncRequireMembership($pdo, $catalogId, $userId, "mark")["role"];
     $stmt = $pdo->prepare("SELECT taxonID FROM catalog_species WHERE catalog_id = ? AND deleted_at IS NULL");
     $stmt->execute([$catalogId]);
     $taxa = array_flip(array_map("strval", $stmt->fetchAll(PDO::FETCH_COLUMN)));
 
-    $results = [];
-    foreach ($occurrences as $item) {
-        try {
-            $c = syncValidateOccurrence($item);
-            if (!isset($taxa[$c["taxonID"]])) syncReject("taxon_not_in_catalog", "La especie {$c["taxonID"]} no está en el catálogo.");
-        } catch (SyncRejection $e) {
-            $results[] = syncRejected($item, $e);
-            continue;
+    $out = [];
+    foreach (SYNC_ENTITIES as $ent) {
+        $results = [];
+        foreach ($body[$ent["list"]] ?? [] as $item) {
+            try {
+                $c = ($ent["validate"])($item);
+                if (!isset($taxa[$c["taxonID"]])) syncReject("taxon_not_in_catalog", "La especie {$c["taxonID"]} no está en el catálogo.");
+            } catch (SyncRejection $e) {
+                $results[] = syncRejected($ent, $item, $e);
+                continue;
+            }
+            $results[] = syncWithRetry($pdo, fn() => syncPushItem($pdo, $ent, $catalogId, $userId, $deviceId, $role, $c));
         }
-        $results[] = syncWithRetry($pdo, fn() => syncPushOccurrence($pdo, $catalogId, $userId, $deviceId, $role, $c));
-    }
-    foreach ($deletes as $item) {
-        try {
-            [$id, $ts] = syncValidateDelete($item);
-        } catch (SyncRejection $e) {
-            $results[] = syncRejected($item, $e);
-            continue;
+        foreach ($body[$ent["deletes"]] ?? [] as $item) {
+            try {
+                [$id, $ts] = syncValidateDelete($item, $ent["id"]);
+            } catch (SyncRejection $e) {
+                $results[] = syncRejected($ent, $item, $e);
+                continue;
+            }
+            $results[] = syncWithRetry($pdo, fn() => syncPushDelete($pdo, $ent, $catalogId, $userId, $deviceId, $role, $id, $ts));
         }
-        $results[] = syncWithRetry($pdo, fn() => syncPushDelete($pdo, $catalogId, $userId, $deviceId, $role, $id, $ts));
+        $out[$ent["results"]] = $results;
     }
-    respond(["results" => $results]);
+    respond($out);
 }
 
 // --- GET /api/sync/pull -------------------------------------------------------------------------
@@ -227,7 +262,9 @@ if ($limit === false) apiError("«limit» debe estar entre 1 y " . SYNC_PULL_MAX
 // Rol y época se leen juntos: lo que va en esta página corresponde a esa época.
 ["role" => $role, "epoch" => $epoch] = syncRequireMembership($pdo, $catalogId, $userId, "view");
 
-// Una fila de más para saber si hay otra página. $limit es un entero validado.
+// Una página = los $limit primeros server_seq > since de TODOS los tipos (el contador es común), así
+// que el cursor sirve para todos. De cada tabla, una fila de más para saber si hay otra página.
+// $limit es un entero validado.
 $stmt = $pdo->prepare(
     "SELECT o.*, u.name AS recorded_by, ss.level AS sens_level
        FROM occurrences o
@@ -238,13 +275,29 @@ $stmt = $pdo->prepare(
       LIMIT " . ($limit + 1)
 );
 $stmt->execute([$catalogId, $since]);
-$rows = $stmt->fetchAll();
+$rows = array_map(fn($r) => ["occurrence", $r], $stmt->fetchAll());
+
+// Notas: sin coordenadas, no pasan por applyVisibility(); solo llegan hasta aquí miembros con «view».
+$stmt = $pdo->prepare(
+    "SELECT n.*, u.name AS recorded_by
+       FROM species_notes n
+       JOIN users u ON u.id = n.user_id
+      WHERE n.catalog_id = ? AND n.server_seq > ?
+      ORDER BY n.server_seq
+      LIMIT " . ($limit + 1)
+);
+$stmt->execute([$catalogId, $since]);
+foreach ($stmt->fetchAll() as $r) $rows[] = ["note", $r];
+
+usort($rows, fn($a, $b) => (int) $a[1]["server_seq"] <=> (int) $b[1]["server_seq"]);
 $hasMore = count($rows) > $limit;
-if ($hasMore) array_pop($rows);
+$rows = array_slice($rows, 0, $limit);
 
 $items = [];
+$notes = [];
 $exactForeign = 0;
-foreach ($rows as $r) {
+foreach ($rows as [$kind, $r]) {
+    if ($kind === "note") { $notes[] = noteOut($r); continue; }
     // Sin nivel registrado → normalizeSensitivityLevel() cae al más restrictivo (1).
     $level = normalizeSensitivityLevel($r["sens_level"]);
     $item = occurrenceOut($r, $level, $role, $userId);
@@ -259,7 +312,8 @@ $stmt->execute([$catalogId]);
 
 respond([
     "items"             => $items,
-    "cursor"            => $rows ? (int) end($rows)["server_seq"] : $since,
+    "notes"             => $notes,
+    "cursor"            => $rows ? (int) end($rows)[1]["server_seq"] : $since,
     "hasMore"           => $hasMore,
     "catalogContentSeq" => (int) $stmt->fetchColumn(),
     "role"              => $role,
