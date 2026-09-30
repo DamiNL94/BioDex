@@ -69,6 +69,7 @@ function auditDetail(array $r, array $names, array $species): string {
     $t = preg_replace_callback('/user:(\d+)/', fn($m) => $names[(int) $m[1]] ?? "usuario {$m[1]}", $t);
     $t = preg_replace_callback('/\b(owner|custodian|editor|viewer)\b/', fn($m) => ROLE_NAMES_ES[$m[1]], $t);
     $t = preg_replace('/invite:(\d+)/', 'invitación #$1', $t);
+    $t = mb_strtoupper(mb_substr($t, 0, 1)) . mb_substr($t, 1);   // «Invitación #3 …»
     return match ($r["action"]) {
         "view_exact"   => (int) $t === 1 ? "Recibió 1 coordenada exacta ajena" : "Recibió {$t} coordenadas exactas ajenas",
         "login_failed" => "Contraseña incorrecta al transferir la propiedad",
