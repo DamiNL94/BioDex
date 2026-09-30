@@ -150,7 +150,9 @@ export function createMarksLayer(map, { ctx, onOpenSpecies }) {
         });
         points.push(layer);
       }
-      layer.bindPopup(() => popupHtml(o, shape, colors, level), { maxWidth: 280 });
+      // Estrecho y con margen de encuadre: a los lados están el zoom y los botones flotantes (44–48 px).
+      layer.bindPopup(() => popupHtml(o, shape, colors, level),
+        { maxWidth: 250, autoPanPaddingTopLeft: [64, 16], autoPanPaddingBottomRight: [68, 16] });
       byId.set(o.occurrenceID, layer);
     }
     clusters.addLayers(points);

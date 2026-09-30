@@ -690,7 +690,7 @@ body.has-overlay{overflow:hidden}
 .leaflet-control-attribution{font-size:11px;background:rgba(255,255,255,.85) !important;color:var(--ink-soft)}
 .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--panel);color:var(--ink);border-radius:var(--radius-lg);
   box-shadow:var(--shadow)}
-.leaflet-popup-content{margin:12px 14px}
+.leaflet-popup-content{margin:12px 40px 12px 14px}   /* a la derecha, la × de 44 px */
 .leaflet-container a.leaflet-popup-close-button{width:44px;height:44px;font-size:22px;line-height:44px;color:var(--muted)}
 
 /* Botones flotantes */

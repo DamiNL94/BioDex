@@ -319,7 +319,11 @@ export function mount(el) {
     const n = activeFilterCount(filters);
     const btn = $('[data-filters]', el);
     btn.textContent = n ? `Filtros (${n})` : 'Filtros';
-    if (form.contains(document.activeElement)) return;   // no se repinta bajo los dedos
+    if (form.contains(document.activeElement)) {   // no se repinta bajo los dedos; solo «Quitar filtros»
+      const clear = $('[data-clear]', form);
+      if (clear) clear.disabled = !n;
+      return;
+    }
     render(form, html`
       <label class="field"><span>Especie</span><select name="taxonID"><option value="">Todas</option>
         ${taxa.map(({ t, name }) => html`<option value="${t}" ${filters.taxonID === t ? html`selected` : ''}>${name}</option>`)}</select></label>
