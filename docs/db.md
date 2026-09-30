@@ -55,7 +55,7 @@ el resto, generalizada según `species_sensitivity.level`).
 ## Auditoría
 | Tabla | Propósito | Campos clave |
 |---|---|---|
-| `access_log` | Rastro de accesos sensibles | `action` view_exact/export_full/set_level/grant_role/revoke_role/login_failed (F6) invite_created/invite_revoked/member_joined/member_removed/member_left y (F8b) set_reference, `user_id`, `catalog_id`, `target` (`user:<id> editor → custodian`, `invite:<id> …`), `ip`, `created_at`; las FK pasan a NULL al borrar, el rastro se conserva. `GET /catalogs/{id}/audit` lo devuelve legible |
+| `access_log` | Rastro de accesos sensibles | `action` view_exact/export_full/set_level/grant_role/revoke_role/login_failed (F6) invite_created/invite_revoked/member_joined/member_removed/member_left y (F8b) set_reference, `user_id`, `catalog_id`, `target` (`user:<id> editor → custodian`, `invite:<id> …`, F10a `zip completo: n registros, m especies`), `ip`, `created_at`; las FK pasan a NULL al borrar, el rastro se conserva. `GET /catalogs/{id}/audit` lo devuelve legible |
 
 ## Borrados
 - Lógicos (`deleted_at`) en `catalogs`, `catalog_species`, `occurrences`, `species_notes` y `species_assessments`.
