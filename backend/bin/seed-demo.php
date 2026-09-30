@@ -219,6 +219,19 @@ if (($r["assessmentResults"][0]["status"] ?? "") !== "accepted") fail("evaluaci�
 [$code, $r] = http("PUT", "/api/catalogs/{$cat}/species/" . ARTEMISIA . "/reference-assessment", ["assessmentID" => $assessmentID], $jar["owner"]);
 expect($code, [200], "marcar la evaluación de referencia", $r);
 
+// 6. La demo exporta Plinian Core (F10c): el servidor valida el XML contra el XSD y, si no valida, no da ZIP.
+foreach (["public"] as $mode) {   // la completa dejaría una fila export_full en el Registro de la demo
+    $ch = curl_init("{$BASE}/api/catalogs/{$cat}/export");
+    curl_setopt_array($ch, [CURLOPT_POST => true, CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 120,
+        CURLOPT_POSTFIELDS => json_encode(["mode" => $mode, "formats" => ["plinian"]]),
+        CURLOPT_HTTPHEADER => ["Content-Type: application/json", "Cookie: " . implode("; ", array_map(fn($k, $v) => "{$k}={$v}",
+            array_keys($jar["owner"]), $jar["owner"]))]]);
+    $raw = (string) curl_exec($ch);
+    $code = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+    curl_close($ch);
+    expect($code, [200], "exportar Plinian Core ({$mode})", json_decode($raw, true));
+}
+
 foreach ($jar as $k => $j) http("POST", "/api/auth/logout", null, $jar[$k]);
 
 // ------------------------------------------------------------------------------------------------
