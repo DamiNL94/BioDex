@@ -2,7 +2,8 @@
 // y cierre de sesión.
 // Sincronización: pendientes, última pasada, «Sincronizar ahora», marcas rechazadas (reintentar o
 // descartar a mano) y catálogos de los que te han sacado con marcas sin subir (exportar o descartar).
-// Dispositivo: espacio usado (storage.estimate), catálogos descargados y respaldo (exportar/importar).
+// Dispositivo: espacio usado (storage.estimate), catálogos descargados, zonas del mapa (F7: tamaño,
+// reanudar y borrar) y respaldo (exportar/importar).
 
 import { state, subscribe, setTheme, setUser, APP_VERSION, CONNECTION_LABELS } from '../state.js';
 import { html, render, $, plural, normalizeOrcid } from '../util.js';
@@ -11,6 +12,8 @@ import { confirmDialog } from '../components/overlay.js';
 import { syncNow, refreshCounts } from '../sync.js';
 import { rejectedItems, retryRejected, discardRejected, downloadBackup, importBackup, outboxEntries } from '../marks.js';
 import { localCatalogs, storageInfo, formatBytes, shortDate, forgetCatalog } from '../offline.js';
+import { listZones, onZones } from '../map/zones.js';
+import { zoneRow, bindZoneRows } from '../map/zone-ui.js';
 
 const THEMES = [['system', 'Sistema'], ['light', 'Claro'], ['dark', 'Oscuro']];
 
@@ -18,6 +21,7 @@ export function mount(el, { onLogout }) {
   let alive = true;
   let rejected = [];
   let catalogs = [];
+  let zones = [];
   let storage = { usage: null, quota: null, persisted: null };
   let revokedPending = new Map();    // catalogId → nº de marcas sin subir
   let message = null;                // {kind, text} tras importar/exportar
@@ -25,7 +29,7 @@ export function mount(el, { onLogout }) {
 
   async function loadLocal() {
     try {
-      [rejected, catalogs, storage] = await Promise.all([rejectedItems(), localCatalogs(), storageInfo()]);
+      [rejected, catalogs, storage, zones] = await Promise.all([rejectedItems(), localCatalogs(), storageInfo(), listZones()]);
       const entries = await outboxEntries();
       revokedPending = new Map(catalogs.filter((c) => c.revoked)
         .map((c) => [c.id, entries.filter((e) => e.catalogId === c.id).length]));
@@ -112,6 +116,9 @@ export function mount(el, { onLogout }) {
           ${downloaded.length ? html`<h4>Catálogos sin conexión</h4><ul class="plain-list">${downloaded.map((c) => html`
             <li><strong>${c.name}</strong> <span class="muted">· ${shortDate(c.downloadedAt)}</span></li>`)}</ul>`
             : html`<p class="hint">Ningún catálogo descargado. En Catálogos, «Descargar para usar sin conexión».</p>`}
+          <h4>Zonas del mapa sin conexión</h4>
+          ${zones.length ? html`<ul class="zone-rows">${zones.map((z) => zoneRow(z))}</ul>`
+            : html`<p class="hint">Ninguna zona descargada. En Mapa › Zonas, «Descargar esta zona».</p>`}
           <h4>Respaldo</h4>
           <p class="hint">Un fichero con tus marcas sin sincronizar, por si hay que cambiar de dispositivo o cerrar sesión.</p>
           ${message ? html`<p class="guard-band ${message.kind}" role="status">${message.text}</p>` : ''}
@@ -230,6 +237,11 @@ export function mount(el, { onLogout }) {
     }));
   }
 
+  bindZoneRows(el, () => zones, { onChanged: loadLocal });
+  // Durante una descarga los avisos llegan cada 150 ms: aquí basta con uno por segundo.
+  let zonesTimer = null;
+  const offZones = onZones(() => { if (!zonesTimer) zonesTimer = setTimeout(() => { zonesTimer = null; loadLocal(); }, 1000); });
+
   const unsubscribe = subscribe((key) => {
     if (key === 'theme' || key === 'online' || key === 'user') paint();
     if (key === 'sync' || key === 'download') loadLocal();
@@ -238,5 +250,5 @@ export function mount(el, { onLogout }) {
   const tick = setInterval(() => { const l = $('#syncLine', el); if (l) l.textContent = syncLine(); }, 5000);
   paint();
   loadLocal();
-  return () => { alive = false; unsubscribe(); clearInterval(tick); };
+  return () => { alive = false; unsubscribe(); offZones(); clearTimeout(zonesTimer); clearInterval(tick); };
 }

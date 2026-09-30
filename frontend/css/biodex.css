@@ -24,6 +24,11 @@
   --brass-ink:#DDC38A;      /* latón como TEXTO sobre el verde del cartel (el #C4A15E se quedaba en 3,97:1) */
   --sign-soft:#C7D6C9;      /* texto secundario sobre el cartel */
   --sea:#2E6D8E; --sea-tint:#DCE6E9;
+  /* Observadores del equipo en el mapa (F7): 8 colores de tierra distinguibles entre sí, del verde de
+     «mis marcas» (--leaf-fill) y del azul del GPS (--me). */
+  --obs-1:#B5476B; --obs-2:#9E5610; --obs-3:#6E4691; --obs-4:#2E6D8E;
+  --obs-5:#3F8A76; --obs-6:#A8871C; --obs-7:#4F5AA8; --obs-8:#7A4A36;
+  --me:#1E78D6;
 
   --warn:#C4762A; --warn-ink:#96601F; --warn-bg:#FBF1DF;
   --danger:#A0451F; --danger-ink:#8A3B19;
@@ -100,7 +105,8 @@ button:disabled{opacity:.55;cursor:progress}
   height:var(--tap-min);border:1px solid rgba(251,247,238,.35);border-radius:var(--radius-md);
   color:var(--cream);background:transparent}
 .icon-btn:hover,.icon-btn.is-active{border-color:var(--brass);box-shadow:inset 0 0 0 1px var(--brass)}
-svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;
+/* Iconos. El SVG del renderizador de Leaflet (F7) no es un icono: lleva su tamaño en atributos. */
+svg:not(.leaflet-zoom-animated){width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;
   stroke-linejoin:round}
 
 /* Formularios */
@@ -626,6 +632,9 @@ body.has-overlay{overflow:hidden}
   /* Sobre el verde de relleno, el latón normal se queda en 2,6:1: como texto, latón pálido. */
   --brass-ink:#EBD9A8;
   --sea:#6FA9C4; --sea-tint:#1D2A30;
+  --obs-1:#E07C9C; --obs-2:#D98A3D; --obs-3:#A884CC; --obs-4:#6FA9C4;
+  --obs-5:#6CC0A8; --obs-6:#D9B84A; --obs-7:#8F9AE0; --obs-8:#C08A6E;
+  --me:#4AA3FF;
   --warn:#C4762A; --warn-ink:#E8B45A; --warn-bg:#2A2417;
   --danger:#E08256; --danger-ink:#F0A68F;
   --iucn-ex:#D5CDB8; --iucn-en:#D98A3D; --iucn-vu:var(--warn-ink);
@@ -649,3 +658,147 @@ body.has-overlay{overflow:hidden}
 @media (max-width:899px){ .tab,.auth-screen .btn-primary{min-height:var(--tap-big)} }
 @media (min-width:900px) and (pointer:fine){ .icon-btn{width:36px;height:36px;min-width:36px;min-height:36px} }
 @media (prefers-reduced-motion:reduce){ *{transition:none !important} }
+
+/* ===== G. F7: mapa ============================================================================= */
+/* El alto de .map-wrap lo pone views/map.js (lo que queda de pantalla); Leaflet va dentro con su
+   propio contexto de apilado (z-index:0) para que los botones flotantes queden siempre encima. */
+.view.view-mapa{padding:10px 0 0}
+.map-view{display:flex;flex-direction:column;gap:8px}
+.map-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding:0 16px}
+.map-layers button{padding:0 12px;font-size:var(--fs-sm)}
+.map-bar-tools{display:flex;flex-wrap:wrap;gap:6px}
+.map-btn{padding:0 12px;font-size:var(--fs-xs);border-width:1px}
+.map-filters{margin:0 16px;display:grid;gap:12px;grid-template-columns:1fr 1fr}
+.map-filters .field:first-child,.map-filters .field:nth-child(2),.map-filters .form-actions{grid-column:1 / -1}
+.map-filters input[type="date"]{width:100%;min-height:var(--tap-min);padding:8px 10px;background:var(--panel);
+  border:1px solid var(--line-strong);border-radius:var(--radius-md);color:var(--ink)}
+.map-note{padding:0 16px}
+.map-note:empty{display:none}
+.map-note .guard-band{margin:0 -16px 6px;padding-left:16px}
+.map-count{margin:0}
+.map-wrap{position:relative;min-height:280px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.map{position:absolute;inset:0;z-index:0;background:var(--surface-alt)}
+.leaflet-container{font-family:var(--font-ui);font-size:var(--fs-sm)}
+.leaflet-container a{color:var(--leaf)}
+
+/* Controles de Leaflet con la piel de la casa y objetivos de 44 px */
+.leaflet-bar{border:1px solid var(--line-strong) !important;border-radius:var(--radius-md) !important;box-shadow:var(--shadow-sm) !important}
+.leaflet-bar a,.leaflet-touch .leaflet-bar a{width:44px;height:44px;line-height:44px;font-size:20px;
+  background:var(--panel);color:var(--ink);border-bottom-color:var(--line)}
+.leaflet-bar a:hover{background:var(--surface-alt)}
+.leaflet-control-scale-line{border-color:var(--ink);color:var(--ink);background:rgba(255,255,255,.75);font-weight:600}
+.leaflet-control-attribution{font-size:11px;background:rgba(255,255,255,.85) !important;color:var(--ink-soft)}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--panel);color:var(--ink);border-radius:var(--radius-lg);
+  box-shadow:var(--shadow)}
+.leaflet-popup-content{margin:12px 14px}
+.leaflet-container a.leaflet-popup-close-button{width:44px;height:44px;font-size:22px;line-height:44px;color:var(--muted)}
+
+/* Botones flotantes */
+.map-fabs{position:absolute;top:10px;right:10px;z-index:1;display:grid;gap:8px}
+.map-fab{display:inline-flex;align-items:center;justify-content:center;width:var(--tap-big);height:var(--tap-big);
+  border:1px solid var(--line-strong);border-radius:var(--radius-md);background:var(--panel);color:var(--leaf);
+  box-shadow:var(--shadow-sm);cursor:pointer}
+.map-fab.is-active{background:var(--leaf-fill);color:var(--cream);border-color:var(--brass)}
+.mark-fab{position:absolute;right:10px;bottom:34px;z-index:1;min-height:var(--tap-big);box-shadow:var(--shadow);
+  border-left:var(--rule) solid var(--brass)}
+.mark-fab svg{width:20px;height:20px}
+.is-editing-zone .mark-fab,.is-editing-zone .map-fabs{display:none}
+
+/* Pie: posición */
+.map-foot{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 14px;margin:0;padding:0 16px;
+  font-size:var(--fs-sm);font-variant-numeric:tabular-nums;color:var(--ink-soft)}
+.foot-label{letter-spacing:var(--tracking-caps);text-transform:uppercase;font-weight:700;font-size:var(--fs-xs);color:var(--muted)}
+.foot-item abbr{text-decoration:none;font-size:var(--fs-xs);font-weight:700;letter-spacing:.06em;color:var(--muted)}
+.foot-item.is-poor{color:var(--warn-ink);font-weight:700}
+.map-foot.is-flash{background:var(--warn-bg)}
+
+/* Posición propia */
+.me-dot{fill:var(--me);fill-opacity:1;stroke:#FFFFFF;stroke-width:3}
+.me-accuracy{fill:var(--me);fill-opacity:.12;stroke:var(--me);stroke-opacity:.5;stroke-width:1}
+
+/* Marcas: el punto va centrado en un área táctil de 44 px */
+.mk-wrap{display:flex;align-items:center;justify-content:center}
+.mk{position:relative;display:inline-block;width:18px;height:18px;border-radius:50%;border:2px solid #FFFFFF;
+  box-shadow:0 1px 4px rgba(0,0,0,.45);background:var(--muted)}
+.mk-own{background:var(--leaf-fill);border-radius:var(--radius-sm)}   /* las propias, cuadradas y sólidas */
+.mk.is-pending::after{content:"";position:absolute;top:-6px;right:-6px;width:9px;height:9px;border-radius:50%;
+  background:var(--warn);border:2px solid #FFFFFF}
+.mk.is-rejected{outline:2px solid var(--danger);outline-offset:1px}
+.obs-1{--obs:var(--obs-1)} .obs-2{--obs:var(--obs-2)} .obs-3{--obs:var(--obs-3)} .obs-4{--obs:var(--obs-4)}
+.obs-5{--obs:var(--obs-5)} .obs-6{--obs:var(--obs-6)} .obs-7{--obs:var(--obs-7)} .obs-8{--obs:var(--obs-8)}
+.mk-obs{background:var(--obs)}
+/* Celda de una marca generalizada: rectángulo discontinuo del color del observador */
+path.gen-cell{stroke:var(--obs);fill:var(--obs);fill-opacity:.16;stroke-dasharray:6 4}
+path.gen-cell.is-pending{stroke:var(--warn)}
+.mk-cluster-wrap{display:flex;align-items:center;justify-content:center}
+.mk-cluster{display:flex;align-items:center;justify-content:center;min-width:36px;height:36px;padding:0 6px;border-radius:18px;
+  background:var(--leaf-fill);color:var(--cream);border:3px solid var(--brass);font-weight:800;font-size:var(--fs-sm);
+  box-shadow:var(--shadow-sm)}
+.mk-pop p{margin:0 0 4px}
+.mk-pop-name{font-size:var(--fs-md)}
+.mk-pop-meta{color:var(--ink-soft)}
+.mk-pop-gen,.mk-pop-pending{font-weight:700;color:var(--warn-ink);font-size:var(--fs-xs);letter-spacing:.06em;text-transform:uppercase}
+.mk-pop-open{padding:0;min-height:var(--tap-min)}
+
+/* Leyenda */
+.map-legend{padding:0 16px 8px}
+.legend{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:4px 16px;font-size:var(--fs-sm);color:var(--ink-soft)}
+.legend li{display:inline-flex;align-items:center;gap:8px}
+.legend .mk{width:14px;height:14px;box-shadow:none;border-color:var(--panel)}
+.legend .mk.is-pending{background:var(--line-strong)}
+.legend-cell{display:inline-block;width:18px;height:12px;border:2px dashed var(--muted);background:rgba(106,106,97,.15)}
+
+/* Zonas sin conexión */
+path.zone-outline{stroke:var(--brass);stroke-dasharray:4 4}
+path.zone-draft{stroke:var(--sea);fill:var(--sea);fill-opacity:.08}
+.zone-handle-wrap{display:flex;align-items:center;justify-content:center;cursor:grab}
+.zone-handle{width:20px;height:20px;background:var(--brass);border:3px solid #FFFFFF;border-radius:var(--radius-sm);
+  box-shadow:0 1px 4px rgba(0,0,0,.5)}
+.zone-panel{position:absolute;left:0;right:0;bottom:0;z-index:2;display:grid;gap:10px;max-height:72%;overflow:auto;
+  padding:12px 16px 16px;background:var(--paper);border-top:4px solid var(--brass);box-shadow:var(--shadow)}
+.zone-panel-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.zone-panel h3{margin:0}
+.zone-panel .hint,.zone-panel p{margin:0}
+.zone-layers{margin:0;padding:0;border:0;display:grid;gap:4px}
+.zone-layers legend{margin-bottom:4px;color:var(--muted)}
+.zone-layer{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:8px}
+.zoom-sel{display:inline-flex;align-items:center;gap:4px;font-size:var(--fs-sm);color:var(--muted)}
+.zoom-sel select{min-height:var(--tap-min);padding:4px 6px;background:var(--panel);border:1px solid var(--line-strong);
+  border-radius:var(--radius-md);color:var(--ink)}
+.zone-estimate{font-variant-numeric:tabular-nums}
+.zone-estimate.is-over strong{color:var(--danger)}
+.zone-strip{position:absolute;top:10px;left:64px;right:68px;z-index:1;display:grid;gap:4px;padding:8px 12px;
+  background:var(--panel);border-left:var(--rule) solid var(--brass);border-radius:var(--radius-md);box-shadow:var(--shadow-sm);
+  font-size:var(--fs-sm)}
+.zone-strip .form-actions{gap:4px}
+.zone-strip progress,.zone-row progress{width:100%;height:8px;accent-color:var(--leaf-fill)}
+.zone-rows{list-style:none;margin:0 0 12px;padding:0;display:grid;gap:8px}
+.zone-row{display:grid;gap:4px;padding:10px 12px;background:var(--surface);border:1px solid var(--line);
+  border-left:var(--rule) solid var(--line-strong);border-radius:var(--radius-sm)}
+.zone-row.status-complete{border-left-color:var(--leaf)}
+.zone-row.status-downloading{border-left-color:var(--sea)}
+.zone-row.status-paused,.zone-row.status-incomplete{border-left-color:var(--warn)}
+.zone-row-main{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.zone-row .hint{margin:0}
+
+/* «Marcar aquí» desde el mapa: selector de especie */
+.pick-list{max-height:240px;overflow:auto;border:1px solid var(--line-strong);border-radius:var(--radius-md);padding:2px 10px;
+  background:var(--panel)}
+.pick-row{border-bottom:1px solid var(--line)}
+.pick-row:last-child{border-bottom:0}
+.map-list .mark-main+.mark-main{margin-top:2px}
+
+@media (min-width:900px){
+  .view.view-mapa{max-width:none;padding:14px 0 0}
+  .map-bar,.map-note,.map-foot,.map-legend{padding-left:32px;padding-right:32px}
+  .map-filters{margin:0 32px;grid-template-columns:minmax(0,2fr) auto minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr) auto;align-items:end}
+  .map-filters .field:first-child,.map-filters .field:nth-child(2),.map-filters .form-actions{grid-column:auto}
+  .map-note .guard-band{margin:0 -32px 6px;padding-left:32px}
+  .zone-panel{left:12px;right:auto;top:12px;bottom:auto;width:400px;max-height:calc(100% - 24px);border-top:0;
+    border-left:4px solid var(--brass);border-radius:var(--radius-lg)}
+  .mark-fab{bottom:40px;right:14px}
+}
+
+:root[data-theme="dark"] .leaflet-control-scale-line{background:rgba(22,24,15,.8)}
+:root[data-theme="dark"] .leaflet-control-attribution{background:rgba(22,24,15,.85) !important}
+:root[data-theme="dark"] .me-dot{stroke:#16180F}

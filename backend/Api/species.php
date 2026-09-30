@@ -175,7 +175,9 @@ function handleFilters(): never {
     if (!is_array($filters)) apiError("Faltan los filtros: ejecuta bin/build-filters.php.", 500);
     $levels = [];
     foreach (sensitivityConfig()["levels"] as $n => $l) {
+        // gridDeg: el mapa (F7) dibuja una marca generalizada como la celda de ese paso, nunca como punto.
         $levels[] = ["level" => (int) $n, "name" => $l["name"], "approxKm" => $l["approxKm"] ?? null,
+                     "gridDeg" => $l["gridDeg"] ?? null,
                      "display" => $l["display"] ?? null, "displayText" => $l["displayText"] ?? null];
     }
     header("Cache-Control: private, max-age=86400");
