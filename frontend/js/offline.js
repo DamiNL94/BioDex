@@ -21,9 +21,9 @@ const IMG_CONCURRENCY = 4;
 
 // Niveles de sensibilidad por si no hay red para GET /species/filters (shared/sensitivity.json).
 const FALLBACK_LEVELS = [
-  { level: 1, name: 'Extrema', approxKm: null, display: 'withheld', displayText: 'presente en la provincia' },
-  { level: 2, name: 'Alta', approxKm: 10 }, { level: 3, name: 'Media', approxKm: 1 },
-  { level: 4, name: 'Sin restricción', approxKm: null },
+  { level: 1, name: 'Extrema', approxKm: null, gridDeg: null, display: 'withheld', displayText: 'presente en la provincia' },
+  { level: 2, name: 'Alta', approxKm: 10, gridDeg: 0.1 }, { level: 3, name: 'Media', approxKm: 1, gridDeg: 0.01 },
+  { level: 4, name: 'Sin restricción', approxKm: null, gridDeg: null },
 ];
 
 /** Niveles de sensibilidad: del servidor si contesta (y se guardan), si no, los guardados. */
@@ -81,7 +81,7 @@ export const localCatalog = (id) => get('catalogs', id);
 
 let persistAsked = false;
 /** La primera vez que se descarga algo se pide almacenamiento persistente (que el navegador no lo borre). */
-async function askPersist() {
+export async function askPersist() {
   if (persistAsked || !navigator.storage || !navigator.storage.persist) return;
   persistAsked = true;
   if (await getMeta('persistAsked')) return;

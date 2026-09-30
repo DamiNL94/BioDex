@@ -11,9 +11,12 @@
 //   outbox          id autoincremental → {kind: species · occurrence · delete, ref, catalogId, attempts,
 //                   lastError, rejected?}
 //   meta            key → value (cursor:<catalogId>, deviceId, lastSync, persistAsked…)
+//   zones           id → zona de mapa para usar sin conexión (F7, js/map/zones.js): {id, name, bounds,
+//                   layers: [{key, minZoom, maxZoom}], tileCount, doneCount, failedCount, bytes, status,
+//                   createdAt, completedAt}. Las teselas van a Cache Storage `biodex-tiles-<id>`.
 // ================================================================================================
 
-const DB_VERSION = 1;
+const DB_VERSION = 2;   // 2 (F7): almacén zones
 let current = null;       // {name, db}
 
 const req = (r) => new Promise((resolve, reject) => {
@@ -23,7 +26,12 @@ const req = (r) => new Promise((resolve, reject) => {
 
 export const dbName = (userId) => `biodex-${userId}`;
 
-function upgrade(db) {
+function upgrade(db, oldVersion) {
+  if (oldVersion < 1) createV1(db);
+  if (oldVersion < 2) db.createObjectStore('zones', { keyPath: 'id' });
+}
+
+function createV1(db) {
   db.createObjectStore('catalogs', { keyPath: 'id' });
   db.createObjectStore('species', { keyPath: 'taxonID' });
   const cs = db.createObjectStore('catalogSpecies', { keyPath: ['catalogId', 'taxonID'] });
@@ -43,7 +51,7 @@ export async function openUserDb(userId) {
   if (current && current.name === name) return current.db;
   closeDb();
   const open = indexedDB.open(name, DB_VERSION);
-  open.onupgradeneeded = () => upgrade(open.result);
+  open.onupgradeneeded = (ev) => upgrade(open.result, ev.oldVersion);
   const db = await req(open);
   // Otra pestaña borra la base (cerrar sesión): se suelta para no bloquearla.
   db.onversionchange = () => { db.close(); if (current && current.db === db) current = null; };

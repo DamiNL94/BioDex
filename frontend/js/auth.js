@@ -20,6 +20,7 @@ import { hasDb, getAll, deleteUserDb, closeDb } from './db.js';
 import { queueCounts, downloadBackup } from './marks.js';
 import { syncNow, stopSync, syncIdle } from './sync.js';
 import { IMG_CACHE_PREFIX } from './offline.js';
+import { forgetAllZones } from './map/zones.js';
 import { openOverlay } from './components/overlay.js';
 
 export const SESSION_EXPIRED = 'Tu sesión ha caducado. Lo que tengas en este dispositivo se conserva.';
@@ -129,6 +130,7 @@ export async function logout() {
   if (userId && hasDb()) {
     const ids = (await getAll('catalogs').catch(() => [])).map((c) => c.id);
     if ('caches' in window) await Promise.all(ids.map((id) => caches.delete(IMG_CACHE_PREFIX + id).catch(() => {})));
+    await forgetAllZones();   // teselas de sus zonas (F7); la caché de uso es del IGN, no de la persona
     await deleteUserDb(userId);
   } else {
     closeDb();

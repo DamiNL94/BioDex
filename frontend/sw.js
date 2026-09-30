@@ -18,10 +18,23 @@
  *
  * Fotos de especies (/img/fototeca/, F5): CACHE-FIRST en las cachés `biodex-img-<catalogId>` que llena
  * la app al descargar un catálogo; lo que no esté ahí va a la red y NO se guarda en la del armazón.
+ *
+ * Teselas del mapa (/tiles/, F7): CACHE-FIRST en todas las cachés `biodex-tiles-*` (las zonas descargadas
+ * y la de uso, `biodex-tiles-runtime`). Si no está: red con corte de TILE_TIMEOUT_MS, y lo que llega se
+ * guarda en la de uso, con tope de RUNTIME_TILES_MAX entradas (fuera las más antiguas). Sin red ni copia:
+ * tesela transparente, nunca un error visible en el mapa. Nunca van a la caché del armazón.
+ * Las peticiones de la descarga de zonas (cabecera X-BioDex-Zone) van directas a la red: allí un fallo
+ * tiene que ser un fallo, no una tesela vacía.
  */
 var VERSION = 'v6';
 var CACHE = 'biodex-shell-' + VERSION;
 var NET_TIMEOUT_MS = 3000;
+var TILE_TIMEOUT_MS = 5000;
+var TILE_CACHE_PREFIX = 'biodex-tiles-';
+var RUNTIME_TILES = 'biodex-tiles-runtime';
+var RUNTIME_TILES_MAX = 1500;
+// PNG de 1×1 transparente (el navegador lo estira a 256×256)
+var EMPTY_TILE = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
 
 var SHELL_ASSETS = [
   // Armazón
@@ -45,8 +58,16 @@ var SHELL_ASSETS = [
   'js/nav.js', 'js/util.js', 'js/state.js', 'js/api.js', 'js/auth.js', 'js/app.js',
   'js/db.js', 'js/offline.js', 'js/marks.js', 'js/sync.js',
 
-  // js/geo/ (F7)
+  // js/geo/ y js/map/ (F7)
   'js/geo/utm.js',
+  'js/map/layers.js', 'js/map/zones.js', 'js/map/zone-ui.js', 'js/map/marks-layer.js',
+
+  // vendor/leaflet/ y vendor/markercluster/ (F7) — el mapa tiene que abrir sin red
+  'vendor/leaflet/leaflet.js', 'vendor/leaflet/leaflet.css',
+  'vendor/leaflet/images/layers.png', 'vendor/leaflet/images/layers-2x.png',
+  'vendor/leaflet/images/marker-icon.png', 'vendor/leaflet/images/marker-icon-2x.png', 'vendor/leaflet/images/marker-shadow.png',
+  'vendor/markercluster/leaflet.markercluster.js',
+  'vendor/markercluster/MarkerCluster.css', 'vendor/markercluster/MarkerCluster.Default.css',
 
   // js/components/
   'js/components/overlay.js', 'js/components/species-card.js', 'js/components/marks.js',
@@ -71,7 +92,8 @@ self.addEventListener('install', function (event) {
 self.addEventListener('activate', function (event) {
   event.waitUntil(
     caches.keys().then(function (names) {
-      // Solo cachés del armazón de versiones anteriores. Las de imágenes (biodex-img-*) no se tocan.
+      // Solo cachés del armazón de versiones anteriores. Las de imágenes (biodex-img-*) y las de
+      // teselas (biodex-tiles-*) no se tocan.
       return Promise.all(names.map(function (name) {
         if (name.indexOf('biodex-shell-') === 0 && name !== CACHE) return caches.delete(name);
         return null;
@@ -95,6 +117,13 @@ self.addEventListener('fetch', function (event) {
     event.respondWith(caches.match(req, { ignoreVary: true }).then(function (cached) {
       return cached || fetch(req);
     }));
+    return;
+  }
+
+  // Teselas del IGN (F7)
+  if (url.pathname.indexOf('/tiles/') === 0) {
+    if (req.headers.get('X-BioDex-Zone')) return;   // descarga de una zona: directa a la red
+    event.respondWith(tileResponse(req, url, event));
     return;
   }
 
@@ -133,6 +162,56 @@ self.addEventListener('fetch', function (event) {
     })
   );
 });
+
+function tileResponse(req, url, event) {
+  var key = url.origin + url.pathname;   // sin parámetros: una tesela, una sola entrada
+  return caches.keys().then(function (names) {
+    var tileCaches = names.filter(function (n) { return n.indexOf(TILE_CACHE_PREFIX) === 0; });
+    // Primero las zonas descargadas, después la de uso.
+    tileCaches.sort(function (a, b) { return (a === RUNTIME_TILES) - (b === RUNTIME_TILES); });
+    return firstMatch(tileCaches, key);
+  }).then(function (cached) {
+    if (cached) return cached;
+    return withTimeout(fetch(req), TILE_TIMEOUT_MS).then(function (res) {
+      var type = res.headers.get('Content-Type') || '';
+      if (!res.ok || type.indexOf('image/') !== 0) return emptyTile();
+      var copy = res.clone();
+      event.waitUntil(caches.open(RUNTIME_TILES).then(function (cache) {
+        return cache.put(key, copy).then(function () { return trimRuntime(cache); });
+      }).catch(function () { /* cuota llena: no es crítico */ }));
+      return res;
+    }, emptyTile);
+  }).catch(emptyTile);
+}
+
+function firstMatch(names, key) {
+  if (!names.length) return Promise.resolve(null);
+  return caches.open(names[0]).then(function (c) { return c.match(key); }).then(function (hit) {
+    return hit || firstMatch(names.slice(1), key);
+  });
+}
+
+function emptyTile() {
+  var bin = atob(EMPTY_TILE);
+  var bytes = new Uint8Array(bin.length);
+  for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new Response(bytes, { status: 200,
+    headers: { 'Content-Type': 'image/png', 'Cache-Control': 'no-store', 'X-BioDex-Tile': 'empty' } });
+}
+
+// Tope de la caché de uso. keys() va en orden de inserción: se borran las primeras. Una pasada cada
+// 50 teselas nuevas y nunca dos a la vez (recorrer 1.500 claves por tesela sería gastar batería).
+var trimming = false;
+var putsSinceTrim = 0;
+function trimRuntime(cache) {
+  if (trimming || ++putsSinceTrim < 50) return Promise.resolve();
+  trimming = true;
+  putsSinceTrim = 0;
+  return cache.keys().then(function (keys) {
+    var extra = Math.max(0, keys.length - RUNTIME_TILES_MAX);
+    return Promise.all(keys.slice(0, extra).map(function (k) { return cache.delete(k); }));
+  }).then(function () { trimming = false; }, function () { trimming = false; });
+}
 
 function withTimeout(promise, ms) {
   return new Promise(function (resolve, reject) {
