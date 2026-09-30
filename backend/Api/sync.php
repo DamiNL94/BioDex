@@ -5,9 +5,10 @@
 //   POST /api/sync/push   {catalogId, deviceId, occurrences:[…], deletes:[{occurrenceID, clientUpdatedAt}]}
 //                         permiso mark → {results:[{occurrenceID, status, reason?, detail?, serverSeq?, occurrence?}]}
 //   GET  /api/sync/pull?catalogId=&since=&limit=500
-//                         permiso view → {items, cursor, hasMore, catalogContentSeq, role}
+//                         permiso view → {items, cursor, hasMore, catalogContentSeq, role, visibilityEpoch}
 // Sin rol en el catálogo (expulsado o catálogo borrado): 403 {error, code: "not_member"}; el móvil
-// borra entonces sus datos de ese catálogo.
+// borra entonces sus datos de ese catálogo. Si visibilityEpoch no es la que tiene guardada, borra las
+// marcas AJENAS de ese catálogo y vuelve a bajarlas desde 0 (F6: cambió lo que puede ver; Lib/teams.php).
 //
 // Nunca se descarta una marca en silencio: cada elemento del lote vuelve con su estado. Cada elemento
 // va en su propia transacción; si la BD falla a mitad de lote la petición da 500 y el móvil repite el
@@ -36,14 +37,17 @@ $action = $m[1];
 
 // ------------------------------------------------------------------------------------------------
 
-/** Rol en el catálogo si permite $permission; si no es miembro, 403 not_member; si no llega, 403 forbidden. */
-function syncRequireRole(PDO $pdo, string $catalogId, int $userId, string $permission): string {
-    $role = catalogRole($pdo, $catalogId, $userId);
-    if ($role === null) respond(["error" => "Ya no eres miembro de este catálogo.", "code" => "not_member"], 403);
-    if (!catalogCan($role, $permission)) {
+/**
+ * {role, epoch} en el catálogo si el rol permite $permission; si no es miembro, 403 not_member; si no
+ * llega, 403 forbidden.
+ */
+function syncRequireMembership(PDO $pdo, string $catalogId, int $userId, string $permission): array {
+    $membership = catalogMembership($pdo, $catalogId, $userId);
+    if ($membership === null) respond(["error" => "Ya no eres miembro de este catálogo.", "code" => "not_member"], 403);
+    if (!catalogCan($membership["role"], $permission)) {
         respond(["error" => "Tu rol en el catálogo no permite esta acción.", "code" => "forbidden"], 403);
     }
-    return $role;
+    return $membership;
 }
 
 /** Ejecuta un elemento del lote, reintentando ante carreras con otro push (ver SYNC_RETRY_ERRORS). */
@@ -182,7 +186,7 @@ if ($action === "push") {
         apiError("Como mucho " . SYNC_MAX_ITEMS . " elementos por lote (marcas + borrados).", 400);
     }
 
-    $role = syncRequireRole($pdo, $catalogId, $userId, "mark");
+    $role = syncRequireMembership($pdo, $catalogId, $userId, "mark")["role"];
     $stmt = $pdo->prepare("SELECT taxonID FROM catalog_species WHERE catalog_id = ? AND deleted_at IS NULL");
     $stmt->execute([$catalogId]);
     $taxa = array_flip(array_map("strval", $stmt->fetchAll(PDO::FETCH_COLUMN)));
@@ -220,7 +224,8 @@ if ($since === false) apiError("«since» debe ser un entero ≥ 0 (el cursor de
 $limit = filter_var($_GET["limit"] ?? SYNC_PULL_MAX_LIMIT, FILTER_VALIDATE_INT, ["options" => ["min_range" => 1, "max_range" => SYNC_PULL_MAX_LIMIT]]);
 if ($limit === false) apiError("«limit» debe estar entre 1 y " . SYNC_PULL_MAX_LIMIT . ".", 400);
 
-$role = syncRequireRole($pdo, $catalogId, $userId, "view");
+// Rol y época se leen juntos: lo que va en esta página corresponde a esa época.
+["role" => $role, "epoch" => $epoch] = syncRequireMembership($pdo, $catalogId, $userId, "view");
 
 // Una fila de más para saber si hay otra página. $limit es un entero validado.
 $stmt = $pdo->prepare(
@@ -258,4 +263,5 @@ respond([
     "hasMore"           => $hasMore,
     "catalogContentSeq" => (int) $stmt->fetchColumn(),
     "role"              => $role,
+    "visibilityEpoch"   => $epoch,
 ]);

@@ -1,10 +1,12 @@
 <?php
 // ================================================================================================
 // audit.php — registro en access_log de lo que CLAUDE.md exige auditar: vistas de coordenadas
-// exactas, exportaciones completas, cambios de nivel de sensibilidad y de rol, logins fallidos.
+// exactas, exportaciones completas, cambios de nivel de sensibilidad y de rol, logins fallidos y (F6)
+// invitaciones y altas y bajas de miembros.
 // ================================================================================================
 
-const AUDIT_ACTIONS = ["view_exact", "export_full", "set_level", "grant_role", "revoke_role", "login_failed"];
+const AUDIT_ACTIONS = ["view_exact", "export_full", "set_level", "grant_role", "revoke_role", "login_failed",
+                       "invite_created", "invite_revoked", "member_joined", "member_removed", "member_left"];
 
 /** IP del cliente tal como la ve PHP (nginx pasa REMOTE_ADDR). null en CLI. */
 function clientIp(): ?string {

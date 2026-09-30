@@ -13,7 +13,7 @@
 //   POST   /api/catalogs/{id}/species                      add_species {taxonID}, idempotente
 //   DELETE /api/catalogs/{id}/species/{taxonID}            remove_species (owner), borrado lógico
 //   PUT    /api/catalogs/{id}/species/{taxonID}/sensitivity  set_level {level, reason} → access_log
-// Miembros e invitaciones: F6.
+// Miembros, invitaciones, salir, transferir y registro (F6): Api/teams.php, incluido desde aquí.
 // content_seq sube con cada cambio de lo que lleva el paquete offline (especies, niveles, nombre):
 // el pull de /api/sync lo devuelve y el móvil vuelve a descargar el paquete si no coincide.
 // ================================================================================================
@@ -22,6 +22,7 @@ require_once __DIR__ . "/../Lib/session.php";
 require_once __DIR__ . "/../Lib/authz.php";
 require_once __DIR__ . "/../Lib/audit.php";
 require_once __DIR__ . "/../Lib/species.php";
+require_once __DIR__ . "/../Lib/teams.php";
 
 const CATALOG_NAME_MAX = 120;
 // Especies por alta de catálogo: cada una sin ficha en caché son ~7 peticiones a EIDOS (~1,5 s).
@@ -33,6 +34,11 @@ $userId = requireUserId();
 
 $method = $_SERVER["REQUEST_METHOD"];
 $path   = parse_url($_SERVER["REQUEST_URI"] ?? "/", PHP_URL_PATH);
+if (preg_match('#^/api/catalogs/([0-9a-f-]{36})/(members|invites|leave|transfer|audit)(?:/([^/]+))?/?$#', $path, $tm)) {
+    $teamRoute = [$tm[1], $tm[2], $tm[3] ?? null];
+    require __DIR__ . "/teams.php";
+    exit;
+}
 if (!preg_match('#^/api/catalogs(?:/([0-9a-f-]{36})(?:/(tree|species|offline)(?:/([^/]+)(?:/(sensitivity))?)?)?)?/?$#', $path, $m)) {
     apiError("Recurso no encontrado.", 404);
 }
@@ -358,6 +364,9 @@ $pdo->prepare(
      ON DUPLICATE KEY UPDATE level = VALUES(level), reason = VALUES(reason), set_by = VALUES(set_by), set_at = NOW()"
 )->execute([$catalogId, $taxonID, $level, $suggested, $reason === "" ? null : $reason, $userId]);
 catalogBumpContent($pdo, $catalogId);
+// Lo que ven de las marcas ajenas los miembros sin exactas cambia: sus móviles rehacen las del equipo
+// (subir el nivel les borra exactas o celdas finas que ya no les tocan; bajarlo les da más detalle).
+if ($old !== $level) bumpUntrustedEpochs($pdo, $catalogId);
 logAccess($pdo, $userId, "set_level", $catalogId, "{$taxonID}: " . ($old ?? "-") . " → {$level}" . ($reason !== "" ? " ({$reason})" : ""));
 $pdo->commit();
 

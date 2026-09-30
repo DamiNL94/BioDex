@@ -6,6 +6,7 @@
 //   POST /api/auth/login     {email, password}         → 200 {user} · 401 · 429
 //   POST /api/auth/logout                              → 200 {ok}
 //   GET  /api/auth/me                                  → 200 {user} · 401
+//   PATCH /api/auth/me       {name?, orcid?}            → 200 {user} · 400 (ORCID con dígito de control)
 //   GET  /api/auth/verify?token=...                    → 200 {ok, user} · 400
 //
 // Sesión: Lib/session.php (cookie de sesión + token "seguir conectado" de 90 días).
@@ -16,6 +17,7 @@
 require_once __DIR__ . "/../Lib/session.php";
 require_once __DIR__ . "/../Lib/audit.php";
 require_once __DIR__ . "/../Lib/mail.php";
+require_once __DIR__ . "/../Lib/teams.php";   // orcidNormalize()
 
 const PASSWORD_MIN_LENGTH   = 10;
 const LOGIN_MAX_FAILURES    = 5;
@@ -68,9 +70,35 @@ function sendVerificationEmail(PDO $pdo, int $userId, string $email, string $nam
     return sendMail($email, "Confirma tu correo en BioDex", $body);
 }
 
+// -------------------------------------------------------------------------------------- PATCH
+if ($action === "me" && $method === "PATCH") {
+    $userId = requireUserId();
+    $body = requireJsonBody("{name?, orcid?}");
+    $sets = [];
+    if (array_key_exists("name", $body)) {
+        $name = trim((string) $body["name"]);
+        if ($name === "" || mb_strlen($name) > 120) apiError("«name» es obligatorio (≤ 120 caracteres).", 400);
+        $sets["name"] = $name;
+    }
+    if (array_key_exists("orcid", $body)) {
+        $raw = $body["orcid"];
+        if ($raw === null || (is_string($raw) && trim($raw) === "")) {
+            $sets["orcid"] = null;
+        } else {
+            $orcid = orcidNormalize($raw);
+            if ($orcid === null) apiError("ORCID no válido: debe tener la forma 0000-0000-0000-000X y un dígito de control correcto.", 400);
+            $sets["orcid"] = $orcid;
+        }
+    }
+    if (!$sets) apiError("Nada que cambiar: envía «name» u «orcid».", 400);
+    $cols = implode(", ", array_map(fn($k) => "`{$k}` = ?", array_keys($sets)));
+    $pdo->prepare("UPDATE users SET {$cols} WHERE id = ?")->execute([...array_values($sets), $userId]);
+    respond(["user" => authUser($pdo, $userId)]);
+}
+
 // ---------------------------------------------------------------------------------------- GET
 if ($action === "me") {
-    if ($method !== "GET") apiMethodNotAllowed("GET");
+    if ($method !== "GET") apiMethodNotAllowed("GET o PATCH");
     $user = authUser($pdo, requireUserId());
     if (!$user) { biodexLogOut($pdo); apiError("No autenticado.", 401); }
     respond(["user" => $user]);

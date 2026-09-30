@@ -34,6 +34,21 @@ function catalogRole(PDO $pdo, string $catalogId, int $userId): ?string {
     return $role === false ? null : $role;
 }
 
+/**
+ * Rol y época de visibilidad del usuario en el catálogo → {role, epoch}, o null si no es miembro o el
+ * catálogo está borrado. La época la usa el pull (Lib/teams.php, docs/sync.md).
+ */
+function catalogMembership(PDO $pdo, string $catalogId, int $userId): ?array {
+    $stmt = $pdo->prepare(
+        "SELECT m.role, m.visibility_epoch FROM catalog_members m
+           JOIN catalogs c ON c.id = m.catalog_id AND c.deleted_at IS NULL
+          WHERE m.catalog_id = ? AND m.user_id = ?"
+    );
+    $stmt->execute([$catalogId, $userId]);
+    $row = $stmt->fetch();
+    return $row ? ["role" => $row["role"], "epoch" => (int) $row["visibility_epoch"]] : null;
+}
+
 /** Rol del usuario si está entre $roles; si no (o no es miembro), 403. */
 function requireCatalogRole(PDO $pdo, string $catalogId, int $userId, array $roles): string {
     $role = catalogRole($pdo, $catalogId, $userId);
