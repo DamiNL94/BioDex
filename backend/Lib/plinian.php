@@ -67,6 +67,11 @@ function plicClean(string $s): string {
     return trim(preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F]/u', "", $s) ?? "");
 }
 
+/** «1 ausencia», «3 ausencias». */
+function plural(int $n, string $one, string $many): string {
+    return $n . " " . ($n === 1 ? $one : $many);
+}
+
 function plicNum(?float $v): ?string {
     return $v === null ? null : rtrim(rtrim(sprintf("%.3F", $v), "0"), ".");
 }
@@ -337,7 +342,8 @@ function plicTaxonRecord(PlicXml $x, DOMNode $root, array $s, array $rows, ?arra
         $x->el($da, "dwc:locality", "Catálogo BioDex «{$catalog["name"]}»");
         $pres = count(array_filter($rows, fn($r) => $r["occurrenceStatus"] === "present"));
         plicNote($x, $d, "Fuente de los datos de distribución",
-            count($rows) . " registros exportados ({$pres} presencias, " . (count($rows) - $pres) . " ausencias) entre el " . min($days)
+            plural(count($rows), "registro exportado", "registros exportados") . " (" . plural($pres, "presencia", "presencias") . ", "
+            . plural(count($rows) - $pres, "ausencia", "ausencias") . ") entre el " . min($days)
             . " y el " . max($days) . ". Reflejan las observaciones del catálogo, no la distribución completa de la especie.",
             ["source" => $ctx["withDwc"] ? "dwca/occurrence.txt de esta descarga ({$ctx["zipName"]}), taxonID {$t["taxonID"]}"
                                          : "Observaciones del catálogo BioDex «{$catalog["name"]}» (no incluidas en esta descarga)",
