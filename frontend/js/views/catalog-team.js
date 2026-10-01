@@ -362,14 +362,24 @@ export function mountTeam(el, catalog, { onLeft, onChanged } = {}) {
 // Niveles de sensibilidad (owner)
 // ================================================================================================
 
-/** Panel a pantalla completa: especie · sugerido · actual · motivo · autor del cambio, editable en línea. */
+/** Panel a pantalla completa (móvil, o desde fuera de Catálogos) con la tabla de niveles. */
 export function openLevels(catalog, { onChanged } = {}) {
+  let stop = null;
+  const ov = openOverlay({ key: 'niveles', title: `Niveles de sensibilidad · ${catalog.name}`, variant: 'full', className: 'team-panel',
+    onClose: () => { if (stop) stop(); } });
+  stop = mountLevels(el, catalog, { onChanged });
+  return ov;
+}
+
+/**
+ * Tabla de niveles en `el`: especie · sugerido · actual · motivo · autor del cambio, editable en línea.
+ * F11c: en escritorio se pinta dentro de la pestaña «Sensibilidad» del catálogo. Devuelve el desmontaje.
+ */
+export function mountLevels(el, catalog, { onChanged } = {}) {
   let alive = true;
   let data = null;         // {data: GET /catalogs/{id}, at, fromDevice}
   let levels = [];
-  const ov = openOverlay({ key: 'niveles', title: `Niveles de sensibilidad · ${catalog.name}`, variant: 'full', className: 'team-panel',
-    onClose: () => { alive = false; } });
-  render(ov.body, html`<p class="muted">Cargando niveles…</p>`);
+  render(el, html`<p class="muted">Cargando niveles…</p>`);
 
   async function load() {
     try {
@@ -379,7 +389,7 @@ export function openLevels(catalog, { onChanged } = {}) {
       ]);
       paint();
     } catch (e) {
-      if (alive) render(ov.body, html`<p class="guard-band warn">${e.offline ? 'Sin conexión y sin niveles guardados en este dispositivo.' : e.message}</p>`);
+      if (alive) render(el, html`<p class="guard-band warn">${e.offline ? 'Sin conexión y sin niveles guardados en este dispositivo.' : e.message}</p>`);
     }
   }
 
@@ -389,7 +399,7 @@ export function openLevels(catalog, { onChanged } = {}) {
     if (!alive) return;
     const live = canAct(data.fromDevice);
     const rows = data.data.species;
-    render(ov.body, html`
+    render(el, html`
       <p class="hint">Nivel 1 = máxima protección (sin coordenadas para quien no es de confianza) · 4 = coordenada exacta para todo el equipo.
         Bajar un nivel respecto al sugerido exige motivo.</p>
       ${data.fromDevice || !state.online ? html`<p class="copy-note" role="status">${dataNote(data.at)} · ${OFFLINE_ACTION} para cambiar niveles</p>` : ''}
@@ -408,7 +418,7 @@ export function openLevels(catalog, { onChanged } = {}) {
             <td><button type="button" class="link-btn" data-save hidden>Guardar</button><span class="form-error" role="alert" hidden></span></td>
           </tr>`;
         })}</tbody></table></div>`);
-    ov.body.querySelectorAll('tr[data-taxon]').forEach(wireRow);
+    el.querySelectorAll('tr[data-taxon]').forEach(wireRow);
   }
 
   function wireRow(tr) {
@@ -452,23 +462,30 @@ export function openLevels(catalog, { onChanged } = {}) {
   }
 
   load();
-  return ov;
+  return () => { alive = false; };
 }
 
 // ================================================================================================
 // Registro (owner)
 // ================================================================================================
 
-/** Panel a pantalla completa: fecha · persona · acción · detalle, de lo más reciente a lo más antiguo. */
+/** Panel a pantalla completa (móvil) con el registro. */
 export function openAudit(catalog) {
+  let stop = null;
+  const ov = openOverlay({ key: 'registro', title: `Registro · ${catalog.name}`, variant: 'full', className: 'team-panel',
+    onClose: () => { if (stop) stop(); } });
+  stop = mountAudit(el, catalog);
+  return ov;
+}
+
+/** Registro en `el`: fecha · persona · acción · detalle, de lo más reciente a lo más antiguo (F11c: también en pestaña). */
+export function mountAudit(el, catalog) {
   let alive = true;
   let data = null;         // {data: {items, hasMore, before}, at, fromDevice}
   let more = [];           // páginas siguientes (no se guardan en el dispositivo)
   let hasMore = false;
   let before = null;
-  const ov = openOverlay({ key: 'registro', title: `Registro · ${catalog.name}`, variant: 'full', className: 'team-panel',
-    onClose: () => { alive = false; } });
-  render(ov.body, html`<p class="muted">Cargando registro…</p>`);
+  render(el, html`<p class="muted">Cargando registro…</p>`);
 
   async function load() {
     try {
@@ -478,7 +495,7 @@ export function openAudit(catalog) {
       more = [];
       paint();
     } catch (e) {
-      if (alive) render(ov.body, html`<p class="guard-band warn">${e.offline ? 'Sin conexión y sin registro guardado en este dispositivo.' : e.message}</p>`);
+      if (alive) render(el, html`<p class="guard-band warn">${e.offline ? 'Sin conexión y sin registro guardado en este dispositivo.' : e.message}</p>`);
     }
   }
 
@@ -496,7 +513,7 @@ export function openAudit(catalog) {
   function paint() {
     if (!alive) return;
     const items = data.data.items.concat(more);
-    render(ov.body, html`
+    render(el, html`
       <p class="hint">Vistas de coordenadas exactas, cambios de nivel y de rol, invitaciones y altas y bajas del equipo.</p>
       ${data.fromDevice || !state.online ? html`<p class="copy-note" role="status">${dataNote(data.at)}</p>` : ''}
       ${items.length ? html`<div class="table-scroll"><table class="data-table audit-table">
@@ -507,10 +524,10 @@ export function openAudit(catalog) {
           <td><span class="badge action-${r.action}">${AUDIT_LABELS[r.action] || r.action}</span></td>
           <td>${r.detail}</td></tr>`)}</tbody></table></div>` : html`<p class="muted">Aún no hay nada en el registro.</p>`}
       ${hasMore && canAct(data.fromDevice) ? html`<div class="form-actions"><button type="button" class="btn-secondary" data-more>Cargar más</button></div>` : ''}`);
-    const btn = $('[data-more]', ov.body);
+    const btn = $('[data-more]', el);
     if (btn) btn.addEventListener('click', () => loadMore(btn));
   }
 
   load();
-  return ov;
+  return () => { alive = false; };
 }

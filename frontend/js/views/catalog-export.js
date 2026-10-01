@@ -1,5 +1,5 @@
 // ================================================================================================
-// catalog-export.js — «Descargar datos» de un catálogo (F10a): opciones, resumen y descarga del ZIP.
+// catalog-export.js — «Exportar datos» de un catálogo (antes «Descargar datos») (F10a): opciones, resumen y descarga del ZIP.
 // ------------------------------------------------------------------------------------------------
 // La exportación se genera EN EL SERVIDOR (tiene las exactas y aplica la seguridad): sin conexión el
 // panel lo explica y remite al respaldo JSON de Ajustes (F5b). Dos modos: «Para publicar» (cualquier
@@ -45,7 +45,17 @@ function saveBlob(blob, name) {
   setTimeout(() => URL.revokeObjectURL(a.href), 10000);
 }
 
+/** Panel a pantalla completa (móvil, Ajustes › Descargas) con la exportación. */
 export function openExport(catalog) {
+  let stop = null;
+  const ov = openOverlay({ key: 'exportar', title: `Exportar datos · ${catalog.name}`, variant: 'full', className: 'export-panel',
+    onClose: () => { if (stop) stop(); } });
+  stop = mountExport(ov.body, catalog);
+  return ov;
+}
+
+/** Exportación en `el` (F11c: también en la pestaña «Exportar» del catálogo en escritorio). Devuelve el desmontaje. */
+export function mountExport(el, catalog) {
   let alive = true;
   let info = null;            // preview inicial: available, licenses, defaults, canFull
   let summary = null;
@@ -57,16 +67,13 @@ export function openExport(catalog) {
     observers: new Set(), includeAbsences: true, license: null, title: '', description: '',
     formats: new Set(FORMATS.filter((f) => f[2]).map((f) => f[0])) };
 
-  const ov = openOverlay({ key: 'exportar', title: `Descargar datos · ${catalog.name}`, variant: 'full', className: 'export-panel',
-    onClose: () => { alive = false; } });
-
   if (!state.online) {
-    render(ov.body, html`<div class="export-offline">
+    render(el, html`<div class="export-offline">
       <p class="guard-band warn">La exportación se genera en el servidor y necesita conexión.</p>
       <p>Sin red, tus marcas no se pierden: en <strong>Ajustes › Datos en este dispositivo</strong>, «Exportar respaldo»
         guarda en un fichero JSON las que aún no se han sincronizado. Cuando vuelvas a tener conexión, esta descarga
         tendrá las del equipo entero.</p></div>`);
-    return ov;
+    return () => { alive = false; };
   }
 
   function body() {
@@ -85,7 +92,7 @@ export function openExport(catalog) {
   }
 
   async function start() {
-    render(ov.body, html`<p class="muted">Preparando las opciones…</p>`);
+    render(el, html`<p class="muted">Preparando las opciones…</p>`);
     try {
       info = await apiPostJson(`${catPath(catalog)}/export/preview`, { mode: 'public' });
       if (!alive) return;
@@ -95,7 +102,7 @@ export function openExport(catalog) {
       opts.description = info.defaults.description;
       paint();
     } catch (e) {
-      if (alive) render(ov.body, html`<p class="guard-band warn">${e.status === 0
+      if (alive) render(el, html`<p class="guard-band warn">${e.status === 0
         ? 'Sin conexión con el servidor: la exportación se genera allí. Sin red, usa «Exportar respaldo» en Ajustes.' : e.message}</p>`);
     }
   }
@@ -116,7 +123,7 @@ export function openExport(catalog) {
   }, 350);
 
   function paintSummary(loading) {
-    const box = $('#exportSummary', ov.body);
+    const box = $('#exportSummary', el);
     if (!box) return;
     const s = summary;
     const full = opts.mode === 'full';
@@ -133,16 +140,16 @@ export function openExport(catalog) {
             ? html`${plural(s.generalized, 'observación se generaliza', 'observaciones se generalizan')} por la sensibilidad de su especie${
               s.withheld ? html` (${s.withheld} sin coordenadas, nivel 1)` : ''}; en ellas tampoco salen las notas de campo.`
             : 'Ninguna observación necesita generalizarse: todas son de especies sin restricción.'}</p>`}` : ''}`);
-    const btn = $('[data-download]', ov.body);
+    const btn = $('[data-download]', el);
     if (btn) btn.disabled = downloading || loading || !s || s.occurrences === 0 || !!summaryError || opts.formats.size === 0;
-    const empty = $('#exportEmpty', ov.body);
+    const empty = $('#exportEmpty', el);
     if (empty) empty.hidden = !s || s.occurrences > 0 || loading;
   }
 
   function paint() {
     const av = info.available;
     const full = opts.mode === 'full';
-    render(ov.body, html`<form class="form export-form" novalidate>
+    render(el, html`<form class="form export-form" novalidate>
       <p class="hint">Un ZIP con los formatos que elijas: un <strong>Darwin Core Archive</strong> para GBIF u otras bases, fichas
         de especie en <strong>Plinian Core</strong> y <strong>hojas en castellano</strong> (Excel y CSV). Se genera en el servidor.</p>
       <fieldset class="checks export-formats">
@@ -210,27 +217,27 @@ export function openExport(catalog) {
     </form>`);
     paintSummary(false);
 
-    const form = $('.export-form', ov.body);
+    const form = $('.export-form', el);
     const repaint = () => { paint(); refreshSummary(); };
     form.querySelectorAll('[data-mode]').forEach((b) => b.addEventListener('click', () => {
       if (opts.mode === b.dataset.mode) return;
       opts.mode = b.dataset.mode;
       status = null;
       repaint();
-      const again = $(`[data-mode="${opts.mode}"]`, ov.body);
+      const again = $(`[data-mode="${opts.mode}"]`, el);
       if (again) again.focus();
     }));
     form.addEventListener('change', (ev) => {
       const t = ev.target;
       if (t.name === 'dateFrom' || t.name === 'dateTo') { opts[t.name] = t.value; refreshSummary(); }
-      else if (t.name === 'speciesAll') { opts.speciesAll = t.value === 'all'; repaint(); $(`input[name="speciesAll"][value="${t.value}"]`, ov.body).focus(); }
-      else if (t.name === 'observersAll') { opts.observersAll = t.value === 'all'; repaint(); $(`input[name="observersAll"][value="${t.value}"]`, ov.body).focus(); }
+      else if (t.name === 'speciesAll') { opts.speciesAll = t.value === 'all'; repaint(); $(`input[name="speciesAll"][value="${t.value}"]`, el).focus(); }
+      else if (t.name === 'observersAll') { opts.observersAll = t.value === 'all'; repaint(); $(`input[name="observersAll"][value="${t.value}"]`, el).focus(); }
       else if (t.dataset.taxon) { t.checked ? opts.taxonIDs.add(t.dataset.taxon) : opts.taxonIDs.delete(t.dataset.taxon); refreshSummary(); }
       else if (t.dataset.format) {
         t.checked ? opts.formats.add(t.dataset.format) : opts.formats.delete(t.dataset.format);
         status = null;
         paint();
-        $(`[data-format="${t.dataset.format}"]`, ov.body).focus();
+        $(`[data-format="${t.dataset.format}"]`, el).focus();
       }
       else if (t.dataset.observer) { const id = Number(t.dataset.observer); t.checked ? opts.observers.add(id) : opts.observers.delete(id); refreshSummary(); }
       else if (t.name === 'includeAbsences') { opts.includeAbsences = t.checked; refreshSummary(); }
@@ -245,7 +252,7 @@ export function openExport(catalog) {
     if (downloading) return;
     downloading = true;
     status = null;
-    const btn = $('[data-download]', ov.body);
+    const btn = $('[data-download]', el);
     if (btn) { btn.disabled = true; btn.textContent = 'Generando…'; }
     try {
       const res = await apiFetch(`${catPath(catalog)}/export`, { method: 'POST', body: body(), timeoutMs: EXPORT_TIMEOUT_MS });
@@ -266,5 +273,5 @@ export function openExport(catalog) {
   }
 
   start();
-  return ov;
+  return () => { alive = false; };
 }
