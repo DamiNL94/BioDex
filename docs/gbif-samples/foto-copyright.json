@@ -1,0 +1,169 @@
+{
+    "_nota": "La primera ocurrencia tiene licencia CC en la ocurrencia, pero su foto dice «Copyright by the creator…»: se salta. Gana la siguiente (foto CC BY).",
+    "_fecha": "2026-10-01",
+    "species": {
+        "name": "Achnatherum calamagrostis",
+        "rank": "Species",
+        "kingdom": "Plantae"
+    },
+    "match": {
+        "usageKey": 4142326,
+        "scientificName": "Achnatherum calamagrostis (L.) P.Beauv.",
+        "canonicalName": "Achnatherum calamagrostis",
+        "rank": "SPECIES",
+        "status": "ACCEPTED",
+        "confidence": 100,
+        "matchType": "EXACT",
+        "kingdom": "Plantae",
+        "phylum": "Tracheophyta",
+        "order": "Poales",
+        "family": "Poaceae",
+        "genus": "Achnatherum",
+        "species": "Achnatherum calamagrostis",
+        "kingdomKey": 6,
+        "phylumKey": 7707728,
+        "classKey": 196,
+        "orderKey": 1369,
+        "familyKey": 3073,
+        "genusKey": 2703376,
+        "speciesKey": 4142326,
+        "class": "Liliopsida"
+    },
+    "occurrences": {
+        "ES": {
+            "offset": 0,
+            "limit": 50,
+            "endOfRecords": true,
+            "count": 2,
+            "results": [
+                {
+                    "key": 5016986885,
+                    "datasetKey": "6ac3f774-d9fb-4796-b3e9-92bf6c81c084",
+                    "basisOfRecord": "HUMAN_OBSERVATION",
+                    "taxonKey": 4142326,
+                    "speciesKey": 4142326,
+                    "acceptedTaxonKey": 4142326,
+                    "scientificName": "Achnatherum calamagrostis (L.) P.Beauv.",
+                    "acceptedScientificName": "Achnatherum calamagrostis (L.) P.Beauv.",
+                    "taxonRank": "SPECIES",
+                    "issues": [
+                        "COORDINATE_ROUNDED",
+                        "GEODETIC_DATUM_ASSUMED_WGS84",
+                        "CONTINENT_DERIVED_FROM_COORDINATES"
+                    ],
+                    "license": "http://creativecommons.org/licenses/by/4.0/legalcode",
+                    "countryCode": "ES",
+                    "media": [
+                        {
+                            "type": "StillImage",
+                            "format": "image/jpeg",
+                            "references": "https://nabu-naturgucker-beobachtungen.de/?sprache=en&bild=-133385816",
+                            "license": "Copyright by the creator. For license and creator details, see https://nabu-naturgucker-beobachtungen.de/?sprache=en&bild=-133385816.",
+                            "identifier": "https://live.staticflickr.com/1964/44935624954_6ee0af96ff_b.jpg"
+                        },
+                        {
+                            "type": "StillImage",
+                            "format": "image/jpeg",
+                            "references": "https://nabu-naturgucker-beobachtungen.de/?sprache=en&bild=201048475",
+                            "license": "Copyright by the creator. For license and creator details, see https://nabu-naturgucker-beobachtungen.de/?sprache=en&bild=201048475.",
+                            "identifier": "https://live.staticflickr.com/1909/44935626524_52fa074eba_b.jpg"
+                        },
+                        {
+                            "type": "StillImage",
+                            "format": "image/jpeg",
+                            "references": "https://nabu-naturgucker-beobachtungen.de/?sprache=en&bild=-1463904087",
+                            "license": "Copyright by the creator. For license and creator details, see https://nabu-naturgucker-beobachtungen.de/?sprache=en&bild=-1463904087.",
+                            "identifier": "https://live.staticflickr.com/1956/43842293670_0ff609441c_b.jpg"
+                        }
+                    ]
+                },
+                {
+                    "key": 5237998135,
+                    "datasetKey": "50c9509d-22c7-4a22-a47d-8c48425ef4a7",
+                    "basisOfRecord": "HUMAN_OBSERVATION",
+                    "taxonKey": 4142326,
+                    "speciesKey": 4142326,
+                    "acceptedTaxonKey": 4142326,
+                    "scientificName": "Achnatherum calamagrostis (L.) P.Beauv.",
+                    "acceptedScientificName": "Achnatherum calamagrostis (L.) P.Beauv.",
+                    "taxonRank": "SPECIES",
+                    "issues": [
+                        "COORDINATE_ROUNDED",
+                        "CONTINENT_DERIVED_FROM_COORDINATES",
+                        "TAXON_ID_NOT_FOUND"
+                    ],
+                    "license": "http://creativecommons.org/licenses/by/4.0/legalcode",
+                    "countryCode": "ES",
+                    "media": [
+                        {
+                            "type": "StillImage",
+                            "format": "image/jpeg",
+                            "references": "https://www.inaturalist.org/photos/542381254",
+                            "creator": "Ana Garcia",
+                            "publisher": "iNaturalist",
+                            "license": "http://creativecommons.org/licenses/by/4.0/",
+                            "rightsHolder": "Ana Garcia",
+                            "identifier": "https://inaturalist-open-data.s3.amazonaws.com/photos/542381254/original.jpg"
+                        },
+                        {
+                            "type": "StillImage",
+                            "format": "image/jpeg",
+                            "references": "https://www.inaturalist.org/photos/542381399",
+                            "creator": "Ana Garcia",
+                            "publisher": "iNaturalist",
+                            "license": "http://creativecommons.org/licenses/by/4.0/",
+                            "rightsHolder": "Ana Garcia",
+                            "identifier": "https://inaturalist-open-data.s3.amazonaws.com/photos/542381399/original.jpg"
+                        },
+                        {
+                            "type": "StillImage",
+                            "format": "image/jpeg",
+                            "references": "https://www.inaturalist.org/photos/542381566",
+                            "creator": "Ana Garcia",
+                            "publisher": "iNaturalist",
+                            "license": "http://creativecommons.org/licenses/by/4.0/",
+                            "rightsHolder": "Ana Garcia",
+                            "identifier": "https://inaturalist-open-data.s3.amazonaws.com/photos/542381566/original.jpg"
+                        },
+                        {
+                            "type": "StillImage",
+                            "format": "image/jpeg",
+                            "references": "https://www.inaturalist.org/photos/542381700",
+                            "creator": "Ana Garcia",
+                            "publisher": "iNaturalist",
+                            "license": "http://creativecommons.org/licenses/by/4.0/",
+                            "rightsHolder": "Ana Garcia",
+                            "identifier": "https://inaturalist-open-data.s3.amazonaws.com/photos/542381700/original.jpg"
+                        },
+                        {
+                            "type": "StillImage",
+                            "format": "image/jpeg",
+                            "references": "https://www.inaturalist.org/photos/542381963",
+                            "creator": "Ana Garcia",
+                            "publisher": "iNaturalist",
+                            "license": "http://creativecommons.org/licenses/by/4.0/",
+                            "rightsHolder": "Ana Garcia",
+                            "identifier": "https://inaturalist-open-data.s3.amazonaws.com/photos/542381963/original.jpg"
+                        },
+                        {
+                            "type": "StillImage",
+                            "format": "image/jpeg",
+                            "references": "https://www.inaturalist.org/photos/542382282",
+                            "creator": "Ana Garcia",
+                            "publisher": "iNaturalist",
+                            "license": "http://creativecommons.org/licenses/by/4.0/",
+                            "rightsHolder": "Ana Garcia",
+                            "identifier": "https://inaturalist-open-data.s3.amazonaws.com/photos/542382282/original.jpg"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "expected": {
+        "status": "ok",
+        "match_type": "exact",
+        "gbifID": 5237998135,
+        "skipped": 5016986885
+    }
+}

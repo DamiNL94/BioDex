@@ -1,0 +1,76 @@
+{
+    "_nota": "EIDOS «Lacerta lepida» es sinónimo en GBIF de Timon lepidus (acceptedUsageKey): foto a revisión.",
+    "_fecha": "2026-10-01",
+    "species": {
+        "name": "Lacerta lepida",
+        "rank": "Species",
+        "kingdom": "Animalia"
+    },
+    "match": {
+        "usageKey": 8033162,
+        "acceptedUsageKey": 2468542,
+        "scientificName": "Lacerta lepida Daudin, 1802",
+        "canonicalName": "Lacerta lepida",
+        "rank": "SPECIES",
+        "status": "SYNONYM",
+        "confidence": 100,
+        "matchType": "EXACT",
+        "kingdom": "Animalia",
+        "phylum": "Chordata",
+        "family": "Lacertidae",
+        "genus": "Timon",
+        "species": "Timon lepidus",
+        "kingdomKey": 1,
+        "phylumKey": 44,
+        "classKey": 11592253,
+        "familyKey": 5201,
+        "genusKey": 2468528,
+        "speciesKey": 2468542,
+        "class": "Squamata"
+    },
+    "occurrences": {
+        "ES": {
+            "offset": 0,
+            "limit": 50,
+            "endOfRecords": true,
+            "count": 1,
+            "results": [
+                {
+                    "key": 5938257522,
+                    "datasetKey": "50c9509d-22c7-4a22-a47d-8c48425ef4a7",
+                    "basisOfRecord": "HUMAN_OBSERVATION",
+                    "taxonKey": 2468542,
+                    "speciesKey": 2468542,
+                    "acceptedTaxonKey": 2468542,
+                    "scientificName": "Timon lepidus (Daudin, 1802)",
+                    "acceptedScientificName": "Timon lepidus (Daudin, 1802)",
+                    "taxonRank": "SPECIES",
+                    "issues": [
+                        "COORDINATE_ROUNDED",
+                        "CONTINENT_DERIVED_FROM_COORDINATES",
+                        "TAXON_ID_NOT_FOUND"
+                    ],
+                    "license": "http://creativecommons.org/licenses/by/4.0/legalcode",
+                    "countryCode": "ES",
+                    "media": [
+                        {
+                            "type": "StillImage",
+                            "format": "image/jpeg",
+                            "references": "https://www.inaturalist.org/photos/605401778",
+                            "creator": "Susanne Vogel",
+                            "publisher": "iNaturalist",
+                            "license": "http://creativecommons.org/licenses/by-nc/4.0/",
+                            "rightsHolder": "Susanne Vogel",
+                            "identifier": "https://inaturalist-open-data.s3.amazonaws.com/photos/605401778/original.jpg"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "expected": {
+        "status": "review",
+        "match_type": "synonym",
+        "gbifID": 5938257522
+    }
+}

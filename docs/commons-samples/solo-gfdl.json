@@ -1,0 +1,67 @@
+{
+    "_fecha": "2026-10-01",
+    "_nota": "Fichero real con licencia GFDL sola (sin CC): extmetadata no trae License (solo LicenseShortName «GFDL») → none.",
+    "imageinfo": {
+        "batchcomplete": "",
+        "query": {
+            "pages": {
+                "19277438": {
+                    "pageid": 19277438,
+                    "ns": 6,
+                    "title": "File:\"Digitalis ciliata\".jpg",
+                    "imagerepository": "local",
+                    "imageinfo": [
+                        {
+                            "size": 117194,
+                            "width": 480,
+                            "height": 640,
+                            "thumburl": "https://upload.wikimedia.org/wikipedia/commons/7/74/%22Digitalis_ciliata%22.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+                            "thumbwidth": 500,
+                            "thumbheight": 667,
+                            "url": "https://upload.wikimedia.org/wikipedia/commons/7/74/%22Digitalis_ciliata%22.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+                            "descriptionurl": "https://commons.wikimedia.org/wiki/File:%22Digitalis_ciliata%22.jpg",
+                            "descriptionshorturl": "https://commons.wikimedia.org/w/index.php?curid=19277438",
+                            "extmetadata": {
+                                "Credit": {
+                                    "value": "<a rel=\"nofollow\" class=\"external free\" href=\"http://luirig.altervista.org/flora/digitalis.htm\">http://luirig.altervista.org/flora/digitalis.htm</a>",
+                                    "source": "commons-desc-page"
+                                },
+                                "Artist": {
+                                    "value": "Kurt Stueber",
+                                    "source": "commons-desc-page"
+                                },
+                                "LicenseShortName": {
+                                    "value": "GFDL",
+                                    "source": "commons-desc-page",
+                                    "hidden": ""
+                                },
+                                "UsageTerms": {
+                                    "value": "GNU Free Documentation License",
+                                    "source": "commons-desc-page"
+                                },
+                                "AttributionRequired": {
+                                    "value": "true",
+                                    "source": "commons-desc-page",
+                                    "hidden": ""
+                                },
+                                "LicenseUrl": {
+                                    "value": "http://www.gnu.org/copyleft/fdl.html",
+                                    "source": "commons-desc-page"
+                                },
+                                "Copyrighted": {
+                                    "value": "True",
+                                    "source": "commons-desc-page",
+                                    "hidden": ""
+                                }
+                            },
+                            "mime": "image/jpeg"
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    "expected": {
+        "status": "none"
+    }
+}

@@ -1,0 +1,38 @@
+{
+    "_nota": "Subespecie de EIDOS que en GBIF es sinónimo de la ESPECIE Sideritis glacialis (acceptedUsageKey = speciesKey): sus fotos pueden ser de otra subespecie → none.",
+    "_fecha": "2026-10-01",
+    "species": {
+        "name": "Sideritis glacialis subsp. virens",
+        "rank": "Subspecies",
+        "kingdom": "Plantae"
+    },
+    "match": {
+        "usageKey": 3891094,
+        "acceptedUsageKey": 7307755,
+        "scientificName": "Sideritis glacialis subsp. virens (Boiss.) Obón & D.Rivera",
+        "canonicalName": "Sideritis glacialis virens",
+        "rank": "SUBSPECIES",
+        "status": "SYNONYM",
+        "confidence": 100,
+        "matchType": "EXACT",
+        "kingdom": "Plantae",
+        "phylum": "Tracheophyta",
+        "order": "Lamiales",
+        "family": "Lamiaceae",
+        "genus": "Sideritis",
+        "species": "Sideritis glacialis",
+        "kingdomKey": 6,
+        "phylumKey": 7707728,
+        "classKey": 220,
+        "orderKey": 408,
+        "familyKey": 2497,
+        "genusKey": 2926685,
+        "speciesKey": 7307755,
+        "class": "Magnoliopsida"
+    },
+    "occurrences": null,
+    "expected": {
+        "status": "none",
+        "match_type": null
+    }
+}

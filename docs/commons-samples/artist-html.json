@@ -1,0 +1,73 @@
+{
+    "_fecha": "2026-10-01",
+    "_nota": "Artist con HTML anidado (plantilla Creator): el crédito queda en texto plano.",
+    "imageinfo": {
+        "batchcomplete": "",
+        "query": {
+            "pages": {
+                "186103334": {
+                    "pageid": 186103334,
+                    "ns": 6,
+                    "title": "File:COI00042089 - Atropa baetica - Willkomm, Heinrich Moritz - 1230.jpg",
+                    "imagerepository": "local",
+                    "imageinfo": [
+                        {
+                            "size": 863623,
+                            "width": 2592,
+                            "height": 4096,
+                            "thumburl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6e/COI00042089_-_Atropa_baetica_-_Willkomm%2C_Heinrich_Moritz_-_1230.jpg/500px-COI00042089_-_Atropa_baetica_-_Willkomm%2C_Heinrich_Moritz_-_1230.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+                            "thumbwidth": 500,
+                            "thumbheight": 790,
+                            "url": "https://upload.wikimedia.org/wikipedia/commons/6/6e/COI00042089_-_Atropa_baetica_-_Willkomm%2C_Heinrich_Moritz_-_1230.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+                            "descriptionurl": "https://commons.wikimedia.org/wiki/File:COI00042089_-_Atropa_baetica_-_Willkomm,_Heinrich_Moritz_-_1230.jpg",
+                            "descriptionshorturl": "https://commons.wikimedia.org/w/index.php?curid=186103334",
+                            "extmetadata": {
+                                "Credit": {
+                                    "value": "<a rel=\"nofollow\" class=\"external text\" href=\"http://coicatalogue.uc.pt/specimen/COI00042089\">Herbarium of the University of Coimbra (COI)</a> <span class=\"mw-valign-text-top noprint\" typeof=\"mw:File/Frameless\"><a href=\"//commons.wikimedia.org/wiki/File:COI00042089_-_Atropa_baetica_-_Willkomm,_Heinrich_Moritz_-_1230.jpg#P7482\" title=\"Edit this at Structured Data on Commons\"><img alt=\"Edit this at Structured Data on Commons\" src=\"https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8a/OOjs_UI_icon_edit-ltr-progressive.svg/20px-OOjs_UI_icon_edit-ltr-progressive.svg.png?utm_source=commons.wikimedia.org&amp;utm_campaign=parser&amp;utm_content=thumbnail\" decoding=\"async\" loading=\"lazy\" width=\"10\" height=\"10\" class=\"mw-file-element\" data-file-width=\"20\" data-file-height=\"20\"></a></span>",
+                                    "source": "commons-desc-page"
+                                },
+                                "Artist": {
+                                    "value": "<a href=\"https://www.wikidata.org/wiki/Q55829070\" class=\"extiw\" title=\"d:Q55829070\"><span title=\"herbarium\">Herbarium of the University of Coimbra (COI)</span></a> <span class=\"mw-valign-text-top noprint\" typeof=\"mw:File/Frameless\"><a href=\"//commons.wikimedia.org/wiki/File:COI00042089_-_Atropa_baetica_-_Willkomm,_Heinrich_Moritz_-_1230.jpg#P170\" title=\"Edit this at Structured Data on Commons\"><img alt=\"Edit this at Structured Data on Commons\" src=\"https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8a/OOjs_UI_icon_edit-ltr-progressive.svg/20px-OOjs_UI_icon_edit-ltr-progressive.svg.png?utm_source=commons.wikimedia.org&amp;utm_campaign=parser&amp;utm_content=thumbnail\" decoding=\"async\" loading=\"lazy\" width=\"10\" height=\"10\" class=\"mw-file-element\" data-file-width=\"20\" data-file-height=\"20\"></a></span>",
+                                    "source": "commons-desc-page"
+                                },
+                                "LicenseShortName": {
+                                    "value": "CC BY 4.0",
+                                    "source": "commons-desc-page",
+                                    "hidden": ""
+                                },
+                                "UsageTerms": {
+                                    "value": "Creative Commons Attribution 4.0",
+                                    "source": "commons-desc-page"
+                                },
+                                "AttributionRequired": {
+                                    "value": "true",
+                                    "source": "commons-desc-page",
+                                    "hidden": ""
+                                },
+                                "LicenseUrl": {
+                                    "value": "https://creativecommons.org/licenses/by/4.0",
+                                    "source": "commons-desc-page"
+                                },
+                                "Copyrighted": {
+                                    "value": "True",
+                                    "source": "commons-desc-page",
+                                    "hidden": ""
+                                },
+                                "License": {
+                                    "value": "cc-by-4.0",
+                                    "source": "commons-templates",
+                                    "hidden": ""
+                                }
+                            },
+                            "mime": "image/jpeg"
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    "expected": {
+        "status": "ok",
+        "attribution": "Herbarium of the University of Coimbra (COI)"
+    }
+}

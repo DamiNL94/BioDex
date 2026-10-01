@@ -1,0 +1,171 @@
+{
+    "_fecha": "2026-10-01",
+    "_nota": "Agathis es género de coníferas y de avispas: dos elementos con P225 «Agathis montana» → ambiguo → none.",
+    "species": {
+        "name": "Agathis montana",
+        "rank": "Species",
+        "kingdom": "Plantae"
+    },
+    "search": {
+        "batchcomplete": "",
+        "query": {
+            "searchinfo": {
+                "totalhits": 2
+            },
+            "search": [
+                {
+                    "ns": 0,
+                    "title": "Q2599422",
+                    "pageid": 2507717,
+                    "size": 37051,
+                    "wordcount": 172,
+                    "snippet": "Agathis montana\nAgathis montana\nAgathis montana\nAgathis montana\nAgathis montana\nAgathis montana\nAgathis montana\nAgathis montana\nAgathis montana\nAgathis",
+                    "timestamp": "2026-08-22T07:11:42Z"
+                },
+                {
+                    "ns": 0,
+                    "title": "Q17405678",
+                    "pageid": 19001884,
+                    "size": 26828,
+                    "wordcount": 154,
+                    "snippet": "Agathis montana\nAgathis montana\nAgathis montana\nAgathis montana\nAgathis montana\nAgathis montana\nAgathis montana\nAgathis montana\nAgathis montana\nAgathis",
+                    "timestamp": "2026-06-23T12:17:28Z"
+                }
+            ]
+        }
+    },
+    "entities": {
+        "entities": {
+            "Q2599422": {
+                "type": "item",
+                "id": "Q2599422",
+                "claims": {
+                    "P105": [
+                        {
+                            "mainsnak": {
+                                "snaktype": "value",
+                                "property": "P105",
+                                "datavalue": {
+                                    "value": {
+                                        "entity-type": "item",
+                                        "numeric-id": 7432,
+                                        "id": "Q7432"
+                                    },
+                                    "type": "wikibase-entityid"
+                                }
+                            },
+                            "type": "statement",
+                            "rank": "normal"
+                        }
+                    ],
+                    "P225": [
+                        {
+                            "mainsnak": {
+                                "snaktype": "value",
+                                "property": "P225",
+                                "datavalue": {
+                                    "value": "Agathis montana",
+                                    "type": "string"
+                                }
+                            },
+                            "type": "statement",
+                            "rank": "normal"
+                        }
+                    ],
+                    "P31": [
+                        {
+                            "mainsnak": {
+                                "snaktype": "value",
+                                "property": "P31",
+                                "datavalue": {
+                                    "value": {
+                                        "entity-type": "item",
+                                        "numeric-id": 16521,
+                                        "id": "Q16521"
+                                    },
+                                    "type": "wikibase-entityid"
+                                }
+                            },
+                            "type": "statement",
+                            "rank": "normal"
+                        }
+                    ],
+                    "P18": [
+                        {
+                            "mainsnak": {
+                                "snaktype": "value",
+                                "property": "P18",
+                                "datavalue": {
+                                    "value": "Agathis montana de Laub.jpg",
+                                    "type": "string"
+                                }
+                            },
+                            "type": "statement",
+                            "rank": "normal"
+                        }
+                    ]
+                }
+            },
+            "Q17405678": {
+                "type": "item",
+                "id": "Q17405678",
+                "claims": {
+                    "P31": [
+                        {
+                            "mainsnak": {
+                                "snaktype": "value",
+                                "property": "P31",
+                                "datavalue": {
+                                    "value": {
+                                        "entity-type": "item",
+                                        "numeric-id": 16521,
+                                        "id": "Q16521"
+                                    },
+                                    "type": "wikibase-entityid"
+                                }
+                            },
+                            "type": "statement",
+                            "rank": "normal"
+                        }
+                    ],
+                    "P225": [
+                        {
+                            "mainsnak": {
+                                "snaktype": "value",
+                                "property": "P225",
+                                "datavalue": {
+                                    "value": "Agathis montana",
+                                    "type": "string"
+                                }
+                            },
+                            "type": "statement",
+                            "rank": "normal"
+                        }
+                    ],
+                    "P105": [
+                        {
+                            "mainsnak": {
+                                "snaktype": "value",
+                                "property": "P105",
+                                "datavalue": {
+                                    "value": {
+                                        "entity-type": "item",
+                                        "numeric-id": 7432,
+                                        "id": "Q7432"
+                                    },
+                                    "type": "wikibase-entityid"
+                                }
+                            },
+                            "type": "statement",
+                            "rank": "normal"
+                        }
+                    ]
+                }
+            }
+        },
+        "success": 1
+    },
+    "expected": {
+        "status": "none"
+    }
+}

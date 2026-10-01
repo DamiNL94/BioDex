@@ -1,0 +1,35 @@
+{
+    "_nota": "Grafía con otra terminación (lepida/lepidus): GBIF da FUZZY aunque strict=true → none.",
+    "_fecha": "2026-10-01",
+    "species": {
+        "name": "Timon lepida",
+        "rank": "Species",
+        "kingdom": "Animalia"
+    },
+    "match": {
+        "usageKey": 2468542,
+        "scientificName": "Timon lepidus (Daudin, 1802)",
+        "canonicalName": "Timon lepidus",
+        "rank": "SPECIES",
+        "status": "ACCEPTED",
+        "confidence": 99,
+        "matchType": "FUZZY",
+        "kingdom": "Animalia",
+        "phylum": "Chordata",
+        "family": "Lacertidae",
+        "genus": "Timon",
+        "species": "Timon lepidus",
+        "kingdomKey": 1,
+        "phylumKey": 44,
+        "classKey": 11592253,
+        "familyKey": 5201,
+        "genusKey": 2468528,
+        "speciesKey": 2468542,
+        "class": "Squamata"
+    },
+    "occurrences": null,
+    "expected": {
+        "status": "none",
+        "match_type": null
+    }
+}

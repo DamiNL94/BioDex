@@ -1,0 +1,118 @@
+{
+    "_fecha": "2026-10-01",
+    "_nota": "El plátano de sombra es en Wikidata una notoespecie (P105 = Q1306176), no una especie (Q7432) como lo da EIDOS → none.",
+    "species": {
+        "name": "Platanus × hispanica",
+        "rank": "Species",
+        "kingdom": "Plantae"
+    },
+    "search": {
+        "batchcomplete": "",
+        "query": {
+            "searchinfo": {
+                "totalhits": 1
+            },
+            "search": [
+                {
+                    "ns": 0,
+                    "title": "Q161374",
+                    "pageid": 162226,
+                    "size": 67190,
+                    "wordcount": 402,
+                    "snippet": "英桐\n英桐\n英桐\n英桐\n英桐\n英桐\nPlatanus × hispanica\nPlatanus × hispanica\nplatan klonolistny\nalbo\nplatane commun\nПлатан клёнолистный\nPlatanus × hispanica\nLondra çınarı",
+                    "timestamp": "2026-09-20T17:45:21Z"
+                }
+            ]
+        }
+    },
+    "entities": {
+        "entities": {
+            "Q161374": {
+                "type": "item",
+                "id": "Q161374",
+                "claims": {
+                    "P105": [
+                        {
+                            "mainsnak": {
+                                "snaktype": "value",
+                                "property": "P105",
+                                "datavalue": {
+                                    "value": {
+                                        "entity-type": "item",
+                                        "numeric-id": 1306176,
+                                        "id": "Q1306176"
+                                    },
+                                    "type": "wikibase-entityid"
+                                }
+                            },
+                            "type": "statement",
+                            "rank": "normal"
+                        }
+                    ],
+                    "P18": [
+                        {
+                            "mainsnak": {
+                                "snaktype": "value",
+                                "property": "P18",
+                                "datavalue": {
+                                    "value": "PlatanusAcerifoliaTrunk.jpg",
+                                    "type": "string"
+                                }
+                            },
+                            "type": "statement",
+                            "rank": "normal"
+                        },
+                        {
+                            "mainsnak": {
+                                "snaktype": "value",
+                                "property": "P18",
+                                "datavalue": {
+                                    "value": "London Plane Larousse Extracted.png",
+                                    "type": "string"
+                                }
+                            },
+                            "type": "statement",
+                            "rank": "normal"
+                        }
+                    ],
+                    "P225": [
+                        {
+                            "mainsnak": {
+                                "snaktype": "value",
+                                "property": "P225",
+                                "datavalue": {
+                                    "value": "Platanus × hispanica",
+                                    "type": "string"
+                                }
+                            },
+                            "type": "statement",
+                            "rank": "normal"
+                        }
+                    ],
+                    "P31": [
+                        {
+                            "mainsnak": {
+                                "snaktype": "value",
+                                "property": "P31",
+                                "datavalue": {
+                                    "value": {
+                                        "entity-type": "item",
+                                        "numeric-id": 136343650,
+                                        "id": "Q136343650"
+                                    },
+                                    "type": "wikibase-entityid"
+                                }
+                            },
+                            "type": "statement",
+                            "rank": "normal"
+                        }
+                    ]
+                }
+            }
+        },
+        "success": 1
+    },
+    "expected": {
+        "status": "none"
+    }
+}

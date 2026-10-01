@@ -1,0 +1,37 @@
+{
+    "_nota": "Morus es género de aves (alcatraces) y de plantas (moreras). Respuesta real de GBIF para «Morus alba» (sin el parámetro kingdom); si EIDOS dijera Animalia, un match en Plantae no vale aunque sea EXACT → none.",
+    "_fecha": "2026-10-01",
+    "species": {
+        "name": "Morus alba",
+        "rank": "Species",
+        "kingdom": "Animalia"
+    },
+    "match": {
+        "usageKey": 5361889,
+        "scientificName": "Morus alba L.",
+        "canonicalName": "Morus alba",
+        "rank": "SPECIES",
+        "status": "ACCEPTED",
+        "confidence": 98,
+        "matchType": "EXACT",
+        "kingdom": "Plantae",
+        "phylum": "Tracheophyta",
+        "order": "Rosales",
+        "family": "Moraceae",
+        "genus": "Morus",
+        "species": "Morus alba",
+        "kingdomKey": 6,
+        "phylumKey": 7707728,
+        "classKey": 220,
+        "orderKey": 691,
+        "familyKey": 6640,
+        "genusKey": 2984545,
+        "speciesKey": 5361889,
+        "class": "Magnoliopsida"
+    },
+    "occurrences": null,
+    "expected": {
+        "status": "none",
+        "match_type": null
+    }
+}

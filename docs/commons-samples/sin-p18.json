@@ -1,0 +1,92 @@
+{
+    "_fecha": "2026-10-01",
+    "_nota": "Endemismo de Sierra Nevada: el elemento existe (Q17133520) pero no tiene imagen (P18) → none.",
+    "species": {
+        "name": "Laserpitium longiradium",
+        "rank": "Species",
+        "kingdom": "Plantae"
+    },
+    "search": {
+        "batchcomplete": "",
+        "query": {
+            "searchinfo": {
+                "totalhits": 1
+            },
+            "search": [
+                {
+                    "ns": 0,
+                    "title": "Q17133520",
+                    "pageid": 18727104,
+                    "size": 26328,
+                    "wordcount": 135,
+                    "snippet": "Laserpitium longiradium\nLaserpitium longiradium\nLaserpitium longiradium\nLaserpitium longiradium\nLaserpitium longiradium\nLaserpitium longiradium\nLaserpitium",
+                    "timestamp": "2026-08-25T23:49:50Z"
+                }
+            ]
+        }
+    },
+    "entities": {
+        "entities": {
+            "Q17133520": {
+                "type": "item",
+                "id": "Q17133520",
+                "claims": {
+                    "P225": [
+                        {
+                            "mainsnak": {
+                                "snaktype": "value",
+                                "property": "P225",
+                                "datavalue": {
+                                    "value": "Laserpitium longiradium",
+                                    "type": "string"
+                                }
+                            },
+                            "type": "statement",
+                            "rank": "normal"
+                        }
+                    ],
+                    "P105": [
+                        {
+                            "mainsnak": {
+                                "snaktype": "value",
+                                "property": "P105",
+                                "datavalue": {
+                                    "value": {
+                                        "entity-type": "item",
+                                        "numeric-id": 7432,
+                                        "id": "Q7432"
+                                    },
+                                    "type": "wikibase-entityid"
+                                }
+                            },
+                            "type": "statement",
+                            "rank": "normal"
+                        }
+                    ],
+                    "P31": [
+                        {
+                            "mainsnak": {
+                                "snaktype": "value",
+                                "property": "P31",
+                                "datavalue": {
+                                    "value": {
+                                        "entity-type": "item",
+                                        "numeric-id": 16521,
+                                        "id": "Q16521"
+                                    },
+                                    "type": "wikibase-entityid"
+                                }
+                            },
+                            "type": "statement",
+                            "rank": "normal"
+                        }
+                    ]
+                }
+            }
+        },
+        "success": 1
+    },
+    "expected": {
+        "status": "none"
+    }
+}

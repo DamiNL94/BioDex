@@ -1,0 +1,174 @@
+{
+    "_fecha": "2026-10-01",
+    "_nota": "Un solo elemento (Q15544927) con P225 exacto, rango especie, P31 taxón y P18; la foto es CC BY-SA 4.0 y el Artist trae un enlace HTML.",
+    "species": {
+        "name": "Achillea pyrenaica",
+        "rank": "Species",
+        "kingdom": "Plantae"
+    },
+    "search": {
+        "batchcomplete": "",
+        "query": {
+            "searchinfo": {
+                "totalhits": 1
+            },
+            "search": [
+                {
+                    "ns": 0,
+                    "title": "Q15544927",
+                    "pageid": 17184465,
+                    "size": 28991,
+                    "wordcount": 149,
+                    "snippet": "Achillea pyrenaica\nAchillea pyrenaica\nAchillea pyrenaica\nAchillea pyrenaica\nAchillea pyrenaica\nAchillea pyrenaica\nAchillea pyrenaica\nAchillea pyrenaica",
+                    "timestamp": "2026-02-28T06:40:59Z"
+                }
+            ]
+        }
+    },
+    "entities": {
+        "entities": {
+            "Q15544927": {
+                "type": "item",
+                "id": "Q15544927",
+                "claims": {
+                    "P225": [
+                        {
+                            "mainsnak": {
+                                "snaktype": "value",
+                                "property": "P225",
+                                "datavalue": {
+                                    "value": "Achillea pyrenaica",
+                                    "type": "string"
+                                }
+                            },
+                            "type": "statement",
+                            "rank": "normal"
+                        }
+                    ],
+                    "P105": [
+                        {
+                            "mainsnak": {
+                                "snaktype": "value",
+                                "property": "P105",
+                                "datavalue": {
+                                    "value": {
+                                        "entity-type": "item",
+                                        "numeric-id": 7432,
+                                        "id": "Q7432"
+                                    },
+                                    "type": "wikibase-entityid"
+                                }
+                            },
+                            "type": "statement",
+                            "rank": "normal"
+                        }
+                    ],
+                    "P31": [
+                        {
+                            "mainsnak": {
+                                "snaktype": "value",
+                                "property": "P31",
+                                "datavalue": {
+                                    "value": {
+                                        "entity-type": "item",
+                                        "numeric-id": 16521,
+                                        "id": "Q16521"
+                                    },
+                                    "type": "wikibase-entityid"
+                                }
+                            },
+                            "type": "statement",
+                            "rank": "normal"
+                        }
+                    ],
+                    "P18": [
+                        {
+                            "mainsnak": {
+                                "snaktype": "value",
+                                "property": "P18",
+                                "datavalue": {
+                                    "value": "ACHILLEA PYRENAICA - GENTO - IB-907 (Camamilla de muntanya).jpg",
+                                    "type": "string"
+                                }
+                            },
+                            "type": "statement",
+                            "rank": "normal"
+                        }
+                    ]
+                }
+            }
+        },
+        "success": 1
+    },
+    "imageinfo": {
+        "batchcomplete": "",
+        "query": {
+            "pages": {
+                "50755194": {
+                    "pageid": 50755194,
+                    "ns": 6,
+                    "title": "File:ACHILLEA PYRENAICA - GENTO - IB-907 (Camamilla de muntanya).jpg",
+                    "imagerepository": "local",
+                    "imageinfo": [
+                        {
+                            "size": 1008681,
+                            "width": 2048,
+                            "height": 1536,
+                            "thumburl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0d/ACHILLEA_PYRENAICA_-_GENTO_-_IB-907_%28Camamilla_de_muntanya%29.jpg/500px-ACHILLEA_PYRENAICA_-_GENTO_-_IB-907_%28Camamilla_de_muntanya%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+                            "thumbwidth": 500,
+                            "thumbheight": 375,
+                            "url": "https://upload.wikimedia.org/wikipedia/commons/0/0d/ACHILLEA_PYRENAICA_-_GENTO_-_IB-907_%28Camamilla_de_muntanya%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+                            "descriptionurl": "https://commons.wikimedia.org/wiki/File:ACHILLEA_PYRENAICA_-_GENTO_-_IB-907_(Camamilla_de_muntanya).jpg",
+                            "descriptionshorturl": "https://commons.wikimedia.org/w/index.php?curid=50755194",
+                            "extmetadata": {
+                                "Credit": {
+                                    "value": "<span class=\"int-own-work\" lang=\"en\">Own work</span>",
+                                    "source": "commons-desc-page"
+                                },
+                                "Artist": {
+                                    "value": "<a href=\"//commons.wikimedia.org/wiki/User:Isidre_blanc\" title=\"User:Isidre blanc\">Isidre blanc</a>",
+                                    "source": "commons-desc-page"
+                                },
+                                "LicenseShortName": {
+                                    "value": "CC BY-SA 4.0",
+                                    "source": "commons-desc-page",
+                                    "hidden": ""
+                                },
+                                "UsageTerms": {
+                                    "value": "Creative Commons Attribution-Share Alike 4.0",
+                                    "source": "commons-desc-page"
+                                },
+                                "AttributionRequired": {
+                                    "value": "true",
+                                    "source": "commons-desc-page",
+                                    "hidden": ""
+                                },
+                                "LicenseUrl": {
+                                    "value": "https://creativecommons.org/licenses/by-sa/4.0",
+                                    "source": "commons-desc-page"
+                                },
+                                "Copyrighted": {
+                                    "value": "True",
+                                    "source": "commons-desc-page",
+                                    "hidden": ""
+                                },
+                                "License": {
+                                    "value": "cc-by-sa-4.0",
+                                    "source": "commons-templates",
+                                    "hidden": ""
+                                }
+                            },
+                            "mime": "image/jpeg"
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    "expected": {
+        "status": "ok",
+        "license": "cc-by-sa",
+        "license_version": "4.0",
+        "attribution": "Isidre blanc"
+    }
+}

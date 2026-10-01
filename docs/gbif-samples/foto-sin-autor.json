@@ -1,0 +1,140 @@
+{
+    "_nota": "Dos ocurrencias reales (CC BY y CC BY-NC); a la PRIMERA se le han quitado creator y rightsHolder (en la muestra real no aparecía ninguna foto CC sin autor): se salta y gana la segunda.",
+    "_fecha": "2026-10-01",
+    "species": {
+        "name": "Achillea pyrenaica",
+        "rank": "Species",
+        "kingdom": "Plantae"
+    },
+    "match": {
+        "usageKey": 8011422,
+        "scientificName": "Achillea pyrenaica Sibth. ex DC.",
+        "canonicalName": "Achillea pyrenaica",
+        "rank": "SPECIES",
+        "status": "ACCEPTED",
+        "confidence": 100,
+        "matchType": "EXACT",
+        "kingdom": "Plantae",
+        "phylum": "Tracheophyta",
+        "order": "Asterales",
+        "family": "Asteraceae",
+        "genus": "Achillea",
+        "species": "Achillea pyrenaica",
+        "kingdomKey": 6,
+        "phylumKey": 7707728,
+        "classKey": 220,
+        "orderKey": 414,
+        "familyKey": 3065,
+        "genusKey": 3119995,
+        "speciesKey": 8011422,
+        "class": "Magnoliopsida"
+    },
+    "occurrences": {
+        "ES": {
+            "offset": 0,
+            "limit": 50,
+            "endOfRecords": true,
+            "count": 2,
+            "results": [
+                {
+                    "key": 4923840410,
+                    "datasetKey": "50c9509d-22c7-4a22-a47d-8c48425ef4a7",
+                    "basisOfRecord": "HUMAN_OBSERVATION",
+                    "taxonKey": 8011422,
+                    "speciesKey": 8011422,
+                    "acceptedTaxonKey": 8011422,
+                    "scientificName": "Achillea pyrenaica Sibth. ex DC.",
+                    "acceptedScientificName": "Achillea pyrenaica Sibth. ex DC.",
+                    "taxonRank": "SPECIES",
+                    "issues": [
+                        "COORDINATE_ROUNDED",
+                        "CONTINENT_DERIVED_FROM_COORDINATES",
+                        "TAXON_ID_NOT_FOUND"
+                    ],
+                    "license": "http://creativecommons.org/licenses/by/4.0/legalcode",
+                    "countryCode": "ES",
+                    "media": [
+                        {
+                            "type": "StillImage",
+                            "format": "image/jpeg",
+                            "references": "https://www.inaturalist.org/photos/417608203",
+                            "publisher": "iNaturalist",
+                            "license": "http://creativecommons.org/licenses/by/4.0/",
+                            "identifier": "https://inaturalist-open-data.s3.amazonaws.com/photos/417608203/original.jpeg"
+                        },
+                        {
+                            "type": "StillImage",
+                            "format": "image/jpeg",
+                            "references": "https://www.inaturalist.org/photos/417608252",
+                            "publisher": "iNaturalist",
+                            "license": "http://creativecommons.org/licenses/by/4.0/",
+                            "identifier": "https://inaturalist-open-data.s3.amazonaws.com/photos/417608252/original.jpeg"
+                        },
+                        {
+                            "type": "StillImage",
+                            "format": "image/jpeg",
+                            "references": "https://www.inaturalist.org/photos/417608304",
+                            "publisher": "iNaturalist",
+                            "license": "http://creativecommons.org/licenses/by/4.0/",
+                            "identifier": "https://inaturalist-open-data.s3.amazonaws.com/photos/417608304/original.jpeg"
+                        },
+                        {
+                            "type": "StillImage",
+                            "format": "image/jpeg",
+                            "references": "https://www.inaturalist.org/photos/417608356",
+                            "publisher": "iNaturalist",
+                            "license": "http://creativecommons.org/licenses/by/4.0/",
+                            "identifier": "https://inaturalist-open-data.s3.amazonaws.com/photos/417608356/original.jpeg"
+                        }
+                    ]
+                },
+                {
+                    "key": 6430818811,
+                    "datasetKey": "50c9509d-22c7-4a22-a47d-8c48425ef4a7",
+                    "basisOfRecord": "HUMAN_OBSERVATION",
+                    "taxonKey": 8011422,
+                    "speciesKey": 8011422,
+                    "acceptedTaxonKey": 8011422,
+                    "scientificName": "Achillea pyrenaica Sibth. ex DC.",
+                    "acceptedScientificName": "Achillea pyrenaica Sibth. ex DC.",
+                    "taxonRank": "SPECIES",
+                    "issues": [
+                        "COORDINATE_ROUNDED",
+                        "CONTINENT_DERIVED_FROM_COORDINATES",
+                        "TAXON_ID_NOT_FOUND"
+                    ],
+                    "license": "http://creativecommons.org/licenses/by-nc/4.0/legalcode",
+                    "countryCode": "ES",
+                    "media": [
+                        {
+                            "type": "StillImage",
+                            "format": "image/jpeg",
+                            "references": "https://www.inaturalist.org/photos/690628379",
+                            "creator": "Alba Rovira",
+                            "publisher": "iNaturalist",
+                            "license": "http://creativecommons.org/licenses/by-nc/4.0/",
+                            "rightsHolder": "Alba Rovira",
+                            "identifier": "https://inaturalist-open-data.s3.amazonaws.com/photos/690628379/original.jpg"
+                        },
+                        {
+                            "type": "StillImage",
+                            "format": "image/jpeg",
+                            "references": "https://www.inaturalist.org/photos/690628383",
+                            "creator": "Alba Rovira",
+                            "publisher": "iNaturalist",
+                            "license": "http://creativecommons.org/licenses/by-nc/4.0/",
+                            "rightsHolder": "Alba Rovira",
+                            "identifier": "https://inaturalist-open-data.s3.amazonaws.com/photos/690628383/original.jpg"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "expected": {
+        "status": "ok",
+        "match_type": "exact",
+        "gbifID": 6430818811,
+        "skipped": 4923840410
+    }
+}
