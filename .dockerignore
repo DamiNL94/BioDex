@@ -1,0 +1,9 @@
+# Contexto de la imagen de Railway (Dockerfile de la raíz): solo backend, frontend, shared, VERSION y docker/
+.git
+.env
+mysql-data/
+node_modules/
+docs/
+*.pdf
+docker/nginx/certs/
+frontend/tests/

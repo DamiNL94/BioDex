@@ -66,6 +66,8 @@ Los iconos de la PWA salen de `backend/bin/make-icons.php` (necesita ext-gd, que
 `php -d extension=gd backend/bin/make-icons.php` en el anfitrión.
 
 ## Probar en el móvil
+Lo más cómodo: el despliegue de prueba en Railway (HTTPS real, sin certificados locales) → `docs/railway.md`.
+
 El GPS y el Service Worker solo funcionan en contexto seguro (HTTPS o `localhost`). Dos formas:
 
 ### A. HTTPS local con mkcert (puerto 8443)
