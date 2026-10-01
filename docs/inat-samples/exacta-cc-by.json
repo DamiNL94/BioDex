@@ -1,0 +1,75 @@
+{
+    "_note": "Exacta, especie, CC BY → ok.",
+    "_source": "Respuesta real de GET https://api.inaturalist.org/v1/taxa?q=<q>&is_active=true&per_page=10 (2026-10-01), recortada a los campos que usa inatDecide().",
+    "species": {
+        "name": "Turdus merula",
+        "rank": "Species",
+        "kingdom": "Animalia",
+        "synonyms": []
+    },
+    "expected": {
+        "status": "ok",
+        "match_type": "exact"
+    },
+    "response": {
+        "total_results": 3,
+        "page": 1,
+        "per_page": 10,
+        "results": [
+            {
+                "id": 12716,
+                "rank": "species",
+                "is_active": true,
+                "name": "Turdus merula",
+                "default_photo": {
+                    "id": 356885346,
+                    "license_code": "cc-by",
+                    "attribution": "(c) Luiz Lapa, some rights reserved (CC BY)",
+                    "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/356885346/square.jpg",
+                    "flags": [],
+                    "square_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/356885346/square.jpg",
+                    "medium_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/356885346/medium.jpg"
+                },
+                "matched_term": "Turdus merula",
+                "iconic_taxon_name": "Aves",
+                "preferred_common_name": "Eurasian Blackbird"
+            },
+            {
+                "id": 342088,
+                "rank": "subspecies",
+                "is_active": true,
+                "name": "Turdus merula cabrerae",
+                "default_photo": {
+                    "id": 633887414,
+                    "license_code": "cc-by-nc",
+                    "attribution": "(c) Raoul Gerend, some rights reserved (CC BY-NC), uploaded by Raoul Gerend",
+                    "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/633887414/square.jpg",
+                    "flags": [],
+                    "square_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/633887414/square.jpg",
+                    "medium_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/633887414/medium.jpg"
+                },
+                "matched_term": "Turdus merula cabrerae",
+                "iconic_taxon_name": "Aves",
+                "preferred_common_name": "Canarian Blackbird"
+            },
+            {
+                "id": 732010,
+                "rank": "subspecies",
+                "is_active": true,
+                "name": "Turdus merula syriacus",
+                "default_photo": {
+                    "id": 278396899,
+                    "license_code": null,
+                    "attribution": "(c) Jake Smith, all rights reserved, uploaded by Jake Smith",
+                    "url": "https://static.inaturalist.org/photos/278396899/square.jpg",
+                    "flags": [],
+                    "square_url": "https://static.inaturalist.org/photos/278396899/square.jpg",
+                    "medium_url": "https://static.inaturalist.org/photos/278396899/medium.jpg"
+                },
+                "matched_term": "Turdus merula syriacus",
+                "iconic_taxon_name": "Aves",
+                "preferred_common_name": "Levant blackbird"
+            }
+        ]
+    }
+}

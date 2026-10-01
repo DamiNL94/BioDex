@@ -1,0 +1,58 @@
+{
+    "_note": "Construido con resultados reales: para «Atropa baetica» solo llegan otra especie del género (Atropa bella-donna) y un híbrido → none.",
+    "_source": "Respuesta real de GET https://api.inaturalist.org/v1/taxa?q=<q>&is_active=true&per_page=10 (2026-10-01), recortada a los campos que usa inatDecide(). Ver la nota.",
+    "species": {
+        "name": "Atropa baetica",
+        "rank": "Species",
+        "kingdom": "Plantae",
+        "synonyms": [
+            "Atropa belladonna subsp. baetica (Willk.) Font Quer"
+        ]
+    },
+    "expected": {
+        "status": "none",
+        "match_type": null
+    },
+    "response": {
+        "total_results": 2,
+        "page": 1,
+        "per_page": 10,
+        "results": [
+            {
+                "id": 159098,
+                "rank": "species",
+                "is_active": true,
+                "name": "Atropa bella-donna",
+                "default_photo": {
+                    "id": 9372,
+                    "license_code": "cc-by-nc-sa",
+                    "attribution": "(c) AnneTanne, some rights reserved (CC BY-NC-SA)",
+                    "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/9372/square.jpg",
+                    "flags": [],
+                    "square_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/9372/square.jpg",
+                    "medium_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/9372/medium.jpg"
+                },
+                "matched_term": "Atropa belladonna belladonna",
+                "iconic_taxon_name": "Plantae",
+                "preferred_common_name": "Deadly Nightshade"
+            },
+            {
+                "id": 716504,
+                "rank": "hybrid",
+                "is_active": true,
+                "name": "Atropa × martiana",
+                "default_photo": {
+                    "id": 407017126,
+                    "license_code": "cc-by-nc-nd",
+                    "attribution": "(c) mario_mairal, some rights reserved (CC BY-NC-ND), uploaded by mario_mairal",
+                    "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/407017126/square.jpg",
+                    "flags": [],
+                    "square_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/407017126/square.jpg",
+                    "medium_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/407017126/medium.jpg"
+                },
+                "matched_term": "Atropa baetica × belladonna",
+                "iconic_taxon_name": "Plantae"
+            }
+        ]
+    }
+}

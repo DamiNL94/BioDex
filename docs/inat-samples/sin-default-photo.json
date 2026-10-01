@@ -1,0 +1,30 @@
+{
+    "_note": "Exacta, pero el taxón no tiene foto por defecto → none.",
+    "_source": "Respuesta real de GET https://api.inaturalist.org/v1/taxa?q=<q>&is_active=true&per_page=10 (2026-10-01), recortada a los campos que usa inatDecide().",
+    "species": {
+        "name": "Laserpitium longiradium",
+        "rank": "Species",
+        "kingdom": "Plantae",
+        "synonyms": []
+    },
+    "expected": {
+        "status": "none",
+        "match_type": null
+    },
+    "response": {
+        "total_results": 1,
+        "page": 1,
+        "per_page": 10,
+        "results": [
+            {
+                "id": 439489,
+                "rank": "species",
+                "is_active": true,
+                "name": "Laserpitium longiradium",
+                "default_photo": null,
+                "matched_term": "Laserpitium longiradium",
+                "iconic_taxon_name": "Plantae"
+            }
+        ]
+    }
+}

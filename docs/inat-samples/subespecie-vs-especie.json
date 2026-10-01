@@ -1,0 +1,42 @@
+{
+    "_note": "La trampa de EIDOS: las subespecies de Capra pyrenaica son SINÓNIMOS de la especie (docs/eidos.md). iNat devuelve la subespecie, cuyo nombre es un sinónimo de EIDOS, pero el rango no es compatible → none.",
+    "_source": "Respuesta real de GET https://api.inaturalist.org/v1/taxa?q=<q>&is_active=true&per_page=10 (2026-10-01), recortada a los campos que usa inatDecide().",
+    "species": {
+        "name": "Capra pyrenaica",
+        "rank": "Species",
+        "kingdom": "Animalia",
+        "synonyms": [
+            "Capra pyrenaica victoriae Cabrera, 1911",
+            "Capra pyrenaica hispanica Schimper, 1848"
+        ]
+    },
+    "expected": {
+        "status": "none",
+        "match_type": null
+    },
+    "response": {
+        "total_results": 1,
+        "page": 1,
+        "per_page": 10,
+        "results": [
+            {
+                "id": 424103,
+                "rank": "subspecies",
+                "is_active": true,
+                "name": "Capra pyrenaica victoriae",
+                "default_photo": {
+                    "id": 243222729,
+                    "license_code": "cc-by-nc",
+                    "attribution": "(c) Pablo Pozo, some rights reserved (CC BY-NC), uploaded by Pablo Pozo",
+                    "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/243222729/square.jpg",
+                    "flags": [],
+                    "square_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/243222729/square.jpg",
+                    "medium_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/243222729/medium.jpg"
+                },
+                "matched_term": "Capra pyrenaica victoriae",
+                "iconic_taxon_name": "Mammalia",
+                "preferred_common_name": "Western Spanish Ibex"
+            }
+        ]
+    }
+}

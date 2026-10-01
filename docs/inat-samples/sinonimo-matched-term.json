@@ -1,0 +1,57 @@
+{
+    "_note": "iNat acepta Timon lepidus; el término buscado (matched_term) es el nombre de EIDOS → review.",
+    "_source": "Respuesta real de GET https://api.inaturalist.org/v1/taxa?q=<q>&is_active=true&per_page=10 (2026-10-01), recortada a los campos que usa inatDecide().",
+    "species": {
+        "name": "Lacerta lepida",
+        "rank": "Species",
+        "kingdom": "Animalia",
+        "synonyms": []
+    },
+    "expected": {
+        "status": "review",
+        "match_type": "synonym"
+    },
+    "response": {
+        "total_results": 2,
+        "page": 1,
+        "per_page": 10,
+        "results": [
+            {
+                "id": 73972,
+                "rank": "species",
+                "is_active": true,
+                "name": "Timon lepidus",
+                "default_photo": {
+                    "id": 238812385,
+                    "license_code": "cc-by-nc",
+                    "attribution": "(c) Samuel Duarte, some rights reserved (CC BY-NC), uploaded by Samuel Duarte",
+                    "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/238812385/square.jpg",
+                    "flags": [],
+                    "square_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/238812385/square.jpg",
+                    "medium_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/238812385/medium.jpg"
+                },
+                "matched_term": "Lacerta lepida",
+                "iconic_taxon_name": "Reptilia",
+                "preferred_common_name": "Ocellated Lizard"
+            },
+            {
+                "id": 35466,
+                "rank": "species",
+                "is_active": true,
+                "name": "Timon pater",
+                "default_photo": {
+                    "id": 386059527,
+                    "license_code": null,
+                    "attribution": "(c) Julien Rouard - Dreamtime Nature Photography, all rights reserved, uploaded by Julien Rouard - Dreamtime Nature Photography",
+                    "url": "https://static.inaturalist.org/photos/386059527/square.jpg",
+                    "flags": [],
+                    "square_url": "https://static.inaturalist.org/photos/386059527/square.jpg",
+                    "medium_url": "https://static.inaturalist.org/photos/386059527/medium.jpg"
+                },
+                "matched_term": "Lacerta lepida pater",
+                "iconic_taxon_name": "Reptilia",
+                "preferred_common_name": "North African Ocellated Lizard"
+            }
+        ]
+    }
+}

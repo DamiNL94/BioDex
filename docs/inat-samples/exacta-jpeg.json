@@ -1,0 +1,57 @@
+{
+    "_note": "Exacta, CC BY-NC, foto .jpeg → ok (extensión jpeg).",
+    "_source": "Respuesta real de GET https://api.inaturalist.org/v1/taxa?q=<q>&is_active=true&per_page=10 (2026-10-01), recortada a los campos que usa inatDecide().",
+    "species": {
+        "name": "Narcissus nevadensis",
+        "rank": "Species",
+        "kingdom": "Plantae",
+        "synonyms": [
+            "Narcissus pseudonarcissus subsp. nevadensis (Pugsley) A.Fern."
+        ]
+    },
+    "expected": {
+        "status": "ok",
+        "match_type": "exact"
+    },
+    "response": {
+        "total_results": 2,
+        "page": 1,
+        "per_page": 10,
+        "results": [
+            {
+                "id": 436699,
+                "rank": "species",
+                "is_active": true,
+                "name": "Narcissus nevadensis",
+                "default_photo": {
+                    "id": 503903175,
+                    "license_code": "cc-by-nc",
+                    "attribution": "(c) faluke, some rights reserved (CC BY-NC), uploaded by faluke",
+                    "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/503903175/square.jpeg",
+                    "flags": [],
+                    "square_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/503903175/square.jpeg",
+                    "medium_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/503903175/medium.jpeg"
+                },
+                "matched_term": "Narcissus nevadensis",
+                "iconic_taxon_name": "Plantae"
+            },
+            {
+                "id": 437452,
+                "rank": "subspecies",
+                "is_active": true,
+                "name": "Narcissus nevadensis nevadensis",
+                "default_photo": {
+                    "id": 201352334,
+                    "license_code": "cc-by-nc",
+                    "attribution": "(c) faluke, some rights reserved (CC BY-NC), uploaded by faluke",
+                    "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/201352334/square.jpeg",
+                    "flags": [],
+                    "square_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/201352334/square.jpeg",
+                    "medium_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/201352334/medium.jpeg"
+                },
+                "matched_term": "Narcissus nevadensis nevadensis",
+                "iconic_taxon_name": "Plantae"
+            }
+        ]
+    }
+}

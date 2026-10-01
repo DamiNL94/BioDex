@@ -1,0 +1,39 @@
+{
+    "_note": "Nombre de entrada con mayúsculas y espacios dobles; respuesta real → ok.",
+    "_source": "Respuesta real de GET https://api.inaturalist.org/v1/taxa?q=<q>&is_active=true&per_page=10 (2026-10-01), recortada a los campos que usa inatDecide().",
+    "species": {
+        "name": "  turdus   MERULA ",
+        "rank": "Species",
+        "kingdom": "Animalia",
+        "synonyms": []
+    },
+    "expected": {
+        "status": "ok",
+        "match_type": "exact"
+    },
+    "response": {
+        "total_results": 1,
+        "page": 1,
+        "per_page": 10,
+        "results": [
+            {
+                "id": 12716,
+                "rank": "species",
+                "is_active": true,
+                "name": "Turdus merula",
+                "default_photo": {
+                    "id": 356885346,
+                    "license_code": "cc-by",
+                    "attribution": "(c) Luiz Lapa, some rights reserved (CC BY)",
+                    "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/356885346/square.jpg",
+                    "flags": [],
+                    "square_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/356885346/square.jpg",
+                    "medium_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/356885346/medium.jpg"
+                },
+                "matched_term": "Turdus merula",
+                "iconic_taxon_name": "Aves",
+                "preferred_common_name": "Eurasian Blackbird"
+            }
+        ]
+    }
+}

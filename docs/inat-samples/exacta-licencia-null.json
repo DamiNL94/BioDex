@@ -1,0 +1,201 @@
+{
+    "_note": "Exacta pero la foto por defecto es «all rights reserved» (license_code null) → none. Felis catus casa por matched_term con «Felis silvestris catus», que NO es el nombre de EIDOS ni un sinónimo suyo.",
+    "_source": "Respuesta real de GET https://api.inaturalist.org/v1/taxa?q=<q>&is_active=true&per_page=10 (2026-10-01), recortada a los campos que usa inatDecide().",
+    "species": {
+        "name": "Felis silvestris",
+        "rank": "Species",
+        "kingdom": "Animalia",
+        "synonyms": []
+    },
+    "expected": {
+        "status": "none",
+        "match_type": null
+    },
+    "response": {
+        "total_results": 10,
+        "page": 1,
+        "per_page": 10,
+        "results": [
+            {
+                "id": 118552,
+                "rank": "species",
+                "is_active": true,
+                "name": "Felis catus",
+                "default_photo": {
+                    "id": 129658776,
+                    "license_code": "cc-by-sa",
+                    "attribution": "(c) Von.grzanka, some rights reserved (CC BY-SA)",
+                    "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/129658776/square.jpg",
+                    "flags": [],
+                    "square_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/129658776/square.jpg",
+                    "medium_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/129658776/medium.jpg"
+                },
+                "matched_term": "Felis silvestris catus",
+                "iconic_taxon_name": "Mammalia",
+                "preferred_common_name": "Domestic Cat"
+            },
+            {
+                "id": 922459,
+                "rank": "species",
+                "is_active": true,
+                "name": "Felis silvestris",
+                "default_photo": {
+                    "id": 290618129,
+                    "license_code": null,
+                    "attribution": "(c) Fanis Theofanopoulos (ASalafa Deri), all rights reserved, uploaded by Fanis Theofanopoulos (ASalafa Deri)",
+                    "url": "https://static.inaturalist.org/photos/290618129/square.jpeg",
+                    "flags": [],
+                    "square_url": "https://static.inaturalist.org/photos/290618129/square.jpeg",
+                    "medium_url": "https://static.inaturalist.org/photos/290618129/medium.jpeg"
+                },
+                "matched_term": "Felis silvestris",
+                "iconic_taxon_name": "Mammalia",
+                "preferred_common_name": "European Wildcat"
+            },
+            {
+                "id": 342134,
+                "rank": "subspecies",
+                "is_active": true,
+                "name": "Felis silvestris silvestris",
+                "default_photo": {
+                    "id": 181938943,
+                    "license_code": "cc-by-nc",
+                    "attribution": "(c) virag93buranyi, some rights reserved (CC BY-NC)",
+                    "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/181938943/square.jpg",
+                    "flags": [],
+                    "square_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/181938943/square.jpg",
+                    "medium_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/181938943/medium.jpg"
+                },
+                "matched_term": "Felis silvestris silvestris",
+                "iconic_taxon_name": "Mammalia",
+                "preferred_common_name": "European Wildcat"
+            },
+            {
+                "id": 922462,
+                "rank": "subspecies",
+                "is_active": true,
+                "name": "Felis lybica cafra",
+                "default_photo": {
+                    "id": 112528926,
+                    "license_code": "cc-by-sa",
+                    "attribution": "(c) Leonemanuel, some rights reserved (CC BY-SA)",
+                    "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/112528926/square.jpg",
+                    "flags": [],
+                    "square_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/112528926/square.jpg",
+                    "medium_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/112528926/medium.jpg"
+                },
+                "matched_term": "Felis silvestris cafra",
+                "iconic_taxon_name": "Mammalia",
+                "preferred_common_name": "Southern African Wildcat"
+            },
+            {
+                "id": 922461,
+                "rank": "subspecies",
+                "is_active": true,
+                "name": "Felis lybica lybica",
+                "default_photo": {
+                    "id": 23923490,
+                    "license_code": "cc-by-nc-nd",
+                    "attribution": "(c) Chris Wood, some rights reserved (CC BY-NC-ND), uploaded by Chris Wood",
+                    "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/23923490/square.jpg",
+                    "flags": [],
+                    "square_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/23923490/square.jpg",
+                    "medium_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/23923490/medium.jpg"
+                },
+                "matched_term": "Felis silvestris reyi",
+                "iconic_taxon_name": "Mammalia",
+                "preferred_common_name": "North African Wildcat"
+            },
+            {
+                "id": 922465,
+                "rank": "subspecies",
+                "is_active": true,
+                "name": "Felis lybica ornata",
+                "default_photo": {
+                    "id": 278609539,
+                    "license_code": "cc-by-nc",
+                    "attribution": "(c) Dhyey Shah, some rights reserved (CC BY-NC), uploaded by Dhyey Shah",
+                    "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/278609539/square.jpg",
+                    "flags": [],
+                    "square_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/278609539/square.jpg",
+                    "medium_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/278609539/medium.jpg"
+                },
+                "matched_term": "Felis silvestris ornata",
+                "iconic_taxon_name": "Mammalia",
+                "preferred_common_name": "Asian Wildcat"
+            },
+            {
+                "id": 928537,
+                "rank": "hybrid",
+                "is_active": true,
+                "name": "Felis catus × silvestris",
+                "default_photo": {
+                    "id": 197024658,
+                    "license_code": "cc-by-nc",
+                    "attribution": "(c) Marc, some rights reserved (CC BY-NC), uploaded by Marc",
+                    "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/197024658/square.jpg",
+                    "flags": [],
+                    "square_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/197024658/square.jpg",
+                    "medium_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/197024658/medium.jpg"
+                },
+                "matched_term": "Felis catus × silvestris",
+                "iconic_taxon_name": "Mammalia",
+                "preferred_common_name": "Domestic × European Wildcat"
+            },
+            {
+                "id": 703829,
+                "rank": "subspecies",
+                "is_active": true,
+                "name": "Felis silvestris caucasica",
+                "default_photo": {
+                    "id": 259176563,
+                    "license_code": "cc-by-nc",
+                    "attribution": "(c) Olga Eremenko, some rights reserved (CC BY-NC), uploaded by Olga Eremenko",
+                    "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/259176563/square.jpeg",
+                    "flags": [],
+                    "square_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/259176563/square.jpeg",
+                    "medium_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/259176563/medium.jpeg"
+                },
+                "matched_term": "Felis silvestris caucasica",
+                "iconic_taxon_name": "Mammalia",
+                "preferred_common_name": "Caucasian Wildcat"
+            },
+            {
+                "id": 569411,
+                "rank": "species",
+                "is_active": true,
+                "name": "Felis bieti",
+                "default_photo": {
+                    "id": 291495213,
+                    "license_code": "cc-by-nc",
+                    "attribution": "(c) Mengshuai Ge, some rights reserved (CC BY-NC), uploaded by Mengshuai Ge",
+                    "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/291495213/square.jpg",
+                    "flags": [],
+                    "square_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/291495213/square.jpg",
+                    "medium_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/291495213/medium.jpg"
+                },
+                "matched_term": "Felis silvestris bieti",
+                "iconic_taxon_name": "Mammalia",
+                "preferred_common_name": "Chinese Mountain Cat"
+            },
+            {
+                "id": 937292,
+                "rank": "hybrid",
+                "is_active": true,
+                "name": "Felis catus × lybica",
+                "default_photo": {
+                    "id": 590003254,
+                    "license_code": "cc-by-nc",
+                    "attribution": "(c) 昆虫学liuye, some rights reserved (CC BY-NC), uploaded by 昆虫学liuye",
+                    "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/590003254/square.jpg",
+                    "flags": [],
+                    "square_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/590003254/square.jpg",
+                    "medium_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/590003254/medium.jpg"
+                },
+                "matched_term": "Felis catus × Silvestris cafra",
+                "iconic_taxon_name": "Mammalia",
+                "preferred_common_name": "Domestic Cat × African Wildcat"
+            }
+        ]
+    }
+}
