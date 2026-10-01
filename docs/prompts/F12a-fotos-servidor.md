@@ -23,7 +23,7 @@ servicios `php` y `nginx` de `docker-compose.yml`; `media-data/` a `.gitignore`,
 root). Ruta en disco: `MEDIA_DIR/<catalogId>/<mediaID>/{full,thumb}.jpg`, nunca a partir de un nombre del cliente.
 `docs/railway.md`: paso «+ Volume → mount path /data» y la limitación de copias de seguridad del volumen.
 
-## 2. Datos (migración `013_media.sql`; la 012 es de F11b)
+## 2. Datos (migración `014_media.sql`; la 012 es de F11b y la 013 de F11d)
 Tabla `media`: `mediaID` CHAR(36) PK (UUID v4 del cliente), `catalog_id`, `taxonID`, `occurrenceID` NULL (→
 `occurrences`, RESTRICT), `user_id` (autor), `kind`, `caption` (≤ 500), `license` (`CC-BY-4.0` · `CC0-1.0` ·
 `CC-BY-NC-4.0` · `all-rights-reserved`), `created` (hora de la foto, UTC), `width`, `height`, `bytes`, `sha256`,

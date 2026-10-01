@@ -29,12 +29,17 @@ local no cambia: sigue en `docker-compose.yml`.
    APP_ENV=prod
    APP_URL=https://${{RAILWAY_PUBLIC_DOMAIN}}
    SEED_DEMO=1
+   CONTACT_EMAIL=<tu correo>
    ```
+   `CONTACT_EMAIL` (F11d) va en el User-Agent de las peticiones a Wikimedia y GBIF
+   («BioDex/1.4.0 (https://…; correo)»): la política de User-Agent de Wikimedia pide un contacto. Sin ella, solo
+   la URL. No se enseña en la app.
 5. **Settings → Networking → Generate Domain** (puerto 8080). Abrir `https://<dominio>/api/health` →
    `{"ok":true,"db":true}`.
 6. En los logs del despliegue tiene que salir el resumen de `seed-demo.php` con las tres cuentas
    (`@biodex.demo`, contraseñas en el README) y, después, la línea `BioDex fotos: …` de
-   `fetch-species-photos.php` (F11b, en segundo plano). En el móvil: abrir el dominio → instalar la PWA.
+   `fetch-species-photos.php` (F11b/F11d, en segundo plano; con unas 140 especies sin foto, ~1 h: GBIF es lento). En el
+   móvil: abrir el dominio → instalar la PWA.
 
 Cada `git push` a `main` vuelve a desplegar. Lo no confirmado en Git no se despliega.
 
@@ -44,6 +49,8 @@ Cada `git push` a `main` vuelve a desplegar. Lo no confirmado en Git no se despl
 - **Datos de demo públicos**: las contraseñas de la demo están en el repo. Es un entorno de prueba con
   datos ficticios; no meter observaciones reales. Para dejar de sembrar: `SEED_DEMO=0`.
 - Las cachés de teselas y fotos de nginx (Fototeca e iNaturalist) viven en el contenedor: se vacían en cada despliegue.
-- Fotos de respaldo (F11b): `fetch-species-photos.php` corre en segundo plano en cada arranque (1 petición/s a
-  iNaturalist). En local: `docker compose exec php php bin/fetch-species-photos.php` (`docs/fotos-respaldo.md`).
+- Fotos de respaldo (F11b, F11d): `fetch-species-photos.php` corre en segundo plano en cada arranque (cascada
+  iNaturalist > GBIF > Wikimedia Commons, 1 petición/s por fuente). Las copias de GBIF y Commons van en MySQL, no
+  en el disco del contenedor: sobreviven a los despliegues. En local: `docker compose exec php php bin/fetch-species-photos.php`
+  (`docs/fotos-respaldo.md`).
 - Sin Adminer: para mirar la BD, la pestaña **Data** del servicio MySQL en Railway.

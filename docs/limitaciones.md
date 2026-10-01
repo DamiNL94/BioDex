@@ -1,4 +1,4 @@
-# Limitaciones conocidas (1.2.0 · F11b)
+# Limitaciones conocidas (1.4.0 · F11d)
 
 Lista cerrada al terminar F10b (2026-09-30). Recoge lo que BioDex **no hace**, lo que hace de forma **orientativa** y
 lo que **no se ha podido probar** en esta máquina. Cada punto abierto de las listas de F3 a F10a está aquí o marcado
@@ -15,10 +15,15 @@ como resuelto en su lista.
 - **Fotos de la Fototeca del MITECO**: EIDOS no trae autor ni licencia. Se citan «Fototeca MITECO · vía EIDOS»,
   pero las condiciones de reutilización están **sin resolver** (`docs/eidos.md`). No publicar capturas con fotos
   fuera de la demo sin aclararlo.
-- **Fotos de respaldo de iNaturalist** (F11b, `docs/fotos-respaldo.md`): son **ilustrativas**, no evidencia (no
-  entran en ninguna exportación). iNat cubre poco algunas especies (endemismos, invertebrados, hongos): muchas se quedan
-  con la silueta del grupo. Solo se aceptan coincidencias exactas o sinónimos revisados a mano, así que puede faltar
-  foto aunque iNat tenga alguna. La foto es la «por defecto» del taxón en iNat, sin elegir.
+- **Fotos de respaldo de iNaturalist, GBIF y Wikimedia Commons** (F11b, F11d, `docs/fotos-respaldo.md`): son
+  **ilustrativas**, no evidencia (no entran en ninguna exportación). Las tres fuentes cubren poco algunas especies
+  (endemismos, invertebrados, hongos): muchas se quedan con la silueta del grupo. Solo se aceptan coincidencias exactas
+  o sinónimos revisados a mano, así que puede faltar foto aunque alguna fuente tenga una. En iNat es la «por defecto»
+  del taxón; en GBIF, la primera observación con foto que cumple las reglas; en Commons, la imagen (P18) de Wikidata.
+- **Las copias de GBIF y Commons van en MySQL** (F11d): si un autor retira su foto de Commons o GBIF, la nuestra sigue
+  hasta la siguiente comprobación. Hoy el script no vuelve a mirar las `ok`: para comprobar una, se borra su fila de
+  `species_photos` y se pasa el script. Con Wikidata en retraso de réplica (`maxlag`) o GBIF lento, esas especies se
+  quedan pendientes hasta otra pasada.
 - **EIDOS**: todas sus especies, sin filtro provincial; la caché caduca a 30 días. Si EIDOS no responde, solo se puede
   buscar en lo ya guardado.
 - **Exportación**: el ZIP no ha pasado el validador de GBIF (sin red a GBIF desde aquí) ni se ha abierto el XLSX en

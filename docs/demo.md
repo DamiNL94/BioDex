@@ -37,7 +37,7 @@ La víspera, con red:
 - [ ] `docker compose up -d` y http://localhost:8090/api/health → `{"ok":true,"db":true}`.
 - [ ] `docker compose exec php php bin/reset-demo.php` y `bin/seed-demo.php` (imprime las cuentas); luego
       `bin/fetch-species-photos.php`: en el paso 2, *Atropa baetica* (sin foto en EIDOS) sale con la de iNaturalist y su
-      crédito, y *Laserpitium longiradium* con la silueta (F11b).
+      crédito, y *Laserpitium longiradium* con la silueta (F11b; F11d: tampoco hay foto en GBIF ni en Commons).
 - [ ] Todas las pruebas en verde (`README.md` › «Comprobaciones»).
 - [ ] Escritorio: entrar como `owner@biodex.demo`, catálogo DEMO activo.
 - [ ] Móvil: app instalada, entrar como `editor@biodex.demo`, catálogo DEMO activo. **No** descargarlo aún (se hace en
