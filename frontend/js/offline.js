@@ -3,7 +3,7 @@
 // ------------------------------------------------------------------------------------------------
 // Descargar un catálogo = GET /catalogs/{id}/offline (fichas y niveles) + pull completo de sus marcas
 // (sync.js) + imágenes en Cache Storage `biodex-img-<catalogId>` (la primera foto de cada especie,
-// que es también su miniatura). Sin red, Catálogos, Especies y la ficha leen de aquí.
+// que es también su miniatura: de la Fototeca o, F11b, la de iNaturalist aceptada). Sin red, Catálogos, Especies y la ficha leen de aquí.
 // F6: también se guardan miembros, invitaciones y registro (cachedRemote) para verlos sin red.
 //
 // Las lecturas locales devuelven la MISMA forma que la API (GET /catalogs/{id}, /tree, /species/{id})
@@ -112,14 +112,14 @@ export async function savePackage(pkg) {
   });
 }
 
-/** URLs de imagen que se guardan por especie: la primera foto (es también la miniatura). */
+/** URLs de imagen que se guardan por especie: la primera foto (es también la miniatura). Fototeca o iNaturalist (F11b). */
 function imageUrls(species) {
   const urls = new Set();
   for (const sp of species) {
     if (sp.thumbnail) urls.add(sp.thumbnail);
     if (sp.images && sp.images[0]) urls.add(sp.images[0].url);
   }
-  return [...urls].filter((u) => u && u.startsWith('/img/fototeca/'));
+  return [...urls].filter((u) => u && (u.startsWith('/img/fototeca/') || u.startsWith('/img/inat/')));
 }
 
 async function cacheImages(catalogId, species, onProgress) {

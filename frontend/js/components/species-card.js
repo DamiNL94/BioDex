@@ -5,9 +5,11 @@
 // La tarjeta es un <article>; lo pulsable dentro son botones y enlaces de verdad (teclado y lector de
 // pantalla): el nombre es el botón que abre la ficha, y el clic en el resto de la tarjeta hace lo mismo.
 // Los eventos van delegados en el contenedor (bindSpeciesCards), así una lista repintada no pierde nada.
+// F11b: miniatura = Fototeca > foto de iNaturalist aceptada > silueta del grupo. La API decide (thumbnail,
+// photoCredit y silhouette); aquí solo se pinta. Nunca una imagen rota: si no carga, silueta.
 // ================================================================================================
 
-import { html, sciName, sciNameText } from '../util.js';
+import { html, render, sciName, sciNameText } from '../util.js';
 
 export const IUCN_CODES = ['EX', 'EW', 'RE', 'CR', 'EN', 'VU', 'NT', 'LC', 'DD', 'NA', 'NE'];
 
@@ -18,6 +20,34 @@ export function iucnBadge(a, { primary = false } = {}) {
   if (!a || !a.code) return html`<span class="badge iucn iucn-none">Sin evaluar</span>`;
   return html`<span class="badge iucn iucn-${iucnClass(a.code)} ${primary ? 'is-primary' : ''}"
     >${a.code}${a.scope ? html` · ${a.scope}` : ''}${a.year ? html` ${a.year}` : ''}</span>`;
+}
+
+const SILHOUETTES = '/img/silhouettes.svg';
+const GENERIC_SILHOUETTE = { id: 'generic', label: 'organismo' };
+
+/** Silueta del grupo (F11b) a partir de `silhouette {id, label}` de la API. */
+export function silhouette(s, extraClass = '') {
+  const sil = s && s.id ? s : GENERIC_SILHOUETTE;
+  return html`<span class="sil-box ${extraClass}"><svg class="silhouette" role="img" aria-label="Sin foto · silueta de ${sil.label}"
+    viewBox="0 0 48 48" focusable="false"><use href="${SILHOUETTES}#sil-${sil.id}"></use></svg></span>`;
+}
+
+/** Atributos para que una <img> que no carga se cambie por su silueta (swapToSilhouette). */
+export function silhouetteData(sp) {
+  const sil = sp.silhouette || GENERIC_SILHOUETTE;
+  return html`data-sil-id="${sil.id}" data-sil-label="${sil.label}"`;
+}
+
+/** Cambia una <img> rota por la silueta guardada en sus data-sil-*; `box` es el contenedor que se repinta. */
+export function swapToSilhouette(img, box, extraClass = '') {
+  render(box, silhouette({ id: img.dataset.silId, label: img.dataset.silLabel }, extraClass));
+}
+
+/** Crédito corto bajo la miniatura de la tarjeta. */
+function shortCredit(sp) {
+  const c = sp.photoCredit;
+  if (c && c.source === 'inaturalist') return html`iNaturalist${c.license ? html` · ${c.license}` : ''}`;
+  return 'Fototeca MITECO · vía EIDOS';
 }
 
 /** Todas las evaluaciones UICN, la principal primero (la API ya las ordena). */
@@ -41,9 +71,10 @@ export function speciesCard(sp, { action = null, canRemove = false } = {}) {
     <article class="sp-card iucn-edge-${edge}" data-taxon="${sp.taxonID}">
       <figure class="sp-card-media">
         ${sp.thumbnail
-          ? html`<img src="${sp.thumbnail}" loading="lazy" decoding="async" alt="${name}${sp.vernacularName ? ` (${sp.vernacularName})` : ''}">
-              <figcaption>Fototeca MITECO · vía EIDOS</figcaption>`
-          : html`<div class="sp-card-ph" aria-hidden="true"><span>${sp.taxonomicGroup || 'Sin foto'}</span></div>`}
+          ? html`<img src="${sp.thumbnail}" loading="lazy" decoding="async" ${silhouetteData(sp)}
+                alt="${name}${sp.vernacularName ? ` (${sp.vernacularName})` : ''}">
+              <figcaption>${shortCredit(sp)}</figcaption>`
+          : silhouette(sp.silhouette)}
       </figure>
       <div class="sp-card-body">
         <h3 class="sp-card-title"><button type="button" class="sp-card-open" data-open>${sciName(sp)}</button></h3>
@@ -103,22 +134,12 @@ export function bindSpeciesCards(container, { onOpen, onAdd, onRemove }) {
     const next = opens[at + (ev.key === 'ArrowDown' ? 1 : -1)];
     if (next) { ev.preventDefault(); next.focus(); }
   });
-  // Foto que no carga (MITECO caído, ruta rota): marcador sobrio en vez del icono de imagen rota.
-  // En captura: el evento `error` de <img> no burbujea.
+  // Foto que no carga (MITECO o iNat caídos, sin red y sin copia): la silueta del grupo en vez del icono
+  // de imagen rota. En captura: el evento `error` de <img> no burbujea.
   container.addEventListener('error', (ev) => {
     const img = ev.target;
     if (!(img instanceof HTMLImageElement) || !img.closest('.sp-card-media')) return;
-    const fig = img.closest('.sp-card-media');
-    const card = img.closest('.sp-card');
-    const group = card && card.querySelector('.sp-card-meta .badge');
-    fig.innerHTML = '';
-    const ph = document.createElement('div');
-    ph.className = 'sp-card-ph';
-    ph.setAttribute('aria-hidden', 'true');
-    const span = document.createElement('span');
-    span.textContent = group ? group.textContent : 'Sin foto';
-    ph.appendChild(span);
-    fig.appendChild(ph);
+    swapToSilhouette(img, img.closest('.sp-card-media'));
   }, true);
 }
 

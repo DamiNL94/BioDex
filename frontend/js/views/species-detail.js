@@ -10,13 +10,15 @@
 // su resumen, y las notas de cuaderno de la especie (F8a). Tras las evaluaciones UICN oficiales de EIDOS,
 // aparte y rotulada «Evaluación BioDex», la del asistente del equipo (F8b; no las sustituye). Tras las
 // marcas, «Distribución»: EOO y AOO de la especie en el catálogo (F9).
+// F11b: sin fotos de la Fototeca, la foto de iNaturalist aceptada (con su crédito y enlace) o la silueta
+// del grupo. Una foto de iNat que no carga se cambia por la silueta, nunca una imagen rota.
 // ================================================================================================
 
 import { apiGetJson, apiPutJson } from '../api.js';
 import { state } from '../state.js';
 import { html, render, $, sciName, sciNameText } from '../util.js';
 import { openOverlay } from '../components/overlay.js';
-import { iucnBadge, iucnClass } from '../components/species-card.js';
+import { iucnBadge, iucnClass, silhouette, silhouetteData, swapToSilhouette } from '../components/species-card.js';
 import { mountMarks } from '../components/marks.js';
 import { mountNotes } from '../components/species-notes.js';
 import { mountAssessments } from '../components/species-assessments.js';
@@ -77,6 +79,34 @@ export function levelText(levels, n) {
   return `Nivel ${n} · ${l.name} · coordenada exacta para todo el equipo`;
 }
 
+/** «Foto: (c) autor, … · CC BY-NC · iNaturalist», con enlace a la foto en iNaturalist. */
+function inatCredit(c) {
+  return html`Foto: ${c.text}${c.license ? html` · ${c.license}` : ''} · <a href="${c.url}" target="_blank"
+    rel="noopener noreferrer">iNaturalist<span class="sr-only"> (se abre en otra pestaña)</span></a>`;
+}
+
+/** Cabecera de fotos: galería de la Fototeca; si no hay, la foto de iNaturalist; si no, la silueta. */
+function photoBlock(sp) {
+  const images = sp.images || [];
+  if (images.length) {
+    return html`<div class="gallery" role="list" aria-label="Fotos">${images.map((img, i) => html`
+      <figure class="gallery-item" role="listitem">
+        <img src="${img.url}" loading="${i ? 'lazy' : 'eager'}" decoding="async"
+             alt="${sciNameText(sp)}${img.description ? ` — ${img.description}` : ''}">
+        <figcaption>${img.description ? html`${img.description} · ` : ''}<span class="credit">${img.attribution || sp.photoAttribution}</span></figcaption>
+      </figure>`)}</div>`;
+  }
+  const c = sp.photoCredit;
+  if (sp.thumbnail && c && c.source === 'inaturalist') {
+    return html`<figure class="detail-photo">
+      <div class="detail-photo-media"><img src="${sp.thumbnail}" decoding="async" ${silhouetteData(sp)}
+        alt="${sciNameText(sp)}${sp.vernacularName ? ` (${sp.vernacularName})` : ''}"></div>
+      <figcaption class="credit-inat">${inatCredit(c)}</figcaption>
+    </figure>`;
+  }
+  return html`<figure class="detail-photo is-silhouette"><div class="detail-photo-media">${silhouette(sp.silhouette)}</div></figure>`;
+}
+
 function fmtDate(s) {
   if (!s) return '';
   const d = new Date(String(s).replace(' ', 'T'));
@@ -123,16 +153,10 @@ export function openSpeciesDetail(taxonID, { onChanged } = {}) {
     const cls = sp.classification || {};
     const ranks = [['Reino', cls.kingdom], ['Filo', cls.phylum], ['Clase', cls.class], ['Orden', cls.order], ['Familia', cls.family]];
     const legal = sp.legalStatus;
-    const images = sp.images || [];
     render(ov.body, html`
       <article class="detail">
         ${device ? html`<p class="copy-note" role="status">${localNote(device)}</p>` : ''}
-        ${images.length ? html`<div class="gallery" role="list" aria-label="Fotos">${images.map((img, i) => html`
-          <figure class="gallery-item" role="listitem">
-            <img src="${img.url}" loading="${i ? 'lazy' : 'eager'}" decoding="async"
-                 alt="${sciNameText(sp)}${img.description ? ` — ${img.description}` : ''}">
-            <figcaption>${img.description ? html`${img.description} · ` : ''}<span class="credit">${img.attribution || sp.photoAttribution}</span></figcaption>
-          </figure>`)}</div>` : ''}
+        ${photoBlock(sp)}
 
         <header class="detail-head iucn-edge-${iucnClass(sp.iucnPrimary && sp.iucnPrimary.code)}">
           <h3 class="detail-name">${sciName(sp)}</h3>
@@ -191,10 +215,18 @@ export function openSpeciesDetail(taxonID, { onChanged } = {}) {
           rel="noopener noreferrer">Ver en EIDOS</a></p>` : ''}
       </article>`);
     paintSensitivity(sp, catalogData, inCatalog, levels);
-    // Fotos que no están guardadas en el dispositivo: fuera, en vez del icono de imagen rota.
+    // Fotos que no están guardadas en el dispositivo: fuera, en vez del icono de imagen rota. La de
+    // iNaturalist se cambia por la silueta (y su crédito ya no aplica).
     ov.body.addEventListener('error', (ev) => {
-      const fig = ev.target instanceof HTMLImageElement && ev.target.closest('.gallery-item');
-      if (fig) fig.remove();
+      if (!(ev.target instanceof HTMLImageElement)) return;
+      const fig = ev.target.closest('.gallery-item');
+      if (fig) { fig.remove(); return; }
+      const photo = ev.target.closest('.detail-photo');
+      if (!photo) return;
+      photo.classList.add('is-silhouette');
+      const cap = photo.querySelector('figcaption');
+      if (cap) cap.remove();
+      swapToSilhouette(ev.target, photo.querySelector('.detail-photo-media'));
     }, true);
     if (inCatalog) {
       for (const m of [marks, notes, assessments, distribution]) if (m) m.destroy();

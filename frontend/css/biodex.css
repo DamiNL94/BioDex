@@ -352,6 +352,10 @@ body.has-overlay{overflow:hidden}
   background-image:repeating-linear-gradient(135deg,transparent 0 9px,var(--line) 9px 10px)}
 .sp-card-ph span{color:var(--muted);font-size:.625rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
   background:var(--surface-alt);padding:2px 4px}
+/* F11b: silueta del grupo cuando no hay foto (img/silhouettes.svg, en currentColor) */
+.sil-box{display:flex;align-items:center;justify-content:center;width:100%;aspect-ratio:1;background:var(--surface-alt);
+  border:1px solid var(--line);border-radius:var(--radius-sm);color:var(--muted-2)}
+svg.silhouette{display:block;width:62%;height:62%;fill:currentColor;stroke:none}   /* gana a la regla global de svg (iconos) */
 .sp-card-body{display:grid;gap:4px;align-content:start;min-width:0}
 .sp-card-title{margin:0;font-family:var(--font-ui);font-size:var(--fs-md);line-height:1.3}
 .sp-card-open{padding:0;border:0;background:none;color:var(--ink);font:inherit;font-weight:600;text-align:left;cursor:pointer;
@@ -405,6 +409,25 @@ body.has-overlay{overflow:hidden}
 .gallery-item figcaption{margin-top:4px;color:var(--muted);font-size:var(--fs-xs)}
 .gallery-item .credit{font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:.625rem}
 .gallery-item:only-child{flex-basis:100%}
+/* F11b: una sola foto de respaldo (iNaturalist) o la silueta del grupo */
+.detail-photo{margin:0 0 8px}
+.detail-photo-media img{display:block;width:100%;max-width:420px;aspect-ratio:4/3;object-fit:cover;border-radius:var(--radius-sm);
+  background:var(--surface-alt)}
+.detail-photo.is-silhouette .detail-photo-media{max-width:160px}
+.credit-inat{margin-top:4px;color:var(--muted);font-size:var(--fs-xs);overflow-wrap:anywhere}
+.credit-inat a{color:inherit}
+/* F11b: fotos de iNaturalist por revisar (views/species.js) */
+.photo-review-toggle{margin:8px 0 0}
+.chip[aria-pressed="true"]{border-color:var(--bark);background:var(--surface-alt);font-weight:700}
+.photo-reviews h3{margin:16px 0 4px}
+.pr-list{display:grid;gap:12px;margin-top:8px}
+.pr-item{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;padding:12px;background:var(--surface);
+  border:1px solid var(--line);border-radius:var(--radius-sm)}
+.pr-photo{margin:0;max-width:320px}
+.pr-photo img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:var(--radius-sm);background:var(--surface-alt)}
+.pr-photo .sil-box{max-width:160px}
+.pr-body p{margin:0 0 6px}
+.pr-body .form-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
 .detail-head{padding:4px 0 8px 12px;border-left:var(--rule) solid var(--line-strong)}
 .detail-name{margin:0;font-family:var(--font-ui);font-size:var(--fs-lg);font-weight:600;line-height:1.3}
 .detail-common{margin:2px 0 6px;color:var(--ink-soft)}
@@ -603,6 +626,7 @@ body.has-overlay{overflow:hidden}
   .builder-foot .builder-status{margin-right:auto}
   .gallery{margin:0 -16px 8px}
   .list-filters{grid-template-columns:minmax(0,2fr) repeat(4,minmax(0,1fr));align-items:end}
+  .pr-item{grid-template-columns:240px minmax(0,1fr)}
   .list-filters .lf-text{grid-column:auto}
   .species-rows button.row{display:grid}
 

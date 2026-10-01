@@ -4,15 +4,17 @@
 // nombre, categoría (de CR a LC) o grupo. Tocar una fila abre la ficha.
 // Cada fila lleva el filete lateral del color de su categoría UICN principal y «Marcar aquí» (F5).
 // Sin servidor, las especies salen del catálogo descargado (IndexedDB).
+// F11b: owner y custodio tienen el filtro «Fotos por revisar»: fotos de iNaturalist propuestas porque
+// iNat usa otro nombre (sinónimo) para la especie. Aceptar la muestra; rechazar no la vuelve a proponer.
 // ================================================================================================
 
-import { apiGetJson } from '../api.js';
+import { apiGetJson, apiPostJson } from '../api.js';
 import { state, subscribe, setActiveCatalog } from '../state.js';
-import { html, render, $, plural, sciName, sciNameText, store } from '../util.js';
+import { html, render, $, $$, plural, sciName, sciNameText, store } from '../util.js';
 import { remoteOrLocal, localCatalogData, localNote } from '../offline.js';
 import { openMarkHere, canMark } from '../components/marks.js';
 import { openSpeciesNew } from './species-new.js';
-import { IUCN_CODES, iucnBadge, iucnClass } from '../components/species-card.js';
+import { IUCN_CODES, iucnBadge, iucnClass, silhouette } from '../components/species-card.js';
 import { openSpeciesDetail } from './species-detail.js';
 import { openAddSpecies } from './catalog-builder.js';
 
@@ -47,7 +49,8 @@ export function mount(el, { go }) {
   // Filtros y orden: se recuerdan por dispositivo (comodidad), salvo la familia, que es de un viaje.
   const saved = store.get('biodex.speciesFilters', {});
   const f = { text: '', group: saved.group || '', category: saved.category || '', level: saved.level || '',
-    family: '', sort: saved.sort || 'name' };
+    family: '', sort: saved.sort || 'name', photos: false };
+  let reviewStatus = '';   // aviso tras aceptar o rechazar una foto (lo lee el lector de pantalla)
   if (pendingFamily !== undefined) { f.family = pendingFamily || ''; pendingFamily = undefined; }
 
   function paint(body) { if (alive) render(el, body); }
@@ -116,6 +119,8 @@ export function mount(el, { go }) {
     const groups = Object.keys(summary.byTaxonomicGroup);
     const cats = iucnEntries(summary.byIucnCategory).map(([k]) => k);
     const canAdd = ADD_ROLES.includes(catalog.role);
+    const reviews = data.photoReviews;   // solo llega a owner y custodio, y con servidor
+    if (!reviews || (!reviews.length && !f.photos)) f.photos = false;
     const opt = (value, label, current) => html`<option value="${value}" ${current === value ? html`selected` : ''}>${label}</option>`;
     paint(html`
       <div class="page-head">
@@ -133,11 +138,15 @@ export function mount(el, { go }) {
           <label class="field"><span>Nivel</span><select name="level">${opt('', 'Todos', f.level)}${['1', '2', '3', '4'].map((n) => opt(n, `Nivel ${n}`, f.level))}</select></label>
           <label class="field"><span>Ordenar por</span><select name="sort">${opt('name', 'Nombre', f.sort)}${opt('category', 'Categoría (CR → LC)', f.sort)}${opt('group', 'Grupo', f.sort)}</select></label>
         </form>
+        ${reviews && (reviews.length || f.photos) ? html`<p class="photo-review-toggle">
+          <button type="button" class="chip" id="photoReviewBtn" aria-pressed="${f.photos ? 'true' : 'false'}"
+            >Fotos por revisar (${reviews.length})</button></p>` : ''}
         <div class="chips" id="familyChip"></div>
         <p class="search-count" id="listCount" role="status" aria-live="polite"></p>
         <div class="table-head" aria-hidden="true">
           <span>Especie</span><span>Grupo</span><span>UICN</span><span>Sensibilidad</span><span></span></div>
-        <ul class="rows species-rows" id="speciesList"></ul>` : html`
+        <ul class="rows species-rows" id="speciesList"></ul>
+        <section class="photo-reviews" id="photoReviews" aria-labelledby="pr-title" hidden></section>` : html`
         <section class="placeholder">
           <h3>Este catálogo aún no tiene especies</h3>
           <p>${canAdd ? 'Búscalas en EIDOS con «Añadir especies».' : 'Quien lo administra aún no ha añadido ninguna.'}</p>
@@ -169,6 +178,22 @@ export function mount(el, { go }) {
       const row = ev.target.closest('[data-taxon]');
       if (row) openSpeciesDetail(row.dataset.taxon, { onChanged: load });
     });
+    const prBtn = $('#photoReviewBtn', el);
+    if (prBtn) prBtn.addEventListener('click', () => {
+      f.photos = !f.photos;
+      prBtn.setAttribute('aria-pressed', f.photos ? 'true' : 'false');
+      reviewStatus = '';
+      paintRows();
+    });
+    $('#photoReviews', el).addEventListener('click', (ev) => {
+      const b = ev.target.closest('[data-decision]');
+      if (b) decidePhoto(b.dataset.taxon, b.dataset.decision);
+    });
+    // La foto propuesta no carga (iNat caído): silueta genérica en su lugar, nunca el icono roto.
+    $('#photoReviews', el).addEventListener('error', (ev) => {
+      const fig = ev.target instanceof HTMLImageElement && ev.target.closest('.pr-photo');
+      if (fig) render(fig, silhouette(null));
+    }, true);
     $('#familyChip', el).addEventListener('click', (ev) => {
       if (!ev.target.closest('.chip')) return;
       f.family = '';
@@ -178,7 +203,68 @@ export function mount(el, { go }) {
     paintRows();
   }
 
+  /** Lista de fotos por revisar (F11b), en lugar de la tabla mientras el filtro está activo. */
+  function paintReviews() {
+    const box = $('#photoReviews', el);
+    const list = data.photoReviews || [];
+    render(box, html`
+      <h3 id="pr-title">Fotos por revisar</h3>
+      <p class="hint">iNaturalist llama a estas especies con otro nombre. Acepta la foto solo si es la misma especie;
+        si dudas, recházala: mejor sin foto que con la de otra especie. La decisión vale para todos los catálogos.</p>
+      <p class="search-count" role="status" aria-live="polite">${reviewStatus}</p>
+      ${list.length ? html`<ul class="rows pr-list">${list.map((r) => html`
+        <li class="pr-item">
+          <figure class="pr-photo">
+            <img src="${r.photo}" loading="lazy" decoding="async" alt="Foto propuesta de iNaturalist para ${r.canonicalName}">
+            <figcaption class="credit-inat">Foto: ${r.photoCredit.text}${r.photoCredit.license ? html` · ${r.photoCredit.license}` : ''} ·
+              <a href="${r.photoCredit.url}" target="_blank" rel="noopener noreferrer">iNaturalist<span class="sr-only"> (se abre en otra pestaña)</span></a></figcaption>
+          </figure>
+          <div class="pr-body">
+            <p><span class="muted">EIDOS:</span> ${sciName(r)}${r.vernacularName ? html` <span class="row-text">${r.vernacularName}</span>` : ''}</p>
+            <p><span class="muted">iNaturalist:</span> <a href="${r.inatTaxonUrl}" target="_blank" rel="noopener noreferrer"><i>${r.inatName}</i><span
+              class="sr-only"> en iNaturalist (se abre en otra pestaña)</span></a></p>
+            <div class="form-actions">
+              <button type="button" class="btn-primary" data-taxon="${r.taxonID}" data-decision="accept"
+                >Aceptar<span class="sr-only"> la foto para ${r.canonicalName}</span></button>
+              <button type="button" class="btn-secondary" data-taxon="${r.taxonID}" data-decision="reject"
+                >Rechazar<span class="sr-only"> la foto para ${r.canonicalName}</span></button>
+            </div>
+          </div>
+        </li>`)}</ul>` : html`<p class="muted">No quedan fotos por revisar en este catálogo.</p>`}`);
+  }
+
+  async function decidePhoto(taxonID, decision) {
+    const item = (data.photoReviews || []).find((r) => r.taxonID === taxonID);
+    if (!item) return;
+    for (const b of $$('[data-decision]', $('#photoReviews', el))) b.disabled = true;
+    try {
+      const res = await apiPostJson(`/species/${encodeURIComponent(taxonID)}/photo-review`,
+        { catalogId: data.catalog.id, decision });
+      if (!alive) return;
+      data.photoReviews = data.photoReviews.filter((r) => r.taxonID !== taxonID);
+      const sp = data.species.find((s) => s.taxonID === taxonID);
+      if (sp && res.species) Object.assign(sp, { thumbnail: res.species.thumbnail, photoCredit: res.species.photoCredit });
+      reviewStatus = `${decision === 'accept' ? 'Foto aceptada' : 'Foto rechazada'} para ${item.canonicalName}.`;
+    } catch (e) {
+      if (!alive) return;
+      reviewStatus = e.status === 409 ? 'Esa foto ya no estaba pendiente (la ha revisado otra persona).' : e.message;
+      if (e.status === 409) data.photoReviews = data.photoReviews.filter((r) => r.taxonID !== taxonID);
+    }
+    const btn = $('#photoReviewBtn', el);
+    if (btn) btn.textContent = `Fotos por revisar (${data.photoReviews.length})`;
+    paintRows();
+    const next = $('#photoReviews [data-decision]', el) || btn;
+    if (next) next.focus();
+  }
+
   function paintRows() {
+    const reviewing = f.photos && !!data.photoReviews;
+    for (const sel of ['.table-head', '#speciesList', '#listCount', '#familyChip']) {
+      const n = $(sel, el);
+      if (n) n.hidden = reviewing;
+    }
+    $('#photoReviews', el).hidden = !reviewing;
+    if (reviewing) { paintReviews(); return; }
     const rows = filtered();
     const total = data.species.length;
     render($('#familyChip', el), f.family ? html`<button type="button" class="chip" aria-label="Quitar filtro familia ${f.family}"
