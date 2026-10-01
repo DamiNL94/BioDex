@@ -16,7 +16,7 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends libzip-dev libicu-dev nginx \
     && docker-php-ext-install pdo_mysql zip intl \
     && rm -rf /var/lib/apt/lists/* /etc/nginx/sites-enabled/default \
-    && mkdir -p /var/cache/nginx/tiles /var/cache/nginx/fototeca /etc/nginx/biodex \
+    && mkdir -p /var/cache/nginx/tiles /var/cache/nginx/fototeca /var/cache/nginx/inat /etc/nginx/biodex \
     && chown -R www-data:www-data /var/cache/nginx \
     && ln -sf /dev/stdout /var/log/nginx/access.log \
     && ln -sf /dev/stderr /var/log/nginx/error.log
