@@ -187,6 +187,16 @@ export function mount(el, { onLogout }) {
             <div><dt>Conexión</dt><dd>${CONNECTION_LABELS[state.connection]}</dd></div>
             <div><dt>Uso sin conexión</dt><dd>${sw ? 'Preparado' : 'No disponible en este navegador o aún instalándose'}</dd></div>
           </dl>
+          <details class="more">
+            <summary>Acerca de</summary>
+            <!-- Créditos obligatorios: el mapa no muestra atribución en pantalla -->
+            <ul class="hint">
+              <li>Mapas (IGN Base, PNOA, MTN): © <a href="https://www.ign.es" rel="noopener" target="_blank">Instituto Geográfico Nacional</a>,
+                <a href="https://creativecommons.org/licenses/by/4.0/deed.es" rel="noopener" target="_blank">CC BY 4.0</a>.</li>
+              <li>Datos de especies: Inventario Español del Patrimonio Natural y de la Biodiversidad (EIDOS, MITECO).</li>
+              <li>Visor de mapas: <a href="https://leafletjs.com" rel="noopener" target="_blank">Leaflet</a> (licencia BSD-2).</li>
+            </ul>
+          </details>
         </section>
       </div>`);
 

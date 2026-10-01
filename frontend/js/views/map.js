@@ -146,8 +146,7 @@ export function mount(el, { go = () => {}, isStudio = () => false } = {}) {
   sizeWrap();
 
   // --- Mapa y capas ----------------------------------------------------------------------------
-  const map = Lf.map(mapEl, { maxZoom: MAP_MAX_ZOOM, minZoom: 5, zoomControl: true, attributionControl: true });
-  map.attributionControl.setPrefix('<a href="https://leafletjs.com" rel="noopener" target="_blank">Leaflet</a>');
+  const map = Lf.map(mapEl, { maxZoom: MAP_MAX_ZOOM, minZoom: 5, zoomControl: true, attributionControl: false });
   Lf.control.scale({ imperial: false, metric: true, position: 'bottomleft' }).addTo(map);
   const tileLayers = new Map(LAYERS.map((l) => [l.key, Lf.tileLayer(tileTemplate(l.key), {
     maxNativeZoom: l.maxZoom, maxZoom: MAP_MAX_ZOOM, minZoom: 5, attribution: attributionFor(l), keepBuffer: 3,

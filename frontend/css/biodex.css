@@ -886,7 +886,7 @@ path.zone-draft{stroke:var(--sea);fill:var(--sea);fill-opacity:.08}
 .map-list .mark-main+.mark-main{margin-top:2px}
 
 @media (min-width:900px){
-  .view.view-mapa{max-width:none;padding:14px 0 0}
+  .view.view-mapa{max-width:none;padding:14px 0 0;border-left:3px solid var(--leaf-fill)}
   .map-bar,.map-note{padding-left:32px;padding-right:32px}
   .map-filters{margin:0 32px;grid-template-columns:minmax(0,2fr) auto minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr) auto;align-items:end}
   .map-filters .field:first-child,.map-filters .field:nth-child(2),.map-filters .form-actions{grid-column:auto}
