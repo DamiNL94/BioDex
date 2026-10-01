@@ -10,15 +10,16 @@
 // su resumen, y las notas de cuaderno de la especie (F8a). Tras las evaluaciones UICN oficiales de EIDOS,
 // aparte y rotulada «Evaluación BioDex», la del asistente del equipo (F8b; no las sustituye). Tras las
 // marcas, «Distribución»: EOO y AOO de la especie en el catálogo (F9).
-// F11b: sin fotos de la Fototeca, la foto de iNaturalist aceptada (con su crédito y enlace) o la silueta
-// del grupo. Una foto de iNat que no carga se cambia por la silueta, nunca una imagen rota.
+// F11b/F11d: sin fotos de la Fototeca, la foto de respaldo aceptada de iNaturalist, GBIF o Wikimedia Commons
+// (con su crédito y enlace) o la silueta del grupo. Una foto de respaldo que no carga se cambia por la
+// silueta, nunca una imagen rota.
 // ================================================================================================
 
 import { apiGetJson, apiPutJson } from '../api.js';
 import { state } from '../state.js';
 import { html, render, $, sciName, sciNameText } from '../util.js';
 import { openOverlay } from '../components/overlay.js';
-import { iucnBadge, iucnClass, silhouette, silhouetteData, swapToSilhouette } from '../components/species-card.js';
+import { iucnBadge, iucnClass, silhouette, silhouetteData, swapToSilhouette, PHOTO_SOURCES } from '../components/species-card.js';
 import { mountMarks } from '../components/marks.js';
 import { mountNotes } from '../components/species-notes.js';
 import { mountAssessments } from '../components/species-assessments.js';
@@ -79,13 +80,22 @@ export function levelText(levels, n) {
   return `Nivel ${n} · ${l.name} · coordenada exacta para todo el equipo`;
 }
 
-/** «Foto: (c) autor, … · CC BY-NC · iNaturalist», con enlace a la foto en iNaturalist. */
-function inatCredit(c) {
-  return html`Foto: ${c.text}${c.license ? html` · ${c.license}` : ''} · <a href="${c.url}" target="_blank"
-    rel="noopener noreferrer">iNaturalist<span class="sr-only"> (se abre en otra pestaña)</span></a>`;
+/**
+ * «Foto: {autor} · CC BY-SA 4.0 · GBIF», con enlace a la página de la foto en su fuente (iNaturalist, GBIF
+ * o Wikimedia Commons). En iNat el autor va tal cual lo da («(c) faluke, some rights reserved…»).
+ */
+function backupCredit(c) {
+  const src = PHOTO_SOURCES[c.source];
+  return html`Foto: ${c.text}${c.license ? html` · ${c.license}` : ''} · ${c.url ? html`<a href="${c.url}" target="_blank"
+    rel="noopener noreferrer">${src.name}<span class="sr-only"> (se abre en otra pestaña)</span></a>` : src.name}`;
 }
 
-/** Cabecera de fotos: galería de la Fototeca; si no hay, la foto de iNaturalist; si no, la silueta. */
+/** Silueta del grupo en la cabecera de la ficha. */
+function silhouetteBlock(sp) {
+  return html`<figure class="detail-photo is-silhouette"><div class="detail-photo-media">${silhouette(sp.silhouette)}</div></figure>`;
+}
+
+/** Cabecera de fotos: galería de la Fototeca; si no hay, la foto de respaldo (iNat, GBIF o Commons); si no, la silueta. */
 function photoBlock(sp) {
   const images = sp.images || [];
   if (images.length) {
@@ -97,14 +107,14 @@ function photoBlock(sp) {
       </figure>`)}</div>`;
   }
   const c = sp.photoCredit;
-  if (sp.thumbnail && c && c.source === 'inaturalist') {
+  if (sp.thumbnail && c && PHOTO_SOURCES[c.source]) {
     return html`<figure class="detail-photo">
       <div class="detail-photo-media"><img src="${sp.thumbnail}" decoding="async" ${silhouetteData(sp)}
         alt="${sciNameText(sp)}${sp.vernacularName ? ` (${sp.vernacularName})` : ''}"></div>
-      <figcaption class="credit-inat">${inatCredit(c)}</figcaption>
+      <figcaption class="credit-inat">${backupCredit(c)}</figcaption>
     </figure>`;
   }
-  return html`<figure class="detail-photo is-silhouette"><div class="detail-photo-media">${silhouette(sp.silhouette)}</div></figure>`;
+  return silhouetteBlock(sp);
 }
 
 function fmtDate(s) {
@@ -245,11 +255,21 @@ export function openSpeciesDetail(taxonID, { onChanged, step, onOpen } = {}) {
       </article>`);
     paintSensitivity(sp, catalogData, inCatalog, levels);
     // Fotos que no están guardadas en el dispositivo: fuera, en vez del icono de imagen rota. La de
-    // iNaturalist se cambia por la silueta (y su crédito ya no aplica).
+    // respaldo se cambia por la silueta (y su crédito ya no aplica). Si fallan TODAS las de la galería,
+    // la silueta en su lugar (antes la cabecera se quedaba vacía).
     ov.body.addEventListener('error', (ev) => {
       if (!(ev.target instanceof HTMLImageElement)) return;
       const fig = ev.target.closest('.gallery-item');
-      if (fig) { fig.remove(); return; }
+      if (fig) {
+        const gallery = fig.closest('.gallery');
+        fig.remove();
+        if (gallery && !gallery.querySelector('.gallery-item')) {
+          const box = document.createElement('div');
+          render(box, silhouetteBlock(sp));
+          gallery.replaceWith(box.firstElementChild);
+        }
+        return;
+      }
       const photo = ev.target.closest('.detail-photo');
       if (!photo) return;
       photo.classList.add('is-silhouette');

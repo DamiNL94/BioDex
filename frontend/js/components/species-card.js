@@ -5,8 +5,9 @@
 // La tarjeta es un <article>; lo pulsable dentro son botones y enlaces de verdad (teclado y lector de
 // pantalla): el nombre es el botón que abre la ficha, y el clic en el resto de la tarjeta hace lo mismo.
 // Los eventos van delegados en el contenedor (bindSpeciesCards), así una lista repintada no pierde nada.
-// F11b: miniatura = Fototeca > foto de iNaturalist aceptada > silueta del grupo. La API decide (thumbnail,
-// photoCredit y silhouette); aquí solo se pinta. Nunca una imagen rota: si no carga, silueta.
+// F11b/F11d: miniatura = Fototeca > foto de respaldo aceptada (iNaturalist, GBIF o Commons) > silueta del
+// grupo. La API decide (thumbnail, photoCredit y silhouette); aquí solo se pinta. Nunca una imagen rota: si
+// no carga, silueta.
 // ================================================================================================
 
 import { html, render, sciName, sciNameText } from '../util.js';
@@ -43,10 +44,18 @@ export function swapToSilhouette(img, box, extraClass = '') {
   render(box, silhouette({ id: img.dataset.silId, label: img.dataset.silLabel }, extraClass));
 }
 
-/** Crédito corto bajo la miniatura de la tarjeta. */
+/** Nombre de la fuente de una foto de respaldo (F11d): largo para la ficha, corto para la tarjeta. */
+export const PHOTO_SOURCES = {
+  inaturalist: { name: 'iNaturalist', short: 'iNaturalist' },
+  gbif: { name: 'GBIF', short: 'GBIF' },
+  commons: { name: 'Wikimedia Commons', short: 'Commons' },
+};
+
+/** Crédito corto bajo la miniatura de la tarjeta: «GBIF · CC BY 4.0». */
 function shortCredit(sp) {
   const c = sp.photoCredit;
-  if (c && c.source === 'inaturalist') return html`iNaturalist${c.license ? html` · ${c.license}` : ''}`;
+  const src = c && PHOTO_SOURCES[c.source];
+  if (src) return html`${src.short}${c.license ? html` · ${c.license}` : ''}`;
   return 'Fototeca MITECO · vía EIDOS';
 }
 

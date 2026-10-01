@@ -112,14 +112,14 @@ export async function savePackage(pkg) {
   });
 }
 
-/** URLs de imagen que se guardan por especie: la primera foto (es también la miniatura). Fototeca o iNaturalist (F11b). */
+/** URLs de imagen que se guardan por especie: la primera foto (es también la miniatura). Fototeca, iNaturalist (F11b) o copia local de GBIF/Commons (F11d). */
 function imageUrls(species) {
   const urls = new Set();
   for (const sp of species) {
     if (sp.thumbnail) urls.add(sp.thumbnail);
     if (sp.images && sp.images[0]) urls.add(sp.images[0].url);
   }
-  return [...urls].filter((u) => u && (u.startsWith('/img/fototeca/') || u.startsWith('/img/inat/')));
+  return [...urls].filter((u) => u && (u.startsWith('/img/fototeca/') || u.startsWith('/img/inat/') || u.startsWith('/img/respaldo/')));
 }
 
 async function cacheImages(catalogId, species, onProgress) {

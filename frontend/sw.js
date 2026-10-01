@@ -16,7 +16,7 @@
  * (F5), con su propia fecha y su propia regla de sincronización. Una respuesta de la API cacheada aquí
  * sería una segunda copia, sin edad conocida, que el navegador serviría como si fuese fresca.
  *
- * Fotos de especies (/img/fototeca/, F5; /img/inat/, F11b): CACHE-FIRST en las cachés `biodex-img-<catalogId>`
+ * Fotos de especies (/img/fototeca/, F5; /img/inat/, F11b; /img/respaldo/, F11d): CACHE-FIRST en las cachés `biodex-img-<catalogId>`
  * que llena la app al descargar un catálogo; lo que no esté ahí va a la red y NO se guarda en la del armazón.
  * El sprite de siluetas (img/silhouettes.svg, F11b) va en SHELL_ASSETS: sin red, la silueta sale igual.
  *
@@ -29,7 +29,7 @@
  * Las peticiones de la descarga de zonas (cabecera X-BioDex-Zone) van directas a la red: allí un fallo
  * tiene que ser un fallo, no una tesela vacía.
  */
-var VERSION = 'v14';
+var VERSION = 'v15';
 var CACHE = 'biodex-shell-' + VERSION;
 var NET_TIMEOUT_MS = 3000;
 var TILE_TIMEOUT_MS = 5000;
@@ -126,7 +126,8 @@ self.addEventListener('fetch', function (event) {
   if (url.pathname.indexOf('/api/') === 0) return;
 
   // Fotos de especies: las guardadas al descargar un catálogo (caches.match busca en todas las cachés).
-  if (url.pathname.indexOf('/img/fototeca/') === 0 || url.pathname.indexOf('/img/inat/') === 0) {
+  if (url.pathname.indexOf('/img/fototeca/') === 0 || url.pathname.indexOf('/img/inat/') === 0 ||
+      url.pathname.indexOf('/img/respaldo/') === 0) {
     event.respondWith(caches.match(req, { ignoreVary: true }).then(function (cached) {
       return cached || fetch(req);
     }));

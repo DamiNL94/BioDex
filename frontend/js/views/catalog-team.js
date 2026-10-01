@@ -28,7 +28,7 @@ const AUDIT_LABELS = {
   view_exact: 'Vista exacta', export_full: 'Exportación completa', set_level: 'Nivel', grant_role: 'Rol concedido',
   revoke_role: 'Rol retirado', login_failed: 'Contraseña fallida', invite_created: 'Invitación',
   invite_revoked: 'Invitación revocada', member_joined: 'Alta', member_removed: 'Expulsión', member_left: 'Salida',
-  set_reference: 'Evaluación de referencia', photo_review: 'Foto de iNaturalist',
+  set_reference: 'Evaluación de referencia', photo_review: 'Foto de respaldo',
 };
 const OFFLINE_ACTION = 'Necesita conexión';
 

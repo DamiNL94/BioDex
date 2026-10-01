@@ -8,8 +8,9 @@
 // sube desde abajo («Filtros (n)», nivel de BioDexNav) y los filtros activos quedan como fichas que se
 // quitan con un toque. En escritorio (estudio) los filtros van en línea y la ficha abierta pasa a la
 // especie anterior/siguiente con ↑/↓.
-// F11b: owner y custodio tienen el filtro «Fotos por revisar»: fotos de iNaturalist propuestas porque
-// iNat usa otro nombre (sinónimo) para la especie. Aceptar la muestra; rechazar no la vuelve a proponer.
+// F11b/F11d: owner y custodio tienen el filtro «Fotos por revisar»: fotos de respaldo (iNaturalist o GBIF)
+// propuestas porque su fuente usa otro nombre (sinónimo). Aceptar la muestra; rechazar no vuelve a proponer
+// esa fuente y la búsqueda sigue con la siguiente.
 // ================================================================================================
 
 import { apiGetJson, apiPostJson } from '../api.js';
@@ -220,7 +221,7 @@ export function mount(el, { go }) {
       const b = ev.target.closest('[data-decision]');
       if (b) decidePhoto(b.dataset.taxon, b.dataset.decision);
     });
-    // La foto propuesta no carga (iNat caído): silueta genérica en su lugar, nunca el icono roto.
+    // La foto propuesta no carga (fuente caída o sin red): silueta genérica en su lugar, nunca el icono roto.
     $('#photoReviews', el).addEventListener('error', (ev) => {
       const fig = ev.target instanceof HTMLImageElement && ev.target.closest('.pr-photo');
       if (fig) render(fig, silhouette(null));
@@ -246,20 +247,21 @@ export function mount(el, { go }) {
     const list = data.photoReviews || [];
     render(box, html`
       <h3 id="pr-title">Fotos por revisar</h3>
-      <p class="hint">iNaturalist llama a estas especies con otro nombre. Acepta la foto solo si es la misma especie;
-        si dudas, recházala: mejor sin foto que con la de otra especie. La decisión vale para todos los catálogos.</p>
+      <p class="hint">La fuente de cada foto llama a la especie con otro nombre. Acepta la foto solo si es la misma
+        especie; si dudas, recházala: mejor sin foto que con la de otra especie (se buscará en la fuente siguiente).
+        La decisión vale para todos los catálogos.</p>
       <p class="search-count" role="status" aria-live="polite">${reviewStatus}</p>
       ${list.length ? html`<ul class="rows pr-list">${list.map((r) => html`
         <li class="pr-item">
           <figure class="pr-photo">
-            <img src="${r.photo}" loading="lazy" decoding="async" alt="Foto propuesta de iNaturalist para ${r.canonicalName}">
+            <img src="${r.photo}" loading="lazy" decoding="async" alt="Foto propuesta de ${r.sourceName} para ${r.canonicalName}">
             <figcaption class="credit-inat">Foto: ${r.photoCredit.text}${r.photoCredit.license ? html` · ${r.photoCredit.license}` : ''} ·
-              <a href="${r.photoCredit.url}" target="_blank" rel="noopener noreferrer">iNaturalist<span class="sr-only"> (se abre en otra pestaña)</span></a></figcaption>
+              <a href="${r.photoCredit.url}" target="_blank" rel="noopener noreferrer">${r.sourceName}<span class="sr-only"> (se abre en otra pestaña)</span></a></figcaption>
           </figure>
           <div class="pr-body">
             <p><span class="muted">EIDOS:</span> ${sciName(r)}${r.vernacularName ? html` <span class="row-text">${r.vernacularName}</span>` : ''}</p>
-            <p><span class="muted">iNaturalist:</span> <a href="${r.inatTaxonUrl}" target="_blank" rel="noopener noreferrer"><i>${r.inatName}</i><span
-              class="sr-only"> en iNaturalist (se abre en otra pestaña)</span></a></p>
+            <p><span class="muted">${r.sourceName} la llama:</span> <a href="${r.sourceTaxonUrl}" target="_blank" rel="noopener noreferrer"><i>${r.sourceTaxonName}</i><span
+              class="sr-only"> en ${r.sourceName} (se abre en otra pestaña)</span></a></p>
             <div class="form-actions">
               <button type="button" class="btn-primary" data-taxon="${r.taxonID}" data-decision="accept"
                 >Aceptar<span class="sr-only"> la foto para ${r.canonicalName}</span></button>
@@ -281,7 +283,8 @@ export function mount(el, { go }) {
       data.photoReviews = data.photoReviews.filter((r) => r.taxonID !== taxonID);
       const sp = data.species.find((s) => s.taxonID === taxonID);
       if (sp && res.species) Object.assign(sp, { thumbnail: res.species.thumbnail, photoCredit: res.species.photoCredit });
-      reviewStatus = `${decision === 'accept' ? 'Foto aceptada' : 'Foto rechazada'} para ${item.canonicalName}.`;
+      reviewStatus = decision === 'accept' ? `Foto aceptada para ${item.canonicalName}.`
+        : `Foto rechazada para ${item.canonicalName}: se buscará en la fuente siguiente.`;
     } catch (e) {
       if (!alive) return;
       reviewStatus = e.status === 409 ? 'Esa foto ya no estaba pendiente (la ha revisado otra persona).' : e.message;
