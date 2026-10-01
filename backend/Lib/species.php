@@ -8,10 +8,14 @@
 //             (detail_fetched_at). Caduca a los SPECIES_DETAIL_MAX_AGE_DAYS días.
 // El estado legal también se puede traer solo (legal_fetched_at) para el filtro `legal` del buscador.
 // Las especies de usuario (source='user', taxonID biodex:<uuid>) nunca se piden a EIDOS.
+// F11b: miniatura = foto de la Fototeca > foto de iNaturalist aceptada (species_photos, status ok) >
+// silueta del grupo (shared/species-groups.json). Las filas que acaban en speciesSummaryOut() traen las
+// columnas inat_* de SPECIES_PHOTO_JOIN; sin ellas, simplemente no hay foto de iNat.
 // ================================================================================================
 
 require_once __DIR__ . "/eidos.php";
 require_once __DIR__ . "/sensitivity.php";
+require_once __DIR__ . "/inat.php";
 
 const SPECIES_DETAIL_MAX_AGE_DAYS = 30;
 const SPECIES_PHOTO_ATTRIBUTION = "Fototeca MITECO (vía EIDOS)";
@@ -31,6 +35,11 @@ const SPECIES_LEGAL_FILTERS = [
 // el móvil puede guardarlas sin respuestas «opacas». Misma forma de ruta que admite nginx.
 const SPECIES_FOTOTECA_ORIGIN = '#^https?://www\.miteco\.gob\.es/content/dam/fototeca/([A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*\.(?:jpe?g|png|webp|gif))$#i';
 const SPECIES_FOTOTECA_PROXY = "/img/fototeca/";
+// Foto de iNaturalist aceptada (F11b), servida por el proxy /img/inat/<id>/<tamaño>.<ext> de nginx.
+const SPECIES_INAT_PROXY = "/img/inat/";
+const SPECIES_PHOTO_COLUMNS = "ph.photo_id AS inat_photo_id, ph.photo_ext AS inat_photo_ext, ph.attribution AS inat_attribution, ph.license AS inat_license";
+const SPECIES_PHOTO_JOIN = "LEFT JOIN species_photos ph ON ph.taxonID = s.taxonID AND ph.status = 'ok'";
+const SPECIES_GROUPS_JSON = __DIR__ . "/../../shared/species-groups.json";
 
 /** URL de la Fototeca → la del proxy; null si no es de la Fototeca (la CSP no la dejaría cargar). */
 function speciesImageUrl(?string $url): ?string {
@@ -52,9 +61,62 @@ function speciesIsEidosId(string $taxonID): bool {
 }
 
 function speciesFind(PDO $pdo, string $taxonID): ?array {
-    $stmt = $pdo->prepare("SELECT * FROM species WHERE taxonID = ?");
+    $stmt = $pdo->prepare("SELECT s.*, " . SPECIES_PHOTO_COLUMNS . " FROM species s " . SPECIES_PHOTO_JOIN . " WHERE s.taxonID = ?");
     $stmt->execute([$taxonID]);
     return $stmt->fetch() ?: null;
+}
+
+// --- Fotos de respaldo y siluetas (F11b) ---------------------------------------------------------
+
+/**
+ * Pone en cola (status pending) la búsqueda de foto en iNaturalist de una especie de EIDOS sin foto de la
+ * Fototeca. Nunca espera a iNat: la busca bin/fetch-species-photos.php. Las de usuario no se buscan (su
+ * nombre puede no existir): van directas a la silueta. → true si ha creado la fila.
+ */
+function speciesQueuePhoto(PDO $pdo, array $row): bool {
+    if ($row["source"] !== "eidos" || speciesImagesOut($row)) return false;
+    $stmt = $pdo->prepare("INSERT IGNORE INTO species_photos (taxonID) VALUES (?)");
+    $stmt->execute([$row["taxonID"]]);
+    return $stmt->rowCount() > 0;
+}
+
+/** Miniatura y su crédito: Fototeca > iNaturalist aceptada > nada (el cliente pinta la silueta). */
+function speciesPhotoOut(array $row): array {
+    $images = speciesImagesOut($row);
+    if ($images) {
+        return ["thumbnail" => $images[0]["url"],
+                "photoCredit" => ["text" => SPECIES_PHOTO_ATTRIBUTION, "license" => null, "url" => null, "source" => "fototeca"]];
+    }
+    if (!empty($row["inat_photo_id"])) {
+        $id = (string) $row["inat_photo_id"];
+        return ["thumbnail" => SPECIES_INAT_PROXY . "{$id}/medium.{$row["inat_photo_ext"]}",
+                "photoCredit" => ["text" => $row["inat_attribution"], "license" => inatLicenseLabel($row["inat_license"]),
+                                  "url" => INAT_PHOTO_PAGE . $id, "source" => "inaturalist"]];
+    }
+    return ["thumbnail" => null, "photoCredit" => null];
+}
+
+/** Reglas de shared/species-groups.json (una lectura por proceso). */
+function speciesGroupsConfig(): array {
+    static $cfg = null;
+    if ($cfg === null) {
+        $cfg = json_decode((string) @file_get_contents(SPECIES_GROUPS_JSON), true);
+        if (!is_array($cfg) || !isset($cfg["groups"], $cfg["rules"], $cfg["default"])) {
+            throw new RuntimeException("shared/species-groups.json no se puede leer");
+        }
+    }
+    return $cfg;
+}
+
+/** Silueta del grupo por la taxonomía (reino/filo/clase/orden): la primera regla que casa. → {id, label} */
+function speciesSilhouette(array $row): array {
+    $cfg = speciesGroupsConfig();
+    $id = $cfg["default"];
+    foreach ($cfg["rules"] as $rule) {
+        $value = $row[$rule["rank"]] ?? null;
+        if ($value !== null && in_array($value, $rule["in"], true)) { $id = $rule["group"]; break; }
+    }
+    return ["id" => $id, "label" => $cfg["groups"][$id] ?? $cfg["groups"][$cfg["default"]]];
 }
 
 /** Nombre sin autor: género + epíteto [+ marca + infraespecífico]; si no hay epítetos, el nombre tal cual. */
@@ -276,7 +338,7 @@ function speciesExcerpt(?string $text, int $max = 320): ?string {
 
 /** Tarjeta de especie (resultados de búsqueda, listas de catálogo). */
 function speciesSummaryOut(array $row): array {
-    $images = speciesImagesOut($row);
+    $photo = speciesPhotoOut($row);
     return [
         "taxonID"                  => $row["taxonID"],
         "source"                   => $row["source"],
@@ -290,7 +352,9 @@ function speciesSummaryOut(array $row): array {
         "iucnPrimary"              => speciesIucnPrimary($row),
         "iucnAssessments"          => speciesIucnBadges($row),
         "descriptionExcerpt"       => speciesExcerpt($row["description"]),
-        "thumbnail"                => $images[0]["url"] ?? null,
+        "thumbnail"                => $photo["thumbnail"],
+        "photoCredit"              => $photo["photoCredit"],
+        "silhouette"               => speciesSilhouette($row),
         "eidosUrl"                 => speciesEidosUrl($row),
     ];
 }

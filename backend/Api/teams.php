@@ -73,7 +73,7 @@ function auditDetail(array $r, array $names, array $species): string {
     return match ($r["action"]) {
         "view_exact"   => (int) $t === 1 ? "Recibió 1 coordenada exacta ajena" : "Recibió {$t} coordenadas exactas ajenas",
         "login_failed" => "Contraseña incorrecta al transferir la propiedad",
-        "set_level", "set_reference" => preg_replace_callback('/^([^:]+):/', fn($m) => ($species[$m[1]] ?? $m[1]) . ":", $t),
+        "set_level", "set_reference", "photo_review" => preg_replace_callback('/^([^:]+):/', fn($m) => ($species[$m[1]] ?? $m[1]) . ":", $t),
         default        => $t,
     };
 }
@@ -309,7 +309,7 @@ $taxa = [];
 foreach ($rows as $r) {
     preg_match_all('/user:(\d+)/', (string) $r["target"], $mm);
     foreach ($mm[1] as $id) $userIds[(int) $id] = true;
-    if (in_array($r["action"], ["set_level", "set_reference"], true) && preg_match('/^([^:]+):/', (string) $r["target"], $t)) $taxa[$t[1]] = true;
+    if (in_array($r["action"], ["set_level", "set_reference", "photo_review"], true) && preg_match('/^([^:]+):/', (string) $r["target"], $t)) $taxa[$t[1]] = true;
 }
 $names = [];
 if ($userIds) {

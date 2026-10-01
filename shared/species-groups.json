@@ -1,0 +1,47 @@
+{
+  "description": "Silueta de respaldo por grupo (F11b, docs/fotos-respaldo.md). Se aplica en backend/Lib/species.php (speciesSilhouette) sobre la taxonomía de EIDOS (o la de GBIF en especies de usuario): la PRIMERA regla que casa gana, así que las específicas van antes. Sin regla → generic. Cada id es un <symbol id=\"sil-<id>\"> de frontend/img/silhouettes.svg.",
+  "groups": {
+    "flowering-plant": "planta con flor",
+    "fern": "helecho",
+    "gymnosperm": "gimnosperma",
+    "bryophyte": "briófito",
+    "fungus": "hongo",
+    "lichen": "liquen",
+    "alga": "alga",
+    "bird": "ave",
+    "mammal": "mamífero",
+    "reptile": "reptil",
+    "amphibian": "anfibio",
+    "fish": "pez",
+    "insect": "insecto",
+    "arachnid": "arácnido",
+    "mollusc": "molusco",
+    "crustacean": "crustáceo",
+    "invertebrate": "otro invertebrado",
+    "generic": "organismo"
+  },
+  "default": "generic",
+  "rules": [
+    { "rank": "class",   "in": ["Lecanoromycetes", "Arthoniomycetes", "Lichinomycetes"], "group": "lichen" },
+    { "rank": "kingdom", "in": ["Fungi"], "group": "fungus" },
+    { "rank": "phylum",  "in": ["Mycetozoa"], "group": "fungus" },
+
+    { "rank": "class",   "in": ["Magnoliopsida", "Liliopsida"], "group": "flowering-plant" },
+    { "rank": "class",   "in": ["Polypodiopsida", "Lycopodiopsida", "Equisetopsida"], "group": "fern" },
+    { "rank": "class",   "in": ["Pinopsida", "Gnetopsida", "Cycadopsida", "Ginkgoopsida"], "group": "gymnosperm" },
+    { "rank": "phylum",  "in": ["Bryophyta", "Marchantiophyta", "Anthocerotophyta"], "group": "bryophyte" },
+    { "rank": "phylum",  "in": ["Rhodophyta", "Chlorophyta", "Charophyta", "Ochrophyta", "Haptophyta"], "group": "alga" },
+    { "rank": "phylum",  "in": ["Tracheophyta"], "group": "flowering-plant" },
+
+    { "rank": "class",   "in": ["Aves"], "group": "bird" },
+    { "rank": "class",   "in": ["Mammalia"], "group": "mammal" },
+    { "rank": "class",   "in": ["Reptilia", "Squamata", "Testudines", "Crocodylia"], "group": "reptile" },
+    { "rank": "class",   "in": ["Amphibia"], "group": "amphibian" },
+    { "rank": "class",   "in": ["Actinopterygii", "Actinopteri", "Teleostei", "Elasmobranchii", "Holocephali", "Cephalaspidomorphi", "Petromyzonti", "Sarcopterygii", "Myxini"], "group": "fish" },
+    { "rank": "class",   "in": ["Insecta"], "group": "insect" },
+    { "rank": "class",   "in": ["Arachnida"], "group": "arachnid" },
+    { "rank": "phylum",  "in": ["Mollusca"], "group": "mollusc" },
+    { "rank": "class",   "in": ["Malacostraca", "Hexanauplia", "Branchiopoda", "Ostracoda", "Maxillopoda", "Copepoda", "Thecostraca"], "group": "crustacean" },
+    { "rank": "kingdom", "in": ["Animalia"], "group": "invertebrate" }
+  ]
+}

@@ -7,6 +7,8 @@
 //   GET  /api/species/{taxonID}   ficha completa (la trae de EIDOS si falta o tiene > 30 días)
 //   POST /api/species             {scientificName, scientificNameAuthorship, taxonRank, vernacularName?, taxonID?}
 //                                 taxonID = biodex:<uuid v4> propuesto por el móvil (especie creada sin conexión)
+//   POST /api/species/{taxonID}/photo-review   {catalogId, decision: accept|reject} (F11b) owner/custodian del
+//                                 catálogo: la foto de iNaturalist propuesta por sinónimo → ok o rejected; a access_log
 //
 // Búsqueda con `q`: EIDOS en vivo (grupo, origen y ámbito se filtran allí) + especies de usuario de la
 // caché. Sin `q`: solo la caché. `legal` y `category` se aplican sobre la caché: la categoría llega ya con
@@ -16,6 +18,8 @@
 
 require_once __DIR__ . "/../Lib/session.php";
 require_once __DIR__ . "/../Lib/species.php";
+require_once __DIR__ . "/../Lib/authz.php";
+require_once __DIR__ . "/../Lib/audit.php";
 
 const SEARCH_DEFAULT_LIMIT = 20;
 const SEARCH_MAX_LIMIT     = 50;
@@ -33,8 +37,9 @@ $userId = requireUserId();
 
 $method = $_SERVER["REQUEST_METHOD"];
 $path   = parse_url($_SERVER["REQUEST_URI"] ?? "/", PHP_URL_PATH);
-if (!preg_match('#^/api/species(?:/([^/]+))?/?$#', $path, $m)) apiError("Recurso no encontrado.", 404);
+if (!preg_match('#^/api/species(?:/([^/]+)(/photo-review)?)?/?$#', $path, $m)) apiError("Recurso no encontrado.", 404);
 $taxonID = isset($m[1]) ? rawurldecode($m[1]) : null;
+$photoReviewPath = !empty($m[2]);
 
 // ------------------------------------------------------------------------------------------------
 
@@ -57,7 +62,8 @@ function intParam(string $name, int $default, int $min, int $max): int {
 /** Filas de `species` en el orden de $ids. */
 function speciesRowsByIds(PDO $pdo, array $ids): array {
     if (!$ids) return [];
-    $stmt = $pdo->prepare("SELECT * FROM species WHERE taxonID IN (" . rtrim(str_repeat("?,", count($ids)), ",") . ")");
+    $stmt = $pdo->prepare("SELECT s.*, " . SPECIES_PHOTO_COLUMNS . " FROM species s " . SPECIES_PHOTO_JOIN
+        . " WHERE s.taxonID IN (" . rtrim(str_repeat("?,", count($ids)), ",") . ")");
     $stmt->execute($ids);
     $byId = array_column($stmt->fetchAll(), null, "taxonID");
     return array_values(array_filter(array_map(fn($id) => $byId[$id] ?? null, $ids)));
@@ -70,16 +76,16 @@ function searchCache(PDO $pdo, ?string $q, array $columnFilters, ?string $source
     if ($q !== null) {
         // La colación _ai_ ya ignora acentos y mayúsculas.
         $like = "%" . addcslashes($q, "%_\\") . "%";
-        $where[] = "(canonical_name LIKE ? OR scientificName LIKE ? OR vernacularName LIKE ?)";
+        $where[] = "(s.canonical_name LIKE ? OR s.scientificName LIKE ? OR s.vernacularName LIKE ?)";
         array_push($args, $like, $like, $like);
     }
     foreach ($columnFilters as $col => $value) {
-        $where[] = "`{$col}` = ?";
+        $where[] = "s.`{$col}` = ?";
         $args[] = $value;
     }
-    if ($source !== null) { $where[] = "source = ?"; $args[] = $source; }
-    $stmt = $pdo->prepare("SELECT * FROM species" . ($where ? " WHERE " . implode(" AND ", $where) : "")
-        . " ORDER BY canonical_name LIMIT " . (int) $cap);
+    if ($source !== null) { $where[] = "s.source = ?"; $args[] = $source; }
+    $stmt = $pdo->prepare("SELECT s.*, " . SPECIES_PHOTO_COLUMNS . " FROM species s " . SPECIES_PHOTO_JOIN
+        . ($where ? " WHERE " . implode(" AND ", $where) : "") . " ORDER BY s.canonical_name LIMIT " . (int) $cap);
     $stmt->execute($args);
     return $stmt->fetchAll();
 }
@@ -281,7 +287,49 @@ function handleCreate(PDO $pdo, int $userId): never {
     respond(["species" => speciesFullOut(speciesFind($pdo, $taxonID))], 201);
 }
 
+/**
+ * Revisión de la foto de iNaturalist propuesta por sinónimo (F11b). Owner o custodio de un catálogo que
+ * tenga la especie; la decisión es global (species_photos la comparten todos los catálogos). Aceptar → ok
+ * (se muestra); rechazar → rejected (no se vuelve a proponer). Sube content_seq de los catálogos con la
+ * especie (su paquete offline cambia) y queda en access_log quién y cuándo.
+ */
+function handlePhotoReview(PDO $pdo, int $userId, string $taxonID): never {
+    $body = requireJsonBody("{catalogId, decision: accept|reject}");
+    $catalogId = is_string($body["catalogId"] ?? null) ? $body["catalogId"] : "";
+    if (!preg_match('/^[0-9a-f-]{36}$/', $catalogId)) apiError("«catalogId» debe ser el id de un catálogo.", 400);
+    $decision = $body["decision"] ?? null;
+    if (!in_array($decision, ["accept", "reject"], true)) apiError("«decision» debe ser accept o reject.", 400);
+    requireCatalogPermission($pdo, $catalogId, $userId, "review_photos");
+    $stmt = $pdo->prepare("SELECT 1 FROM catalog_species WHERE catalog_id = ? AND taxonID = ? AND deleted_at IS NULL");
+    $stmt->execute([$catalogId, $taxonID]);
+    if (!$stmt->fetchColumn()) apiError("La especie no está en el catálogo.", 404);
+
+    $pdo->beginTransaction();
+    $stmt = $pdo->prepare("SELECT * FROM species_photos WHERE taxonID = ? FOR UPDATE");
+    $stmt->execute([$taxonID]);
+    $photo = $stmt->fetch();
+    if (!$photo || $photo["status"] !== "review") {
+        $pdo->rollBack();
+        apiError("Esta especie no tiene ninguna foto pendiente de revisión.", 409);
+    }
+    $status = $decision === "accept" ? "ok" : "rejected";
+    $pdo->prepare("UPDATE species_photos SET status = ?, reviewed_by = ?, reviewed_at = NOW() WHERE taxonID = ?")
+        ->execute([$status, $userId, $taxonID]);
+    $pdo->prepare("UPDATE catalogs SET content_seq = content_seq + 1 WHERE deleted_at IS NULL AND id IN
+                   (SELECT catalog_id FROM catalog_species WHERE taxonID = ? AND deleted_at IS NULL)")->execute([$taxonID]);
+    logAccess($pdo, $userId, "photo_review", $catalogId, "{$taxonID}: foto de iNaturalist {$photo["photo_id"]} de «{$photo["matched_name"]}» "
+        . ($status === "ok" ? "aceptada" : "rechazada"));
+    $pdo->commit();
+
+    respond(["taxonID" => $taxonID, "status" => $status, "species" => speciesSummaryOut(speciesFind($pdo, $taxonID))]);
+}
+
 // ------------------------------------------------------------------------------------------------
+
+if ($photoReviewPath) {
+    if ($method !== "POST") apiMethodNotAllowed("POST");
+    handlePhotoReview($pdo, $userId, $taxonID);
+}
 
 if ($method === "GET" && $taxonID === null) handleSearch($pdo);
 if ($method === "GET" && $taxonID === "filters") handleFilters();

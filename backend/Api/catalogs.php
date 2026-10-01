@@ -20,6 +20,8 @@
 // Exportación (F10a): POST /api/catalogs/{id}/export[/preview] → Api/exports.php, incluido desde aquí.
 // content_seq sube con cada cambio de lo que lleva el paquete offline (especies, niveles, nombre):
 // el pull de /api/sync lo devuelve y el móvil vuelve a descargar el paquete si no coincide.
+// F11b: dar de alta una especie de EIDOS sin foto de la Fototeca la pone en cola (species_photos pending)
+// para bin/fetch-species-photos.php; GET /api/catalogs/{id} lleva a owner y custodio `photoReviews`.
 // ================================================================================================
 
 require_once __DIR__ . "/../Lib/session.php";
@@ -98,9 +100,10 @@ function catalogFields(array $body, bool $partial): array {
 function catalogSpecies(PDO $pdo, string $catalogId): array {
     $stmt = $pdo->prepare(
         "SELECT s.*, ss.level AS sens_level, ss.suggested_level AS sens_suggested, ss.reason AS sens_reason,
-                ss.set_by AS sens_set_by, ss.set_at AS sens_set_at, u.name AS sens_set_by_name, cs.added_at
+                ss.set_by AS sens_set_by, ss.set_at AS sens_set_at, u.name AS sens_set_by_name, cs.added_at, " . SPECIES_PHOTO_COLUMNS . "
            FROM catalog_species cs
            JOIN species s ON s.taxonID = cs.taxonID
+           " . SPECIES_PHOTO_JOIN . "
            LEFT JOIN species_sensitivity ss ON ss.catalog_id = cs.catalog_id AND ss.taxonID = cs.taxonID
            LEFT JOIN users u ON u.id = ss.set_by
           WHERE cs.catalog_id = ? AND cs.deleted_at IS NULL
@@ -168,7 +171,34 @@ function catalogAddSpecies(PDO $pdo, string $catalogId, array $species, int $use
         ->execute([$catalogId, $taxonID, $level, $level, mb_substr($reason, 0, 255)]);
     $changed = $existing === false || $existing["deleted_at"] !== null;
     if ($changed) catalogBumpContent($pdo, $catalogId);
+    speciesQueuePhoto($pdo, $species);   // F11b: foto de respaldo, la busca bin/fetch-species-photos.php
     return $changed;
+}
+
+/**
+ * Fotos de iNaturalist propuestas por sinónimo (status review) de las especies del catálogo, para que owner
+ * o custodio las acepten o rechacen (POST /api/species/{taxonID}/photo-review). F11b.
+ */
+function catalogPhotoReviews(PDO $pdo, string $catalogId): array {
+    $stmt = $pdo->prepare(
+        "SELECT s.taxonID, s.canonical_name, s.scientificName, s.scientificNameAuthorship, s.vernacularName,
+                ph.photo_id, ph.photo_ext, ph.attribution, ph.license, ph.matched_name, ph.inat_taxon_id, ph.match_type
+           FROM catalog_species cs
+           JOIN species s ON s.taxonID = cs.taxonID
+           JOIN species_photos ph ON ph.taxonID = cs.taxonID AND ph.status = 'review'
+          WHERE cs.catalog_id = ? AND cs.deleted_at IS NULL
+          ORDER BY s.canonical_name"
+    );
+    $stmt->execute([$catalogId]);
+    return array_map(fn($r) => [
+        "taxonID" => $r["taxonID"], "canonicalName" => $r["canonical_name"], "scientificName" => $r["scientificName"],
+        "scientificNameAuthorship" => $r["scientificNameAuthorship"], "vernacularName" => $r["vernacularName"],
+        "inatName" => $r["matched_name"], "inatTaxonUrl" => "https://www.inaturalist.org/taxa/" . $r["inat_taxon_id"],
+        "matchType" => $r["match_type"],
+        "photo" => SPECIES_INAT_PROXY . "{$r["photo_id"]}/medium.{$r["photo_ext"]}",
+        "photoCredit" => ["text" => $r["attribution"], "license" => inatLicenseLabel($r["license"]),
+                          "url" => INAT_PHOTO_PAGE . $r["photo_id"], "source" => "inaturalist"],
+    ], $stmt->fetchAll());
 }
 
 /** Especie vigente del catálogo con su sensibilidad, o 404. */
@@ -279,7 +309,7 @@ if ($sub === null) {
                 "sensitivity" => sensitivityOut($r), "addedAt" => $r["added_at"],
             ], $rows),
             "summary" => ["total" => count($rows), "byTaxonomicGroup" => $byGroup, "byIucnCategory" => $byCategory],
-        ]);
+        ] + (catalogCan($role, "review_photos") ? ["photoReviews" => catalogPhotoReviews($pdo, $catalogId)] : []));
     }
     if ($method === "PATCH") {
         requireCatalogPermission($pdo, $catalogId, $userId, "edit_catalog");
