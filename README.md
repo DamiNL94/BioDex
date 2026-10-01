@@ -18,7 +18,7 @@ Necesitas Docker Desktop (Compose v2), Git, Edge o Chrome y conexión a internet
    foto en EIDOS (1 petición/s; `docs/fotos-respaldo.md`).
 7. Abre http://localhost:8090 y entra con una de las cuentas de abajo.
 8. Instala la app: icono «Instalar» de la barra de direcciones de Edge o Chrome (`localhost` cuenta como contexto seguro).
-9. En la app instalada: Catálogos › «Descargar para usar sin conexión» y Mapa › Zonas › «Descargar esta zona».
+9. En la app instalada: Catálogo › «Llevar al campo» y Mapa › Zonas › «Descargar esta zona».
 10. Comprueba que todo está en verde: `docker compose exec php php bin/check-sw.php` y `bin/test-f10b.php` (lista completa abajo).
 
 Otras direcciones: Adminer http://localhost:8081 (servidor `mysql`, usuario y contraseña de `.env`) · correo de
