@@ -1,0 +1,1829 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Dataset xmlns:dwc="http://rs.tdwg.org/dwc/terms/" xmlns:tcs="http://www.tdwg.org/schemas/tcs/1.01" xmlns:eol="http://www.eol.org/transfer/content/0.3" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/">
+  <Metadata>
+    <Dataset_ID>urn:uuid:93bc685d-0b54-4257-9cf9-01aff4165bb0</Dataset_ID>
+    <dateStamp>2026-10-01</dateStamp>
+    <dataset>
+      <alternateIdentifier>urn:uuid:93bc685d-0b54-4257-9cf9-01aff4165bb0</alternateIdentifier>
+      <title>DEMO — Flora amenazada de Sierra Nevada (datos ficticios) — fichas de especie</title>
+      <creator>
+        <individualName>
+          <surName>Lucía Ortega</surName>
+        </individualName>
+        <onlineUrl>https://orcid.org/0000-0002-1825-0097</onlineUrl>
+      </creator>
+      <metadataProvider>
+        <individualName>
+          <surName>Lucía Ortega</surName>
+        </individualName>
+        <onlineUrl>https://orcid.org/0000-0002-1825-0097</onlineUrl>
+      </metadataProvider>
+      <associatedParty>
+        <individualName>
+          <surName>Carlos Molina</surName>
+        </individualName>
+        <role>Evaluador/a (evaluación BioDex)</role>
+      </associatedParty>
+      <associatedParty>
+        <individualName>
+          <surName>Carlos Molina</surName>
+        </individualName>
+        <role>Observador/a (registros de distribución)</role>
+      </associatedParty>
+      <associatedParty>
+        <individualName>
+          <surName>Elena Ruiz</surName>
+        </individualName>
+        <role>Observador/a (registros de distribución)</role>
+      </associatedParty>
+      <associatedParty>
+        <individualName>
+          <surName>Lucía Ortega</surName>
+        </individualName>
+        <onlineUrl>https://orcid.org/0000-0002-1825-0097</onlineUrl>
+        <role>Observador/a (registros de distribución)</role>
+      </associatedParty>
+      <pubDate>2026-10-01</pubDate>
+      <language>spa</language>
+      <abstract>
+        <para>Datos ficticios para demostración: no publicar. Catálogo de ejemplo de BioDex: especies reales de EIDOS con observaciones inventadas en Sierra Nevada (Granada) para enseñar la aplicación. Fichas de 10 especies del catálogo BioDex «DEMO — Flora amenazada de Sierra Nevada (datos ficticios)»: taxonomía según EIDOS (IEPNB, MITECO), categorías de amenaza oficiales recogidas en EIDOS, la evaluación regional preliminar hecha en BioDex (no oficial) y la distribución en cifras (EOO, AOO) según las observaciones exportadas. No incluye observaciones individuales.</para>
+      </abstract>
+      <additionalInfo>
+        <para>Generado con BioDex 1.1.0 el 01/10/2026 03:31 (hora peninsular), exportación para publicar. Plinian Core 3.2.2.7, validado contra su XSD. Fuente de los datos de distribución: el Darwin Core Archive dwca/ de esta misma descarga (BioDex_DEMO_Flora_amenazada_de_Sierra_Nevada_datos_ficticios_publicar_2026-10-01.zip). Ninguna ficha lleva coordenadas ni cuadrículas: solo cifras agregadas.</para>
+      </additionalInfo>
+      <intellectualRights>
+        <para>Creative Commons Attribution (CC-BY 4.0) · http://creativecommons.org/licenses/by/4.0/legalcode</para>
+      </intellectualRights>
+      <coverage>
+        <temporalCoverage>
+          <rangeOfDates>
+            <beginDate>
+              <calendarDate>2026-05-20</calendarDate>
+            </beginDate>
+            <endDate>
+              <calendarDate>2026-09-14</calendarDate>
+            </endDate>
+          </rangeOfDates>
+        </temporalCoverage>
+        <taxonomicCoverage>
+          <generalTaxonomicCoverage>10 taxones de 10 familias</generalTaxonomicCoverage>
+          <taxonomicClassification>
+            <taxonRankName>family</taxonRankName>
+            <taxonRankValue>Amaryllidaceae</taxonRankValue>
+          </taxonomicClassification>
+          <taxonomicClassification>
+            <taxonRankName>family</taxonRankName>
+            <taxonRankValue>Apiaceae</taxonRankValue>
+          </taxonomicClassification>
+          <taxonomicClassification>
+            <taxonRankName>family</taxonRankName>
+            <taxonRankValue>Asteraceae</taxonRankValue>
+          </taxonomicClassification>
+          <taxonomicClassification>
+            <taxonRankName>family</taxonRankName>
+            <taxonRankValue>Caryophyllaceae</taxonRankValue>
+          </taxonomicClassification>
+          <taxonomicClassification>
+            <taxonRankName>family</taxonRankName>
+            <taxonRankValue>Crassulaceae</taxonRankValue>
+          </taxonomicClassification>
+          <taxonomicClassification>
+            <taxonRankName>family</taxonRankName>
+            <taxonRankValue>Geraniaceae</taxonRankValue>
+          </taxonomicClassification>
+          <taxonomicClassification>
+            <taxonRankName>family</taxonRankName>
+            <taxonRankValue>Lentibulariaceae</taxonRankValue>
+          </taxonomicClassification>
+          <taxonomicClassification>
+            <taxonRankName>family</taxonRankName>
+            <taxonRankValue>Plantaginaceae</taxonRankValue>
+          </taxonomicClassification>
+          <taxonomicClassification>
+            <taxonRankName>family</taxonRankName>
+            <taxonRankValue>Solanaceae</taxonRankValue>
+          </taxonomicClassification>
+          <taxonomicClassification>
+            <taxonRankName>family</taxonRankName>
+            <taxonRankValue>Violaceae</taxonRankValue>
+          </taxonomicClassification>
+          <taxonomicClassification>
+            <taxonRankName>species</taxonRankName>
+            <taxonRankValue>Arenaria nevadensis</taxonRankValue>
+          </taxonomicClassification>
+          <taxonomicClassification>
+            <taxonRankName>species</taxonRankName>
+            <taxonRankValue>Artemisia granatensis</taxonRankValue>
+          </taxonomicClassification>
+          <taxonomicClassification>
+            <taxonRankName>species</taxonRankName>
+            <taxonRankValue>Atropa baetica</taxonRankValue>
+          </taxonomicClassification>
+          <taxonomicClassification>
+            <taxonRankName>species</taxonRankName>
+            <taxonRankValue>Erodium boissieri</taxonRankValue>
+          </taxonomicClassification>
+          <taxonomicClassification>
+            <taxonRankName>species</taxonRankName>
+            <taxonRankValue>Laserpitium longiradium</taxonRankValue>
+          </taxonomicClassification>
+          <taxonomicClassification>
+            <taxonRankName>species</taxonRankName>
+            <taxonRankValue>Narcissus nevadensis</taxonRankValue>
+          </taxonomicClassification>
+          <taxonomicClassification>
+            <taxonRankName>species</taxonRankName>
+            <taxonRankValue>Pinguicula nevadensis</taxonRankValue>
+          </taxonomicClassification>
+          <taxonomicClassification>
+            <taxonRankName>species</taxonRankName>
+            <taxonRankValue>Plantago nivalis</taxonRankValue>
+          </taxonomicClassification>
+          <taxonomicClassification>
+            <taxonRankName>species</taxonRankName>
+            <taxonRankValue>Sempervivum minutum</taxonRankValue>
+          </taxonomicClassification>
+          <taxonomicClassification>
+            <taxonRankName>species</taxonRankName>
+            <taxonRankValue>Viola crassiuscula</taxonRankValue>
+          </taxonomicClassification>
+        </taxonomicCoverage>
+      </coverage>
+      <contact>
+        <individualName>
+          <surName>Lucía Ortega</surName>
+        </individualName>
+        <onlineUrl>https://orcid.org/0000-0002-1825-0097</onlineUrl>
+      </contact>
+      <methods>
+        <methodStep>
+          <description>
+            <para>Taxonomía y categorías oficiales: EIDOS (IEPNB, MITECO). Evaluación BioDex: asistente UICN 3.1 de la app, revisado por quien evalúa; solo se incluye la de referencia del catálogo. EOO: polígono convexo mínimo de las presencias exportadas con precisión no peor que la celda; AOO: celdas de 2×2 km ocupadas; ambas en ETRS89 / UTM 30N (EPSG:25830), calculadas en el servidor con las coordenadas exactas.</para>
+          </description>
+        </methodStep>
+      </methods>
+    </dataset>
+  </Metadata>
+  <TaxonRecord>
+    <BaseElements>
+      <TaxonRecordID>EIDOS:2337</TaxonRecordID>
+      <dwc:nameAccordingTo>EIDOS (IEPNB, MITECO)</dwc:nameAccordingTo>
+    </BaseElements>
+    <RecordMetadata>
+      <Language>es</Language>
+      <Version>
+        <Modifier>BioDex 1.1.0</Modifier>
+        <DateIssued>2026-10-01</DateIssued>
+      </Version>
+      <Revision>
+        <associatedParty>
+          <individualName>
+            <surName>Elena Ruiz</surName>
+          </individualName>
+          <role>Generó la ficha</role>
+        </associatedParty>
+        <pubDate>2026-10-01</pubDate>
+        <dcterms:created>2026-10-01T03:31:19+02:00</dcterms:created>
+      </Revision>
+    </RecordMetadata>
+    <NomenclatureAndClassification>
+      <TaxonRecordName>
+        <ScientificName id="n-EIDOS-2337" nomenclaturalCode="Botanical">
+          <tcs:Simple>Arenaria nevadensis Boiss. &amp; Reut.</tcs:Simple>
+          <tcs:Rank code="sp">species</tcs:Rank>
+          <tcs:CanonicalName>
+            <tcs:Simple>Arenaria nevadensis</tcs:Simple>
+          </tcs:CanonicalName>
+          <tcs:CanonicalAuthorship>
+            <tcs:Simple>Boiss. &amp; Reut.</tcs:Simple>
+          </tcs:CanonicalAuthorship>
+        </ScientificName>
+      </TaxonRecordName>
+      <CommonNames>
+        <CommonNamesAtomized>
+          <CommonName>Arenaria</CommonName>
+          <Language>es</Language>
+        </CommonNamesAtomized>
+      </CommonNames>
+      <Hierarchy classification="EIDOS">
+        <dwc:kingdom>Plantae</dwc:kingdom>
+        <dwc:phylum>Tracheophyta</dwc:phylum>
+        <dwc:class>Magnoliopsida</dwc:class>
+        <dwc:order>Caryophyllales</dwc:order>
+        <dwc:family>Caryophyllaceae</dwc:family>
+        <dwc:genus>Arenaria</dwc:genus>
+        <dwc:taxonRank>species</dwc:taxonRank>
+        <dwc:specificEpithet>nevadensis</dwc:specificEpithet>
+      </Hierarchy>
+    </NomenclatureAndClassification>
+    <HabitatAndDistribution>
+      <Distribution>
+        <temporalCoverage>
+          <rangeOfDates>
+            <beginDate>
+              <calendarDate>2026-05-26</calendarDate>
+            </beginDate>
+            <endDate>
+              <calendarDate>2026-08-15</calendarDate>
+            </endDate>
+          </rangeOfDates>
+        </temporalCoverage>
+        <DistributionAtomized>
+          <dwc:country>España</dwc:country>
+          <dwc:locality>Catálogo BioDex «DEMO — Flora amenazada de Sierra Nevada (datos ficticios)»</dwc:locality>
+        </DistributionAtomized>
+        <AncillaryData>
+          <eol:dataType>http://purl.org/dc/dcmitype/Text</eol:dataType>
+          <dc:title>Fuente de los datos de distribución</dc:title>
+          <dc:language>es</dc:language>
+          <dc:source>dwca/occurrence.txt de esta descarga (BioDex_DEMO_Flora_amenazada_de_Sierra_Nevada_datos_ficticios_publicar_2026-10-01.zip), taxonID EIDOS:2337</dc:source>
+          <eol:subject>http://rs.tdwg.org/ontology/voc/SPMInfoItems#Distribution</eol:subject>
+          <dc:description>4 registros exportados (4 presencias, 0 ausencias) entre el 2026-05-26 y el 2026-08-15. Reflejan las observaciones del catálogo, no la distribución completa de la especie.</dc:description>
+        </AncillaryData>
+      </Distribution>
+    </HabitatAndDistribution>
+    <DemographyAndThreat>
+      <Territory>
+        <TerritoryAtomized>
+          <ExtentOfOccurrence>
+            <dwc:MeasurementOrFact>
+              <dwc:measurementType>extensión de presencia (EOO)</dwc:measurementType>
+              <dwc:measurementValue>8</dwc:measurementValue>
+              <dwc:measurementUnit>km²</dwc:measurementUnit>
+              <dwc:measurementDeterminedBy>BioDex 1.1.0 (servidor)</dwc:measurementDeterminedBy>
+              <dwc:measurementDeterminedDate>2026-10-01</dwc:measurementDeterminedDate>
+              <dwc:measurementMethod>Polígono convexo mínimo de las presencias con precisión no peor que 2 km, en ETRS89 / UTM 30N (EPSG:25830)</dwc:measurementMethod>
+              <dwc:measurementRemarks>Solo con las presencias de esta exportación del catálogo (4 registros), no con la distribución completa de la especie. EOO menor que AOO: se toma EOO = AOO (UICN).</dwc:measurementRemarks>
+            </dwc:MeasurementOrFact>
+          </ExtentOfOccurrence>
+          <AreaOfOccupancy>
+            <dwc:MeasurementOrFact>
+              <dwc:measurementType>área de ocupación (AOO)</dwc:measurementType>
+              <dwc:measurementValue>8</dwc:measurementValue>
+              <dwc:measurementAccuracy>sin cambio al desplazar la rejilla media celda</dwc:measurementAccuracy>
+              <dwc:measurementUnit>km²</dwc:measurementUnit>
+              <dwc:measurementDeterminedBy>BioDex 1.1.0 (servidor)</dwc:measurementDeterminedBy>
+              <dwc:measurementDeterminedDate>2026-10-01</dwc:measurementDeterminedDate>
+              <dwc:measurementMethod>Celdas de 2×2 km ocupadas, rejilla anclada al origen UTM (EPSG:25830)</dwc:measurementMethod>
+              <dwc:measurementRemarks>Solo con las presencias de esta exportación del catálogo (4 registros), no con la distribución completa de la especie.</dwc:measurementRemarks>
+            </dwc:MeasurementOrFact>
+            <dwc:MeasurementOrFact>
+              <dwc:measurementType>número de cuadrículas ocupadas</dwc:measurementType>
+              <dwc:measurementValue>2</dwc:measurementValue>
+              <dwc:measurementUnit>cuadrículas de 2×2 km</dwc:measurementUnit>
+              <dwc:measurementDeterminedBy>BioDex 1.1.0 (servidor)</dwc:measurementDeterminedBy>
+              <dwc:measurementDeterminedDate>2026-10-01</dwc:measurementDeterminedDate>
+            </dwc:MeasurementOrFact>
+            <dwc:MeasurementOrFact>
+              <dwc:measurementType>tamaño de celda</dwc:measurementType>
+              <dwc:measurementValue>2</dwc:measurementValue>
+              <dwc:measurementUnit>km</dwc:measurementUnit>
+              <dwc:measurementDeterminedBy>BioDex 1.1.0 (servidor)</dwc:measurementDeterminedBy>
+              <dwc:measurementDeterminedDate>2026-10-01</dwc:measurementDeterminedDate>
+            </dwc:MeasurementOrFact>
+          </AreaOfOccupancy>
+          <AncillaryData>
+            <eol:dataType>http://purl.org/dc/dcmitype/Text</eol:dataType>
+            <dc:title>Avisos del cálculo</dc:title>
+            <dc:language>es</dc:language>
+            <eol:subject>http://rs.tdwg.org/ontology/voc/SPMInfoItems#Distribution</eol:subject>
+            <dc:description>EOO (0,478 km²) menor que AOO (8 km²): se toma EOO = AOO.</dc:description>
+          </AncillaryData>
+          <AncillaryData>
+            <eol:dataType>http://purl.org/dc/dcmitype/Text</eol:dataType>
+            <dc:title>Información retenida</dc:title>
+            <dc:language>es</dc:language>
+            <eol:subject>http://rs.tdwg.org/ontology/voc/SPMInfoItems#Distribution</eol:subject>
+            <dc:description>Especie sensible en este catálogo (nivel 2 · Alta): no se publican coordenadas, cuadrículas concretas ni el contorno de la EOO; solo cifras agregadas (EOO, AOO, número de cuadrículas).</dc:description>
+          </AncillaryData>
+        </TerritoryAtomized>
+      </Territory>
+      <ThreatStatus>
+        <ThreatStatusAtomized>
+          <ThreatCategory>CR B1ac(iii,iv)+2ac(iii,iv)</ThreatCategory>
+          <Authority>EIDOS (IEPNB, MITECO) · categoría oficial de 2010</Authority>
+          <AppliesTo>
+            <DistributionUnstructured>España</DistributionUnstructured>
+          </AppliesTo>
+        </ThreatStatusAtomized>
+        <ThreatStatusAtomized>
+          <ThreatCategory>CR B1ac(iii,iv)+2ac(iii,iv)</ThreatCategory>
+          <Authority>EIDOS (IEPNB, MITECO) · categoría oficial de 2011</Authority>
+          <AppliesTo>
+            <DistributionUnstructured>Mundial</DistributionUnstructured>
+          </AppliesTo>
+        </ThreatStatusAtomized>
+      </ThreatStatus>
+    </DemographyAndThreat>
+    <associatedParty>
+      <individualName>
+        <surName>Lucía Ortega</surName>
+      </individualName>
+      <onlineUrl>https://orcid.org/0000-0002-1825-0097</onlineUrl>
+      <role>Observador/a (registros de distribución)</role>
+    </associatedParty>
+    <associatedParty>
+      <individualName>
+        <surName>Carlos Molina</surName>
+      </individualName>
+      <role>Observador/a (registros de distribución)</role>
+    </associatedParty>
+    <associatedParty>
+      <individualName>
+        <surName>Elena Ruiz</surName>
+      </individualName>
+      <role>Observador/a (registros de distribución)</role>
+    </associatedParty>
+    <References>Darwin Core Archive dwca/ de esta descarga (BioDex_DEMO_Flora_amenazada_de_Sierra_Nevada_datos_ficticios_publicar_2026-10-01.zip): observaciones con taxonID EIDOS:2337.</References>
+  </TaxonRecord>
+  <TaxonRecord>
+    <BaseElements>
+      <TaxonRecordID>EIDOS:9918</TaxonRecordID>
+      <dwc:nameAccordingTo>EIDOS (IEPNB, MITECO)</dwc:nameAccordingTo>
+    </BaseElements>
+    <RecordMetadata>
+      <Language>es</Language>
+      <Version>
+        <Modifier>BioDex 1.1.0</Modifier>
+        <DateIssued>2026-10-01</DateIssued>
+      </Version>
+      <Revision>
+        <associatedParty>
+          <individualName>
+            <surName>Elena Ruiz</surName>
+          </individualName>
+          <role>Generó la ficha</role>
+        </associatedParty>
+        <pubDate>2026-10-01</pubDate>
+        <dcterms:created>2026-10-01T03:31:19+02:00</dcterms:created>
+      </Revision>
+    </RecordMetadata>
+    <NomenclatureAndClassification>
+      <TaxonRecordName>
+        <ScientificName id="n-EIDOS-9918" nomenclaturalCode="Botanical">
+          <tcs:Simple>Artemisia granatensis Boiss.</tcs:Simple>
+          <tcs:Rank code="sp">species</tcs:Rank>
+          <tcs:CanonicalName>
+            <tcs:Simple>Artemisia granatensis</tcs:Simple>
+          </tcs:CanonicalName>
+          <tcs:CanonicalAuthorship>
+            <tcs:Simple>Boiss.</tcs:Simple>
+          </tcs:CanonicalAuthorship>
+        </ScientificName>
+      </TaxonRecordName>
+      <CommonNames>
+        <CommonNamesAtomized>
+          <CommonName>Manzanilla de la sierra</CommonName>
+          <Language>es</Language>
+        </CommonNamesAtomized>
+      </CommonNames>
+      <Hierarchy classification="EIDOS">
+        <dwc:kingdom>Plantae</dwc:kingdom>
+        <dwc:phylum>Tracheophyta</dwc:phylum>
+        <dwc:class>Magnoliopsida</dwc:class>
+        <dwc:order>Asterales</dwc:order>
+        <dwc:family>Asteraceae</dwc:family>
+        <dwc:genus>Artemisia</dwc:genus>
+        <dwc:taxonRank>species</dwc:taxonRank>
+        <dwc:specificEpithet>granatensis</dwc:specificEpithet>
+      </Hierarchy>
+    </NomenclatureAndClassification>
+    <HabitatAndDistribution>
+      <Distribution>
+        <temporalCoverage>
+          <rangeOfDates>
+            <beginDate>
+              <calendarDate>2026-05-20</calendarDate>
+            </beginDate>
+            <endDate>
+              <calendarDate>2026-09-08</calendarDate>
+            </endDate>
+          </rangeOfDates>
+        </temporalCoverage>
+        <DistributionAtomized>
+          <dwc:country>España</dwc:country>
+          <dwc:locality>Catálogo BioDex «DEMO — Flora amenazada de Sierra Nevada (datos ficticios)»</dwc:locality>
+        </DistributionAtomized>
+        <AncillaryData>
+          <eol:dataType>http://purl.org/dc/dcmitype/Text</eol:dataType>
+          <dc:title>Fuente de los datos de distribución</dc:title>
+          <dc:language>es</dc:language>
+          <dc:source>dwca/occurrence.txt de esta descarga (BioDex_DEMO_Flora_amenazada_de_Sierra_Nevada_datos_ficticios_publicar_2026-10-01.zip), taxonID EIDOS:9918</dc:source>
+          <eol:subject>http://rs.tdwg.org/ontology/voc/SPMInfoItems#Distribution</eol:subject>
+          <dc:description>12 registros exportados (11 presencias, 1 ausencia) entre el 2026-05-20 y el 2026-09-08. Reflejan las observaciones del catálogo, no la distribución completa de la especie.</dc:description>
+        </AncillaryData>
+      </Distribution>
+    </HabitatAndDistribution>
+    <DemographyAndThreat>
+      <Territory>
+        <TerritoryAtomized>
+          <ExtentOfOccurrence>
+            <dwc:MeasurementOrFact>
+              <dwc:measurementType>extensión de presencia (EOO)</dwc:measurementType>
+              <dwc:measurementValue>62.455</dwc:measurementValue>
+              <dwc:measurementUnit>km²</dwc:measurementUnit>
+              <dwc:measurementDeterminedBy>BioDex 1.1.0 (servidor)</dwc:measurementDeterminedBy>
+              <dwc:measurementDeterminedDate>2026-10-01</dwc:measurementDeterminedDate>
+              <dwc:measurementMethod>Polígono convexo mínimo de las presencias con precisión no peor que 2 km, en ETRS89 / UTM 30N (EPSG:25830)</dwc:measurementMethod>
+              <dwc:measurementRemarks>Solo con las presencias de esta exportación del catálogo (11 registros), no con la distribución completa de la especie.</dwc:measurementRemarks>
+            </dwc:MeasurementOrFact>
+          </ExtentOfOccurrence>
+          <AreaOfOccupancy>
+            <dwc:MeasurementOrFact>
+              <dwc:measurementType>área de ocupación (AOO)</dwc:measurementType>
+              <dwc:measurementValue>12</dwc:measurementValue>
+              <dwc:measurementAccuracy>sin cambio al desplazar la rejilla media celda</dwc:measurementAccuracy>
+              <dwc:measurementUnit>km²</dwc:measurementUnit>
+              <dwc:measurementDeterminedBy>BioDex 1.1.0 (servidor)</dwc:measurementDeterminedBy>
+              <dwc:measurementDeterminedDate>2026-10-01</dwc:measurementDeterminedDate>
+              <dwc:measurementMethod>Celdas de 2×2 km ocupadas, rejilla anclada al origen UTM (EPSG:25830)</dwc:measurementMethod>
+              <dwc:measurementRemarks>Solo con las presencias de esta exportación del catálogo (11 registros), no con la distribución completa de la especie.</dwc:measurementRemarks>
+            </dwc:MeasurementOrFact>
+            <dwc:MeasurementOrFact>
+              <dwc:measurementType>número de cuadrículas ocupadas</dwc:measurementType>
+              <dwc:measurementValue>3</dwc:measurementValue>
+              <dwc:measurementUnit>cuadrículas de 2×2 km</dwc:measurementUnit>
+              <dwc:measurementDeterminedBy>BioDex 1.1.0 (servidor)</dwc:measurementDeterminedBy>
+              <dwc:measurementDeterminedDate>2026-10-01</dwc:measurementDeterminedDate>
+            </dwc:MeasurementOrFact>
+            <dwc:MeasurementOrFact>
+              <dwc:measurementType>tamaño de celda</dwc:measurementType>
+              <dwc:measurementValue>2</dwc:measurementValue>
+              <dwc:measurementUnit>km</dwc:measurementUnit>
+              <dwc:measurementDeterminedBy>BioDex 1.1.0 (servidor)</dwc:measurementDeterminedBy>
+              <dwc:measurementDeterminedDate>2026-10-01</dwc:measurementDeterminedDate>
+            </dwc:MeasurementOrFact>
+          </AreaOfOccupancy>
+          <AncillaryData>
+            <eol:dataType>http://purl.org/dc/dcmitype/Text</eol:dataType>
+            <dc:title>Información retenida</dc:title>
+            <dc:language>es</dc:language>
+            <eol:subject>http://rs.tdwg.org/ontology/voc/SPMInfoItems#Distribution</eol:subject>
+            <dc:description>Especie sensible en este catálogo (nivel 2 · Alta): no se publican coordenadas, cuadrículas concretas ni el contorno de la EOO; solo cifras agregadas (EOO, AOO, número de cuadrículas). La justificación de la evaluación BioDex también se retiene.</dc:description>
+          </AncillaryData>
+        </TerritoryAtomized>
+      </Territory>
+      <ThreatStatus>
+        <ThreatStatusAtomized>
+          <ThreatCategory>CR A2ad; B1ab(iv,v)</ThreatCategory>
+          <Authority>EIDOS (IEPNB, MITECO) · categoría oficial de 2010</Authority>
+          <AppliesTo>
+            <DistributionUnstructured>España</DistributionUnstructured>
+          </AppliesTo>
+        </ThreatStatusAtomized>
+        <ThreatStatusAtomized>
+          <ThreatCategory>EN A2ad</ThreatCategory>
+          <Authority>EIDOS (IEPNB, MITECO) · categoría oficial de 2011</Authority>
+          <AppliesTo>
+            <DistributionUnstructured>Mundial</DistributionUnstructured>
+          </AppliesTo>
+        </ThreatStatusAtomized>
+        <ThreatStatusAtomized>
+          <ThreatCategory>EN B1ab(iii)+2ab(iii)</ThreatCategory>
+          <Authority>BioDex · evaluación regional preliminar NO oficial</Authority>
+          <Authority>Evaluador/a: Carlos Molina</Authority>
+          <AppliesTo>
+            <DistributionUnstructured>Catálogo BioDex «DEMO — Flora amenazada de Sierra Nevada (datos ficticios)» (evaluación regional)</DistributionUnstructured>
+          </AppliesTo>
+        </ThreatStatusAtomized>
+        <AncillaryData>
+          <eol:dataType>http://purl.org/dc/dcmitype/Text</eol:dataType>
+          <eol:agent role="author">Carlos Molina</eol:agent>
+          <dcterms:created>2026-07-03T09:00:00.000Z</dcterms:created>
+          <dc:title>Evaluación BioDex — regional, preliminar, no oficial</dc:title>
+          <dc:language>es</dc:language>
+          <eol:subject>http://rs.tdwg.org/ontology/voc/SPMInfoItems#ConservationStatus</eol:subject>
+          <dc:description>Evaluación regional preliminar hecha con el asistente UICN de BioDex (categorías y criterios de la UICN 3.1 y directrices para el nivel regional). NO es una categoría oficial ni sustituye una evaluación de la Lista Roja. Categoría: EN. Criterios: EN B1ab(iii)+2ab(iii). Estado: final. Ajuste regional: ninguno. Localidades (las indica quien evalúa): 3. Datos usados: B: EOO 62.455 km², AOO 12 km², 3 localidades, b(iii). Justificación retenida por la sensibilidad de la especie (puede describir dónde está).</dc:description>
+        </AncillaryData>
+      </ThreatStatus>
+    </DemographyAndThreat>
+    <associatedParty>
+      <individualName>
+        <surName>Carlos Molina</surName>
+      </individualName>
+      <role>Evaluador/a (evaluación BioDex)</role>
+    </associatedParty>
+    <associatedParty>
+      <individualName>
+        <surName>Lucía Ortega</surName>
+      </individualName>
+      <onlineUrl>https://orcid.org/0000-0002-1825-0097</onlineUrl>
+      <role>Observador/a (registros de distribución)</role>
+    </associatedParty>
+    <associatedParty>
+      <individualName>
+        <surName>Carlos Molina</surName>
+      </individualName>
+      <role>Observador/a (registros de distribución)</role>
+    </associatedParty>
+    <associatedParty>
+      <individualName>
+        <surName>Elena Ruiz</surName>
+      </individualName>
+      <role>Observador/a (registros de distribución)</role>
+    </associatedParty>
+    <References>Darwin Core Archive dwca/ de esta descarga (BioDex_DEMO_Flora_amenazada_de_Sierra_Nevada_datos_ficticios_publicar_2026-10-01.zip): observaciones con taxonID EIDOS:9918.</References>
+  </TaxonRecord>
+  <TaxonRecord>
+    <BaseElements>
+      <TaxonRecordID>EIDOS:2723</TaxonRecordID>
+      <dwc:nameAccordingTo>EIDOS (IEPNB, MITECO)</dwc:nameAccordingTo>
+    </BaseElements>
+    <RecordMetadata>
+      <Language>es</Language>
+      <Version>
+        <Modifier>BioDex 1.1.0</Modifier>
+        <DateIssued>2026-10-01</DateIssued>
+      </Version>
+      <Revision>
+        <associatedParty>
+          <individualName>
+            <surName>Elena Ruiz</surName>
+          </individualName>
+          <role>Generó la ficha</role>
+        </associatedParty>
+        <pubDate>2026-10-01</pubDate>
+        <dcterms:created>2026-10-01T03:31:19+02:00</dcterms:created>
+      </Revision>
+    </RecordMetadata>
+    <NomenclatureAndClassification>
+      <TaxonRecordName>
+        <ScientificName id="n-EIDOS-2723" nomenclaturalCode="Botanical">
+          <tcs:Simple>Atropa baetica Willk.</tcs:Simple>
+          <tcs:Rank code="sp">species</tcs:Rank>
+          <tcs:CanonicalName>
+            <tcs:Simple>Atropa baetica</tcs:Simple>
+          </tcs:CanonicalName>
+          <tcs:CanonicalAuthorship>
+            <tcs:Simple>Willk.</tcs:Simple>
+          </tcs:CanonicalAuthorship>
+        </ScientificName>
+      </TaxonRecordName>
+      <Synonyms>
+        <SynonymsAtomized>
+          <SynonymName id="n-EIDOS-2723-s1" nomenclaturalCode="Botanical">
+            <tcs:Simple>Atropa belladonna subsp. baetica (Willk.) Font Quer</tcs:Simple>
+          </SynonymName>
+        </SynonymsAtomized>
+      </Synonyms>
+      <CommonNames>
+        <CommonNamesAtomized>
+          <CommonName>Belladona de Andalucia</CommonName>
+          <Language>es</Language>
+        </CommonNamesAtomized>
+      </CommonNames>
+      <Hierarchy classification="EIDOS">
+        <dwc:kingdom>Plantae</dwc:kingdom>
+        <dwc:phylum>Tracheophyta</dwc:phylum>
+        <dwc:class>Magnoliopsida</dwc:class>
+        <dwc:order>Solanales</dwc:order>
+        <dwc:family>Solanaceae</dwc:family>
+        <dwc:genus>Atropa</dwc:genus>
+        <dwc:taxonRank>species</dwc:taxonRank>
+        <dwc:specificEpithet>baetica</dwc:specificEpithet>
+      </Hierarchy>
+    </NomenclatureAndClassification>
+    <HabitatAndDistribution>
+      <Distribution>
+        <temporalCoverage>
+          <rangeOfDates>
+            <beginDate>
+              <calendarDate>2026-05-22</calendarDate>
+            </beginDate>
+            <endDate>
+              <calendarDate>2026-08-18</calendarDate>
+            </endDate>
+          </rangeOfDates>
+        </temporalCoverage>
+        <DistributionAtomized>
+          <dwc:country>España</dwc:country>
+          <dwc:locality>Catálogo BioDex «DEMO — Flora amenazada de Sierra Nevada (datos ficticios)»</dwc:locality>
+        </DistributionAtomized>
+        <AncillaryData>
+          <eol:dataType>http://purl.org/dc/dcmitype/Text</eol:dataType>
+          <dc:title>Fuente de los datos de distribución</dc:title>
+          <dc:language>es</dc:language>
+          <dc:source>dwca/occurrence.txt de esta descarga (BioDex_DEMO_Flora_amenazada_de_Sierra_Nevada_datos_ficticios_publicar_2026-10-01.zip), taxonID EIDOS:2723</dc:source>
+          <eol:subject>http://rs.tdwg.org/ontology/voc/SPMInfoItems#Distribution</eol:subject>
+          <dc:description>7 registros exportados (6 presencias, 1 ausencia) entre el 2026-05-22 y el 2026-08-18. Reflejan las observaciones del catálogo, no la distribución completa de la especie.</dc:description>
+        </AncillaryData>
+      </Distribution>
+    </HabitatAndDistribution>
+    <DemographyAndThreat>
+      <Territory>
+        <TerritoryAtomized>
+          <ExtentOfOccurrence>
+            <dwc:MeasurementOrFact>
+              <dwc:measurementType>extensión de presencia (EOO)</dwc:measurementType>
+              <dwc:measurementValue>20.053</dwc:measurementValue>
+              <dwc:measurementUnit>km²</dwc:measurementUnit>
+              <dwc:measurementDeterminedBy>BioDex 1.1.0 (servidor)</dwc:measurementDeterminedBy>
+              <dwc:measurementDeterminedDate>2026-10-01</dwc:measurementDeterminedDate>
+              <dwc:measurementMethod>Polígono convexo mínimo de las presencias con precisión no peor que 2 km, en ETRS89 / UTM 30N (EPSG:25830)</dwc:measurementMethod>
+              <dwc:measurementRemarks>Solo con las presencias de esta exportación del catálogo (6 registros), no con la distribución completa de la especie.</dwc:measurementRemarks>
+            </dwc:MeasurementOrFact>
+          </ExtentOfOccurrence>
+          <AreaOfOccupancy>
+            <dwc:MeasurementOrFact>
+              <dwc:measurementType>área de ocupación (AOO)</dwc:measurementType>
+              <dwc:measurementValue>16</dwc:measurementValue>
+              <dwc:measurementAccuracy>8–20 km² al desplazar la rejilla media celda</dwc:measurementAccuracy>
+              <dwc:measurementUnit>km²</dwc:measurementUnit>
+              <dwc:measurementDeterminedBy>BioDex 1.1.0 (servidor)</dwc:measurementDeterminedBy>
+              <dwc:measurementDeterminedDate>2026-10-01</dwc:measurementDeterminedDate>
+              <dwc:measurementMethod>Celdas de 2×2 km ocupadas, rejilla anclada al origen UTM (EPSG:25830)</dwc:measurementMethod>
+              <dwc:measurementRemarks>Solo con las presencias de esta exportación del catálogo (6 registros), no con la distribución completa de la especie.</dwc:measurementRemarks>
+            </dwc:MeasurementOrFact>
+            <dwc:MeasurementOrFact>
+              <dwc:measurementType>número de cuadrículas ocupadas</dwc:measurementType>
+              <dwc:measurementValue>4</dwc:measurementValue>
+              <dwc:measurementUnit>cuadrículas de 2×2 km</dwc:measurementUnit>
+              <dwc:measurementDeterminedBy>BioDex 1.1.0 (servidor)</dwc:measurementDeterminedBy>
+              <dwc:measurementDeterminedDate>2026-10-01</dwc:measurementDeterminedDate>
+            </dwc:MeasurementOrFact>
+            <dwc:MeasurementOrFact>
+              <dwc:measurementType>tamaño de celda</dwc:measurementType>
+              <dwc:measurementValue>2</dwc:measurementValue>
+              <dwc:measurementUnit>km</dwc:measurementUnit>
+              <dwc:measurementDeterminedBy>BioDex 1.1.0 (servidor)</dwc:measurementDeterminedBy>
+              <dwc:measurementDeterminedDate>2026-10-01</dwc:measurementDeterminedDate>
+            </dwc:MeasurementOrFact>
+          </AreaOfOccupancy>
+          <AncillaryData>
+            <eol:dataType>http://purl.org/dc/dcmitype/Text</eol:dataType>
+            <dc:title>Información retenida</dc:title>
+            <dc:language>es</dc:language>
+            <eol:subject>http://rs.tdwg.org/ontology/voc/SPMInfoItems#Distribution</eol:subject>
+            <dc:description>Especie sensible en este catálogo (nivel 2 · Alta): no se publican coordenadas, cuadrículas concretas ni el contorno de la EOO; solo cifras agregadas (EOO, AOO, número de cuadrículas).</dc:description>
+          </AncillaryData>
+        </TerritoryAtomized>
+      </Territory>
+      <ThreatStatus>
+        <ThreatStatusAtomized>
+          <ThreatCategory>EN B2ab(iii)</ThreatCategory>
+          <Authority>EIDOS (IEPNB, MITECO) · categoría oficial de 2017</Authority>
+          <AppliesTo>
+            <DistributionUnstructured>España</DistributionUnstructured>
+          </AppliesTo>
+        </ThreatStatusAtomized>
+      </ThreatStatus>
+    </DemographyAndThreat>
+    <associatedParty>
+      <individualName>
+        <surName>Carlos Molina</surName>
+      </individualName>
+      <role>Observador/a (registros de distribución)</role>
+    </associatedParty>
+    <associatedParty>
+      <individualName>
+        <surName>Elena Ruiz</surName>
+      </individualName>
+      <role>Observador/a (registros de distribución)</role>
+    </associatedParty>
+    <associatedParty>
+      <individualName>
+        <surName>Lucía Ortega</surName>
+      </individualName>
+      <onlineUrl>https://orcid.org/0000-0002-1825-0097</onlineUrl>
+      <role>Observador/a (registros de distribución)</role>
+    </associatedParty>
+    <References>Darwin Core Archive dwca/ de esta descarga (BioDex_DEMO_Flora_amenazada_de_Sierra_Nevada_datos_ficticios_publicar_2026-10-01.zip): observaciones con taxonID EIDOS:2723.</References>
+  </TaxonRecord>
+  <TaxonRecord>
+    <BaseElements>
+      <TaxonRecordID>EIDOS:9990</TaxonRecordID>
+      <dwc:nameAccordingTo>EIDOS (IEPNB, MITECO)</dwc:nameAccordingTo>
+    </BaseElements>
+    <RecordMetadata>
+      <Language>es</Language>
+      <Version>
+        <Modifier>BioDex 1.1.0</Modifier>
+        <DateIssued>2026-10-01</DateIssued>
+      </Version>
+      <Revision>
+        <associatedParty>
+          <individualName>
+            <surName>Elena Ruiz</surName>
+          </individualName>
+          <role>Generó la ficha</role>
+        </associatedParty>
+        <pubDate>2026-10-01</pubDate>
+        <dcterms:created>2026-10-01T03:31:19+02:00</dcterms:created>
+      </Revision>
+    </RecordMetadata>
+    <NomenclatureAndClassification>
+      <TaxonRecordName>
+        <ScientificName id="n-EIDOS-9990" nomenclaturalCode="Botanical">
+          <tcs:Simple>Erodium boissieri Coss.</tcs:Simple>
+          <tcs:Rank code="sp">species</tcs:Rank>
+          <tcs:CanonicalName>
+            <tcs:Simple>Erodium boissieri</tcs:Simple>
+          </tcs:CanonicalName>
+          <tcs:CanonicalAuthorship>
+            <tcs:Simple>Coss.</tcs:Simple>
+          </tcs:CanonicalAuthorship>
+        </ScientificName>
+      </TaxonRecordName>
+      <Hierarchy classification="EIDOS">
+        <dwc:kingdom>Plantae</dwc:kingdom>
+        <dwc:phylum>Tracheophyta</dwc:phylum>
+        <dwc:class>Magnoliopsida</dwc:class>
+        <dwc:order>Geraniales</dwc:order>
+        <dwc:family>Geraniaceae</dwc:family>
+        <dwc:genus>Erodium</dwc:genus>
+        <dwc:taxonRank>species</dwc:taxonRank>
+        <dwc:specificEpithet>boissieri</dwc:specificEpithet>
+      </Hierarchy>
+    </NomenclatureAndClassification>
+    <HabitatAndDistribution>
+      <Distribution>
+        <temporalCoverage>
+          <rangeOfDates>
+            <beginDate>
+              <calendarDate>2026-05-31</calendarDate>
+            </beginDate>
+            <endDate>
+              <calendarDate>2026-08-20</calendarDate>
+            </endDate>
+          </rangeOfDates>
+        </temporalCoverage>
+        <DistributionAtomized>
+          <dwc:country>España</dwc:country>
+          <dwc:locality>Catálogo BioDex «DEMO — Flora amenazada de Sierra Nevada (datos ficticios)»</dwc:locality>
+        </DistributionAtomized>
+        <AncillaryData>
+          <eol:dataType>http://purl.org/dc/dcmitype/Text</eol:dataType>
+          <dc:title>Fuente de los datos de distribución</dc:title>
+          <dc:language>es</dc:language>
+          <dc:source>dwca/occurrence.txt de esta descarga (BioDex_DEMO_Flora_amenazada_de_Sierra_Nevada_datos_ficticios_publicar_2026-10-01.zip), taxonID EIDOS:9990</dc:source>
+          <eol:subject>http://rs.tdwg.org/ontology/voc/SPMInfoItems#Distribution</eol:subject>
+          <dc:description>5 registros exportados (4 presencias, 1 ausencia) entre el 2026-05-31 y el 2026-08-20. Reflejan las observaciones del catálogo, no la distribución completa de la especie.</dc:description>
+        </AncillaryData>
+      </Distribution>
+    </HabitatAndDistribution>
+    <DemographyAndThreat>
+      <Territory>
+        <TerritoryAtomized>
+          <ExtentOfOccurrence>
+            <dwc:MeasurementOrFact>
+              <dwc:measurementType>extensión de presencia (EOO)</dwc:measurementType>
+              <dwc:measurementValue>8</dwc:measurementValue>
+              <dwc:measurementUnit>km²</dwc:measurementUnit>
+              <dwc:measurementDeterminedBy>BioDex 1.1.0 (servidor)</dwc:measurementDeterminedBy>
+              <dwc:measurementDeterminedDate>2026-10-01</dwc:measurementDeterminedDate>
+              <dwc:measurementMethod>Polígono convexo mínimo de las presencias con precisión no peor que 2 km, en ETRS89 / UTM 30N (EPSG:25830)</dwc:measurementMethod>
+              <dwc:measurementRemarks>Solo con las presencias de esta exportación del catálogo (4 registros), no con la distribución completa de la especie. EOO menor que AOO: se toma EOO = AOO (UICN).</dwc:measurementRemarks>
+            </dwc:MeasurementOrFact>
+          </ExtentOfOccurrence>
+          <AreaOfOccupancy>
+            <dwc:MeasurementOrFact>
+              <dwc:measurementType>área de ocupación (AOO)</dwc:measurementType>
+              <dwc:measurementValue>8</dwc:measurementValue>
+              <dwc:measurementAccuracy>8–12 km² al desplazar la rejilla media celda</dwc:measurementAccuracy>
+              <dwc:measurementUnit>km²</dwc:measurementUnit>
+              <dwc:measurementDeterminedBy>BioDex 1.1.0 (servidor)</dwc:measurementDeterminedBy>
+              <dwc:measurementDeterminedDate>2026-10-01</dwc:measurementDeterminedDate>
+              <dwc:measurementMethod>Celdas de 2×2 km ocupadas, rejilla anclada al origen UTM (EPSG:25830)</dwc:measurementMethod>
+              <dwc:measurementRemarks>Solo con las presencias de esta exportación del catálogo (4 registros), no con la distribución completa de la especie.</dwc:measurementRemarks>
+            </dwc:MeasurementOrFact>
+            <dwc:MeasurementOrFact>
+              <dwc:measurementType>número de cuadrículas ocupadas</dwc:measurementType>
+              <dwc:measurementValue>2</dwc:measurementValue>
+              <dwc:measurementUnit>cuadrículas de 2×2 km</dwc:measurementUnit>
+              <dwc:measurementDeterminedBy>BioDex 1.1.0 (servidor)</dwc:measurementDeterminedBy>
+              <dwc:measurementDeterminedDate>2026-10-01</dwc:measurementDeterminedDate>
+            </dwc:MeasurementOrFact>
+            <dwc:MeasurementOrFact>
+              <dwc:measurementType>tamaño de celda</dwc:measurementType>
+              <dwc:measurementValue>2</dwc:measurementValue>
+              <dwc:measurementUnit>km</dwc:measurementUnit>
+              <dwc:measurementDeterminedBy>BioDex 1.1.0 (servidor)</dwc:measurementDeterminedBy>
+              <dwc:measurementDeterminedDate>2026-10-01</dwc:measurementDeterminedDate>
+            </dwc:MeasurementOrFact>
+          </AreaOfOccupancy>
+          <AncillaryData>
+            <eol:dataType>http://purl.org/dc/dcmitype/Text</eol:dataType>
+            <dc:title>Avisos del cálculo</dc:title>
+            <dc:language>es</dc:language>
+            <eol:subject>http://rs.tdwg.org/ontology/voc/SPMInfoItems#Distribution</eol:subject>
+            <dc:description>EOO (0,919 km²) menor que AOO (8 km²): se toma EOO = AOO.</dc:description>
+          </AncillaryData>
+          <AncillaryData>
+            <eol:dataType>http://purl.org/dc/dcmitype/Text</eol:dataType>
+            <dc:title>Información retenida</dc:title>
+            <dc:language>es</dc:language>
+            <eol:subject>http://rs.tdwg.org/ontology/voc/SPMInfoItems#Distribution</eol:subject>
+            <dc:description>Especie sensible en este catálogo (nivel 3 · Media): no se publican coordenadas, cuadrículas concretas ni el contorno de la EOO; solo cifras agregadas (EOO, AOO, número de cuadrículas).</dc:description>
+          </AncillaryData>
+        </TerritoryAtomized>
+      </Territory>
+      <ThreatStatus>
+        <ThreatStatusAtomized>
+          <ThreatCategory>VU B2ab(ii,iii,v) ; D2</ThreatCategory>
+          <Authority>EIDOS (IEPNB, MITECO) · categoría oficial de 2010</Authority>
+          <AppliesTo>
+            <DistributionUnstructured>España</DistributionUnstructured>
+          </AppliesTo>
+        </ThreatStatusAtomized>
+      </ThreatStatus>
+    </DemographyAndThreat>
+    <associatedParty>
+      <individualName>
+        <surName>Elena Ruiz</surName>
+      </individualName>
+      <role>Observador/a (registros de distribución)</role>
+    </associatedParty>
+    <associatedParty>
+      <individualName>
+        <surName>Lucía Ortega</surName>
+      </individualName>
+      <onlineUrl>https://orcid.org/0000-0002-1825-0097</onlineUrl>
+      <role>Observador/a (registros de distribución)</role>
+    </associatedParty>
+    <associatedParty>
+      <individualName>
+        <surName>Carlos Molina</surName>
+      </individualName>
+      <role>Observador/a (registros de distribución)</role>
+    </associatedParty>
+    <References>Darwin Core Archive dwca/ de esta descarga (BioDex_DEMO_Flora_amenazada_de_Sierra_Nevada_datos_ficticios_publicar_2026-10-01.zip): observaciones con taxonID EIDOS:9990.</References>
+  </TaxonRecord>
+  <TaxonRecord>
+    <BaseElements>
+      <TaxonRecordID>EIDOS:5676</TaxonRecordID>
+      <dwc:nameAccordingTo>EIDOS (IEPNB, MITECO)</dwc:nameAccordingTo>
+    </BaseElements>
+    <RecordMetadata>
+      <Language>es</Language>
+      <Version>
+        <Modifier>BioDex 1.1.0</Modifier>
+        <DateIssued>2026-10-01</DateIssued>
+      </Version>
+      <Revision>
+        <associatedParty>
+          <individualName>
+            <surName>Elena Ruiz</surName>
+          </individualName>
+          <role>Generó la ficha</role>
+        </associatedParty>
+        <pubDate>2026-10-01</pubDate>
+        <dcterms:created>2026-10-01T03:31:19+02:00</dcterms:created>
+      </Revision>
+    </RecordMetadata>
+    <NomenclatureAndClassification>
+      <TaxonRecordName>
+        <ScientificName id="n-EIDOS-5676" nomenclaturalCode="Botanical">
+          <tcs:Simple>Laserpitium longiradium Boiss.</tcs:Simple>
+          <tcs:Rank code="sp">species</tcs:Rank>
+          <tcs:CanonicalName>
+            <tcs:Simple>Laserpitium longiradium</tcs:Simple>
+          </tcs:CanonicalName>
+          <tcs:CanonicalAuthorship>
+            <tcs:Simple>Boiss.</tcs:Simple>
+          </tcs:CanonicalAuthorship>
+        </ScientificName>
+      </TaxonRecordName>
+      <CommonNames>
+        <CommonNamesAtomized>
+          <CommonName>Laserpicio de Sierra Nevada</CommonName>
+          <Language>es</Language>
+        </CommonNamesAtomized>
+      </CommonNames>
+      <Hierarchy classification="EIDOS">
+        <dwc:kingdom>Plantae</dwc:kingdom>
+        <dwc:phylum>Tracheophyta</dwc:phylum>
+        <dwc:class>Magnoliopsida</dwc:class>
+        <dwc:order>Apiales</dwc:order>
+        <dwc:family>Apiaceae</dwc:family>
+        <dwc:genus>Laserpitium</dwc:genus>
+        <dwc:taxonRank>species</dwc:taxonRank>
+        <dwc:specificEpithet>longiradium</dwc:specificEpithet>
+      </Hierarchy>
+    </NomenclatureAndClassification>
+    <HabitatAndDistribution>
+      <Distribution>
+        <temporalCoverage>
+          <rangeOfDates>
+            <beginDate>
+              <calendarDate>2026-06-02</calendarDate>
+            </beginDate>
+            <endDate>
+              <calendarDate>2026-08-22</calendarDate>
+            </endDate>
+          </rangeOfDates>
+        </temporalCoverage>
+        <DistributionAtomized>
+          <dwc:country>España</dwc:country>
+          <dwc:locality>Catálogo BioDex «DEMO — Flora amenazada de Sierra Nevada (datos ficticios)»</dwc:locality>
+        </DistributionAtomized>
+        <AncillaryData>
+          <eol:dataType>http://purl.org/dc/dcmitype/Text</eol:dataType>
+          <dc:title>Fuente de los datos de distribución</dc:title>
+          <dc:language>es</dc:language>
+          <dc:source>dwca/occurrence.txt de esta descarga (BioDex_DEMO_Flora_amenazada_de_Sierra_Nevada_datos_ficticios_publicar_2026-10-01.zip), taxonID EIDOS:5676</dc:source>
+          <eol:subject>http://rs.tdwg.org/ontology/voc/SPMInfoItems#Distribution</eol:subject>
+          <dc:description>4 registros exportados (4 presencias, 0 ausencias) entre el 2026-06-02 y el 2026-08-22. Reflejan las observaciones del catálogo, no la distribución completa de la especie.</dc:description>
+        </AncillaryData>
+      </Distribution>
+    </HabitatAndDistribution>
+    <DemographyAndThreat>
+      <Territory>
+        <TerritoryAtomized>
+          <ExtentOfOccurrence>
+            <dwc:MeasurementOrFact>
+              <dwc:measurementType>extensión de presencia (EOO)</dwc:measurementType>
+              <dwc:measurementValue>4</dwc:measurementValue>
+              <dwc:measurementUnit>km²</dwc:measurementUnit>
+              <dwc:measurementDeterminedBy>BioDex 1.1.0 (servidor)</dwc:measurementDeterminedBy>
+              <dwc:measurementDeterminedDate>2026-10-01</dwc:measurementDeterminedDate>
+              <dwc:measurementMethod>Polígono convexo mínimo de las presencias con precisión no peor que 2 km, en ETRS89 / UTM 30N (EPSG:25830)</dwc:measurementMethod>
+              <dwc:measurementRemarks>Solo con las presencias de esta exportación del catálogo (4 registros), no con la distribución completa de la especie. EOO menor que AOO: se toma EOO = AOO (UICN).</dwc:measurementRemarks>
+            </dwc:MeasurementOrFact>
+          </ExtentOfOccurrence>
+          <AreaOfOccupancy>
+            <dwc:MeasurementOrFact>
+              <dwc:measurementType>área de ocupación (AOO)</dwc:measurementType>
+              <dwc:measurementValue>4</dwc:measurementValue>
+              <dwc:measurementAccuracy>4–12 km² al desplazar la rejilla media celda</dwc:measurementAccuracy>
+              <dwc:measurementUnit>km²</dwc:measurementUnit>
+              <dwc:measurementDeterminedBy>BioDex 1.1.0 (servidor)</dwc:measurementDeterminedBy>
+              <dwc:measurementDeterminedDate>2026-10-01</dwc:measurementDeterminedDate>
+              <dwc:measurementMethod>Celdas de 2×2 km ocupadas, rejilla anclada al origen UTM (EPSG:25830)</dwc:measurementMethod>
+              <dwc:measurementRemarks>Solo con las presencias de esta exportación del catálogo (4 registros), no con la distribución completa de la especie.</dwc:measurementRemarks>
+            </dwc:MeasurementOrFact>
+            <dwc:MeasurementOrFact>
+              <dwc:measurementType>número de cuadrículas ocupadas</dwc:measurementType>
+              <dwc:measurementValue>1</dwc:measurementValue>
+              <dwc:measurementUnit>cuadrículas de 2×2 km</dwc:measurementUnit>
+              <dwc:measurementDeterminedBy>BioDex 1.1.0 (servidor)</dwc:measurementDeterminedBy>
+              <dwc:measurementDeterminedDate>2026-10-01</dwc:measurementDeterminedDate>
+            </dwc:MeasurementOrFact>
+            <dwc:MeasurementOrFact>
+              <dwc:measurementType>tamaño de celda</dwc:measurementType>
+              <dwc:measurementValue>2</dwc:measurementValue>
+              <dwc:measurementUnit>km</dwc:measurementUnit>
+              <dwc:measurementDeterminedBy>BioDex 1.1.0 (servidor)</dwc:measurementDeterminedBy>
+              <dwc:measurementDeterminedDate>2026-10-01</dwc:measurementDeterminedDate>
+            </dwc:MeasurementOrFact>
+          </AreaOfOccupancy>
+          <AncillaryData>
+            <eol:dataType>http://purl.org/dc/dcmitype/Text</eol:dataType>
+            <dc:title>Avisos del cálculo</dc:title>
+            <dc:language>es</dc:language>
+            <eol:subject>http://rs.tdwg.org/ontology/voc/SPMInfoItems#Distribution</eol:subject>
+            <dc:description>EOO (0,285 km²) menor que AOO (4 km²): se toma EOO = AOO.</dc:description>
+          </AncillaryData>
+          <AncillaryData>
+            <eol:dataType>http://purl.org/dc/dcmitype/Text</eol:dataType>
+            <dc:title>Información retenida</dc:title>
+            <dc:language>es</dc:language>
+            <eol:subject>http://rs.tdwg.org/ontology/voc/SPMInfoItems#Distribution</eol:subject>
+            <dc:description>Especie sensible en este catálogo (nivel 2 · Alta): no se publican coordenadas, cuadrículas concretas ni el contorno de la EOO; solo cifras agregadas (EOO, AOO, número de cuadrículas).</dc:description>
+          </AncillaryData>
+        </TerritoryAtomized>
+      </Territory>
+      <ThreatStatus>
+        <ThreatStatusAtomized>
+          <ThreatCategory>CR A3cd; B1ab(iii)+2ab(iii)</ThreatCategory>
+          <Authority>EIDOS (IEPNB, MITECO) · categoría oficial de 2010</Authority>
+          <AppliesTo>
+            <DistributionUnstructured>España</DistributionUnstructured>
+          </AppliesTo>
+        </ThreatStatusAtomized>
+        <ThreatStatusAtomized>
+          <ThreatCategory>CR B1ab(iii)+2ab(iii)</ThreatCategory>
+          <Authority>EIDOS (IEPNB, MITECO) · categoría oficial de 2011</Authority>
+          <AppliesTo>
+            <DistributionUnstructured>Mundial</DistributionUnstructured>
+          </AppliesTo>
+        </ThreatStatusAtomized>
+      </ThreatStatus>
+    </DemographyAndThreat>
+    <associatedParty>
+      <individualName>
+        <surName>Lucía Ortega</surName>
+      </individualName>
+      <onlineUrl>https://orcid.org/0000-0002-1825-0097</onlineUrl>
+      <role>Observador/a (registros de distribución)</role>
+    </associatedParty>
+    <associatedParty>
+      <individualName>
+        <surName>Carlos Molina</surName>
+      </individualName>
+      <role>Observador/a (registros de distribución)</role>
+    </associatedParty>
+    <associatedParty>
+      <individualName>
+        <surName>Elena Ruiz</surName>
+      </individualName>
+      <role>Observador/a (registros de distribución)</role>
+    </associatedParty>
+    <References>Darwin Core Archive dwca/ de esta descarga (BioDex_DEMO_Flora_amenazada_de_Sierra_Nevada_datos_ficticios_publicar_2026-10-01.zip): observaciones con taxonID EIDOS:5676.</References>
+  </TaxonRecord>
+  <TaxonRecord>
+    <BaseElements>
+      <TaxonRecordID>EIDOS:546</TaxonRecordID>
+      <dwc:nameAccordingTo>EIDOS (IEPNB, MITECO)</dwc:nameAccordingTo>
+    </BaseElements>
+    <RecordMetadata>
+      <Language>es</Language>
+      <Version>
+        <Modifier>BioDex 1.1.0</Modifier>
+        <DateIssued>2026-10-01</DateIssued>
+      </Version>
+      <Revision>
+        <associatedParty>
+          <individualName>
+            <surName>Elena Ruiz</surName>
+          </individualName>
+          <role>Generó la ficha</role>
+        </associatedParty>
+        <pubDate>2026-10-01</pubDate>
+        <dcterms:created>2026-10-01T03:31:19+02:00</dcterms:created>
+      </Revision>
+    </RecordMetadata>
+    <NomenclatureAndClassification>
+      <TaxonRecordName>
+        <ScientificName id="n-EIDOS-546" nomenclaturalCode="Botanical">
+          <tcs:Simple>Narcissus nevadensis Pugsley</tcs:Simple>
+          <tcs:Rank code="sp">species</tcs:Rank>
+          <tcs:CanonicalName>
+            <tcs:Simple>Narcissus nevadensis</tcs:Simple>
+          </tcs:CanonicalName>
+          <tcs:CanonicalAuthorship>
+            <tcs:Simple>Pugsley</tcs:Simple>
+          </tcs:CanonicalAuthorship>
+        </ScientificName>
+      </TaxonRecordName>
+      <Synonyms>
+        <SynonymsAtomized>
+          <SynonymName id="n-EIDOS-546-s1" nomenclaturalCode="Botanical">
+            <tcs:Simple>Narcissus pseudonarcissus subsp. nevadensis (Pugsley) A.Fern.</tcs:Simple>
+          </SynonymName>
+        </SynonymsAtomized>
+      </Synonyms>
+      <CommonNames>
+        <CommonNamesAtomized>
+          <CommonName>Narciso</CommonName>
+          <Language>es</Language>
+        </CommonNamesAtomized>
+      </CommonNames>
+      <Hierarchy classification="EIDOS">
+        <dwc:kingdom>Plantae</dwc:kingdom>
+        <dwc:phylum>Tracheophyta</dwc:phylum>
+        <dwc:class>Liliopsida</dwc:class>
+        <dwc:order>Asparagales</dwc:order>
+        <dwc:family>Amaryllidaceae</dwc:family>
+        <dwc:genus>Narcissus</dwc:genus>
+        <dwc:taxonRank>species</dwc:taxonRank>
+        <dwc:specificEpithet>nevadensis</dwc:specificEpithet>
+      </Hierarchy>
+    </NomenclatureAndClassification>
+    <HabitatAndDistribution>
+      <Distribution>
+        <temporalCoverage>
+          <rangeOfDates>
+            <beginDate>
+              <calendarDate>2026-06-25</calendarDate>
+            </beginDate>
+            <endDate>
+              <calendarDate>2026-09-14</calendarDate>
+            </endDate>
+          </rangeOfDates>
+        </temporalCoverage>
+        <DistributionAtomized>
+          <dwc:country>España</dwc:country>
+          <dwc:locality>Catálogo BioDex «DEMO — Flora amenazada de Sierra Nevada (datos ficticios)»</dwc:locality>
+        </DistributionAtomized>
+        <AncillaryData>
+          <eol:dataType>http://purl.org/dc/dcmitype/Text</eol:dataType>
+          <dc:title>Fuente de los datos de distribución</dc:title>
+          <dc:language>es</dc:language>
+          <dc:source>dwca/occurrence.txt de esta descarga (BioDex_DEMO_Flora_amenazada_de_Sierra_Nevada_datos_ficticios_publicar_2026-10-01.zip), taxonID EIDOS:546</dc:source>
+          <eol:subject>http://rs.tdwg.org/ontology/voc/SPMInfoItems#Distribution</eol:subject>
+          <dc:description>5 registros exportados (4 presencias, 1 ausencia) entre el 2026-06-25 y el 2026-09-14. Reflejan las observaciones del catálogo, no la distribución completa de la especie.</dc:description>
+        </AncillaryData>
+      </Distribution>
+    </HabitatAndDistribution>
+    <DemographyAndThreat>
+      <Territory>
+        <TerritoryAtomized>
+          <ExtentOfOccurrence>
+            <dwc:MeasurementOrFact>
+              <dwc:measurementType>extensión de presencia (EOO)</dwc:measurementType>
+              <dwc:measurementValue>8</dwc:measurementValue>
+              <dwc:measurementUnit>km²</dwc:measurementUnit>
+              <dwc:measurementDeterminedBy>BioDex 1.1.0 (servidor)</dwc:measurementDeterminedBy>
+              <dwc:measurementDeterminedDate>2026-10-01</dwc:measurementDeterminedDate>
+              <dwc:measurementMethod>Polígono convexo mínimo de las presencias con precisión no peor que 2 km, en ETRS89 / UTM 30N (EPSG:25830)</dwc:measurementMethod>
+              <dwc:measurementRemarks>Solo con las presencias de esta exportación del catálogo (4 registros), no con la distribución completa de la especie. EOO menor que AOO: se toma EOO = AOO (UICN).</dwc:measurementRemarks>
+            </dwc:MeasurementOrFact>
+          </ExtentOfOccurrence>
+          <AreaOfOccupancy>
+            <dwc:MeasurementOrFact>
+              <dwc:measurementType>área de ocupación (AOO)</dwc:measurementType>
+              <dwc:measurementValue>8</dwc:measurementValue>
+              <dwc:measurementAccuracy>4–12 km² al desplazar la rejilla media celda</dwc:measurementAccuracy>
+              <dwc:measurementUnit>km²</dwc:measurementUnit>
+              <dwc:measurementDeterminedBy>BioDex 1.1.0 (servidor)</dwc:measurementDeterminedBy>
+              <dwc:measurementDeterminedDate>2026-10-01</dwc:measurementDeterminedDate>
+              <dwc:measurementMethod>Celdas de 2×2 km ocupadas, rejilla anclada al origen UTM (EPSG:25830)</dwc:measurementMethod>
+              <dwc:measurementRemarks>Solo con las presencias de esta exportación del catálogo (4 registros), no con la distribución completa de la especie.</dwc:measurementRemarks>
+            </dwc:MeasurementOrFact>
+            <dwc:MeasurementOrFact>
+              <dwc:measurementType>número de cuadrículas ocupadas</dwc:measurementType>
+              <dwc:measurementValue>2</dwc:measurementValue>
+              <dwc:measurementUnit>cuadrículas de 2×2 km</dwc:measurementUnit>
+              <dwc:measurementDeterminedBy>BioDex 1.1.0 (servidor)</dwc:measurementDeterminedBy>
+              <dwc:measurementDeterminedDate>2026-10-01</dwc:measurementDeterminedDate>
+            </dwc:MeasurementOrFact>
+            <dwc:MeasurementOrFact>
+              <dwc:measurementType>tamaño de celda</dwc:measurementType>
+              <dwc:measurementValue>2</dwc:measurementValue>
+              <dwc:measurementUnit>km</dwc:measurementUnit>
+              <dwc:measurementDeterminedBy>BioDex 1.1.0 (servidor)</dwc:measurementDeterminedBy>
+              <dwc:measurementDeterminedDate>2026-10-01</dwc:measurementDeterminedDate>
+            </dwc:MeasurementOrFact>
+          </AreaOfOccupancy>
+          <AncillaryData>
+            <eol:dataType>http://purl.org/dc/dcmitype/Text</eol:dataType>
+            <dc:title>Avisos del cálculo</dc:title>
+            <dc:language>es</dc:language>
+            <eol:subject>http://rs.tdwg.org/ontology/voc/SPMInfoItems#Distribution</eol:subject>
+            <dc:description>EOO (0,335 km²) menor que AOO (8 km²): se toma EOO = AOO.</dc:description>
+          </AncillaryData>
+          <AncillaryData>
+            <eol:dataType>http://purl.org/dc/dcmitype/Text</eol:dataType>
+            <dc:title>Información retenida</dc:title>
+            <dc:language>es</dc:language>
+            <eol:subject>http://rs.tdwg.org/ontology/voc/SPMInfoItems#Distribution</eol:subject>
+            <dc:description>Especie sensible en este catálogo (nivel 2 · Alta): no se publican coordenadas, cuadrículas concretas ni el contorno de la EOO; solo cifras agregadas (EOO, AOO, número de cuadrículas).</dc:description>
+          </AncillaryData>
+        </TerritoryAtomized>
+      </Territory>
+      <ThreatStatus>
+        <ThreatStatusAtomized>
+          <ThreatCategory>EN B2ab(iii)c(iv)</ThreatCategory>
+          <Authority>EIDOS (IEPNB, MITECO) · categoría oficial de 2018</Authority>
+          <AppliesTo>
+            <DistributionUnstructured>Mundial</DistributionUnstructured>
+          </AppliesTo>
+        </ThreatStatusAtomized>
+      </ThreatStatus>
+    </DemographyAndThreat>
+    <associatedParty>
+      <individualName>
+        <surName>Carlos Molina</surName>
+      </individualName>
+      <role>Observador/a (registros de distribución)</role>
+    </associatedParty>
+    <associatedParty>
+      <individualName>
+        <surName>Elena Ruiz</surName>
+      </individualName>
+      <role>Observador/a (registros de distribución)</role>
+    </associatedParty>
+    <associatedParty>
+      <individualName>
+        <surName>Lucía Ortega</surName>
+      </individualName>
+      <onlineUrl>https://orcid.org/0000-0002-1825-0097</onlineUrl>
+      <role>Observador/a (registros de distribución)</role>
+    </associatedParty>
+    <References>Darwin Core Archive dwca/ de esta descarga (BioDex_DEMO_Flora_amenazada_de_Sierra_Nevada_datos_ficticios_publicar_2026-10-01.zip): observaciones con taxonID EIDOS:546.</References>
+  </TaxonRecord>
+  <TaxonRecord>
+    <BaseElements>
+      <TaxonRecordID>EIDOS:6989</TaxonRecordID>
+      <dwc:nameAccordingTo>EIDOS (IEPNB, MITECO)</dwc:nameAccordingTo>
+    </BaseElements>
+    <RecordMetadata>
+      <Language>es</Language>
+      <Version>
+        <Modifier>BioDex 1.1.0</Modifier>
+        <DateIssued>2026-10-01</DateIssued>
+      </Version>
+      <Revision>
+        <associatedParty>
+          <individualName>
+            <surName>Elena Ruiz</surName>
+          </individualName>
+          <role>Generó la ficha</role>
+        </associatedParty>
+        <pubDate>2026-10-01</pubDate>
+        <dcterms:created>2026-10-01T03:31:19+02:00</dcterms:created>
+      </Revision>
+    </RecordMetadata>
+    <NomenclatureAndClassification>
+      <TaxonRecordName>
+        <ScientificName id="n-EIDOS-6989" nomenclaturalCode="Botanical">
+          <tcs:Simple>Pinguicula nevadensis (H. Lindb.) Casper</tcs:Simple>
+          <tcs:Rank code="sp">species</tcs:Rank>
+          <tcs:CanonicalName>
+            <tcs:Simple>Pinguicula nevadensis</tcs:Simple>
+          </tcs:CanonicalName>
+          <tcs:CanonicalAuthorship>
+            <tcs:Simple>(H. Lindb.) Casper</tcs:Simple>
+          </tcs:CanonicalAuthorship>
+        </ScientificName>
+      </TaxonRecordName>
+      <Synonyms>
+        <SynonymsAtomized>
+          <SynonymName id="n-EIDOS-6989-s1" nomenclaturalCode="Botanical">
+            <tcs:Simple>Pinguicula vulgaris subsp. nevadensis H. Lindb</tcs:Simple>
+          </SynonymName>
+        </SynonymsAtomized>
+      </Synonyms>
+      <CommonNames>
+        <CommonNamesAtomized>
+          <CommonName>Grasilla</CommonName>
+          <Language>es</Language>
+        </CommonNamesAtomized>
+      </CommonNames>
+      <Hierarchy classification="EIDOS">
+        <dwc:kingdom>Plantae</dwc:kingdom>
+        <dwc:phylum>Tracheophyta</dwc:phylum>
+        <dwc:class>Magnoliopsida</dwc:class>
+        <dwc:order>Lamiales</dwc:order>
+        <dwc:family>Lentibulariaceae</dwc:family>
+        <dwc:genus>Pinguicula</dwc:genus>
+        <dwc:taxonRank>species</dwc:taxonRank>
+        <dwc:specificEpithet>nevadensis</dwc:specificEpithet>
+      </Hierarchy>
+    </NomenclatureAndClassification>
+    <HabitatAndDistribution>
+      <Distribution>
+        <temporalCoverage>
+          <rangeOfDates>
+            <beginDate>
+              <calendarDate>2026-06-11</calendarDate>
+            </beginDate>
+            <endDate>
+              <calendarDate>2026-08-31</calendarDate>
+            </endDate>
+          </rangeOfDates>
+        </temporalCoverage>
+        <DistributionAtomized>
+          <dwc:country>España</dwc:country>
+          <dwc:locality>Catálogo BioDex «DEMO — Flora amenazada de Sierra Nevada (datos ficticios)»</dwc:locality>
+        </DistributionAtomized>
+        <AncillaryData>
+          <eol:dataType>http://purl.org/dc/dcmitype/Text</eol:dataType>
+          <dc:title>Fuente de los datos de distribución</dc:title>
+          <dc:language>es</dc:language>
+          <dc:source>dwca/occurrence.txt de esta descarga (BioDex_DEMO_Flora_amenazada_de_Sierra_Nevada_datos_ficticios_publicar_2026-10-01.zip), taxonID EIDOS:6989</dc:source>
+          <eol:subject>http://rs.tdwg.org/ontology/voc/SPMInfoItems#Distribution</eol:subject>
+          <dc:description>5 registros exportados (5 presencias, 0 ausencias) entre el 2026-06-11 y el 2026-08-31. Reflejan las observaciones del catálogo, no la distribución completa de la especie.</dc:description>
+        </AncillaryData>
+      </Distribution>
+    </HabitatAndDistribution>
+    <DemographyAndThreat>
+      <Territory>
+        <TerritoryAtomized>
+          <ExtentOfOccurrence>
+            <dwc:MeasurementOrFact>
+              <dwc:measurementType>extensión de presencia (EOO)</dwc:measurementType>
+              <dwc:measurementValue>12</dwc:measurementValue>
+              <dwc:measurementUnit>km²</dwc:measurementUnit>
+              <dwc:measurementDeterminedBy>BioDex 1.1.0 (servidor)</dwc:measurementDeterminedBy>
+              <dwc:measurementDeterminedDate>2026-10-01</dwc:measurementDeterminedDate>
+              <dwc:measurementMethod>Polígono convexo mínimo de las presencias con precisión no peor que 2 km, en ETRS89 / UTM 30N (EPSG:25830)</dwc:measurementMethod>
+              <dwc:measurementRemarks>Solo con las presencias de esta exportación del catálogo (5 registros), no con la distribución completa de la especie. EOO menor que AOO: se toma EOO = AOO (UICN).</dwc:measurementRemarks>
+            </dwc:MeasurementOrFact>
+          </ExtentOfOccurrence>
+          <AreaOfOccupancy>
+            <dwc:MeasurementOrFact>
+              <dwc:measurementType>área de ocupación (AOO)</dwc:measurementType>
+              <dwc:measurementValue>12</dwc:measurementValue>
+              <dwc:measurementAccuracy>4–12 km² al desplazar la rejilla media celda</dwc:measurementAccuracy>
+              <dwc:measurementUnit>km²</dwc:measurementUnit>
+              <dwc:measurementDeterminedBy>BioDex 1.1.0 (servidor)</dwc:measurementDeterminedBy>
+              <dwc:measurementDeterminedDate>2026-10-01</dwc:measurementDeterminedDate>
+              <dwc:measurementMethod>Celdas de 2×2 km ocupadas, rejilla anclada al origen UTM (EPSG:25830)</dwc:measurementMethod>
+              <dwc:measurementRemarks>Solo con las presencias de esta exportación del catálogo (5 registros), no con la distribución completa de la especie.</dwc:measurementRemarks>
+            </dwc:MeasurementOrFact>
+            <dwc:MeasurementOrFact>
+              <dwc:measurementType>número de cuadrículas ocupadas</dwc:measurementType>
+              <dwc:measurementValue>3</dwc:measurementValue>
+              <dwc:measurementUnit>cuadrículas de 2×2 km</dwc:measurementUnit>
+              <dwc:measurementDeterminedBy>BioDex 1.1.0 (servidor)</dwc:measurementDeterminedBy>
+              <dwc:measurementDeterminedDate>2026-10-01</dwc:measurementDeterminedDate>
+            </dwc:MeasurementOrFact>
+            <dwc:MeasurementOrFact>
+              <dwc:measurementType>tamaño de celda</dwc:measurementType>
+              <dwc:measurementValue>2</dwc:measurementValue>
+              <dwc:measurementUnit>km</dwc:measurementUnit>
+              <dwc:measurementDeterminedBy>BioDex 1.1.0 (servidor)</dwc:measurementDeterminedBy>
+              <dwc:measurementDeterminedDate>2026-10-01</dwc:measurementDeterminedDate>
+            </dwc:MeasurementOrFact>
+          </AreaOfOccupancy>
+          <AncillaryData>
+            <eol:dataType>http://purl.org/dc/dcmitype/Text</eol:dataType>
+            <dc:title>Avisos del cálculo</dc:title>
+            <dc:language>es</dc:language>
+            <eol:subject>http://rs.tdwg.org/ontology/voc/SPMInfoItems#Distribution</eol:subject>
+            <dc:description>EOO (0,291 km²) menor que AOO (12 km²): se toma EOO = AOO.</dc:description>
+          </AncillaryData>
+          <AncillaryData>
+            <eol:dataType>http://purl.org/dc/dcmitype/Text</eol:dataType>
+            <dc:title>Información retenida</dc:title>
+            <dc:language>es</dc:language>
+            <eol:subject>http://rs.tdwg.org/ontology/voc/SPMInfoItems#Distribution</eol:subject>
+            <dc:description>Especie sensible en este catálogo (nivel 3 · Media): no se publican coordenadas, cuadrículas concretas ni el contorno de la EOO; solo cifras agregadas (EOO, AOO, número de cuadrículas).</dc:description>
+          </AncillaryData>
+        </TerritoryAtomized>
+      </Territory>
+      <ThreatStatus>
+        <ThreatStatusAtomized>
+          <ThreatCategory>EN B1ab(iii, v) ; D2</ThreatCategory>
+          <Authority>EIDOS (IEPNB, MITECO) · categoría oficial de 2010</Authority>
+          <AppliesTo>
+            <DistributionUnstructured>España</DistributionUnstructured>
+          </AppliesTo>
+        </ThreatStatusAtomized>
+        <ThreatStatusAtomized>
+          <ThreatCategory>EN B2ab(iii,v)</ThreatCategory>
+          <Authority>EIDOS (IEPNB, MITECO) · categoría oficial de 2011</Authority>
+          <AppliesTo>
+            <DistributionUnstructured>Mundial</DistributionUnstructured>
+          </AppliesTo>
+        </ThreatStatusAtomized>
+      </ThreatStatus>
+    </DemographyAndThreat>
+    <associatedParty>
+      <individualName>
+        <surName>Carlos Molina</surName>
+      </individualName>
+      <role>Observador/a (registros de distribución)</role>
+    </associatedParty>
+    <associatedParty>
+      <individualName>
+        <surName>Elena Ruiz</surName>
+      </individualName>
+      <role>Observador/a (registros de distribución)</role>
+    </associatedParty>
+    <associatedParty>
+      <individualName>
+        <surName>Lucía Ortega</surName>
+      </individualName>
+      <onlineUrl>https://orcid.org/0000-0002-1825-0097</onlineUrl>
+      <role>Observador/a (registros de distribución)</role>
+    </associatedParty>
+    <References>Darwin Core Archive dwca/ de esta descarga (BioDex_DEMO_Flora_amenazada_de_Sierra_Nevada_datos_ficticios_publicar_2026-10-01.zip): observaciones con taxonID EIDOS:6989.</References>
+  </TaxonRecord>
+  <TaxonRecord>
+    <BaseElements>
+      <TaxonRecordID>EIDOS:7171</TaxonRecordID>
+      <dwc:nameAccordingTo>EIDOS (IEPNB, MITECO)</dwc:nameAccordingTo>
+    </BaseElements>
+    <RecordMetadata>
+      <Language>es</Language>
+      <Version>
+        <Modifier>BioDex 1.1.0</Modifier>
+        <DateIssued>2026-10-01</DateIssued>
+      </Version>
+      <Revision>
+        <associatedParty>
+          <individualName>
+            <surName>Elena Ruiz</surName>
+          </individualName>
+          <role>Generó la ficha</role>
+        </associatedParty>
+        <pubDate>2026-10-01</pubDate>
+        <dcterms:created>2026-10-01T03:31:19+02:00</dcterms:created>
+      </Revision>
+    </RecordMetadata>
+    <NomenclatureAndClassification>
+      <TaxonRecordName>
+        <ScientificName id="n-EIDOS-7171" nomenclaturalCode="Botanical">
+          <tcs:Simple>Plantago nivalis Boiss.</tcs:Simple>
+          <tcs:Rank code="sp">species</tcs:Rank>
+          <tcs:CanonicalName>
+            <tcs:Simple>Plantago nivalis</tcs:Simple>
+          </tcs:CanonicalName>
+          <tcs:CanonicalAuthorship>
+            <tcs:Simple>Boiss.</tcs:Simple>
+          </tcs:CanonicalAuthorship>
+        </ScientificName>
+      </TaxonRecordName>
+      <CommonNames>
+        <CommonNamesAtomized>
+          <CommonName>estrella de la nieve</CommonName>
+          <Language>es</Language>
+        </CommonNamesAtomized>
+      </CommonNames>
+      <Hierarchy classification="EIDOS">
+        <dwc:kingdom>Plantae</dwc:kingdom>
+        <dwc:phylum>Tracheophyta</dwc:phylum>
+        <dwc:class>Magnoliopsida</dwc:class>
+        <dwc:order>Lamiales</dwc:order>
+        <dwc:family>Plantaginaceae</dwc:family>
+        <dwc:genus>Plantago</dwc:genus>
+        <dwc:taxonRank>species</dwc:taxonRank>
+        <dwc:specificEpithet>nivalis</dwc:specificEpithet>
+      </Hierarchy>
+    </NomenclatureAndClassification>
+    <HabitatAndDistribution>
+      <Distribution>
+        <temporalCoverage>
+          <rangeOfDates>
+            <beginDate>
+              <calendarDate>2026-06-07</calendarDate>
+            </beginDate>
+            <endDate>
+              <calendarDate>2026-09-10</calendarDate>
+            </endDate>
+          </rangeOfDates>
+        </temporalCoverage>
+        <DistributionAtomized>
+          <dwc:country>España</dwc:country>
+          <dwc:locality>Catálogo BioDex «DEMO — Flora amenazada de Sierra Nevada (datos ficticios)»</dwc:locality>
+        </DistributionAtomized>
+        <AncillaryData>
+          <eol:dataType>http://purl.org/dc/dcmitype/Text</eol:dataType>
+          <dc:title>Fuente de los datos de distribución</dc:title>
+          <dc:language>es</dc:language>
+          <dc:source>dwca/occurrence.txt de esta descarga (BioDex_DEMO_Flora_amenazada_de_Sierra_Nevada_datos_ficticios_publicar_2026-10-01.zip), taxonID EIDOS:7171</dc:source>
+          <eol:subject>http://rs.tdwg.org/ontology/voc/SPMInfoItems#Distribution</eol:subject>
+          <dc:description>8 registros exportados (7 presencias, 1 ausencia) entre el 2026-06-07 y el 2026-09-10. Reflejan las observaciones del catálogo, no la distribución completa de la especie.</dc:description>
+        </AncillaryData>
+      </Distribution>
+    </HabitatAndDistribution>
+    <DemographyAndThreat>
+      <Territory>
+        <TerritoryAtomized>
+          <ExtentOfOccurrence>
+            <dwc:MeasurementOrFact>
+              <dwc:measurementType>extensión de presencia (EOO)</dwc:measurementType>
+              <dwc:measurementValue>8</dwc:measurementValue>
+              <dwc:measurementUnit>km²</dwc:measurementUnit>
+              <dwc:measurementDeterminedBy>BioDex 1.1.0 (servidor)</dwc:measurementDeterminedBy>
+              <dwc:measurementDeterminedDate>2026-10-01</dwc:measurementDeterminedDate>
+              <dwc:measurementMethod>Polígono convexo mínimo de las presencias con precisión no peor que 2 km, en ETRS89 / UTM 30N (EPSG:25830)</dwc:measurementMethod>
+              <dwc:measurementRemarks>Solo con las presencias de esta exportación del catálogo (7 registros), no con la distribución completa de la especie. EOO menor que AOO: se toma EOO = AOO (UICN).</dwc:measurementRemarks>
+            </dwc:MeasurementOrFact>
+          </ExtentOfOccurrence>
+          <AreaOfOccupancy>
+            <dwc:MeasurementOrFact>
+              <dwc:measurementType>área de ocupación (AOO)</dwc:measurementType>
+              <dwc:measurementValue>8</dwc:measurementValue>
+              <dwc:measurementAccuracy>8–16 km² al desplazar la rejilla media celda</dwc:measurementAccuracy>
+              <dwc:measurementUnit>km²</dwc:measurementUnit>
+              <dwc:measurementDeterminedBy>BioDex 1.1.0 (servidor)</dwc:measurementDeterminedBy>
+              <dwc:measurementDeterminedDate>2026-10-01</dwc:measurementDeterminedDate>
+              <dwc:measurementMethod>Celdas de 2×2 km ocupadas, rejilla anclada al origen UTM (EPSG:25830)</dwc:measurementMethod>
+              <dwc:measurementRemarks>Solo con las presencias de esta exportación del catálogo (7 registros), no con la distribución completa de la especie.</dwc:measurementRemarks>
+            </dwc:MeasurementOrFact>
+            <dwc:MeasurementOrFact>
+              <dwc:measurementType>número de cuadrículas ocupadas</dwc:measurementType>
+              <dwc:measurementValue>2</dwc:measurementValue>
+              <dwc:measurementUnit>cuadrículas de 2×2 km</dwc:measurementUnit>
+              <dwc:measurementDeterminedBy>BioDex 1.1.0 (servidor)</dwc:measurementDeterminedBy>
+              <dwc:measurementDeterminedDate>2026-10-01</dwc:measurementDeterminedDate>
+            </dwc:MeasurementOrFact>
+            <dwc:MeasurementOrFact>
+              <dwc:measurementType>tamaño de celda</dwc:measurementType>
+              <dwc:measurementValue>2</dwc:measurementValue>
+              <dwc:measurementUnit>km</dwc:measurementUnit>
+              <dwc:measurementDeterminedBy>BioDex 1.1.0 (servidor)</dwc:measurementDeterminedBy>
+              <dwc:measurementDeterminedDate>2026-10-01</dwc:measurementDeterminedDate>
+            </dwc:MeasurementOrFact>
+          </AreaOfOccupancy>
+          <AncillaryData>
+            <eol:dataType>http://purl.org/dc/dcmitype/Text</eol:dataType>
+            <dc:title>Avisos del cálculo</dc:title>
+            <dc:language>es</dc:language>
+            <eol:subject>http://rs.tdwg.org/ontology/voc/SPMInfoItems#Distribution</eol:subject>
+            <dc:description>EOO (6,771 km²) menor que AOO (8 km²): se toma EOO = AOO.</dc:description>
+          </AncillaryData>
+          <AncillaryData>
+            <eol:dataType>http://purl.org/dc/dcmitype/Text</eol:dataType>
+            <dc:title>Información retenida</dc:title>
+            <dc:language>es</dc:language>
+            <eol:subject>http://rs.tdwg.org/ontology/voc/SPMInfoItems#Distribution</eol:subject>
+            <dc:description>Especie sensible en este catálogo (nivel 3 · Media): no se publican coordenadas, cuadrículas concretas ni el contorno de la EOO; solo cifras agregadas (EOO, AOO, número de cuadrículas).</dc:description>
+          </AncillaryData>
+        </TerritoryAtomized>
+      </Territory>
+    </DemographyAndThreat>
+    <associatedParty>
+      <individualName>
+        <surName>Elena Ruiz</surName>
+      </individualName>
+      <role>Observador/a (registros de distribución)</role>
+    </associatedParty>
+    <associatedParty>
+      <individualName>
+        <surName>Lucía Ortega</surName>
+      </individualName>
+      <onlineUrl>https://orcid.org/0000-0002-1825-0097</onlineUrl>
+      <role>Observador/a (registros de distribución)</role>
+    </associatedParty>
+    <associatedParty>
+      <individualName>
+        <surName>Carlos Molina</surName>
+      </individualName>
+      <role>Observador/a (registros de distribución)</role>
+    </associatedParty>
+    <References>Darwin Core Archive dwca/ de esta descarga (BioDex_DEMO_Flora_amenazada_de_Sierra_Nevada_datos_ficticios_publicar_2026-10-01.zip): observaciones con taxonID EIDOS:7171.</References>
+  </TaxonRecord>
+  <TaxonRecord>
+    <BaseElements>
+      <TaxonRecordID>EIDOS:8242</TaxonRecordID>
+      <dwc:nameAccordingTo>EIDOS (IEPNB, MITECO)</dwc:nameAccordingTo>
+    </BaseElements>
+    <RecordMetadata>
+      <Language>es</Language>
+      <Version>
+        <Modifier>BioDex 1.1.0</Modifier>
+        <DateIssued>2026-10-01</DateIssued>
+      </Version>
+      <Revision>
+        <associatedParty>
+          <individualName>
+            <surName>Elena Ruiz</surName>
+          </individualName>
+          <role>Generó la ficha</role>
+        </associatedParty>
+        <pubDate>2026-10-01</pubDate>
+        <dcterms:created>2026-10-01T03:31:19+02:00</dcterms:created>
+      </Revision>
+    </RecordMetadata>
+    <NomenclatureAndClassification>
+      <TaxonRecordName>
+        <ScientificName id="n-EIDOS-8242" nomenclaturalCode="Botanical">
+          <tcs:Simple>Sempervivum minutum (Willk.) Pau</tcs:Simple>
+          <tcs:Rank code="sp">species</tcs:Rank>
+          <tcs:CanonicalName>
+            <tcs:Simple>Sempervivum minutum</tcs:Simple>
+          </tcs:CanonicalName>
+          <tcs:CanonicalAuthorship>
+            <tcs:Simple>(Willk.) Pau</tcs:Simple>
+          </tcs:CanonicalAuthorship>
+        </ScientificName>
+      </TaxonRecordName>
+      <Synonyms>
+        <SynonymsAtomized>
+          <SynonymName id="n-EIDOS-8242-s1" nomenclaturalCode="Botanical">
+            <tcs:Simple>Sempervivum nevadense Wale</tcs:Simple>
+          </SynonymName>
+        </SynonymsAtomized>
+      </Synonyms>
+      <Hierarchy classification="EIDOS">
+        <dwc:kingdom>Plantae</dwc:kingdom>
+        <dwc:phylum>Tracheophyta</dwc:phylum>
+        <dwc:class>Magnoliopsida</dwc:class>
+        <dwc:order>Saxifragales</dwc:order>
+        <dwc:family>Crassulaceae</dwc:family>
+        <dwc:genus>Sempervivum</dwc:genus>
+        <dwc:taxonRank>species</dwc:taxonRank>
+        <dwc:specificEpithet>minutum</dwc:specificEpithet>
+      </Hierarchy>
+    </NomenclatureAndClassification>
+    <HabitatAndDistribution>
+      <Distribution>
+        <temporalCoverage>
+          <rangeOfDates>
+            <beginDate>
+              <calendarDate>2026-06-16</calendarDate>
+            </beginDate>
+            <endDate>
+              <calendarDate>2026-09-05</calendarDate>
+            </endDate>
+          </rangeOfDates>
+        </temporalCoverage>
+        <DistributionAtomized>
+          <dwc:country>España</dwc:country>
+          <dwc:locality>Catálogo BioDex «DEMO — Flora amenazada de Sierra Nevada (datos ficticios)»</dwc:locality>
+        </DistributionAtomized>
+        <AncillaryData>
+          <eol:dataType>http://purl.org/dc/dcmitype/Text</eol:dataType>
+          <dc:title>Fuente de los datos de distribución</dc:title>
+          <dc:language>es</dc:language>
+          <dc:source>dwca/occurrence.txt de esta descarga (BioDex_DEMO_Flora_amenazada_de_Sierra_Nevada_datos_ficticios_publicar_2026-10-01.zip), taxonID EIDOS:8242</dc:source>
+          <eol:subject>http://rs.tdwg.org/ontology/voc/SPMInfoItems#Distribution</eol:subject>
+          <dc:description>5 registros exportados (5 presencias, 0 ausencias) entre el 2026-06-16 y el 2026-09-05. Reflejan las observaciones del catálogo, no la distribución completa de la especie.</dc:description>
+        </AncillaryData>
+      </Distribution>
+    </HabitatAndDistribution>
+    <DemographyAndThreat>
+      <Territory>
+        <TerritoryAtomized>
+          <ExtentOfOccurrence>
+            <dwc:MeasurementOrFact>
+              <dwc:measurementType>extensión de presencia (EOO)</dwc:measurementType>
+              <dwc:measurementValue>4</dwc:measurementValue>
+              <dwc:measurementUnit>km²</dwc:measurementUnit>
+              <dwc:measurementDeterminedBy>BioDex 1.1.0 (servidor)</dwc:measurementDeterminedBy>
+              <dwc:measurementDeterminedDate>2026-10-01</dwc:measurementDeterminedDate>
+              <dwc:measurementMethod>Polígono convexo mínimo de las presencias con precisión no peor que 2 km, en ETRS89 / UTM 30N (EPSG:25830)</dwc:measurementMethod>
+              <dwc:measurementRemarks>Solo con las presencias de esta exportación del catálogo (5 registros), no con la distribución completa de la especie. EOO menor que AOO: se toma EOO = AOO (UICN).</dwc:measurementRemarks>
+            </dwc:MeasurementOrFact>
+          </ExtentOfOccurrence>
+          <AreaOfOccupancy>
+            <dwc:MeasurementOrFact>
+              <dwc:measurementType>área de ocupación (AOO)</dwc:measurementType>
+              <dwc:measurementValue>4</dwc:measurementValue>
+              <dwc:measurementAccuracy>4–16 km² al desplazar la rejilla media celda</dwc:measurementAccuracy>
+              <dwc:measurementUnit>km²</dwc:measurementUnit>
+              <dwc:measurementDeterminedBy>BioDex 1.1.0 (servidor)</dwc:measurementDeterminedBy>
+              <dwc:measurementDeterminedDate>2026-10-01</dwc:measurementDeterminedDate>
+              <dwc:measurementMethod>Celdas de 2×2 km ocupadas, rejilla anclada al origen UTM (EPSG:25830)</dwc:measurementMethod>
+              <dwc:measurementRemarks>Solo con las presencias de esta exportación del catálogo (5 registros), no con la distribución completa de la especie.</dwc:measurementRemarks>
+            </dwc:MeasurementOrFact>
+            <dwc:MeasurementOrFact>
+              <dwc:measurementType>número de cuadrículas ocupadas</dwc:measurementType>
+              <dwc:measurementValue>1</dwc:measurementValue>
+              <dwc:measurementUnit>cuadrículas de 2×2 km</dwc:measurementUnit>
+              <dwc:measurementDeterminedBy>BioDex 1.1.0 (servidor)</dwc:measurementDeterminedBy>
+              <dwc:measurementDeterminedDate>2026-10-01</dwc:measurementDeterminedDate>
+            </dwc:MeasurementOrFact>
+            <dwc:MeasurementOrFact>
+              <dwc:measurementType>tamaño de celda</dwc:measurementType>
+              <dwc:measurementValue>2</dwc:measurementValue>
+              <dwc:measurementUnit>km</dwc:measurementUnit>
+              <dwc:measurementDeterminedBy>BioDex 1.1.0 (servidor)</dwc:measurementDeterminedBy>
+              <dwc:measurementDeterminedDate>2026-10-01</dwc:measurementDeterminedDate>
+            </dwc:MeasurementOrFact>
+          </AreaOfOccupancy>
+          <AncillaryData>
+            <eol:dataType>http://purl.org/dc/dcmitype/Text</eol:dataType>
+            <dc:title>Avisos del cálculo</dc:title>
+            <dc:language>es</dc:language>
+            <eol:subject>http://rs.tdwg.org/ontology/voc/SPMInfoItems#Distribution</eol:subject>
+            <dc:description>EOO (0,619 km²) menor que AOO (4 km²): se toma EOO = AOO.</dc:description>
+          </AncillaryData>
+        </TerritoryAtomized>
+      </Territory>
+    </DemographyAndThreat>
+    <associatedParty>
+      <individualName>
+        <surName>Lucía Ortega</surName>
+      </individualName>
+      <onlineUrl>https://orcid.org/0000-0002-1825-0097</onlineUrl>
+      <role>Observador/a (registros de distribución)</role>
+    </associatedParty>
+    <associatedParty>
+      <individualName>
+        <surName>Carlos Molina</surName>
+      </individualName>
+      <role>Observador/a (registros de distribución)</role>
+    </associatedParty>
+    <associatedParty>
+      <individualName>
+        <surName>Elena Ruiz</surName>
+      </individualName>
+      <role>Observador/a (registros de distribución)</role>
+    </associatedParty>
+    <References>Darwin Core Archive dwca/ de esta descarga (BioDex_DEMO_Flora_amenazada_de_Sierra_Nevada_datos_ficticios_publicar_2026-10-01.zip): observaciones con taxonID EIDOS:8242.</References>
+  </TaxonRecord>
+  <TaxonRecord>
+    <BaseElements>
+      <TaxonRecordID>EIDOS:9392</TaxonRecordID>
+      <dwc:nameAccordingTo>EIDOS (IEPNB, MITECO)</dwc:nameAccordingTo>
+    </BaseElements>
+    <RecordMetadata>
+      <Language>es</Language>
+      <Version>
+        <Modifier>BioDex 1.1.0</Modifier>
+        <DateIssued>2026-10-01</DateIssued>
+      </Version>
+      <Revision>
+        <associatedParty>
+          <individualName>
+            <surName>Elena Ruiz</surName>
+          </individualName>
+          <role>Generó la ficha</role>
+        </associatedParty>
+        <pubDate>2026-10-01</pubDate>
+        <dcterms:created>2026-10-01T03:31:19+02:00</dcterms:created>
+      </Revision>
+    </RecordMetadata>
+    <NomenclatureAndClassification>
+      <TaxonRecordName>
+        <ScientificName id="n-EIDOS-9392" nomenclaturalCode="Botanical">
+          <tcs:Simple>Viola crassiuscula Bory</tcs:Simple>
+          <tcs:Rank code="sp">species</tcs:Rank>
+          <tcs:CanonicalName>
+            <tcs:Simple>Viola crassiuscula</tcs:Simple>
+          </tcs:CanonicalName>
+          <tcs:CanonicalAuthorship>
+            <tcs:Simple>Bory</tcs:Simple>
+          </tcs:CanonicalAuthorship>
+        </ScientificName>
+      </TaxonRecordName>
+      <CommonNames>
+        <CommonNamesAtomized>
+          <CommonName>violeta de Sierra Nevada</CommonName>
+          <Language>es</Language>
+        </CommonNamesAtomized>
+      </CommonNames>
+      <Hierarchy classification="EIDOS">
+        <dwc:kingdom>Plantae</dwc:kingdom>
+        <dwc:phylum>Tracheophyta</dwc:phylum>
+        <dwc:class>Magnoliopsida</dwc:class>
+        <dwc:order>Malpighiales</dwc:order>
+        <dwc:family>Violaceae</dwc:family>
+        <dwc:genus>Viola</dwc:genus>
+        <dwc:taxonRank>species</dwc:taxonRank>
+        <dwc:specificEpithet>crassiuscula</dwc:specificEpithet>
+      </Hierarchy>
+    </NomenclatureAndClassification>
+    <HabitatAndDistribution>
+      <Distribution>
+        <temporalCoverage>
+          <rangeOfDates>
+            <beginDate>
+              <calendarDate>2026-05-24</calendarDate>
+            </beginDate>
+            <endDate>
+              <calendarDate>2026-09-12</calendarDate>
+            </endDate>
+          </rangeOfDates>
+        </temporalCoverage>
+        <DistributionAtomized>
+          <dwc:country>España</dwc:country>
+          <dwc:locality>Catálogo BioDex «DEMO — Flora amenazada de Sierra Nevada (datos ficticios)»</dwc:locality>
+        </DistributionAtomized>
+        <AncillaryData>
+          <eol:dataType>http://purl.org/dc/dcmitype/Text</eol:dataType>
+          <dc:title>Fuente de los datos de distribución</dc:title>
+          <dc:language>es</dc:language>
+          <dc:source>dwca/occurrence.txt de esta descarga (BioDex_DEMO_Flora_amenazada_de_Sierra_Nevada_datos_ficticios_publicar_2026-10-01.zip), taxonID EIDOS:9392</dc:source>
+          <eol:subject>http://rs.tdwg.org/ontology/voc/SPMInfoItems#Distribution</eol:subject>
+          <dc:description>5 registros exportados (5 presencias, 0 ausencias) entre el 2026-05-24 y el 2026-09-12. Reflejan las observaciones del catálogo, no la distribución completa de la especie.</dc:description>
+        </AncillaryData>
+      </Distribution>
+    </HabitatAndDistribution>
+    <DemographyAndThreat>
+      <Territory>
+        <TerritoryAtomized>
+          <ExtentOfOccurrence>
+            <dwc:MeasurementOrFact>
+              <dwc:measurementType>extensión de presencia (EOO)</dwc:measurementType>
+              <dwc:measurementValue>4</dwc:measurementValue>
+              <dwc:measurementUnit>km²</dwc:measurementUnit>
+              <dwc:measurementDeterminedBy>BioDex 1.1.0 (servidor)</dwc:measurementDeterminedBy>
+              <dwc:measurementDeterminedDate>2026-10-01</dwc:measurementDeterminedDate>
+              <dwc:measurementMethod>Polígono convexo mínimo de las presencias con precisión no peor que 2 km, en ETRS89 / UTM 30N (EPSG:25830)</dwc:measurementMethod>
+              <dwc:measurementRemarks>Solo con las presencias de esta exportación del catálogo (5 registros), no con la distribución completa de la especie. EOO menor que AOO: se toma EOO = AOO (UICN).</dwc:measurementRemarks>
+            </dwc:MeasurementOrFact>
+          </ExtentOfOccurrence>
+          <AreaOfOccupancy>
+            <dwc:MeasurementOrFact>
+              <dwc:measurementType>área de ocupación (AOO)</dwc:measurementType>
+              <dwc:measurementValue>4</dwc:measurementValue>
+              <dwc:measurementAccuracy>4–8 km² al desplazar la rejilla media celda</dwc:measurementAccuracy>
+              <dwc:measurementUnit>km²</dwc:measurementUnit>
+              <dwc:measurementDeterminedBy>BioDex 1.1.0 (servidor)</dwc:measurementDeterminedBy>
+              <dwc:measurementDeterminedDate>2026-10-01</dwc:measurementDeterminedDate>
+              <dwc:measurementMethod>Celdas de 2×2 km ocupadas, rejilla anclada al origen UTM (EPSG:25830)</dwc:measurementMethod>
+              <dwc:measurementRemarks>Solo con las presencias de esta exportación del catálogo (5 registros), no con la distribución completa de la especie.</dwc:measurementRemarks>
+            </dwc:MeasurementOrFact>
+            <dwc:MeasurementOrFact>
+              <dwc:measurementType>número de cuadrículas ocupadas</dwc:measurementType>
+              <dwc:measurementValue>1</dwc:measurementValue>
+              <dwc:measurementUnit>cuadrículas de 2×2 km</dwc:measurementUnit>
+              <dwc:measurementDeterminedBy>BioDex 1.1.0 (servidor)</dwc:measurementDeterminedBy>
+              <dwc:measurementDeterminedDate>2026-10-01</dwc:measurementDeterminedDate>
+            </dwc:MeasurementOrFact>
+            <dwc:MeasurementOrFact>
+              <dwc:measurementType>tamaño de celda</dwc:measurementType>
+              <dwc:measurementValue>2</dwc:measurementValue>
+              <dwc:measurementUnit>km</dwc:measurementUnit>
+              <dwc:measurementDeterminedBy>BioDex 1.1.0 (servidor)</dwc:measurementDeterminedBy>
+              <dwc:measurementDeterminedDate>2026-10-01</dwc:measurementDeterminedDate>
+            </dwc:MeasurementOrFact>
+          </AreaOfOccupancy>
+          <AncillaryData>
+            <eol:dataType>http://purl.org/dc/dcmitype/Text</eol:dataType>
+            <dc:title>Avisos del cálculo</dc:title>
+            <dc:language>es</dc:language>
+            <eol:subject>http://rs.tdwg.org/ontology/voc/SPMInfoItems#Distribution</eol:subject>
+            <dc:description>EOO (0,555 km²) menor que AOO (4 km²): se toma EOO = AOO.</dc:description>
+          </AncillaryData>
+        </TerritoryAtomized>
+      </Territory>
+    </DemographyAndThreat>
+    <associatedParty>
+      <individualName>
+        <surName>Elena Ruiz</surName>
+      </individualName>
+      <role>Observador/a (registros de distribución)</role>
+    </associatedParty>
+    <associatedParty>
+      <individualName>
+        <surName>Lucía Ortega</surName>
+      </individualName>
+      <onlineUrl>https://orcid.org/0000-0002-1825-0097</onlineUrl>
+      <role>Observador/a (registros de distribución)</role>
+    </associatedParty>
+    <associatedParty>
+      <individualName>
+        <surName>Carlos Molina</surName>
+      </individualName>
+      <role>Observador/a (registros de distribución)</role>
+    </associatedParty>
+    <References>Darwin Core Archive dwca/ de esta descarga (BioDex_DEMO_Flora_amenazada_de_Sierra_Nevada_datos_ficticios_publicar_2026-10-01.zip): observaciones con taxonID EIDOS:9392.</References>
+  </TaxonRecord>
+</Dataset>
