@@ -230,16 +230,19 @@ export function openIucnWizard({ catalog, species, assessment = null, onSaved } 
     paintActions();
   }
 
+  // F11c: «← Anterior» a la izquierda y la acción principal a la derecha, siempre en el mismo sitio.
   function paintActions() {
     const last = step === STEPS.length - 1;
     const bar = $('.wz-actions', ov.body);
+    const label = (i) => (STEPS[i] === 'R' ? 'Resultado' : STEPS[i]);
+    const prev = step > 0 ? html`<button type="button" class="btn-quiet wz-prev" data-prev>← Anterior: ${label(step - 1)}</button>` : html`<span></span>`;
     if (last) {
-      render(bar, html`<button type="button" class="btn-primary" data-save="final">Guardar como final</button>
+      render(bar, html`${prev}<span class="wz-actions-main">
         <button type="button" class="btn-secondary" data-save="draft">Guardar borrador</button>
-        <button type="button" class="link-btn" data-prev>Anterior</button>`);
+        <button type="button" class="btn-primary" data-save="final">Guardar como final</button></span>`);
     } else {
-      render(bar, html`<button type="button" class="btn-primary" data-next>${step === STEPS.length - 2 ? 'Ver resultado' : `Siguiente: ${STEPS[step + 1]}`}</button>
-        ${step > 0 ? html`<button type="button" class="link-btn" data-prev>Anterior</button>` : ''}`);
+      render(bar, html`${prev}<span class="wz-actions-main"><button type="button" class="btn-primary" data-next
+        >${step === STEPS.length - 2 ? 'Ver resultado →' : `Siguiente: ${STEPS[step + 1]} →`}</button></span>`);
     }
   }
 

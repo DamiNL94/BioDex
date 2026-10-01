@@ -115,8 +115,10 @@ function fmtDate(s) {
 
 /**
  * Abre la ficha. `onChanged()` se llama si se cambia el nivel (para refrescar la lista de Especies).
+ * F11c: `step(dir)` (dir = -1 | 1) devuelve el taxonID de la especie anterior/siguiente de la lista que la
+ * abrió, o null. Con él, la cabecera lleva «Anterior/Siguiente» y ↑/↓ pasan de ficha sin apilar niveles.
  */
-export function openSpeciesDetail(taxonID, { onChanged } = {}) {
+export function openSpeciesDetail(taxonID, { onChanged, step, onOpen } = {}) {
   let alive = true;
   let marks = null;
   let notes = null;
@@ -126,6 +128,33 @@ export function openSpeciesDetail(taxonID, { onChanged } = {}) {
   const ov = openOverlay({ key: 'ficha-especie', title: 'Ficha de especie', variant: 'side', className: 'species-detail',
     onClose: () => { alive = false; for (const m of [marks, notes, assessments, distribution]) if (m) m.destroy(); } });
   render(ov.body, html`<p class="muted">Cargando ficha…</p>`);
+
+  if (onOpen) onOpen(taxonID);
+  if (step) {
+    const go = (dir) => {
+      const next = step(dir);
+      if (!next) return;
+      // Se cierra esta y se abre la otra en el mismo turno: BioDexNav salda el historial a cero.
+      ov.close(true);
+      openSpeciesDetail(next, { onChanged, step, onOpen });
+    };
+    render(ov.head, html`<div class="detail-step">
+      <button type="button" class="sheet-close" data-step="-1" aria-label="Especie anterior (↑)" title="Anterior (↑)" ${step(-1) ? '' : html`disabled`}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg></button>
+      <button type="button" class="sheet-close" data-step="1" aria-label="Especie siguiente (↓)" title="Siguiente (↓)" ${step(1) ? '' : html`disabled`}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></div>`);
+    ov.head.addEventListener('click', (ev) => {
+      const b = ev.target.closest('[data-step]');
+      if (b) go(Number(b.dataset.step));
+    });
+    ov.el.addEventListener('keydown', (ev) => {
+      if (ev.key !== 'ArrowUp' && ev.key !== 'ArrowDown') return;
+      if (ev.target.closest('input,select,textarea,[contenteditable]')) return;
+      if (document.querySelectorAll('.overlay')[document.querySelectorAll('.overlay').length - 1] !== ov.el) return;
+      ev.preventDefault();
+      go(ev.key === 'ArrowUp' ? -1 : 1);
+    });
+  }
 
   const active = state.activeCatalog;
   const localCard = async () => { const sp = await localSpecies(taxonID); return sp ? { species: sp } : null; };
@@ -143,7 +172,7 @@ export function openSpeciesDetail(taxonID, { onChanged } = {}) {
   }).catch((e) => {
     if (!alive) return;
     render(ov.body, html`<p class="guard-band warn">${e.offline
-      ? 'Esta ficha no está en el dispositivo. Descarga su catálogo con red («Descargar para usar sin conexión») para verla en el campo.'
+      ? 'Esta ficha no está en el dispositivo. Lleva su catálogo al dispositivo con red («Llevar al campo», en Catálogo) para verla sin cobertura.'
       : e.message}</p>`);
   });
 

@@ -4,13 +4,19 @@
 // nombre, categoría (de CR a LC) o grupo. Tocar una fila abre la ficha.
 // Cada fila lleva el filete lateral del color de su categoría UICN principal y «Marcar aquí» (F5).
 // Sin servidor, las especies salen del catálogo descargado (IndexedDB).
+// F11c: en el móvil (campo) solo se ve el buscador; Grupo, Categoría, Nivel y Orden van en una hoja que
+// sube desde abajo («Filtros (n)», nivel de BioDexNav) y los filtros activos quedan como fichas que se
+// quitan con un toque. En escritorio (estudio) los filtros van en línea y la ficha abierta pasa a la
+// especie anterior/siguiente con ↑/↓.
 // F11b: owner y custodio tienen el filtro «Fotos por revisar»: fotos de iNaturalist propuestas porque
 // iNat usa otro nombre (sinónimo) para la especie. Aceptar la muestra; rechazar no la vuelve a proponer.
 // ================================================================================================
 
 import { apiGetJson, apiPostJson } from '../api.js';
 import { state, subscribe, setActiveCatalog } from '../state.js';
-import { html, render, $, $$, plural, sciName, sciNameText, store } from '../util.js';
+import { html, render, $, $$, plural, sciName, sciNameText, store, isStudio } from '../util.js';
+
+const Nav = window.BioDexNav;
 import { remoteOrLocal, localCatalogData, localNote } from '../offline.js';
 import { openMarkHere, canMark } from '../components/marks.js';
 import { openSpeciesNew } from './species-new.js';
@@ -50,6 +56,7 @@ export function mount(el, { go }) {
   const saved = store.get('biodex.speciesFilters', {});
   const f = { text: '', group: saved.group || '', category: saved.category || '', level: saved.level || '',
     family: '', sort: saved.sort || 'name', photos: false };
+  let lastOpened = null;    // taxonID de la ficha abierta desde la lista (↑/↓)
   let reviewStatus = '';   // aviso tras aceptar o rechazar una foto (lo lee el lector de pantalla)
   if (pendingFamily !== undefined) { f.family = pendingFamily || ''; pendingFamily = undefined; }
 
@@ -65,7 +72,10 @@ export function mount(el, { go }) {
         <p>Las especies se ven siempre dentro de un catálogo. Elige con cuál trabajas y aparecerán aquí.</p>
         <a class="btn-primary" href="#/catalogos" id="toCatalogs">Ir a Catálogos</a>
       </section>`);
-      el.querySelector('#toCatalogs').addEventListener('click', (ev) => { ev.preventDefault(); go('catalogos'); });
+      el.querySelector('#toCatalogs').addEventListener('click', (ev) => {
+        ev.preventDefault();
+        go('catalogos', { returnTo: { label: 'Especies', run: () => go('especies') } });
+      });
       return;
     }
     if (!data) paint(html`<div class="page-head"><h2>Especies</h2></div><p class="muted">Cargando especies…</p>`);
@@ -87,8 +97,8 @@ export function mount(el, { go }) {
       paint(e.offline ? html`<div class="page-head"><h2>Especies</h2></div>
         <section class="placeholder">
           <h3>Este catálogo no está en el dispositivo</h3>
-          <p>Las especies de «${active.name}» se guardan al descargarlo con red («Descargar para usar sin
-            conexión» en Catálogos). En cuanto vuelva la conexión se descargará solo.</p>
+          <p>Las especies de «${active.name}» se guardan al llevarlo al campo con red («Llevar al campo», en
+            Catálogo). En cuanto vuelva la conexión se descargará solo.</p>
         </section>` : html`<div class="page-head"><h2>Especies</h2></div>
         <p class="guard-band warn">${e.message}</p>`);
     }
@@ -133,10 +143,15 @@ export function mount(el, { go }) {
         <form class="list-filters" role="search" aria-label="Filtrar especies" novalidate>
           <label class="field lf-text"><span>Buscar en el catálogo</span>
             <input type="search" name="text" value="${f.text}" autocomplete="off" placeholder="Nombre científico o común"></label>
+          <button type="button" class="btn-secondary lf-toggle" aria-expanded="false" aria-controls="lfSheet">Filtros</button>
+          <div class="lf-sheet" id="lfSheet" role="group" aria-label="Filtros y orden">
+          <div class="lf-sheet-head"><h3>Filtros</h3></div>
           <label class="field"><span>Grupo</span><select name="group">${opt('', 'Todos', f.group)}${groups.map((g) => opt(g, g, f.group))}</select></label>
           <label class="field"><span>Categoría</span><select name="category">${opt('', 'Todas', f.category)}${cats.map((c) => opt(c, c === 'none' ? 'Sin evaluar' : c, f.category))}</select></label>
           <label class="field"><span>Nivel</span><select name="level">${opt('', 'Todos', f.level)}${['1', '2', '3', '4'].map((n) => opt(n, `Nivel ${n}`, f.level))}</select></label>
           <label class="field"><span>Ordenar por</span><select name="sort">${opt('name', 'Nombre', f.sort)}${opt('category', 'Categoría (CR → LC)', f.sort)}${opt('group', 'Grupo', f.sort)}</select></label>
+          <button type="button" class="btn-primary lf-done">Ver especies</button>
+          </div>
         </form>
         ${reviews && (reviews.length || f.photos) ? html`<p class="photo-review-toggle">
           <button type="button" class="chip" id="photoReviewBtn" aria-pressed="${f.photos ? 'true' : 'false'}"
@@ -168,6 +183,18 @@ export function mount(el, { go }) {
       paintRows();
     });
     form.addEventListener('submit', (ev) => ev.preventDefault());
+    // Hoja de filtros (móvil): nivel de BioDexNav, así «atrás» la cierra.
+    const sheet = $('#lfSheet', el);
+    const toggle = $('.lf-toggle', el);
+    const closeSheet = () => { sheet.classList.remove('is-open'); toggle.setAttribute('aria-expanded', 'false'); };
+    toggle.addEventListener('click', () => {
+      sheet.classList.add('is-open');
+      toggle.setAttribute('aria-expanded', 'true');
+      Nav.open('filtros-especies', closeSheet);
+      const first = $('select', sheet);
+      if (first) first.focus();
+    });
+    $('.lf-done', el).addEventListener('click', () => { if (!Nav.close('filtros-especies')) closeSheet(); toggle.focus(); });
     $('#speciesList', el).addEventListener('click', (ev) => {
       const mark = ev.target.closest('[data-mark]');
       if (mark) {
@@ -176,7 +203,11 @@ export function mount(el, { go }) {
         return;
       }
       const row = ev.target.closest('[data-taxon]');
-      if (row) openSpeciesDetail(row.dataset.taxon, { onChanged: load });
+      if (row) {
+        lastOpened = row.dataset.taxon;
+        openSpeciesDetail(row.dataset.taxon, { onChanged: load, step: isStudio() ? stepFrom : undefined,
+          onOpen: (id) => { lastOpened = id; } });
+      }
     });
     const prBtn = $('#photoReviewBtn', el);
     if (prBtn) prBtn.addEventListener('click', () => {
@@ -195,8 +226,14 @@ export function mount(el, { go }) {
       if (fig) render(fig, silhouette(null));
     }, true);
     $('#familyChip', el).addEventListener('click', (ev) => {
-      if (!ev.target.closest('.chip')) return;
-      f.family = '';
+      const chip = ev.target.closest('.chip');
+      if (!chip) return;
+      f[chip.dataset.clear] = '';
+      if (chip.dataset.clear !== 'family') {
+        const sel = form.elements[chip.dataset.clear];
+        if (sel) sel.value = '';
+        store.set('biodex.speciesFilters', { group: f.group, category: f.category, level: f.level, sort: f.sort });
+      }
       paintRows();
       form.text.focus();
     });
@@ -267,8 +304,17 @@ export function mount(el, { go }) {
     if (reviewing) { paintReviews(); return; }
     const rows = filtered();
     const total = data.species.length;
-    render($('#familyChip', el), f.family ? html`<button type="button" class="chip" aria-label="Quitar filtro familia ${f.family}"
-      >Familia ${f.family} <span aria-hidden="true">×</span></button>` : html``);
+    const chips = [
+      ['family', f.family && `Familia ${f.family}`],
+      ['group', f.group],
+      ['category', f.category && (f.category === 'none' ? 'Sin evaluar' : `UICN ${f.category}`)],
+      ['level', f.level && `Nivel ${f.level}`],
+    ].filter(([, label]) => label);
+    render($('#familyChip', el), html`${chips.map(([k, label]) => html`<button type="button" class="chip" data-clear="${k}"
+      aria-label="Quitar filtro ${label}">${label} <span aria-hidden="true">×</span></button>`)}`);
+    const n = chips.filter(([k]) => k !== 'family').length;
+    const toggle = $('.lf-toggle', el);
+    if (toggle) toggle.textContent = n ? `Filtros (${n})` : 'Filtros';
     $('#listCount', el).textContent = rows.length === total ? plural(total, 'especie', 'especies')
       : `${rows.length} de ${plural(total, 'especie', 'especies')}`;
     const markable = canMark(data.catalog);
@@ -280,7 +326,19 @@ export function mount(el, { go }) {
         <span class="sp-iucn">${iucnBadge(s.iucnPrimary)}</span>
         <span class="sp-level">${sensitivityBadge(s.sensitivity)}</span>
       </button>${markable ? html`<button type="button" class="sp-mark" data-mark="${s.taxonID}"
-        >Marcar aquí<span class="sr-only"> ${sciNameText(s)}</span></button>` : ''}</li>`)}` : html`<li class="empty"><p class="muted">Ninguna especie cumple los filtros.</p></li>`);
+        ><span class="lbl-studio">Marcar aquí</span><span class="lbl-field">Marcar</span><span class="sr-only"> ${sciNameText(s)}</span></button>` : ''}</li>`)}` : html`<li class="empty"><p class="muted">Ninguna especie cumple los filtros.</p></li>`);
+  }
+
+  // Ficha abierta desde la lista: anterior/siguiente según el orden y los filtros que se ven ahora.
+  // step(dir) se consulta también para activar/desactivar los botones: no mueve nada por sí solo;
+  // lastOpened lo actualiza la ficha nueva al abrirse (onOpen).
+  function stepFrom(dir) {
+    if (!data) return null;
+    const rows = filtered();
+    const i = rows.findIndex((s) => s.taxonID === lastOpened);
+    if (i === -1) return null;
+    const next = rows[i + dir];
+    return next ? next.taxonID : null;
   }
 
   const unsubscribe = subscribe((key) => {
@@ -289,5 +347,5 @@ export function mount(el, { go }) {
     if (key === 'download' && !data && state.activeCatalog && !state.downloads[state.activeCatalog.id]) load();
   });
   load();
-  return () => { alive = false; unsubscribe(); };
+  return () => { alive = false; unsubscribe(); if (Nav.has('filtros-especies')) Nav.close('filtros-especies'); };
 }

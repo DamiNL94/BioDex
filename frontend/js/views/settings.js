@@ -4,7 +4,8 @@
 // descartar a mano) y catálogos de los que te han sacado con marcas sin subir (exportar o descartar).
 // Dispositivo: espacio usado (storage.estimate), catálogos descargados, zonas del mapa (F7: tamaño,
 // reanudar y borrar) y respaldo (exportar/importar).
-// Descargas (F10a): «Descargar datos» de cada catálogo (catalog-export.js); necesita conexión.
+// Exportar datos (F10a): de cada catálogo (catalog-export.js); necesita conexión.
+// F11c: secciones agrupadas por uso: Campo (sincronización y dispositivo) · Datos y cuenta · Aplicación.
 
 import { state, subscribe, setTheme, setUser, APP_VERSION, CONNECTION_LABELS } from '../state.js';
 import { html, render, $, plural, normalizeOrcid } from '../util.js';
@@ -79,23 +80,7 @@ export function mount(el, { onLogout }) {
     render(el, html`
       <div class="page-head"><h2>Ajustes</h2></div>
       <div class="settings">
-        <section class="panel" aria-labelledby="set-profile">
-          <h3 id="set-profile">Perfil</h3>
-          <dl class="facts">
-            <div><dt>Email</dt><dd>${u.email}
-              ${u.emailVerified ? html`<span class="badge ok">Verificado</span>` : html`<span class="badge warn">Email sin verificar</span>`}</dd></div>
-          </dl>
-          ${u.emailVerified ? '' : html`<p class="hint">Sin verificar no podrás ser custodio de un catálogo. Abre el enlace del correo de BioDex.</p>`}
-          <form class="form profile-form" novalidate>
-            <label class="field"><span>Nombre</span><input name="name" required maxlength="120" autocomplete="name" value="${u.name || ''}"></label>
-            <label class="field"><span>ORCID <em>(opcional)</em></span><input name="orcid" maxlength="40" inputmode="text"
-              autocomplete="off" spellcheck="false" placeholder="0000-0000-0000-000X" value="${u.orcid || ''}"></label>
-            <p class="hint">Lo verá tu equipo junto a tu nombre, con enlace a orcid.org.</p>
-            ${profileMsg ? html`<p class="${profileMsg.kind === 'error' ? 'form-error' : 'guard-band info'}" role="${profileMsg.kind === 'error' ? 'alert' : 'status'}">${profileMsg.text}</p>` : ''}
-            <div class="form-actions"><button type="submit" class="btn-primary" ${state.online ? '' : html`disabled`}>Guardar perfil</button>
-              ${state.online ? '' : html`<span class="hint">Necesita conexión</span>`}</div>
-          </form>
-        </section>
+        <p class="settings-group">Campo</p>
         <section class="panel" aria-labelledby="set-sync">
           <h3 id="set-sync">Sincronización</h3>
           <dl class="facts">
@@ -138,7 +123,7 @@ export function mount(el, { onLogout }) {
           </dl>
           ${downloaded.length ? html`<h4>Catálogos sin conexión</h4><ul class="plain-list">${downloaded.map((c) => html`
             <li><strong>${c.name}</strong> <span class="muted">· ${shortDate(c.downloadedAt)}</span></li>`)}</ul>`
-            : html`<p class="hint">Ningún catálogo descargado. En Catálogos, «Descargar para usar sin conexión».</p>`}
+            : html`<p class="hint">Ningún catálogo en el dispositivo. En la pestaña Catálogo, «Llevar al campo».</p>`}
           <h4>Zonas del mapa sin conexión</h4>
           ${zones.length ? html`<ul class="zone-rows">${zones.map((z) => zoneRow(z))}</ul>`
             : html`<p class="hint">Ninguna zona descargada. En Mapa › Zonas, «Descargar esta zona».</p>`}
@@ -150,8 +135,9 @@ export function mount(el, { onLogout }) {
             <label class="btn-secondary file-btn">Importar respaldo<input type="file" id="importInput" accept="application/json,.json"></label>
           </div>
         </section>
+        <p class="settings-group">Datos y cuenta</p>
         <section class="panel" aria-labelledby="set-downloads">
-          <h3 id="set-downloads">Descargas</h3>
+          <h3 id="set-downloads">Exportar datos</h3>
           <p class="hint">Los datos de un catálogo en un ZIP: Darwin Core Archive para GBIF, fichas de especie en Plinian Core
             y hojas en castellano (Excel y CSV).
             «Para publicar» generaliza las coordenadas de las especies sensibles; la «completa» es solo para propietario y custodios.</p>
@@ -161,9 +147,32 @@ export function mount(el, { onLogout }) {
             : !serverCatalogs ? html`<p class="muted">Cargando catálogos…</p>`
             : serverCatalogs.length ? html`<ul class="plain-list download-list">${serverCatalogs.map((c) => html`<li>
                 <span><strong>${c.name}</strong> <span class="muted">· ${ROLE_LABELS[c.role] || c.role}</span></span>
-                <button type="button" class="link-btn" data-export-data="${c.id}">Descargar datos</button></li>`)}</ul>`
+                <button type="button" class="link-btn" data-export-data="${c.id}">Exportar datos</button></li>`)}</ul>`
             : html`<p class="hint">Aún no tienes catálogos.</p>`}
         </section>
+        <section class="panel" aria-labelledby="set-profile">
+          <h3 id="set-profile">Perfil</h3>
+          <dl class="facts">
+            <div><dt>Email</dt><dd>${u.email}
+              ${u.emailVerified ? html`<span class="badge ok">Verificado</span>` : html`<span class="badge warn">Email sin verificar</span>`}</dd></div>
+          </dl>
+          ${u.emailVerified ? '' : html`<p class="hint">Sin verificar no podrás ser custodio de un catálogo. Abre el enlace del correo de BioDex.</p>`}
+          <form class="form profile-form" novalidate>
+            <label class="field"><span>Nombre</span><input name="name" required maxlength="120" autocomplete="name" value="${u.name || ''}"></label>
+            <label class="field"><span>ORCID <em>(opcional)</em></span><input name="orcid" maxlength="40" inputmode="text"
+              autocomplete="off" spellcheck="false" placeholder="0000-0000-0000-000X" value="${u.orcid || ''}"></label>
+            <p class="hint">Lo verá tu equipo junto a tu nombre, con enlace a orcid.org.</p>
+            ${profileMsg ? html`<p class="${profileMsg.kind === 'error' ? 'form-error' : 'guard-band info'}" role="${profileMsg.kind === 'error' ? 'alert' : 'status'}">${profileMsg.text}</p>` : ''}
+            <div class="form-actions"><button type="submit" class="btn-primary" ${state.online ? '' : html`disabled`}>Guardar perfil</button>
+              ${state.online ? '' : html`<span class="hint">Necesita conexión</span>`}</div>
+          </form>
+        </section>
+        <section class="panel">
+          <button type="button" class="btn-secondary danger" id="logoutBtn">Cerrar sesión</button>
+          <p class="hint">${state.online ? 'Cierra la sesión solo en este dispositivo y borra de él tus datos.'
+            : `${CONNECTION_LABELS[state.connection]}: se olvida la sesión en este dispositivo; el servidor la cerrará cuando caduque.`}</p>
+        </section>
+        <p class="settings-group">Aplicación</p>
         <section class="panel">
           <h3>Apariencia</h3>
           <div class="segmented" role="radiogroup" aria-label="Tema">${THEMES.map(([value, label]) => html`
@@ -178,11 +187,6 @@ export function mount(el, { onLogout }) {
             <div><dt>Conexión</dt><dd>${CONNECTION_LABELS[state.connection]}</dd></div>
             <div><dt>Uso sin conexión</dt><dd>${sw ? 'Preparado' : 'No disponible en este navegador o aún instalándose'}</dd></div>
           </dl>
-        </section>
-        <section class="panel">
-          <button type="button" class="btn-secondary danger" id="logoutBtn">Cerrar sesión</button>
-          <p class="hint">${state.online ? 'Cierra la sesión solo en este dispositivo y borra de él tus datos.'
-            : `${CONNECTION_LABELS[state.connection]}: se olvida la sesión en este dispositivo; el servidor la cerrará cuando caduque.`}</p>
         </section>
       </div>`);
 

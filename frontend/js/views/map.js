@@ -15,10 +15,19 @@
 // · Zonas: map/zone-ui.js (editor y lista) sobre map/zones.js (descarga).
 // · «EOO / AOO» (F9): con una especie elegida en Filtros, su polígono convexo y sus celdas (o las celdas
 //   generalizadas, según la confianza), con cifras y origen (servidor o provisional). map/metrics-layer.js.
+// · F11c — campo (móvil): el mapa ocupa toda la altura entre las dos barras; encima, una sola fila con
+//   Filtros · Lista · Zonas y el botón de capas (menú pequeño). EOO/AOO pasa a Filtros › Análisis.
+//   Leyenda plegada tras el botón «i» y posición en una pastilla («±8 m») que se despliega al tocarla.
+//   Filtros es una hoja inferior (nivel de BioDexNav). «Ver en el mapa» desde la lista deja
+//   «← Volver a la lista de marcas».
+//   Estudio (escritorio): barra en una fila (capas a la izquierda; herramientas a la derecha), filtros en
+//   línea, lista de marcas acoplada a la derecha del mapa y leyenda flotante plegable.
 // ================================================================================================
 
 import { state, subscribe } from '../state.js';
 import { html, render, $, $$, plural, store, sciName, sciNameText } from '../util.js';
+
+const Nav = window.BioDexNav;
 import { hasDb, byIndex, get } from '../db.js';
 import { localCatalog, localSpeciesOf, sensitivityLevels } from '../offline.js';
 import { openOverlay, confirmDialog } from '../components/overlay.js';
@@ -45,9 +54,19 @@ const ICON = {
   locate: html`<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></svg>`,
   follow: html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 5 21l7-4 7 4-7-19Z"/></svg>`,
   pin: html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12Z"/><circle cx="12" cy="9" r="2.5"/></svg>`,
+  layers: html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5 9-5Zm-9 9 9 5 9-5M3 16l9 5 9-5"/></svg>`,
+  info: html`<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-9.5v.5"/></svg>`,
+  close: html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>`,
 };
 
-export function mount(el) {
+// Leyenda y posición desplegadas: preferencia del dispositivo (en el móvil empiezan plegadas).
+let legendOpen = null;
+let footOpen = null;
+
+export function mount(el, { go = () => {}, isStudio = () => false } = {}) {
+  const studio = isStudio();
+  if (legendOpen === null) legendOpen = studio;
+  if (footOpen === null) footOpen = studio;
   const Lf = window.L;
   if (!Lf || !Lf.markerClusterGroup) {
     render(el, html`<section class="placeholder"><p class="eyebrow">Mapa</p><h2>No se ha podido cargar el mapa</h2>
@@ -72,46 +91,57 @@ export function mount(el) {
   let editor = null;
 
   render(el, html`
-    <section class="map-view" aria-label="Mapa">
+    <section class="map-view ${studio ? 'is-studio' : 'is-field'}" aria-label="Mapa">
       <div class="map-bar">
-        <div class="segmented map-layers" role="radiogroup" aria-label="Capa del mapa">
+        <div class="segmented map-layers" role="radiogroup" aria-label="Capa del mapa" id="mapLayers">
           ${LAYERS.map((l) => html`<button type="button" role="radio" data-layer="${l.key}">${l.label}</button>`)}
         </div>
         <div class="map-bar-tools">
           <button type="button" class="btn-secondary map-btn" data-filters aria-expanded="false" aria-controls="mapFilters">Filtros</button>
-          <button type="button" class="btn-secondary map-btn" data-list>Ver como lista</button>
+          <button type="button" class="btn-secondary map-btn" data-list aria-expanded="false"
+            ><span class="lbl-studio">Ver como lista</span><span class="lbl-field">Lista</span></button>
           <button type="button" class="btn-secondary map-btn" data-zones>Zonas</button>
-          <button type="button" class="btn-secondary map-btn" data-metrics aria-pressed="false">EOO / AOO</button>
+          <button type="button" class="btn-secondary map-btn map-btn-metrics" data-metrics aria-pressed="false">EOO / AOO</button>
+          <button type="button" class="icon-btn map-layers-btn" data-layers-btn aria-expanded="false" aria-controls="mapLayers"
+            aria-label="Capas del mapa" title="Capas">${ICON.layers}</button>
         </div>
       </div>
       <form class="map-filters panel" id="mapFilters" hidden novalidate></form>
       <div class="map-note" id="mapNote"></div>
-      <div class="map-wrap">
-        <div class="map" id="leafletMap"></div>
-        <div class="map-fabs">
-          <button type="button" class="map-fab" data-locate aria-label="Centrar en mí">${ICON.locate}</button>
-          <button type="button" class="map-fab" data-follow aria-pressed="false" aria-label="Seguir mi posición">${ICON.follow}</button>
+      <div class="map-main">
+        <div class="map-wrap">
+          <div class="map" id="leafletMap"></div>
+          <div class="map-fabs">
+            <button type="button" class="map-fab" data-locate aria-label="Centrar en mí" title="Centrar en mí">${ICON.locate}</button>
+            <button type="button" class="map-fab" data-follow aria-pressed="false" aria-label="Seguir mi posición" title="Seguir mi posición">${ICON.follow}</button>
+            <button type="button" class="map-fab" data-legend aria-expanded="false" aria-controls="mapLegend" aria-label="Leyenda" title="Leyenda">${ICON.info}</button>
+          </div>
+          <button type="button" class="btn-primary mark-fab" data-mark>${ICON.pin}<span>Marcar aquí</span></button>
+          <div class="zone-strip" id="zoneStrip" hidden></div>
+          <div class="map-float">
+            <div class="map-legend" id="mapLegend" hidden></div>
+            <div class="map-foot" id="mapFoot" role="status" aria-live="off"></div>
+          </div>
         </div>
-        <button type="button" class="btn-primary mark-fab" data-mark>${ICON.pin}<span>Marcar aquí</span></button>
-        <div class="zone-strip" id="zoneStrip" hidden></div>
+        <aside class="map-side" id="mapSide" hidden aria-label="Marcas del mapa"></aside>
       </div>
-      <p class="map-foot" id="mapFoot" role="status" aria-live="off"></p>
-      <div class="map-legend" id="mapLegend"></div>
     </section>`);
 
   const root = $('.map-view', el);
   const mapEl = $('#leafletMap', el);
   const wrap = $('.map-wrap', el);
+  const side = $('#mapSide', el);
 
   // Alto del mapa: lo que queda de pantalla (en el móvil, sin la barra inferior). Se fija ANTES de
   // crear el mapa: Leaflet encuadra Granada con el tamaño que tenga el contenedor en ese momento.
+  // F11c: leyenda y posición flotan sobre el mapa; debajo solo queda la barra de pestañas del móvil.
   function sizeWrap() {
     const tabs = document.querySelector('.tabs');
     const bottom = tabs && getComputedStyle(tabs).position === 'fixed' ? tabs.offsetHeight : 0;
     const top = wrap.getBoundingClientRect().top + window.scrollY;
-    const gap = parseFloat(getComputedStyle(root).rowGap) || 0;   // huecos del flex: pie y leyenda
-    const below = $('#mapFoot', el).offsetHeight + $('#mapLegend', el).offsetHeight + 2 * gap;
-    wrap.style.height = `${Math.max(280, Math.floor(window.innerHeight - top - bottom - below))}px`;
+    const h = `${Math.max(280, Math.floor(window.innerHeight - top - bottom))}px`;
+    wrap.style.height = h;
+    side.style.height = h;
   }
   sizeWrap();
 
@@ -141,7 +171,7 @@ export function mount(el) {
     for (const [k, layer] of tileLayers) {
       if (k === key) { if (!map.hasLayer(layer)) layer.addTo(map); } else if (map.hasLayer(layer)) layer.remove();
     }
-    $$('[data-layer]', el).forEach((b) => {
+    $$('button[data-layer]', el).forEach((b) => {
       const on = b.dataset.layer === key;
       b.classList.toggle('active', on);
       b.setAttribute('aria-checked', String(on));
@@ -149,14 +179,24 @@ export function mount(el) {
     root.dataset.layer = key;
     saveView();
   }
-  $$('[data-layer]', el).forEach((b) => b.addEventListener('click', () => setLayer(b.dataset.layer)));
+  // Móvil: las capas van en un menú pequeño tras el botón de capas; elegir una lo cierra.
+  const layersBtn = $('[data-layers-btn]', el);
+  function setLayersMenu(open) {
+    root.classList.toggle('layers-open', open);
+    layersBtn.setAttribute('aria-expanded', String(open));
+  }
+  layersBtn.addEventListener('click', () => setLayersMenu(!root.classList.contains('layers-open')));
+  $$('button[data-layer]', el).forEach((b) => b.addEventListener('click', () => {
+    setLayer(b.dataset.layer);
+    if (root.classList.contains('layers-open')) { setLayersMenu(false); layersBtn.focus(); }
+  }));
 
   function fit() {
     sizeWrap();
     map.invalidateSize();
   }
   const ro = window.ResizeObserver ? new ResizeObserver(() => fit()) : null;
-  if (ro) ['.app-sign', '#bands', '.map-bar', '#mapFilters', '#mapNote', '#mapFoot', '#mapLegend']
+  if (ro) ['.topbar', '#bands', '#backSlot', '.map-bar', '#mapFilters', '#mapNote']
     .forEach((s) => { const n = document.querySelector(s); if (n) ro.observe(n); });
   window.addEventListener('resize', fit);
 
@@ -195,21 +235,34 @@ export function mount(el) {
     paintFoot();
   }
 
+  // Posición: pastilla flotante. Plegada solo dice la precisión («±8 m»); desplegada, lat/lon y UTM.
   function paintFoot() {
     const foot = $('#mapFoot', el);
+    foot.classList.toggle('is-open', footOpen);
+    let short;
+    let detail;
     if (!pos) {
-      render(foot, html`<span class="foot-label">Tu posición</span> ${!navigator.geolocation
-        ? 'Este dispositivo no ofrece ubicación.' : posError || 'Buscando…'}`);
-      return;
+      short = !navigator.geolocation ? 'Sin ubicación' : posError ? 'Sin GPS' : 'Buscando GPS…';
+      detail = html`${!navigator.geolocation ? 'Este dispositivo no ofrece ubicación.' : posError || 'Buscando…'}`;
+    } else {
+      const { latitude: lat, longitude: lon, accuracy } = pos.coords;
+      let utm = null;
+      try { utm = toUtm(lat, lon); } catch (e) { /* fuera de rango */ }
+      short = html`<span class="${accuracy > LOW_ACCURACY_M ? 'is-poor' : ''}">±${Math.round(accuracy)} m</span>`;
+      detail = html`<span class="foot-item">${lat.toFixed(6)}, ${lon.toFixed(6)}</span>
+        ${utm ? html`<span class="foot-item"><abbr title="UTM huso 30 norte, ETRS89 (EPSG:25830)">UTM 30N</abbr> ${formatUtm(utm)}</span>` : ''}
+        <span class="foot-item ${accuracy > LOW_ACCURACY_M ? 'is-poor' : ''}">±${Math.round(accuracy)} m</span>`;
     }
-    const { latitude: lat, longitude: lon, accuracy } = pos.coords;
-    let utm = null;
-    try { utm = toUtm(lat, lon); } catch (e) { /* fuera de rango */ }
-    render(foot, html`<span class="foot-label">Tu posición</span>
-      <span class="foot-item">${lat.toFixed(6)}, ${lon.toFixed(6)}</span>
-      ${utm ? html`<span class="foot-item"><abbr title="UTM huso 30 norte, ETRS89 (EPSG:25830)">UTM 30N ETRS89</abbr> ${formatUtm(utm)}</span>` : ''}
-      <span class="foot-item ${accuracy > LOW_ACCURACY_M ? 'is-poor' : ''}">±${Math.round(accuracy)} m</span>`);
+    render(foot, html`<button type="button" class="pos-toggle" aria-expanded="${footOpen}" data-foot-toggle>
+        ${ICON.locate}<span class="foot-label">Tu posición</span><span class="pos-short">${short}</span></button>
+      ${footOpen ? html`<div class="pos-detail">${detail}</div>` : ''}`);
   }
+  $('#mapFoot', el).addEventListener('click', (ev) => {
+    if (!ev.target.closest('[data-foot-toggle]')) return;
+    footOpen = !footOpen;
+    paintFoot();
+    $('[data-foot-toggle]', el).focus();
+  });
 
   function setFollow(on) {
     follow = on;
@@ -222,7 +275,7 @@ export function mount(el) {
   map.on('dragstart', () => { if (follow) setFollow(false); });
   $('[data-follow]', el).addEventListener('click', () => setFollow(!follow));
   $('[data-locate]', el).addEventListener('click', () => {
-    if (!pos) { paintFoot(); $('#mapFoot', el).classList.add('is-flash'); setTimeout(() => $('#mapFoot', el).classList.remove('is-flash'), 900); return; }
+    if (!pos) { footOpen = true; paintFoot(); $('#mapFoot', el).classList.add('is-flash'); setTimeout(() => $('#mapFoot', el).classList.remove('is-flash'), 900); return; }
     map.setView([pos.coords.latitude, pos.coords.longitude], Math.max(map.getZoom(), 16));
   });
 
@@ -277,6 +330,7 @@ export function mount(el) {
       if (form.hidden) $('[data-filters]', el).click();
     }
     refreshMetrics({ fitAfter: true });
+    paintFilters();
   });
 
   function metricsNote() {
@@ -330,6 +384,7 @@ export function mount(el) {
     paintNote();
     paintLegend();
     paintFilters();
+    paintSide();
   }
 
   function paintNote() {
@@ -346,7 +401,7 @@ export function mount(el) {
     const n = activeFilterCount(filters);
     render(note, html`
       ${catalogLocal && catalogLocal.downloadedAt ? '' : html`<p class="guard-band info">«${cat.name}» no está descargado:
-        el mapa solo muestra las marcas hechas en este dispositivo. Descárgalo en Catálogos para ver las del equipo sin conexión.</p>`}
+        el mapa solo muestra las marcas hechas en este dispositivo. Llévalo al campo (pestaña Catálogo) para ver las del equipo sin conexión.</p>`}
       <p class="hint map-count">${plural(visible.length - withheld, 'marca', 'marcas')} en el mapa${n ? ` (${plural(n, 'filtro', 'filtros')})` : ''}
         ${cells ? html` · ${plural(cells, 'ubicación generalizada', 'ubicaciones generalizadas')}, dibujadas como su celda` : ''}
         ${withheld ? html` · ${plural(withheld, 'retenida', 'retenidas')} (nivel 1, sin ubicación)` : ''}</p>
@@ -362,7 +417,11 @@ export function mount(el) {
     const hasAbsent = visible.some((o) => o.occurrenceStatus === 'absent' && markShape(o, me) === 'point');
     const legend = $('#mapLegend', el);
     const drawn = showMetrics && metrics && metrics.drawn;
-    if (!visible.length && !drawn) { render(legend, html``); return; }
+    const legendBtn = $('[data-legend]', el);
+    legendBtn.setAttribute('aria-expanded', String(legendOpen));
+    legendBtn.classList.toggle('is-active', legendOpen);
+    legend.hidden = !legendOpen;
+    if (!visible.length && !drawn) { render(legend, html`<p class="hint">Sin marcas en el mapa.</p>`); return; }
     render(legend, html`<ul class="legend" aria-label="Leyenda">
       ${drawn && drawn.hasHull ? html`<li><span class="legend-eoo" aria-hidden="true"></span>EOO · polígono convexo mínimo</li>` : ''}
       ${drawn && drawn.access === 'full' ? html`<li><span class="legend-aoo" aria-hidden="true"></span>AOO · celdas de ${drawn.cellSizeKm} km ocupadas</li>` : ''}
@@ -375,6 +434,8 @@ export function mount(el) {
       ${hasPending ? html`<li><span class="mk mk-own is-pending" aria-hidden="true"></span>Pendiente de sincronizar</li>` : ''}
     </ul>`);
   }
+
+  $('[data-legend]', el).addEventListener('click', () => { legendOpen = !legendOpen; paintLegend(); });
 
   // --- Filtros ---------------------------------------------------------------------------------
   function paintFilters() {
@@ -393,6 +454,7 @@ export function mount(el) {
       return;
     }
     render(form, html`
+      ${studio ? '' : html`<h3 class="sheet-h">Filtros del mapa</h3>`}
       <label class="field"><span>Especie</span><select name="taxonID"><option value="">Todas</option>
         ${taxa.map(({ t, name }) => html`<option value="${t}" ${filters.taxonID === t ? html`selected` : ''}>${name}</option>`)}</select></label>
       <div class="field"><span id="whoLabel">Marcas</span>
@@ -405,34 +467,57 @@ export function mount(el) {
         ${[...observers.entries()].map(([id, o]) => html`<option value="${id}" ${filters.observer === id ? html`selected` : ''}>${o.name}</option>`)}</select></label>
       <label class="field"><span>Desde</span><input type="date" name="from" value="${filters.from}"></label>
       <label class="field"><span>Hasta</span><input type="date" name="to" value="${filters.to}"></label>
-      <div class="form-actions"><button type="button" class="link-btn" data-clear ${n ? '' : html`disabled`}>Quitar filtros</button></div>`);
+      ${studio ? '' : html`<fieldset class="checks map-analysis"><legend>Análisis</legend>
+        <label class="check"><input type="checkbox" name="metrics" ${showMetrics ? html`checked` : ''}>
+          EOO / AOO de la especie elegida</label></fieldset>`}
+      <div class="form-actions"><button type="button" class="link-btn" data-clear ${n ? '' : html`disabled`}>Quitar filtros</button>
+        ${studio ? '' : html`<button type="button" class="btn-primary filters-close" data-filters-done>Ver el mapa</button>`}</div>`);
   }
   const filtersForm = $('#mapFilters', el);
   filtersForm.addEventListener('change', (ev) => {
     const t = ev.target;
+    if (t.name === 'metrics') { showMetrics = t.checked; refreshMetrics({ fitAfter: true }); return; }
     if (t.name in filters) { filters = { ...filters, [t.name]: t.value }; repaintMarks(); }
   });
   filtersForm.addEventListener('click', (ev) => {
     const who = ev.target.closest('[data-who]');
     if (who) { filters = { ...filters, who: who.dataset.who }; t0(); return; }
     if (ev.target.closest('[data-clear]')) { filters = { taxonID: '', observer: '', who: 'all', from: '', to: '' }; t0(); }
+    if (ev.target.closest('[data-filters-done]')) { closeFilters(); $('[data-filters]', el).focus(); }
     function t0() { document.activeElement.blur(); repaintMarks(); }
   });
-  $('[data-filters]', el).addEventListener('click', (ev) => {
-    const open = filtersForm.hidden;
+  // Estudio: los filtros se despliegan en línea. Campo: hoja inferior, nivel de BioDexNav («atrás» la cierra).
+  function setFiltersOpen(open) {
     filtersForm.hidden = !open;
-    ev.currentTarget.setAttribute('aria-expanded', String(open));
-    fit();
+    filtersForm.classList.toggle('is-sheet', open && !studio);
+    $('[data-filters]', el).setAttribute('aria-expanded', String(open));
+    if (studio) fit();
+  }
+  function closeFilters() { if (!Nav.close('filtros-mapa')) setFiltersOpen(false); }
+  $('[data-filters]', el).addEventListener('click', () => {
+    if (filtersForm.hidden) {
+      setFiltersOpen(true);
+      if (!studio) {
+        Nav.open('filtros-mapa', () => setFiltersOpen(false));
+        const first = $('select', filtersForm);
+        if (first) first.focus();
+      }
+    } else closeFilters();
   });
 
   // --- Lista ------------------------------------------------------------------------------------
-  $('[data-list]', el).addEventListener('click', () => openMarksList());
+  // Estudio: acoplada a la derecha del mapa (se ven las dos cosas a la vez). Campo: panel encima; «Ver en
+  // el mapa» lo cierra, centra la marca y deja «← Volver a la lista de marcas» (app.js, returnTo).
+  let listScroll = 0;
+  let sideOpen = false;
+  $('[data-list]', el).addEventListener('click', () => {
+    if (studio && sideOpen) closeSide(); else openMarksList();
+  });
 
-  function openMarksList() {
+  function listHtml() {
     const me = state.user && state.user.id;
-    const ov = openOverlay({ key: 'marcas-lista', title: 'Marcas del mapa', variant: 'side' });
     const rows = [...visible].sort((a, b) => String(b.eventDate).localeCompare(String(a.eventDate)));
-    render(ov.body, html`
+    return html`
       <p class="hint">${plural(rows.length, 'marca', 'marcas')} de «${state.activeCatalog ? state.activeCatalog.name : '—'}» con los filtros del mapa.</p>
       ${rows.length ? html`<ul class="marks map-list">${rows.map((o) => {
         const shape = markShape(o, me);
@@ -455,14 +540,65 @@ export function mount(el) {
             <button type="button" class="link-btn" data-open="${o.taxonID}">Abrir ficha</button>
           </div>
         </li>`;
-      })}</ul>` : html`<p class="muted">No hay marcas con estos filtros.</p>`}`);
+      })}</ul>` : html`<p class="muted">No hay marcas con estos filtros.</p>`}`;
+  }
+
+  function paintSide() {
+    if (!sideOpen) return;
+    const body = $('.map-side-body', side);
+    if (body) render(body, listHtml());
+  }
+
+  function closeSide() { if (!Nav.close('marcas-lista')) hideSide(); }
+  function hideSide() {
+    sideOpen = false;
+    side.hidden = true;
+    root.classList.remove('has-side');
+    $('[data-list]', el).setAttribute('aria-expanded', 'false');
+    map.invalidateSize();
+  }
+
+  function openMarksList() {
+    if (studio) {
+      sideOpen = true;
+      render(side, html`<header class="map-side-head"><h3>Marcas del mapa</h3>
+          <button type="button" class="sheet-close" data-side-close aria-label="Cerrar la lista">${ICON.close}</button></header>
+        <div class="map-side-body"></div>`);
+      side.hidden = false;
+      root.classList.add('has-side');
+      $('[data-list]', el).setAttribute('aria-expanded', 'true');
+      Nav.open('marcas-lista', hideSide);
+      paintSide();
+      fit();
+      $('[data-side-close]', side).addEventListener('click', closeSide);
+      return;
+    }
+    const ov = openOverlay({ key: 'marcas-lista', title: 'Marcas del mapa', variant: 'side' });
+    render(ov.body, listHtml());
+    ov.body.scrollTop = listScroll;
     ov.body.addEventListener('click', (ev) => {
       const f = ev.target.closest('[data-focus]');
-      if (f) { ov.close(true); layer.focus(f.dataset.focus); return; }
+      if (f) {
+        listScroll = ov.body.scrollTop;
+        ov.close(true);
+        layer.focus(f.dataset.focus);
+        go('mapa', { returnTo: { label: 'la lista de marcas', run: () => openMarksList() } });
+        return;
+      }
       const o = ev.target.closest('[data-open]');
       if (o) openSpeciesDetail(o.dataset.open);
     });
   }
+  side.addEventListener('click', (ev) => {
+    const f = ev.target.closest('[data-focus]');
+    if (f) { layer.focus(f.dataset.focus); return; }
+    const o = ev.target.closest('[data-open]');
+    if (o) openSpeciesDetail(o.dataset.open);
+  });
+
+  // Desde Catálogo (móvil): «Zonas del mapa» abre aquí la lista de zonas.
+  const onOpenZones = () => $('[data-zones]', el).click();
+  window.addEventListener('biodex:open-zones', onOpenZones);
 
   // --- Marcar aquí y marcar en un punto --------------------------------------------------------
   // «Marcar aquí»: la hoja de marca (views/mark-sheet.js) con la última posición del GPS; la hoja sigue
@@ -574,6 +710,8 @@ export function mount(el) {
     stopWatch();
     document.removeEventListener('visibilitychange', onVisibility);
     window.removeEventListener('resize', fit);
+    window.removeEventListener('biodex:open-zones', onOpenZones);
+    for (const k of ['filtros-mapa', 'marcas-lista']) if (Nav.has(k)) Nav.close(k);
     if (ro) ro.disconnect();
     clearTimeout(zonesTimer);
     offZones();
