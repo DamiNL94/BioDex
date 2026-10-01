@@ -1,5 +1,7 @@
 #!/bin/sh
 # Arranque en Railway (F11): migraciones → php-fpm → nginx en $PORT → (opcional) datos de demo.
+# F11b: fotos de respaldo de iNaturalist en segundo plano (tras el seed, si lo hay): no retrasan nginx
+# ni el healthcheck.
 set -e
 
 PORT="${PORT:-8080}"
@@ -16,6 +18,12 @@ done
 
 php-fpm -D
 
+# Fotos de respaldo (F11b): 1 petición/s a iNaturalist, una línea de resumen al acabar.
+fetch_photos() {
+    (cd /var/www/backend && php bin/fetch-species-photos.php) \
+        || echo "BioDex: la búsqueda de fotos de iNaturalist falló (la app sigue funcionando)" >&2
+}
+
 # Demo (SEED_DEMO=1): seed-demo.php es idempotente y va contra la API, así que espera a nginx.
 # Solo ese proceso corre con APP_ENV=dev; el servicio sigue con el APP_ENV de Railway.
 if [ "${SEED_DEMO:-0}" = "1" ]; then
@@ -24,7 +32,10 @@ if [ "${SEED_DEMO:-0}" = "1" ]; then
         until curl -fsS "http://127.0.0.1:${PORT}/api/health" >/dev/null 2>&1 || [ "$n" -ge 30 ]; do n=$((n + 1)); sleep 1; done
         cd /var/www/backend && APP_ENV=dev TEST_BASE_URL="http://127.0.0.1:${PORT}" php bin/seed-demo.php \
             || echo "BioDex: el seed de demo falló (la app sigue funcionando)" >&2
+        fetch_photos
     ) &
+else
+    fetch_photos &
 fi
 
 echo "BioDex: escuchando en el puerto ${PORT}"
