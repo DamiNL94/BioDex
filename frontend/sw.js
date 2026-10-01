@@ -29,7 +29,7 @@
  * Las peticiones de la descarga de zonas (cabecera X-BioDex-Zone) van directas a la red: allí un fallo
  * tiene que ser un fallo, no una tesela vacía.
  */
-var VERSION = 'v13';
+var VERSION = 'v14';
 var CACHE = 'biodex-shell-' + VERSION;
 var NET_TIMEOUT_MS = 3000;
 var TILE_TIMEOUT_MS = 5000;
@@ -76,6 +76,7 @@ var SHELL_ASSETS = [
   // js/components/
   'js/components/overlay.js', 'js/components/species-card.js', 'js/components/marks.js', 'js/components/species-notes.js',
   'js/components/species-assessments.js', 'js/components/species-distribution.js',
+  'js/components/catalog-switcher.js',   // F11c: cambiar de catálogo desde la cabecera
 
   // js/views/
   'js/views/map.js', 'js/views/catalogs.js', 'js/views/species.js', 'js/views/settings.js',

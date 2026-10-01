@@ -1,10 +1,16 @@
 // ================================================================================================
 // overlay.js — paneles y diálogos propios (nunca confirm()/alert()), apilados en BioDexNav.
 // ------------------------------------------------------------------------------------------------
-// Tres formas, el mismo mecanismo:
+// Cuatro formas, el mismo mecanismo:
 //   'side'    panel lateral en escritorio, hoja a pantalla completa en el móvil (ficha de especie)
 //   'full'    pantalla completa en todos los tamaños (constructor de catálogos)
 //   'dialog'  diálogo centrado (confirmaciones, alta de especie)
+//   'sheet'   hoja que sube desde abajo en el móvil; menú anclado en escritorio (F11c: cambiar de catálogo)
+// F11c, volver atrás: cada panel lleva «←» a la izquierda y «×» a la derecha; CSS enseña uno u otro.
+//   móvil, 'side' y 'full'      → «←» (patrón nativo)        escritorio, 'side' → «×»
+//   escritorio, 'full'          → «← Volver» con texto      'dialog' y 'sheet' → «×»
+//   panel encima de otro panel  → «←», con aria-label «Volver a «<título del de abajo>»»
+// Los dos botones llaman al mismo close(): no hay caminos nuevos.
 // Cada uno es un nivel de BioDexNav: «atrás» del móvil, Escape y el botón de cerrar hacen lo mismo.
 // Accesibilidad: role="dialog" + aria-modal, foco atrapado dentro mientras está abierto y devuelto al
 // elemento que lo abrió al cerrar.
@@ -33,12 +39,20 @@ export function openOverlay({ key, title = '', variant = 'side', className = '',
   const id = `ov${++seq}`;
   const returnFocus = document.activeElement;
   const host = document.getElementById('app') || document.body;
+  // Panel sobre panel: el «←» dice a cuál se vuelve.
+  const below = Array.from(document.querySelectorAll('.overlay:not(.overlay-dialog):not(.overlay-sheet)')).pop();
+  const belowTitle = below ? ($('.sheet-title', below) || {}).textContent || '' : '';
+  const nested = !!below && variant !== 'dialog' && variant !== 'sheet';
   const wrap = document.createElement('div');
-  wrap.className = `overlay overlay-${variant} ${className}`;
+  wrap.className = `overlay overlay-${variant} ${nested ? 'is-nested' : ''} ${className}`;
   render(wrap, html`
     <div class="overlay-backdrop" data-dismiss></div>
     <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="${id}-title" tabindex="-1">
       <header class="sheet-head">
+        <button type="button" class="sheet-back" data-dismiss
+                aria-label="${nested && belowTitle ? `Volver a «${belowTitle.trim()}»` : 'Volver'}">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m6-6-6 6 6 6"/></svg>
+          <span class="sheet-back-text">Volver</span></button>
         <h2 class="sheet-title" id="${id}-title"></h2>
         <div class="sheet-tools"></div>
         <button type="button" class="sheet-close" aria-label="Cerrar" data-dismiss>

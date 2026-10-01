@@ -39,6 +39,10 @@ export function render(el, fragment) {
   el.innerHTML = fragment.str;
 }
 
+// F11c: modo de disposición. Estudio (≥ 900 px: escritorio, tablet apaisada) o campo (móvil).
+export const studioQuery = window.matchMedia('(min-width: 900px)');
+export const isStudio = () => studioQuery.matches;
+
 export const $ = (sel, root = document) => root.querySelector(sel);
 export const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
