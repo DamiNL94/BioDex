@@ -7,7 +7,8 @@
 //   · Mapeo taxonomía → silueta: un caso por grupo y uno sin regla; cada grupo tiene su <symbol>.
 //   · Proxy /img/inat/: formas no válidas → 400; POST → 403.
 //   · Revisión: editor y viewer → 403; el custodio acepta → la especie sale con thumbnail y crédito;
-//     rechazada → solo silueta, y no se vuelve a proponer; access_log; content_seq.
+//     rechazada → solo silueta y, desde F11d, la fuente a rejected_sources y la especie a pending (la cascada
+//     sigue con GBIF y Commons); access_log; content_seq.
 // Crea usuarios f11b-*@biodex.test, el catálogo «test-f11b …» y especies 99001100x (ids numéricos, como los de EIDOS); los borra al terminar.
 // ================================================================================================
 
@@ -174,7 +175,7 @@ check("especie de EIDOS sin Fototeca → pending al darla de alta", $status("990
 check("especie de usuario y especie con Fototeca → sin fila (silueta / Fototeca)", $status("990011003") === false && $status("990011004") === false);
 
 // Propuestas por sinónimo (lo que dejaría bin/fetch-species-photos.php).
-$rev = $pdo->prepare("UPDATE species_photos SET status = 'review', photo_id = ?, photo_ext = 'jpg', inat_taxon_id = 73972,
+$rev = $pdo->prepare("UPDATE species_photos SET status = 'review', source = 'inaturalist', photo_id = ?, photo_ext = 'jpg', inat_taxon_id = 73972,
                       matched_name = 'Timon lepidus', match_type = 'synonym', license = 'cc-by-nc',
                       attribution = '(c) Samuel Duarte, some rights reserved (CC BY-NC), uploaded by Samuel Duarte', checked_at = NOW()
                       WHERE taxonID = ?");
@@ -198,7 +199,7 @@ check("owner y custodio reciben photoReviews (2); el editor no", count($ro["phot
     && !array_key_exists("photoReviews", $re ?? []), json_encode(array_keys($re ?? [])));
 $pr = $rc["photoReviews"][0] ?? [];
 check("cada propuesta: nombre de EIDOS e iNat, foto del proxy y crédito con enlace", ($pr["canonicalName"] ?? "") === "Testia acepta"
-    && ($pr["inatName"] ?? "") === "Timon lepidus" && ($pr["photo"] ?? "") === "/img/inat/238812385/medium.jpg"
+    && ($pr["sourceTaxonName"] ?? "") === "Timon lepidus" && ($pr["sourceName"] ?? "") === "iNaturalist" && ($pr["photo"] ?? "") === "/img/inat/238812385/medium.jpg"
     && ($pr["photoCredit"]["url"] ?? "") === "https://www.inaturalist.org/photos/238812385" && ($pr["photoCredit"]["license"] ?? "") === "CC BY-NC",
     json_encode($pr, JSON_UNESCAPED_UNICODE));
 
@@ -235,11 +236,12 @@ check("content_seq sube (el móvil vuelve a bajar el paquete)", $seq1 > $seq0, "
 check("ya revisada → 409", $code === 409, "HTTP {$code}");
 
 [$code, $r] = $review($o, "990011002", ["catalogId" => $cat, "decision" => "reject"]);
-check("la owner rechaza la otra → 200 rejected", $code === 200 && ($r["status"] ?? "") === "rejected", "HTTP {$code}");
+check("la owner rechaza la otra → 200 pending (F11d: la cascada sigue con GBIF y Commons)", $code === 200 && ($r["status"] ?? "") === "pending", "HTTP {$code}");
 $b1 = $card($e, "990011002");
 check("rechazada: sin thumbnail, con silueta", $b1["thumbnail"] === null && ($b1["silhouette"]["id"] ?? "") === "reptile");
 speciesQueuePhoto($pdo, speciesFind($pdo, "990011002"));
-check("rechazada no se vuelve a proponer (la cola no la toca)", $status("990011002") === "rejected");
+check("rechazada: iNaturalist en rejected_sources, sin datos de foto (F11d)", $status("990011002") === "pending"
+    && $pdo->query("SELECT CONCAT(rejected_sources, '|', source IS NULL, photo_id IS NULL) FROM species_photos WHERE taxonID = '990011002'")->fetchColumn() === "inaturalist|11");
 [, $rc] = http("GET", "/api/catalogs/{$cat}", null, $cu);
 check("photoReviews queda vacío", ($rc["photoReviews"] ?? null) === []);
 

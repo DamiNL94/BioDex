@@ -28,6 +28,7 @@ require_once __DIR__ . "/../Lib/session.php";
 require_once __DIR__ . "/../Lib/authz.php";
 require_once __DIR__ . "/../Lib/audit.php";
 require_once __DIR__ . "/../Lib/species.php";
+require_once __DIR__ . "/../Lib/photos.php";    // fuentes de fotos de respaldo (F11d)
 require_once __DIR__ . "/../Lib/teams.php";
 require_once __DIR__ . "/../Lib/sync.php";      // syncNextSeq(), assessmentOut() (F8b)
 require_once __DIR__ . "/../Lib/metrics.php";   // speciesMetrics() (F9)
@@ -176,29 +177,47 @@ function catalogAddSpecies(PDO $pdo, string $catalogId, array $species, int $use
 }
 
 /**
- * Fotos de iNaturalist propuestas por sinónimo (status review) de las especies del catálogo, para que owner
- * o custodio las acepten o rechacen (POST /api/species/{taxonID}/photo-review). F11b.
+ * Fotos de respaldo propuestas por sinónimo (status review; de iNaturalist o GBIF) de las especies del catálogo,
+ * para que owner o custodio las acepten o rechacen (POST /api/species/{taxonID}/photo-review). F11b, F11d.
+ * La de GBIF se ve desde /img/respaldo/, que con status review solo la sirve a owner o custodio.
  */
 function catalogPhotoReviews(PDO $pdo, string $catalogId): array {
     $stmt = $pdo->prepare(
         "SELECT s.taxonID, s.canonical_name, s.scientificName, s.scientificNameAuthorship, s.vernacularName,
-                ph.photo_id, ph.photo_ext, ph.attribution, ph.license, ph.matched_name, ph.inat_taxon_id, ph.match_type
+                ph.source, ph.photo_id, ph.photo_ext, ph.attribution, ph.license, ph.license_version, ph.matched_name,
+                ph.inat_taxon_id, ph.source_ref, ph.photo_page_url, ph.match_type, phf.sha256, phf.mime
            FROM catalog_species cs
            JOIN species s ON s.taxonID = cs.taxonID
            JOIN species_photos ph ON ph.taxonID = cs.taxonID AND ph.status = 'review'
+           LEFT JOIN species_photo_files phf ON phf.taxonID = ph.taxonID
           WHERE cs.catalog_id = ? AND cs.deleted_at IS NULL
           ORDER BY s.canonical_name"
     );
     $stmt->execute([$catalogId]);
-    return array_map(fn($r) => [
-        "taxonID" => $r["taxonID"], "canonicalName" => $r["canonical_name"], "scientificName" => $r["scientificName"],
-        "scientificNameAuthorship" => $r["scientificNameAuthorship"], "vernacularName" => $r["vernacularName"],
-        "inatName" => $r["matched_name"], "inatTaxonUrl" => "https://www.inaturalist.org/taxa/" . $r["inat_taxon_id"],
-        "matchType" => $r["match_type"],
-        "photo" => SPECIES_INAT_PROXY . "{$r["photo_id"]}/medium.{$r["photo_ext"]}",
-        "photoCredit" => ["text" => $r["attribution"], "license" => inatLicenseLabel($r["license"]),
-                          "url" => INAT_PHOTO_PAGE . $r["photo_id"], "source" => "inaturalist"],
-    ], $stmt->fetchAll());
+    $out = [];
+    foreach ($stmt->fetchAll() as $r) {
+        if ($r["source"] === "inaturalist") {
+            $photo = SPECIES_INAT_PROXY . "{$r["photo_id"]}/medium.{$r["photo_ext"]}";
+            $taxonUrl = "https://www.inaturalist.org/taxa/" . $r["inat_taxon_id"];
+            $pageUrl = INAT_PHOTO_PAGE . $r["photo_id"];
+        } elseif ($r["sha256"] !== null) {
+            $photo = photoBackupUrl($r["taxonID"], $r["sha256"], $r["mime"]);
+            $taxonUrl = $r["source"] === "gbif" ? GBIF_SPECIES_PAGE . $r["source_ref"] : WIKIDATA_ITEM_PAGE . $r["source_ref"];
+            $pageUrl = $r["photo_page_url"];
+        } else {
+            continue;   // sin copia local no hay nada que enseñar
+        }
+        $out[] = [
+            "taxonID" => $r["taxonID"], "canonicalName" => $r["canonical_name"], "scientificName" => $r["scientificName"],
+            "scientificNameAuthorship" => $r["scientificNameAuthorship"], "vernacularName" => $r["vernacularName"],
+            "source" => $r["source"], "sourceName" => PHOTO_SOURCE_NAMES[$r["source"]],
+            "sourceTaxonName" => $r["matched_name"], "sourceTaxonUrl" => $taxonUrl, "matchType" => $r["match_type"],
+            "photo" => $photo,
+            "photoCredit" => ["text" => $r["attribution"], "license" => photoLicenseLabel($r["license"], $r["license_version"]),
+                              "url" => $pageUrl, "source" => $r["source"]],
+        ];
+    }
+    return $out;
 }
 
 /** Especie vigente del catálogo con su sensibilidad, o 404. */

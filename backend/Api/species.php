@@ -7,8 +7,9 @@
 //   GET  /api/species/{taxonID}   ficha completa (la trae de EIDOS si falta o tiene > 30 días)
 //   POST /api/species             {scientificName, scientificNameAuthorship, taxonRank, vernacularName?, taxonID?}
 //                                 taxonID = biodex:<uuid v4> propuesto por el móvil (especie creada sin conexión)
-//   POST /api/species/{taxonID}/photo-review   {catalogId, decision: accept|reject} (F11b) owner/custodian del
-//                                 catálogo: la foto de iNaturalist propuesta por sinónimo → ok o rejected; a access_log
+//   POST /api/species/{taxonID}/photo-review   {catalogId, decision: accept|reject} (F11b, F11d) owner/custodian del
+//                                 catálogo: la foto de respaldo propuesta por sinónimo → ok, o se rechaza su fuente
+//                                 (rejected_sources) y la especie vuelve a pending; a access_log
 //
 // Búsqueda con `q`: EIDOS en vivo (grupo, origen y ámbito se filtran allí) + especies de usuario de la
 // caché. Sin `q`: solo la caché. `legal` y `category` se aplican sobre la caché: la categoría llega ya con
@@ -18,6 +19,7 @@
 
 require_once __DIR__ . "/../Lib/session.php";
 require_once __DIR__ . "/../Lib/species.php";
+require_once __DIR__ . "/../Lib/photos.php";    // fuentes de fotos de respaldo (F11d)
 require_once __DIR__ . "/../Lib/authz.php";
 require_once __DIR__ . "/../Lib/audit.php";
 
@@ -288,10 +290,12 @@ function handleCreate(PDO $pdo, int $userId): never {
 }
 
 /**
- * Revisión de la foto de iNaturalist propuesta por sinónimo (F11b). Owner o custodio de un catálogo que
- * tenga la especie; la decisión es global (species_photos la comparten todos los catálogos). Aceptar → ok
- * (se muestra); rechazar → rejected (no se vuelve a proponer). Sube content_seq de los catálogos con la
- * especie (su paquete offline cambia) y queda en access_log quién y cuándo.
+ * Revisión de la foto de respaldo propuesta por sinónimo (F11b; F11d: de iNaturalist o GBIF). Owner o custodio
+ * de un catálogo que tenga la especie; la decisión es global (species_photos la comparten todos los
+ * catálogos). Aceptar → ok (se muestra). Rechazar → la fuente pasa a rejected_sources (no se vuelve a
+ * proponer su foto), se borra la copia local y la especie vuelve a pending para que la cascada siga con las
+ * fuentes siguientes; none si ya no queda ninguna. Sube content_seq de los catálogos con la especie (su
+ * paquete offline cambia) y queda en access_log quién y cuándo.
  */
 function handlePhotoReview(PDO $pdo, int $userId, string $taxonID): never {
     $body = requireJsonBody("{catalogId, decision: accept|reject}");
@@ -312,13 +316,26 @@ function handlePhotoReview(PDO $pdo, int $userId, string $taxonID): never {
         $pdo->rollBack();
         apiError("Esta especie no tiene ninguna foto pendiente de revisión.", 409);
     }
-    $status = $decision === "accept" ? "ok" : "rejected";
-    $pdo->prepare("UPDATE species_photos SET status = ?, reviewed_by = ?, reviewed_at = NOW() WHERE taxonID = ?")
-        ->execute([$status, $userId, $taxonID]);
+    $source = $photo["source"];
+    if ($decision === "accept") {
+        $status = "ok";
+        $pdo->prepare("UPDATE species_photos SET status = 'ok', reviewed_by = ?, reviewed_at = NOW() WHERE taxonID = ?")
+            ->execute([$userId, $taxonID]);
+    } else {
+        $rejected = array_values(array_unique([...array_filter(explode(",", $photo["rejected_sources"])), $source]));
+        $status = array_diff(PHOTO_SOURCES, $rejected) ? "pending" : "none";
+        $pdo->prepare("UPDATE species_photos SET status = ?, rejected_sources = ?, source = NULL, photo_id = NULL, photo_ext = NULL,
+                              inat_taxon_id = NULL, source_ref = NULL, photo_ref = NULL, photo_page_url = NULL, matched_name = NULL,
+                              match_type = NULL, attribution = NULL, license = NULL, license_version = NULL,
+                              reviewed_by = ?, reviewed_at = NOW(), checked_at = NULL
+                        WHERE taxonID = ?")->execute([$status, implode(",", $rejected), $userId, $taxonID]);
+        $pdo->prepare("DELETE FROM species_photo_files WHERE taxonID = ?")->execute([$taxonID]);
+    }
     $pdo->prepare("UPDATE catalogs SET content_seq = content_seq + 1 WHERE deleted_at IS NULL AND id IN
                    (SELECT catalog_id FROM catalog_species WHERE taxonID = ? AND deleted_at IS NULL)")->execute([$taxonID]);
-    logAccess($pdo, $userId, "photo_review", $catalogId, "{$taxonID}: foto de iNaturalist {$photo["photo_id"]} de «{$photo["matched_name"]}» "
-        . ($status === "ok" ? "aceptada" : "rechazada"));
+    $ref = $source === "inaturalist" ? $photo["photo_id"] : $photo["photo_ref"];
+    logAccess($pdo, $userId, "photo_review", $catalogId, "{$taxonID}: foto de " . PHOTO_SOURCE_NAMES[$source] . " {$ref} de «{$photo["matched_name"]}» "
+        . ($decision === "accept" ? "aceptada" : "rechazada"));
     $pdo->commit();
 
     respond(["taxonID" => $taxonID, "status" => $status, "species" => speciesSummaryOut(speciesFind($pdo, $taxonID))]);

@@ -21,7 +21,7 @@ const CATALOG_PERMISSIONS = [
     "view_exact"     => ["owner", "custodian"],                      // coordenadas exactas ajenas
     "export_full"    => ["owner", "custodian"],
     "set_reference"  => ["owner"],                                   // evaluación UICN de referencia (F8b)
-    "review_photos"  => ["owner", "custodian"],                      // fotos de iNaturalist por sinónimo (F11b)
+    "review_photos"  => ["owner", "custodian"],                      // fotos de respaldo por sinónimo (F11b, F11d)
 ];
 
 /** Rol del usuario en el catálogo, o null si no es miembro o el catálogo está borrado. */
