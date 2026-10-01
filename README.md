@@ -14,6 +14,8 @@ Necesitas Docker Desktop (Compose v2), Git, Edge o Chrome y conexión a internet
 4. `docker compose exec php php bin/migrate.php` → crea las tablas (un segundo pase dice «Nada que aplicar»).
 5. Abre http://localhost:8090/api/health → `{"ok":true,"db":true}`.
 6. `docker compose exec php php bin/seed-demo.php` → datos de demostración (trae 10 fichas de EIDOS la primera vez).
+   Después, `docker compose exec php php bin/fetch-species-photos.php` → fotos de iNaturalist para las especies sin
+   foto en EIDOS (1 petición/s; `docs/fotos-respaldo.md`).
 7. Abre http://localhost:8090 y entra con una de las cuentas de abajo.
 8. Instala la app: icono «Instalar» de la barra de direcciones de Edge o Chrome (`localhost` cuenta como contexto seguro).
 9. En la app instalada: Catálogos › «Descargar para usar sin conexión» y Mapa › Zonas › «Descargar esta zona».
@@ -60,6 +62,8 @@ docker compose exec php php bin/test-f8b.php    # evaluaciones UICN
 docker compose exec php php bin/test-f9.php     # EOO y AOO
 docker compose exec php php bin/test-f10a.php   # exportación
 docker compose exec php php bin/test-f10b.php   # datos de demostración (reinicia la demo y la deja cargada)
+docker compose exec php php bin/test-f10c.php   # Plinian Core
+docker compose exec php php bin/test-f11b.php   # fotos de respaldo (iNaturalist) y siluetas
 node shared/iucn-engine.test.js && node shared/geo-metrics.test.js && node frontend/tests/utm.test.mjs
 ```
 Los iconos de la PWA salen de `backend/bin/make-icons.php` (necesita ext-gd, que el contenedor no trae):

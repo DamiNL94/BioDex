@@ -1,4 +1,4 @@
-# Limitaciones conocidas (1.1.0 · F10c)
+# Limitaciones conocidas (1.2.0 · F11b)
 
 Lista cerrada al terminar F10b (2026-09-30). Recoge lo que BioDex **no hace**, lo que hace de forma **orientativa** y
 lo que **no se ha podido probar** en esta máquina. Cada punto abierto de las listas de F3 a F10a está aquí o marcado
@@ -15,6 +15,10 @@ como resuelto en su lista.
 - **Fotos de la Fototeca del MITECO**: EIDOS no trae autor ni licencia. Se citan «Fototeca MITECO · vía EIDOS»,
   pero las condiciones de reutilización están **sin resolver** (`docs/eidos.md`). No publicar capturas con fotos
   fuera de la demo sin aclararlo.
+- **Fotos de respaldo de iNaturalist** (F11b, `docs/fotos-respaldo.md`): son **ilustrativas**, no evidencia (no
+  entran en ninguna exportación). iNat cubre poco algunas especies (endemismos, invertebrados, hongos): muchas se quedan
+  con la silueta del grupo. Solo se aceptan coincidencias exactas o sinónimos revisados a mano, así que puede faltar
+  foto aunque iNat tenga alguna. La foto es la «por defecto» del taxón en iNat, sin elegir.
 - **EIDOS**: todas sus especies, sin filtro provincial; la caché caduca a 30 días. Si EIDOS no responde, solo se puede
   buscar en lo ya guardado.
 - **Exportación**: el ZIP no ha pasado el validador de GBIF (sin red a GBIF desde aquí) ni se ha abierto el XLSX en

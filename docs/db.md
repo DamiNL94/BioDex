@@ -17,6 +17,8 @@ MySQL 8.4, InnoDB, `utf8mb4_0900_ai_ci` (comparaciones insensibles a acentos y m
 |---|---|---|
 | `species` | Caché de EIDOS + especies de usuario | PK `taxonID` (entero EIDOS como texto o `biodex:<uuid>`), `source` `eidos`/`user`, términos DwC (`scientificName`, `taxonRank`, `kingdom`…`family`, `vernacularName`), `canonical_name` (sin autor, índice), `synonyms`, `iucn_assessments`, `legal_status` (`{general, andalucia}`), `images` (JSON), `iucn_primary_code/scope/year`, `detail_fetched_at` (ficha completa, caduca a 30 días), `legal_fetched_at` (solo estado legal, filtro del buscador), `kingdom_id`…`family_id` (ids de EIDOS, para el árbol), `classification_source` eidos/gbif/user, `taxonRemarks`, `created_by` |
 
+| `species_photos` | Foto de respaldo de iNaturalist (F11b, migración 012; `docs/fotos-respaldo.md`). Una fila por especie, global; solo especies de EIDOS sin foto de la Fototeca | PK `taxonID` → `species` (cascada), `source` `inaturalist` (sitio para `commons`/`gbif`), `photo_id` (id de la foto en iNat), `photo_ext` jpg·jpeg·png, `inat_taxon_id`, `matched_name` (nombre en iNat), `match_type` exact·synonym, `attribution` (tal cual de iNat), `license` cc0·cc-by·cc-by-nc, `status` pending·ok·review·rejected·none (solo `ok` se muestra), `checked_at`, `reviewed_by` → `users` (SET NULL), `reviewed_at` |
+
 Mapeo columna ← vista de EIDOS: `docs/eidos.md`. `order` es palabra reservada: siempre entre comillas invertidas.
 
 ## Catálogos
@@ -55,11 +57,12 @@ el resto, generalizada según `species_sensitivity.level`).
 ## Auditoría
 | Tabla | Propósito | Campos clave |
 |---|---|---|
-| `access_log` | Rastro de accesos sensibles | `action` view_exact/export_full/set_level/grant_role/revoke_role/login_failed (F6) invite_created/invite_revoked/member_joined/member_removed/member_left y (F8b) set_reference, `user_id`, `catalog_id`, `target` (`user:<id> editor → custodian`, `invite:<id> …`, F10a `zip completo: n registros, m especies`), `ip`, `created_at`; las FK pasan a NULL al borrar, el rastro se conserva. `GET /catalogs/{id}/audit` lo devuelve legible |
+| `access_log` | Rastro de accesos sensibles | `action` view_exact/export_full/set_level/grant_role/revoke_role/login_failed (F6) invite_created/invite_revoked/member_joined/member_removed/member_left y (F8b) set_reference, `user_id`, `catalog_id`, `target` (`user:<id> editor → custodian`, `invite:<id> …`, F10a `zip completo: n registros, m especies`), `ip`, `created_at`; las FK pasan a NULL al borrar, el rastro se conserva. (F11b) photo_review. `GET /catalogs/{id}/audit` lo devuelve legible |
 
 ## Borrados
 - Lógicos (`deleted_at`) en `catalogs`, `catalog_species`, `occurrences`, `species_notes` y `species_assessments`.
 - `occurrences`, `species_notes` y `species_assessments` → `catalogs`/`users`/`species` con `ON DELETE RESTRICT`: una
   marca, una nota o una evaluación nunca desaparece en cascada.
+- `species_photos` se borra en cascada con su especie.
 - Tokens, verificaciones, miembros, invitaciones, intentos de invitación y métricas se borran en cascada con su usuario o catálogo.
 - Salir o ser expulsado borra la fila de `catalog_members` (no hay rol «ex-miembro»); sus marcas se quedan.

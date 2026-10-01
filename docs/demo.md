@@ -33,7 +33,9 @@ móvil real pendientes).
 La víspera, con red:
 - [ ] Portátil sin actualizaciones pendientes (Windows Update, Docker Desktop, Edge) y con las notificaciones silenciadas.
 - [ ] `docker compose up -d` y http://localhost:8090/api/health → `{"ok":true,"db":true}`.
-- [ ] `docker compose exec php php bin/reset-demo.php` y `bin/seed-demo.php` (imprime las cuentas).
+- [ ] `docker compose exec php php bin/reset-demo.php` y `bin/seed-demo.php` (imprime las cuentas); luego
+      `bin/fetch-species-photos.php`: en el paso 2, *Atropa baetica* (sin foto en EIDOS) sale con la de iNaturalist y su
+      crédito, y *Laserpitium longiradium* con la silueta (F11b).
 - [ ] Todas las pruebas en verde (`README.md` › «Comprobaciones»).
 - [ ] Escritorio: entrar como `owner@biodex.demo`, catálogo DEMO activo.
 - [ ] Móvil: app instalada, entrar como `editor@biodex.demo`, catálogo DEMO activo. **No** descargarlo aún (se hace en
