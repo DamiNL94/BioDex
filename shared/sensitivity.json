@@ -15,8 +15,8 @@
     "2": {
       "name": "Alta",
       "suggestWhen": [
-        "IUCN CR (cualquier ámbito EIDOS)",
-        "CEEA: En peligro de extinción"
+        "Código UICN CR en cualquier ámbito vigente (eidosCategoryCode)",
+        "estadolegal exacto 'CEEA: En peligro de extinción' (norma RD 139/2011, ámbito Nacional, ccaa vacío)"
       ],
       "gridDeg": 0.1,
       "approxKm": 10,
@@ -27,9 +27,8 @@
     "3": {
       "name": "Media",
       "suggestWhen": [
-        "IUCN EN",
-        "IUCN VU",
-        "CEEA: Vulnerable"
+        "Código UICN EN o VU en cualquier ámbito vigente",
+        "estadolegal exacto 'CEEA: Vulnerable' (norma RD 139/2011, ámbito Nacional, ccaa vacío)"
       ],
       "gridDeg": 0.01,
       "approxKm": 1,
@@ -55,6 +54,8 @@
     "El registro original nunca se altera; la generalización solo afecta a copias enviadas o exportadas",
     "coordinateUncertaintyInMeters de la copia generalizada = máx(original, semidiagonal de la celda)",
     "El nivel sugerido lo propone BioDex desde EIDOS; el owner puede confirmarlo o subirlo; cada cambio va a access_log con motivo",
-    "Al expulsar a un miembro, su siguiente sync borra del dispositivo los datos del catálogo"
+    "Al expulsar a un miembro, su siguiente sync borra del dispositivo los datos del catálogo",
+    "Se usa el CÓDIGO UICN (primer token del literal), nunca el literal: EIDOS trae literales sucios (docs/eidos.md, pregunta 8)",
+    "Si varias reglas aplican, gana el nivel más restrictivo (número menor)"
   ]
 }
