@@ -175,8 +175,3 @@ function inatDecide(array $species, array $response): array {
         "license"       => $license,
     ];
 }
-
-/** «CC BY-NC» para el crédito. */
-function inatLicenseLabel(?string $license): ?string {
-    return match ($license) { "cc0" => "CC0", "cc-by" => "CC BY", "cc-by-nc" => "CC BY-NC", default => null };
-}

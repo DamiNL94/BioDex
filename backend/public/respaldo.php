@@ -52,7 +52,7 @@ if ($row["status"] === "review") {
         "SELECT 1 FROM catalog_members m
            JOIN catalogs c ON c.id = m.catalog_id AND c.deleted_at IS NULL
            JOIN catalog_species cs ON cs.catalog_id = m.catalog_id AND cs.taxonID = ? AND cs.deleted_at IS NULL
-          WHERE m.user_id = ? AND m.role IN (" . implode(",", array_fill(0, count($roles), "?")) . ") LIMIT 1"
+          WHERE m.user_id = ? AND m.role IN (" . sqlPlaceholders(count($roles)) . ") LIMIT 1"
     );
     $stmt->execute([$taxonID, $userId, ...$roles]);
     if (!$stmt->fetchColumn()) respaldoFail(404);

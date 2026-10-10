@@ -262,18 +262,26 @@ function syncIsoUtc(?string $mysqlDatetime): ?string {
 }
 
 /**
- * Observación tal como sale hacia $viewerId (rol $role en el catálogo), con el nivel de su especie.
- * Borradas: solo identidad y metadatos de sync, sin coordenadas ni datos. $row necesita además
- * `recorded_by` (nombre del autor).
+ * Identidad y metadatos de sync comunes a marcas, notas y evaluaciones: lo único que sale de una
+ * fila borrada. $idField es su clave pública (occurrenceID, noteID o assessmentID).
  */
-function occurrenceOut(array $row, int $level, string $role, int $viewerId): array {
-    $meta = [
-        "occurrenceID"    => $row["occurrenceID"],
+function syncMeta(array $row, string $idField): array {
+    return [
+        $idField          => $row[$idField],
         "taxonID"         => $row["taxonID"],
         "userId"          => (int) $row["user_id"],
         "clientUpdatedAt" => syncIsoUtc($row["client_updated_at"]),
         "serverSeq"       => (int) $row["server_seq"],
     ];
+}
+
+/**
+ * Observación tal como sale hacia $viewerId (rol $role en el catálogo), con el nivel de su especie.
+ * Borradas: solo identidad y metadatos de sync, sin coordenadas ni datos. $row necesita además
+ * `recorded_by` (nombre del autor).
+ */
+function occurrenceOut(array $row, int $level, string $role, int $viewerId): array {
+    $meta = syncMeta($row, "occurrenceID");
     if ($row["deleted_at"] !== null) return $meta + ["deleted" => true];
 
     $v = applyVisibility($row, $level, $role, $viewerId);
@@ -312,13 +320,7 @@ function occurrenceOut(array $row, int $level, string $role, int $viewerId): arr
  * manda a miembros con permiso view. Borradas: solo identidad y metadatos. $row necesita `recorded_by`.
  */
 function noteOut(array $row): array {
-    $meta = [
-        "noteID"          => $row["noteID"],
-        "taxonID"         => $row["taxonID"],
-        "userId"          => (int) $row["user_id"],
-        "clientUpdatedAt" => syncIsoUtc($row["client_updated_at"]),
-        "serverSeq"       => (int) $row["server_seq"],
-    ];
+    $meta = syncMeta($row, "noteID");
     if ($row["deleted_at"] !== null) return $meta + ["deleted" => true];
     return $meta + [
         "deleted"    => false,
@@ -332,13 +334,7 @@ function noteOut(array $row): array {
  * El pull solo la manda a miembros con view. $row necesita `recorded_by` y `reference_set_by_name`.
  */
 function assessmentOut(array $row): array {
-    $meta = [
-        "assessmentID"    => $row["assessmentID"],
-        "taxonID"         => $row["taxonID"],
-        "userId"          => (int) $row["user_id"],
-        "clientUpdatedAt" => syncIsoUtc($row["client_updated_at"]),
-        "serverSeq"       => (int) $row["server_seq"],
-    ];
+    $meta = syncMeta($row, "assessmentID");
     if ($row["deleted_at"] !== null) return $meta + ["deleted" => true];
     $isRef = (int) $row["is_reference"] === 1;
     return $meta + [

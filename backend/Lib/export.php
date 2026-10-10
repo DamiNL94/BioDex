@@ -18,6 +18,7 @@
 // Mapeo: docs/dwc.md y docs/plinian.md.
 // ================================================================================================
 
+require_once __DIR__ . "/../Config/db.php";   // sqlPlaceholders()
 require_once __DIR__ . "/sensitivity.php";
 require_once __DIR__ . "/sync.php";      // syncIsoUtc(), UUID_V4_RE
 require_once __DIR__ . "/metrics.php";   // metricsStored()
@@ -127,7 +128,7 @@ function exportOccurrences(PDO $pdo, string $catalogId, array $o): array {
     foreach (["taxonIDs" => "o.taxonID", "observers" => "o.user_id"] as $k => $col) {
         if ($o[$k] === null) continue;
         if (!$o[$k]) return [];
-        $sql .= " AND {$col} IN (" . implode(",", array_fill(0, count($o[$k]), "?")) . ")";
+        $sql .= " AND {$col} IN (" . sqlPlaceholders(count($o[$k])) . ")";
         array_push($p, ...$o[$k]);
     }
     $stmt = $pdo->prepare($sql . " ORDER BY o.eventDate, o.occurrenceID");
@@ -373,16 +374,37 @@ function exportObservationRow(array $rec): array {
     ];
 }
 
+/** Celdas de cabecera de una hoja. */
+function exportHeader(array $cols): array {
+    return array_map(fn($c) => ["v" => $c, "s" => "header"], $cols);
+}
+
+/**
+ * Las hojas del libro (Léeme, Observaciones, Especies, Evaluaciones UICN, Distribución y Notas), cada una
+ * con sus filas, anchos, fila fija, autofiltro y el nombre de su CSV. Cada hoja la construye su función.
+ */
 function exportSheets(PDO $pdo, string $catalogId, array $catalog, array $o, array $prep, int $userId, array $meta): array {
-    $header = fn(array $cols) => array_map(fn($c) => ["v" => $c, "s" => "header"], $cols);
-    $species = $prep["species"];
-    $taxa = array_keys($species);
+    return [
+        ["name" => "Léeme", "rows" => exportReadme($catalog, $o, $prep, $meta), "widths" => [26, 110]],
+        exportObservationsSheet($prep),
+        exportSpeciesSheet($prep),
+        exportAssessmentsSheet($pdo, $catalogId, $prep),
+        exportDistributionSheet($pdo, $catalogId, $prep, $userId),
+        exportNotesSheet($pdo, $catalogId, $prep),
+    ];
+}
 
-    // Observaciones: cabecera en castellano y, debajo, el término DwC en gris.
-    $obs = [$header(array_column(EXPORT_OBS_COLUMNS, 0)), array_map(fn($c) => ["v" => $c[1], "s" => "term"], EXPORT_OBS_COLUMNS)];
+/** Observaciones: cabecera en castellano y, debajo, el término DwC en gris. */
+function exportObservationsSheet(array $prep): array {
+    $obs = [exportHeader(array_column(EXPORT_OBS_COLUMNS, 0)), array_map(fn($c) => ["v" => $c[1], "s" => "term"], EXPORT_OBS_COLUMNS)];
     foreach ($prep["records"] as $rec) $obs[] = exportObservationRow($rec);
+    return ["name" => "Observaciones", "rows" => $obs, "widths" => array_column(EXPORT_OBS_COLUMNS, 2), "freeze" => 2,
+            "autofilter" => [2, count(EXPORT_OBS_COLUMNS)], "csv" => "observaciones"];
+}
 
-    // Especies
+/** Especies: taxonomía, una columna UICN por ámbito de EIDOS, estado legal, nivel y recuento de marcas. */
+function exportSpeciesSheet(array $prep): array {
+    $species = $prep["species"];
     $scopes = EXPORT_IUCN_SCOPES;
     foreach ($species as $s) foreach (json_decode((string) $s["iucn_assessments"], true) ?: [] as $a) {
         if (!empty($a["scope"]) && !in_array($a["scope"], $scopes, true)) $scopes[] = $a["scope"];
@@ -390,7 +412,7 @@ function exportSheets(PDO $pdo, string $catalogId, array $catalog, array $o, arr
     $spHead = array_merge(["Especie", "Autor", "Nombre común", "Grupo", "Reino", "Filo", "Clase", "Orden", "Familia", "Género", "Rango",
         "Identificador del taxón"], array_map(fn($s) => "UICN {$s} (EIDOS)", $scopes),
         ["Estado legal nacional", "Estado legal Andalucía", "Otros estados legales", "Nivel de sensibilidad", "Marcas (presencias)", "Ausencias"]);
-    $spRows = [$header($spHead)];
+    $spRows = [exportHeader($spHead)];
     foreach ($species as $s) {
         $iucn = [];
         foreach (json_decode((string) $s["iucn_assessments"], true) ?: [] as $a) {
@@ -412,10 +434,16 @@ function exportSheets(PDO $pdo, string $catalogId, array $catalog, array $o, arr
         ]);
     }
 
-    $in = $taxa ? implode(",", array_fill(0, count($taxa), "?")) : "NULL";
+    return ["name" => "Especies", "rows" => $spRows, "widths" => array_merge([30, 22, 22, 16, 12, 16, 16, 18, 18, 16, 11, 22],
+            array_fill(0, count($scopes), 16), [40, 40, 40, 18, 10, 10]), "freeze" => 1, "autofilter" => [1, count($spHead)], "csv" => "especies"];
+}
 
-    // Evaluaciones UICN: la de referencia primero y luego las del equipo, rotuladas «Evaluación BioDex».
-    $asRows = [$header(["Especie", "Rótulo", "Estado", "Autor", "Fecha", "Categoría", "Categoría antes del ajuste", "Criterios",
+/** Evaluaciones UICN: la de referencia primero y luego las del equipo, rotuladas «Evaluación BioDex». */
+function exportAssessmentsSheet(PDO $pdo, string $catalogId, array $prep): array {
+    $species = $prep["species"];
+    $taxa = array_keys($species);
+    $in = sqlPlaceholders(count($taxa));
+    $asRows = [exportHeader(["Especie", "Rótulo", "Estado", "Autor", "Fecha", "Categoría", "Categoría antes del ajuste", "Criterios",
         "Ajuste regional", "Justificación", "Entradas"])];
     $stmt = $pdo->prepare(assessmentSelect("a.catalog_id = ? AND a.deleted_at IS NULL AND a.taxonID IN ({$in})")
         . " ORDER BY a.taxonID, a.is_reference DESC, a.client_updated_at DESC");
@@ -432,8 +460,14 @@ function exportSheets(PDO $pdo, string $catalogId, array $catalog, array $o, arr
         ];
     }
 
-    // Distribución: EOO/AOO definitivos del servidor (equipo, celda de 2 km), solo cifras.
-    $diRows = [$header(["Especie", "Ámbito", "EOO (km²)", "EOO igualada a AOO", "AOO (km²)", "Celdas", "Tamaño de celda (km)",
+    return ["name" => "Evaluaciones UICN", "rows" => $asRows, "widths" => [30, 30, 10, 22, 17, 10, 12, 30, 16, 50, 70], "freeze" => 1,
+            "autofilter" => [1, 11], "csv" => "evaluaciones_uicn"];
+}
+
+/** Distribución: EOO/AOO definitivos del servidor (equipo, celda de 2 km), solo cifras. */
+function exportDistributionSheet(PDO $pdo, string $catalogId, array $prep, int $userId): array {
+    $species = $prep["species"];
+    $diRows = [exportHeader(["Especie", "Ámbito", "EOO (km²)", "EOO igualada a AOO", "AOO (km²)", "Celdas", "Tamaño de celda (km)",
         "AOO mínima (km²)", "AOO máxima (km²)", "Registros usados", "Excluidos", "de ellos ausencias", "de ellos imprecisos",
         "de ellos sin coordenadas", "Avisos", "Fecha de cálculo"])];
     $stmt = $pdo->prepare("SELECT DISTINCT taxonID FROM occurrences WHERE catalog_id = ? AND deleted_at IS NULL");
@@ -454,8 +488,16 @@ function exportSheets(PDO $pdo, string $catalogId, array $catalog, array $o, arr
         ];
     }
 
-    // Notas de cuaderno
-    $noRows = [$header(["Especie", "Autor", "Fecha", "Nota"])];
+    return ["name" => "Distribución", "rows" => $diRows, "widths" => [30, 26, 11, 10, 11, 8, 10, 11, 11, 10, 10, 10, 10, 10, 50, 17],
+            "freeze" => 1, "autofilter" => [1, 16], "csv" => "distribucion"];
+}
+
+/** Notas de cuaderno de las especies exportadas. */
+function exportNotesSheet(PDO $pdo, string $catalogId, array $prep): array {
+    $species = $prep["species"];
+    $taxa = array_keys($species);
+    $in = sqlPlaceholders(count($taxa));
+    $noRows = [exportHeader(["Especie", "Autor", "Fecha", "Nota"])];
     $stmt = $pdo->prepare("SELECT n.*, u.name AS recorded_by FROM species_notes n JOIN users u ON u.id = n.user_id
                             WHERE n.catalog_id = ? AND n.deleted_at IS NULL AND n.taxonID IN ({$in})
                             ORDER BY n.taxonID, n.client_updated_at");
@@ -464,18 +506,7 @@ function exportSheets(PDO $pdo, string $catalogId, array $catalog, array $o, arr
         $noRows[] = [$species[$n["taxonID"]]["canonical_name"], $n["recorded_by"], exportLocal($n["client_updated_at"]), ["v" => $n["text"], "s" => "wrap"]];
     }
 
-    return [
-        ["name" => "Léeme", "rows" => exportReadme($catalog, $o, $prep, $meta), "widths" => [26, 110]],
-        ["name" => "Observaciones", "rows" => $obs, "widths" => array_column(EXPORT_OBS_COLUMNS, 2), "freeze" => 2,
-         "autofilter" => [2, count(EXPORT_OBS_COLUMNS)], "csv" => "observaciones"],
-        ["name" => "Especies", "rows" => $spRows, "widths" => array_merge([30, 22, 22, 16, 12, 16, 16, 18, 18, 16, 11, 22],
-         array_fill(0, count($scopes), 16), [40, 40, 40, 18, 10, 10]), "freeze" => 1, "autofilter" => [1, count($spHead)], "csv" => "especies"],
-        ["name" => "Evaluaciones UICN", "rows" => $asRows, "widths" => [30, 30, 10, 22, 17, 10, 12, 30, 16, 50, 70], "freeze" => 1,
-         "autofilter" => [1, 11], "csv" => "evaluaciones_uicn"],
-        ["name" => "Distribución", "rows" => $diRows, "widths" => [30, 26, 11, 10, 11, 8, 10, 11, 11, 10, 10, 10, 10, 10, 50, 17],
-         "freeze" => 1, "autofilter" => [1, 16], "csv" => "distribucion"],
-        ["name" => "Notas", "rows" => $noRows, "widths" => [30, 22, 17, 100], "freeze" => 1, "autofilter" => [1, 4], "csv" => "notas"],
-    ];
+    return ["name" => "Notas", "rows" => $noRows, "widths" => [30, 22, 17, 100], "freeze" => 1, "autofilter" => [1, 4], "csv" => "notas"];
 }
 
 /** «Cómo citar» del conjunto. */

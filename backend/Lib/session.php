@@ -186,9 +186,3 @@ function biodexForgetRemembered(PDO $pdo): void {
     if ($parts) $pdo->prepare("DELETE FROM user_auth_tokens WHERE selector = ?")->execute([$parts[0]]);
     biodexClearRememberCookie();
 }
-
-/** Revoca los tokens de TODOS los dispositivos de una cuenta (p. ej. al cambiar la contraseña). */
-function biodexForgetAllForUser(PDO $pdo, int $userId): void {
-    $pdo->prepare("DELETE FROM user_auth_tokens WHERE user_id = ?")->execute([$userId]);
-    biodexClearRememberCookie();
-}

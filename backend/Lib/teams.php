@@ -12,6 +12,7 @@
 // queda en el dispositivo (docs/sync.md). Las propias nunca se tocan.
 // ================================================================================================
 
+require_once __DIR__ . "/../Config/db.php";   // sqlPlaceholders()
 require_once __DIR__ . "/sensitivity.php";   // exactAccess.roles de shared/sensitivity.json
 
 const INVITE_CODE_BYTES   = 16;     // 128 bits
@@ -91,7 +92,7 @@ function bumpMemberEpoch(PDO $pdo, string $catalogId, int $userId): void {
 /** Sube la época de todos los miembros SIN acceso a exactas (cambio de nivel de una especie). */
 function bumpUntrustedEpochs(PDO $pdo, string $catalogId): int {
     $trusted = sensitivityConfig()["exactAccess"]["roles"];
-    $in = implode(", ", array_fill(0, count($trusted), "?"));
+    $in = sqlPlaceholders(count($trusted));
     $stmt = $pdo->prepare("UPDATE catalog_members SET visibility_epoch = visibility_epoch + 1
                             WHERE catalog_id = ? AND role NOT IN ({$in})");
     $stmt->execute([$catalogId, ...$trusted]);

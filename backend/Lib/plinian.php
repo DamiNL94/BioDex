@@ -88,7 +88,7 @@ function plicData(PDO $pdo, string $catalogId, array $o, array $taxa): array {
 
     $refs = [];
     if ($taxa) {
-        $in = implode(",", array_fill(0, count($taxa), "?"));
+        $in = sqlPlaceholders(count($taxa));
         $stmt = $pdo->prepare("SELECT a.*, u.name AS recorded_by, u.orcid AS recorded_by_orcid FROM species_assessments a
                                  JOIN users u ON u.id = a.user_id
                                 WHERE a.catalog_id = ? AND a.deleted_at IS NULL AND a.is_reference = 1 AND a.taxonID IN ({$in})

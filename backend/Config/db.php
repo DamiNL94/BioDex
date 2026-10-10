@@ -32,3 +32,11 @@ function db(): PDO {
     );
     return $pdo;
 }
+
+/**
+ * Marcadores para un `IN (...)` preparado: 3 → "?,?,?". Con 0 valores devuelve "NULL", porque
+ * `IN ()` es un error de sintaxis y `IN (NULL)` simplemente no casa con nada.
+ */
+function sqlPlaceholders(int $n): string {
+    return $n > 0 ? implode(",", array_fill(0, $n, "?")) : "NULL";
+}

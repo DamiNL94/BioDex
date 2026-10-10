@@ -314,14 +314,14 @@ foreach ($rows as $r) {
 $names = [];
 if ($userIds) {
     $ids = array_keys($userIds);
-    $q = $pdo->prepare("SELECT id, name FROM users WHERE id IN (" . implode(",", array_fill(0, count($ids), "?")) . ")");
+    $q = $pdo->prepare("SELECT id, name FROM users WHERE id IN (" . sqlPlaceholders(count($ids)) . ")");
     $q->execute($ids);
     foreach ($q->fetchAll() as $u) $names[(int) $u["id"]] = $u["name"];
 }
 $species = [];
 if ($taxa) {
     $ids = array_keys($taxa);
-    $q = $pdo->prepare("SELECT taxonID, canonical_name FROM species WHERE taxonID IN (" . implode(",", array_fill(0, count($ids), "?")) . ")");
+    $q = $pdo->prepare("SELECT taxonID, canonical_name FROM species WHERE taxonID IN (" . sqlPlaceholders(count($ids)) . ")");
     $q->execute(array_map("strval", $ids));
     foreach ($q->fetchAll() as $s) $species[$s["taxonID"]] = $s["canonical_name"];
 }
