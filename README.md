@@ -4,6 +4,7 @@ PWA de campo para biólogos: catálogos de especies (EIDOS), observaciones offli
 
 Prototipo (1.0.0 · demo): servidor local, sin publicar. Lo que aún no hace o no se ha probado:
 [`docs/limitaciones.md`](docs/limitaciones.md). Guion de la demostración: [`docs/demo.md`](docs/demo.md).
+Convenciones de código, permisos y seguridad de las coordenadas: [`docs/convenciones.md`](docs/convenciones.md).
 
 ## Instalación desde cero (10 pasos)
 Necesitas Docker Desktop (Compose v2), Git, Edge o Chrome y conexión a internet (EIDOS y las teselas del IGN).
@@ -49,6 +50,8 @@ demostración: no publicar».
   (Borreguiles, Sierra Nevada). Sin GPS, «Marcar aquí» no deja guardar.
 
 ## Comprobaciones
+`docker compose exec php php bin/test-all.php` ejecuta todas las baterías en orden y resume (o solo algunas:
+`bin/test-all.php f8a f9`). Por separado:
 ```bash
 docker compose exec php php bin/check-sw.php    # SHELL_ASSETS de frontend/sw.js al día
 docker compose exec php php bin/test-f2a.php    # autenticación
@@ -67,6 +70,8 @@ docker compose exec php php bin/test-f11b.php   # fotos de respaldo (iNaturalist
 docker compose exec php php bin/test-f11d.php   # fotos de respaldo de GBIF y Commons, copias locales y cascada
 node shared/iucn-engine.test.js && node shared/geo-metrics.test.js && node frontend/tests/utm.test.mjs
 ```
+En GitHub, `.github/workflows/ci.yml` comprueba en cada push la sintaxis de PHP, el Service Worker y las pruebas de JS.
+
 Los iconos de la PWA salen de `backend/bin/make-icons.php` (necesita ext-gd, que el contenedor no trae):
 `php -d extension=gd backend/bin/make-icons.php` en el anfitrión.
 
@@ -94,3 +99,13 @@ El GPS y el Service Worker solo funcionan en contexto seguro (HTTPS o `localhost
    *Enable port forwarding*.
 3. En el Chrome del móvil abre `http://localhost:8090`: para el navegador es `localhost`, así que cuenta
    como contexto seguro.
+
+## Cómo se ha hecho
+BioDex es un proyecto personal. La idea, los requisitos y las decisiones de diseño son míos y salen de mi
+formación en Ciencias Ambientales (UGR) y del ciclo de DAW: qué datos guardar y en qué estándar (Darwin Core y
+Plinian Core), las reglas de sensibilidad de las coordenadas, la evaluación UICN, el funcionamiento sin conexión y
+la división entre modo estudio (escritorio) y modo campo (móvil).
+
+Lo he desarrollado por fases (el prefijo F2, F5… de los commits) con un asistente de IA, Claude Code, como
+*pair programmer*: yo definía cada fase y sus criterios de aceptación, y comprobaba cada entrega con las
+pruebas automáticas y probándola en el navegador y en el móvil.

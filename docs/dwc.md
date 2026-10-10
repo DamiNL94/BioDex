@@ -65,5 +65,5 @@ cabecera en castellano con el término DwC debajo en gris, coordenadas con 6 dec
 congeladas y autofiltro. Distribución: EOO/AOO definitivos del servidor (equipo, celda de 2 km), solo cifras.
 
 ## Pendiente para publicar en GBIF
-Pasar el `dwca/` de una exportación «para publicar» por el validador de GBIF (a mano, `docs/prompts/F10-checklist.md`),
+Pasar el `dwca/` de una exportación «para publicar» por el validador de GBIF (a mano),
 un `datasetID` registrado (GBIF.ES) y `scientificNameID` (no lo da EIDOS).

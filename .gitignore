@@ -7,3 +7,6 @@ mysql-data/
 docker/nginx/certs/
 # Lo vendorizado del frontend (tipografías, y Leaflet en F7) sí va al repo
 !frontend/vendor/
+
+# Notas de trabajo personales (no van al repositorio)
+_privado/

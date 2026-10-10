@@ -128,7 +128,7 @@ ya bajó se quedarían en su dispositivo. Para eso está `catalog_members.visibi
   tal cual). Las propias no se tocan nunca, tampoco las de la cola. Si la época cambia más de 3 veces en una
   misma pasada, se deja para el reintento.
 - Comprobado en el recorrido de F6 leyendo la base, no la pantalla: tras quitar el custodio no queda ninguna
-  marca ajena exacta en `biodex-<userId>` (`docs/prompts/F6-checklist.md`).
+  marca ajena exacta en `biodex-<userId>`.
 
 Expulsar, salir o borrar el catálogo no usa la época: el pull da 403 `not_member` y el catálogo sale entero.
 

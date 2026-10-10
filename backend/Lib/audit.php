@@ -1,6 +1,6 @@
 <?php
 // ================================================================================================
-// audit.php — registro en access_log de lo que CLAUDE.md exige auditar: vistas de coordenadas
+// audit.php — registro en access_log de lo que docs/convenciones.md exige auditar: vistas de coordenadas
 // exactas, exportaciones completas, cambios de nivel de sensibilidad y de rol, logins fallidos y (F6)
 // invitaciones y altas y bajas de miembros; (F8b) la evaluación UICN de referencia de cada especie;
 // (F11b) aceptar o rechazar una foto de iNaturalist propuesta por sinónimo.

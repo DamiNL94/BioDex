@@ -9,7 +9,7 @@
 
 const CATALOG_ROLES = ["owner", "custodian", "editor", "viewer"];
 
-/** Acción → roles que pueden hacerla. Única fuente de verdad de la matriz de docs/prompts/F2a. */
+/** Acción → roles que pueden hacerla. Única fuente de verdad de la matriz de permisos (docs/api.md). */
 const CATALOG_PERMISSIONS = [
     "view"           => ["owner", "custodian", "editor", "viewer"],  // ver catálogo y especies
     "add_species"    => ["owner", "custodian", "editor"],

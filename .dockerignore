@@ -7,3 +7,4 @@ docs/
 *.pdf
 docker/nginx/certs/
 frontend/tests/
+_privado/

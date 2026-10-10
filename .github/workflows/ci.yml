@@ -1,0 +1,35 @@
+# Comprobaciones que no necesitan MySQL ni red: sintaxis de PHP, Service Worker al día y pruebas de JS.
+# Las baterías de integración (backend/bin/test-all.php) se ejecutan en local con Docker.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          extensions: pdo_mysql, zip, intl
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Sintaxis de PHP
+        run: find backend -name '*.php' -print0 | xargs -0 -n1 php -l > /dev/null
+
+      - name: SHELL_ASSETS del Service Worker al día
+        run: php backend/bin/check-sw.php
+
+      - name: Pruebas de JS (motor UICN, EOO/AOO y UTM)
+        run: |
+          node shared/iucn-engine.test.js
+          node shared/geo-metrics.test.js
+          node frontend/tests/utm.test.mjs

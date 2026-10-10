@@ -14,7 +14,7 @@
 const DWC_NS = "http://rs.tdwg.org/dwc/terms/";
 const DC_NS  = "http://purl.org/dc/terms/";
 
-/** Términos de occurrence.txt, en orden (docs/prompts/F10a §3). término → URI. */
+/** Términos de occurrence.txt, en orden (docs/dwc.md). término → URI. */
 const DWC_OCCURRENCE_TERMS = [
     "occurrenceID" => DWC_NS, "basisOfRecord" => DWC_NS, "occurrenceStatus" => DWC_NS, "eventDate" => DWC_NS,
     "recordedBy" => DWC_NS, "recordedByID" => DWC_NS, "individualCount" => DWC_NS, "sex" => DWC_NS,
