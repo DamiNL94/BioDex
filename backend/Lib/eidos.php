@@ -22,7 +22,10 @@
 //     nacional = ámbito Nacional Y `ccaa` vacío.
 // ================================================================================================
 
-const EIDOS_HOST = "https://iepnb.gob.es/api";
+require_once __DIR__ . "/../Config/env.php";
+
+// EIDOS_BASE_URL permite apuntar a un doble de pruebas (los tests no dependen de que EIDOS responda).
+define("EIDOS_HOST", rtrim(biodex_env(["EIDOS_BASE_URL"]) ?? "https://iepnb.gob.es/api", "/"));
 // Pausa entre peticiones: es un servicio público y un catálogo son cientos de peticiones.
 const EIDOS_THROTTLE_MS = 150;
 const EIDOS_TIMEOUT_S = 10;
