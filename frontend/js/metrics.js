@@ -10,6 +10,7 @@
 // ================================================================================================
 
 import { apiGetJson } from './api.js';
+import { formatDateTime } from './util.js';
 import { state } from './state.js';
 import { byIndex, getMeta, setMeta } from './db.js';
 import { remoteOrLocal } from './offline.js';
@@ -65,10 +66,7 @@ export function utmCellCorners([i, j], sizeKm) {
 }
 
 /** «30 sept 2026, 18:12». */
-export const fmtMetricsDate = (iso) => {
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? '' : d.toLocaleString('es-ES', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-};
+export const fmtMetricsDate = (iso) => formatDateTime(iso, 'short', '');
 
 /** «1.234,5 km²». */
 export const fmtKm2 = (v) => (v === null || v === undefined ? '—' : `${Number(v).toLocaleString('es-ES', { maximumFractionDigits: 2 })} km²`);

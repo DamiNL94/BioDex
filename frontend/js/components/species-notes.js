@@ -7,17 +7,10 @@
 // ================================================================================================
 
 import { state, subscribe } from '../state.js';
-import { html, render, $ } from '../util.js';
+import { html, render, $, formatDateTime, SYNC_BADGES } from '../util.js';
 import { confirmDialog } from './overlay.js';
 import { createNote, updateNote, deleteNote, notesFor, NOTE_MAX, MARK_ROLES } from '../marks.js';
 import { requestSync } from '../sync.js';
-
-const STATUS = { pending: ['Pendiente', 'warn'], rejected: ['Rechazada', 'danger'] };
-
-const fmtWhen = (iso) => {
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? iso : d.toLocaleString('es-ES', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-};
 
 /** Pinta en `el` las notas de `species` en `catalog` ({id, name, role}). Devuelve {refresh, destroy}. */
 export function mountNotes(el, { species, catalog }) {
@@ -36,7 +29,7 @@ export function mountNotes(el, { species, catalog }) {
     render(el, html`
       ${notes.length ? html`<ol class="notes">${notes.map((n) => {
         const mine = n.authorId === me();
-        const [label, kind] = STATUS[n.status] || [];
+        const [label, kind] = SYNC_BADGES[n.status] || [];
         if (editing === n.noteID) {
           return html`<li class="note is-editing"><form class="form note-edit" data-note="${n.noteID}" novalidate>
             <label class="field"><span>Editar nota</span><textarea name="text" rows="4" maxlength="${NOTE_MAX}">${n.text}</textarea></label>
@@ -46,7 +39,7 @@ export function mountNotes(el, { species, catalog }) {
         }
         return html`<li class="note">
           <div class="note-head"><span class="mark-author">${mine ? 'Tú' : n.recordedBy || 'Otro miembro'}</span>
-            <time class="mark-when" datetime="${n.clientUpdatedAt}">${fmtWhen(n.clientUpdatedAt)}</time>
+            <time class="mark-when" datetime="${n.clientUpdatedAt}">${formatDateTime(n.clientUpdatedAt)}</time>
             ${label ? html`<span class="badge ${kind}">${label}</span>` : ''}</div>
           <p class="note-text">${n.text}</p>
           ${n.status === 'rejected' && n.reason ? html`<p class="hint">${n.reason}</p>` : ''}

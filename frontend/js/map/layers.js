@@ -9,7 +9,6 @@
 
 export const MAP_MAX_ZOOM = 20;
 export const TILE_CACHE_PREFIX = 'biodex-tiles-';
-export const RUNTIME_TILE_CACHE = 'biodex-tiles-runtime';
 
 export const LAYERS = [
   { key: 'base', label: 'IGN Base', short: 'Base', attribution: 'IGN Base', maxZoom: 20,

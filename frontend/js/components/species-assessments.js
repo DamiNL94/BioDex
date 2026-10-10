@@ -10,20 +10,13 @@
 
 import { apiPutJson } from '../api.js';
 import { state, subscribe } from '../state.js';
-import { html, render } from '../util.js';
+import { html, render, formatDateTime, SYNC_BADGES } from '../util.js';
 import { confirmDialog } from './overlay.js';
 import { assessmentsFor, deleteAssessment, MARK_ROLES } from '../marks.js';
 import { tx } from '../db.js';
 import { requestSync } from '../sync.js';
 import { openIucnWizard, loadIucnCriteria, assessmentHeadline, DISCLAIMER } from '../views/iucn-wizard.js';
 import { categoryLabel, criterionSummary } from '../../shared/iucn-engine.js';
-
-const SYNC = { pending: ['Pendiente', 'warn'], rejected: ['Rechazada', 'danger'] };
-
-const fmtWhen = (iso) => {
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? iso : d.toLocaleString('es-ES', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-};
 
 /** Pinta en `el` las evaluaciones de `species` en `catalog` ({id, name, role}). Devuelve {refresh, destroy}. */
 export function mountAssessments(el, { species, catalog }) {
@@ -49,7 +42,7 @@ export function mountAssessments(el, { species, catalog }) {
 
   function itemHtml(a) {
     const mine = a.authorId === me();
-    const [label, kind] = SYNC[a.status] || [];
+    const [label, kind] = SYNC_BADGES[a.status] || [];
     const final = a.assessmentStatus === 'final';
     const synced = !!a.serverSeq && a.status === 'synced';
     return html`<li class="assess${a.isReference ? ' is-reference' : ''} iucn-edge-${a.category || 'none'}">
@@ -61,12 +54,12 @@ export function mountAssessments(el, { species, catalog }) {
       </div>
       <div class="note-head">
         <span class="mark-author">${mine ? 'Tú' : a.recordedBy || 'Otro miembro'}</span>
-        <time class="mark-when" datetime="${a.clientUpdatedAt}">${fmtWhen(a.clientUpdatedAt)}</time>
+        <time class="mark-when" datetime="${a.clientUpdatedAt}">${formatDateTime(a.clientUpdatedAt)}</time>
         <span class="badge ${final ? 'ok' : ''}">${final ? 'Final' : 'Borrador'}</span>
         ${label ? html`<span class="badge ${kind}">${label}</span>` : ''}
       </div>
       ${a.isReference && a.referenceSetBy ? html`<p class="hint">Marcada por ${a.referenceSetBy}${a.referenceSetAt
-        ? html`, ${fmtWhen(a.referenceSetAt)}` : ''}.</p>` : ''}
+        ? html`, ${formatDateTime(a.referenceSetAt)}` : ''}.</p>` : ''}
       ${a.status === 'rejected' && a.reason ? html`<p class="hint mark-reason">${a.reason}</p>` : ''}
       ${detailHtml(a)}
       <div class="form-actions note-actions">

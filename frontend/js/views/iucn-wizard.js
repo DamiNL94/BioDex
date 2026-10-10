@@ -85,11 +85,6 @@ function parseNum(v) {
 }
 const valueOf = (v) => (v === null || v === undefined ? '' : String(v));
 
-/** Distintivo de categoría con su color de la casa. */
-export function categoryBadge(code, extra = '') {
-  return html`<span class="badge iucn iucn-${code || 'none'} ${extra}">${code || 'Sin categoría'}</span>`;
-}
-
 // --- Tablas de umbrales (todo sale del JSON) -------------------------------------------------------
 function thresholdTable(key, crit) {
   const C = crit.criteria;

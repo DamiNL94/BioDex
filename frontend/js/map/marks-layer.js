@@ -12,17 +12,13 @@
 // Todo el HTML de marcadores y globos pasa por html`` (los nombres y notas vienen de usuarios).
 // ================================================================================================
 
-import { html, sciName, sciNameText } from '../util.js';
+import { html, sciName, sciNameText, formatDateTime } from '../util.js';
 
 const L = () => window.L;
 export const OBS_COLORS = 8;
 const MAP_POINT = 'Punto marcado en el mapa';   // georeferenceProtocol (marks.js GEOREF_MAP)
 
-const fmtWhen = (iso) => {
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? String(iso || '') : d.toLocaleString('es-ES',
-    { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-};
+const fmtWhen = (iso) => formatDateTime(iso, 'numeric', String(iso || ''));
 
 const hasCoords = (o) => o.decimalLatitude !== null && o.decimalLatitude !== undefined &&
   Number.isFinite(Number(o.decimalLatitude)) && Number.isFinite(Number(o.decimalLongitude));

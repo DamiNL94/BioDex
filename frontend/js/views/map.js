@@ -25,7 +25,7 @@
 // ================================================================================================
 
 import { state, subscribe } from '../state.js';
-import { html, render, $, $$, plural, store, sciName, sciNameText } from '../util.js';
+import { html, render, $, $$, plural, store, sciName, sciNameText, formatDateTime } from '../util.js';
 
 const Nav = window.BioDexNav;
 import { hasDb, byIndex, get } from '../db.js';
@@ -527,7 +527,7 @@ export function mount(el, { go = () => {}, isStudio = () => false } = {}) {
             <span>${sp ? sciName(sp) : o.taxonID}</span>
           </div>
           <div class="mark-main">
-            <span class="mark-when">${new Date(o.eventDate).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+            <span class="mark-when">${formatDateTime(o.eventDate, 'numeric')}</span>
             <span class="badge">${who}</span>
             ${o.coordinateUncertaintyInMeters !== null && o.coordinateUncertaintyInMeters !== undefined ? html`<span class="badge">±${o.coordinateUncertaintyInMeters} m</span>` : ''}
             ${o.status === 'pending' ? html`<span class="badge warn">Pendiente</span>` : ''}

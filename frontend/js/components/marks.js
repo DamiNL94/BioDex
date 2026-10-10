@@ -12,7 +12,7 @@
 // ================================================================================================
 
 import { state, subscribe } from '../state.js';
-import { html, render, sciName } from '../util.js';
+import { html, render, sciName, formatDateTime, SYNC_BADGES } from '../util.js';
 import { confirmDialog } from './overlay.js';
 import { deleteMark, marksFor, GEOREF_MAP } from '../marks.js';
 import { requestSync } from '../sync.js';
@@ -20,16 +20,9 @@ import { openMarkSheet, canMark, LIFE_STAGE_LABELS, SEX_LABELS } from '../views/
 
 export { canMark };
 
-const STATUS = {
-  pending: ['Pendiente', 'warn'],
-  synced: ['Sincronizada', 'ok'],
-  rejected: ['Rechazada', 'danger'],
-};
+const STATUS = { ...SYNC_BADGES, synced: ['Sincronizada', 'ok'] };
 
-const fmtWhen = (iso) => {
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? iso : d.toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-};
+const fmtWhen = (iso) => formatDateTime(iso, 'numeric');
 const fmtDay = (d) => d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
 const fmtCoord = (o) => (o.decimalLatitude === null || o.decimalLatitude === undefined ? null
   : `${Number(o.decimalLatitude).toFixed(5)}, ${Number(o.decimalLongitude).toFixed(5)}`);

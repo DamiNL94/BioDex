@@ -46,6 +46,24 @@ export const isStudio = () => studioQuery.matches;
 export const $ = (sel, root = document) => root.querySelector(sel);
 export const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
+// --- Fechas -------------------------------------------------------------------------------------
+const DATE_TIME_STYLES = {
+  short: { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' },     // «30 sept 2026, 18:12»
+  numeric: { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }, // «30/09/2026, 18:12»
+};
+
+/**
+ * Fecha y hora en castellano. `style`: 'short' (mes abreviado) o 'numeric'. Si `value` no es una
+ * fecha válida devuelve `fallback` (por defecto, el propio valor tal cual).
+ */
+export function formatDateTime(value, style = 'short', fallback = value) {
+  const d = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(d.getTime()) ? fallback : d.toLocaleString('es-ES', DATE_TIME_STYLES[style]);
+}
+
+/** Distintivo [texto, clase] de lo que aún no está en el servidor (marcas, notas, evaluaciones). */
+export const SYNC_BADGES = { pending: ['Pendiente', 'warn'], rejected: ['Rechazada', 'danger'] };
+
 /** «1 especie» / «3 especies». */
 export function plural(n, one, many) {
   return `${n} ${n === 1 ? one : many}`;

@@ -311,14 +311,6 @@ export async function localTree(catalogId) {
 /** Ficha guardada (o null). */
 export const localSpecies = (taxonID) => get('species', taxonID);
 
-/** Nivel de una especie en un catálogo guardado. */
-export async function localSensitivity(catalogId, taxonID) {
-  const row = await get('catalogSpecies', [catalogId, taxonID]);
-  return row ? row.sensitivity : null;
-}
-
-export const localSpeciesInCatalogs = (taxonID) => byIndex('catalogSpecies', 'taxonID', taxonID);
-
 // --- Almacenamiento (Ajustes) ---------------------------------------------------------------------
 export async function storageInfo() {
   const out = { usage: null, quota: null, persisted: null };
