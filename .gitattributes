@@ -1,2 +1,6 @@
+# Normaliza a LF dentro del repositorio; en Windows se extraen con CRLF salvo las excepciones de abajo
+* text=auto
 # Los scripts que se ejecutan dentro de los contenedores Linux necesitan LF aunque el repo se clone en Windows
 *.sh text eol=lf
+# Los JSON (muestras de EIDOS, etc.) siempre en LF para que no cambien al pasar de una máquina a otra
+*.json text eol=lf
