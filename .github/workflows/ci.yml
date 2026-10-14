@@ -33,3 +33,5 @@ jobs:
           node shared/iucn-engine.test.js
           node shared/geo-metrics.test.js
           node frontend/tests/utm.test.mjs
+          node frontend/tests/tally.test.mjs
+          node frontend/tests/qr.test.mjs
