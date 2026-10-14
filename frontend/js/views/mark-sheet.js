@@ -8,14 +8,15 @@
 //     PUNTO DEL MAPA (mantener pulsado en Mapa: individuo visto a distancia) con la precisión estimada
 //     por el usuario, obligatoria, y comentario de georreferencia. Al editar, la posición no se toca.
 //   · Presente / Ausente (una ausencia en un punto prospectado también es dato: 0 individuos).
-//   · Nº de individuos (− / +), «Individuo maduro» (con varios: «¿cuántos maduros?», el total por
-//     defecto) → lifeStage adult + mature_count.
-//   · Estado vital según el reino (fauna y flora tienen valores distintos) y sexo (solo fauna).
+//   · MARCA NUEVA (F11e): marcar es contar. Casillas grandes por categoría según el reino (macho,
+//     hembra, juvenil… / plántula, en flor…): un toque, un individuo; «−», «Deshacer» y la cifra se
+//     puede escribir (para 300 plantas no se toca 300 veces). Al guardar sale una marca por categoría
+//     con individuos, todas en el mismo punto (reglas en js/tally.js). Sin contar nada se guarda
+//     1 individuo sin detallar (la prisa). Cerrar con individuos contados pide confirmación.
+//   · EDITAR una marca: es UNA ocurrencia, con sus campos de siempre: nº de individuos (− / +),
+//     «Individuo maduro» (con varios: «¿cuántos maduros?») → lifeStage adult + mature_count, estado
+//     vital según el reino y sexo (solo fauna).
 //   · Hábitat (se recuerda el último de esta sesión) y observaciones.
-//   · F11e, «Conteo rápido»: en vez de una marca, casillas grandes por categoría (macho, hembra,
-//     juvenil… / plántula, en flor…) que suman un individuo por toque. Al guardar sale una marca por
-//     categoría con individuos, todas en el mismo punto (reglas en js/tally.js). El modo se recuerda en
-//     la sesión; cerrar con individuos contados pide confirmación.
 // Vocabularios: los de GBIF que valida el servidor (Lib/sync.php); aquí solo sus etiquetas.
 // ================================================================================================
 
@@ -27,12 +28,11 @@ import { createMark, updateMark, markFields, MARK_ROLES, GEOREF_MAP } from '../m
 import { requestSync } from '../sync.js';
 import { remoteOrLocal, localCatalogData, localSpecies } from '../offline.js';
 import { toUtm, formatUtm } from '../geo/utm.js';
-import { tallyCategories, emptyTally, tallyAdd, tallyUndo, tallyTotal, tallyToMarks } from '../tally.js';
+import { tallyCategories, emptyTally, tallyAdd, tallySet, tallyUndo, tallyKeep, tallyTotal, tallyToMarks } from '../tally.js';
 
 const LOW_ACCURACY_M = 50;
 const GPS_TIMEOUT_MS = 30000;
 const HABITAT_KEY = 'biodex.lastHabitat';
-const MODE_KEY = 'biodex.markMode';
 const ROLE_LABELS = { viewer: 'Lector' };
 
 export const LIFE_STAGE_LABELS = {
@@ -84,12 +84,13 @@ export function openMarkSheet({ catalog, species = null, occurrence = null, poin
   const editing = !!occurrence;
   const title = editing ? 'Editar marca' : point ? 'Marcar en este punto' : 'Marcar aquí';
   let watchId = null;
-  let mode = !editing && sessionGet(MODE_KEY) === 'tally' ? 'tally' : 'single';
+  const counting = !editing;   // marca nueva = conteo; editar = una ocurrencia
   let tally = emptyTally();
+  let showExtra = false;
   let tallyKingdom = null;
   const ov = openOverlay({ key: editing ? 'editar-marca' : 'hoja-marca', title, variant: 'side', className: 'mark-sheet',
     onClose: () => { if (watchId !== null) navigator.geolocation.clearWatch(watchId); if (onClose) onClose(); },
-    isDirty: () => mode === 'tally' && tallyTotal(tally) > 0,
+    isDirty: () => counting && tallyTotal(tally) > 0,
     confirmClose: () => confirmDialog({ key: 'descartar-conteo', title: 'Descartar el conteo', danger: true,
       confirmLabel: 'Descartar', text: html`<p>Llevas <strong>${tallyTotal(tally)}</strong> individuos contados sin guardar.</p>` }) });
 
@@ -125,13 +126,6 @@ export function openMarkSheet({ catalog, species = null, occurrence = null, poin
       <div class="mark-sp"></div>
       <section class="mark-pos" aria-label="Posición"></section>
 
-      ${editing ? '' : html`<div class="segmented mode-toggle" role="radiogroup" aria-label="Forma de marcar">
-        <button type="button" role="radio" data-mode="single">Una marca</button>
-        <button type="button" role="radio" data-mode="tally">Conteo rápido</button>
-      </div>`}
-
-      <section class="tally" aria-label="Conteo rápido" hidden></section>
-
       <div class="field status-field"><span id="msStatus">Registro</span>
         <div class="status-toggle" role="radiogroup" aria-labelledby="msStatus">
           <button type="button" role="radio" data-status="present">Presente</button>
@@ -139,6 +133,8 @@ export function openMarkSheet({ catalog, species = null, occurrence = null, poin
         </div>
         <p class="hint absent-hint" hidden>Ausencia: has prospectado aquí y no la has encontrado. Se guarda con 0 individuos.</p>
       </div>
+
+      <section class="tally" aria-label="Conteo" hidden></section>
 
       <div class="present-only">
         <div class="field"><span id="msCount">Nº de individuos</span>
@@ -312,62 +308,53 @@ export function openMarkSheet({ catalog, species = null, occurrence = null, poin
     paintTally(kingdom);
   }
 
-  // --- Conteo rápido (F11e) --------------------------------------------------------------------
+  // --- Conteo (F11e): la forma de crear una marca ---------------------------------------------
   let categories = tallyCategories(null);
   function paintTally(kingdom = tallyKingdom) {
-    if (editing) return;
+    if (!counting) return;
     categories = tallyCategories(kingdom);
     // Otro reino, otras casillas: se conserva lo contado en las que siguen (adulto, juvenil…), el resto fuera.
-    if (kingdom !== tallyKingdom) {
-      const keep = new Set(categories.map((c) => c.key));
-      const next = emptyTally();
-      for (const k of keep) if (tally.counts[k]) next.counts[k] = tally.counts[k];
-      next.history = tally.history.filter((k) => keep.has(k));
-      tally = next;
-      tallyKingdom = kingdom;
-    }
+    if (kingdom !== tallyKingdom) { tally = tallyKeep(tally, categories.map((c) => c.key)); tallyKingdom = kingdom; }
+    const extras = categories.filter((c) => c.extra);
+    const cell = (c) => html`<div class="tally-cell${c.extra ? ' is-extra' : ''}" ${c.extra && !showExtra ? html`hidden` : ''}>
+        <button type="button" class="tally-add" data-tally="${c.key}" aria-label="Sumar uno: ${c.label}">
+          <span class="tally-label">${c.label}</span><span class="tally-plus" aria-hidden="true">+1</span></button>
+        <div class="tally-tools">
+          <button type="button" class="tally-minus" data-tally-minus="${c.key}" aria-label="Quitar uno: ${c.label}">−</button>
+          <input class="tally-input" type="number" inputmode="numeric" min="0" max="100000" step="1" placeholder="0"
+            data-tally-input="${c.key}" aria-label="Número: ${c.label}">
+        </div>
+      </div>`;
     render($('.tally', form), html`
       <div class="tally-head">
         <p class="tally-total" role="status" aria-live="polite">Total <strong class="tally-sum">0</strong></p>
         <button type="button" class="btn-secondary tally-undo" data-tally-undo>Deshacer</button>
       </div>
-      <div class="tally-grid">${categories.map((c) => html`<div class="tally-cell">
-        <button type="button" class="tally-add" data-tally="${c.key}" aria-label="Sumar uno: ${c.label}">
-          <span class="tally-n" data-n="${c.key}">0</span><span class="tally-label">${c.label}</span></button>
-        <button type="button" class="tally-minus" data-tally-minus="${c.key}" aria-label="Quitar uno: ${c.label}">−</button>
-      </div>`)}</div>
-      <p class="hint">Un toque, un individuo. Se guarda una marca por casilla, todas en este punto.
+      <div class="tally-grid">${categories.map(cell)}</div>
+      ${extras.length ? html`<button type="button" class="link-btn tally-more" data-tally-more ${showExtra ? html`hidden` : ''}>
+        Más categorías (${extras.map((c) => c.label.toLowerCase()).join(', ')})</button>` : ''}
+      <p class="hint">Un toque, un individuo; también puedes escribir la cifra. Se guarda una marca por casilla,
+        todas en este punto. Sin contar nada, se guarda 1 individuo sin detallar.
         Cuentan como maduros ${kingdom === 'Plantae' ? 'los que están en flor o en fruto' : 'los adultos'}.</p>`);
     updateTally();
   }
 
   function updateTally() {
     const box = $('.tally', form);
-    if (!box || editing) return;
+    if (!box || !counting) return;
     categories.forEach((c) => {
       const n = tally.counts[c.key] || 0;
-      const el = $(`[data-n="${c.key}"]`, box);
-      if (el) el.textContent = String(n);
+      const input = $(`[data-tally-input="${c.key}"]`, box);
+      if (input && document.activeElement !== input) input.value = n ? String(n) : '';
       const minus = $(`[data-tally-minus="${c.key}"]`, box);
       if (minus) minus.disabled = n === 0;
+      // Una categoría extra con individuos no se esconde
+      if (c.extra && n > 0) input.closest('.tally-cell').hidden = false;
     });
     const sum = $('.tally-sum', box);
     if (sum) sum.textContent = String(tallyTotal(tally));
     const undo = $('[data-tally-undo]', box);
     if (undo) undo.disabled = tally.history.length === 0;
-    paintSave();
-  }
-
-  function paintMode() {
-    const t = mode === 'tally';
-    $$('[data-mode]', form).forEach((b) => {
-      const on = b.dataset.mode === mode;
-      b.classList.toggle('active', on);
-      b.setAttribute('aria-checked', String(on));
-    });
-    $('.tally', form).hidden = !t;
-    $('.status-field', form).hidden = t;
-    paintChoices();
     paintSave();
   }
 
@@ -380,9 +367,9 @@ export function openMarkSheet({ catalog, species = null, occurrence = null, poin
       b.setAttribute('aria-checked', String(on));
     });
     const absent = f.status === 'absent';
-    const counting = mode === 'tally';
     $('.present-only', form).hidden = absent || counting;
-    $('.absent-hint', form).hidden = !absent || counting;
+    $('.absent-hint', form).hidden = !absent;
+    $('.tally', form).hidden = absent || !counting;
     form.mature.checked = f.mature;
     const many = f.mature && f.count > 1;
     $('.mature-field', form).hidden = !many;
@@ -402,10 +389,11 @@ export function openMarkSheet({ catalog, species = null, occurrence = null, poin
 
   function paintSave() {
     const hasWhere = editing || !!point || !!pos;
+    save.disabled = !hasWhere || !(species || chosen);
+    if (!counting) return;
     const total = tallyTotal(tally);
-    const counting = mode === 'tally';
-    save.disabled = !hasWhere || !(species || chosen) || (counting && total === 0);
-    if (!editing) save.textContent = counting ? (total ? `Guardar conteo (${total})` : 'Guardar conteo') : 'Guardar';
+    save.textContent = f.status === 'absent' ? 'Guardar ausencia'
+      : total ? `Guardar ${total} ${total === 1 ? 'individuo' : 'individuos'}` : 'Guardar';
   }
 
   const toInt = (v) => { const n = parseInt(v, 10); return Number.isFinite(n) ? n : null; };
@@ -422,15 +410,19 @@ export function openMarkSheet({ catalog, species = null, occurrence = null, poin
   }
 
   form.addEventListener('click', (ev) => {
-    const md = ev.target.closest('[data-mode]');
-    if (md) { mode = md.dataset.mode; sessionSet(MODE_KEY, mode); paintMode(); return; }
+    if (ev.target.closest('[data-tally-more]')) {
+      showExtra = true;
+      $$('.tally-cell.is-extra', form).forEach((c) => { c.hidden = false; });
+      ev.target.closest('[data-tally-more]').hidden = true;
+      return;
+    }
     const ta = ev.target.closest('[data-tally]');
     if (ta) { if (tallyAdd(tally, ta.dataset.tally)) { buzz(); updateTally(); } return; }
     const tm = ev.target.closest('[data-tally-minus]');
     if (tm) { if (tallyAdd(tally, tm.dataset.tallyMinus, -1)) updateTally(); return; }
     if (ev.target.closest('[data-tally-undo]')) { if (tallyUndo(tally)) updateTally(); return; }
     const s = ev.target.closest('[data-status]');
-    if (s) { f.status = s.dataset.status; paintChoices(); return; }
+    if (s) { f.status = s.dataset.status; paintChoices(); paintSave(); return; }
     const st = ev.target.closest('[data-stage]');
     if (st) { f.lifeStage = f.lifeStage === st.dataset.stage ? '' : st.dataset.stage; paintChoices(); return; }
     const sx = ev.target.closest('[data-sex]');
@@ -450,6 +442,18 @@ export function openMarkSheet({ catalog, species = null, occurrence = null, poin
     if (ev.target.closest('[data-cancel]')) ov.close();
   });
   form.count.addEventListener('change', () => setCount(toInt(form.count.value)));
+  // Cifra escrita en una casilla del conteo: cuenta al salir del campo (un solo paso de «Deshacer»).
+  form.addEventListener('change', (ev) => {
+    const input = ev.target.closest('[data-tally-input]');
+    if (!input) return;
+    tallySet(tally, input.dataset.tallyInput, toInt(input.value) ?? 0);
+    input.value = tally.counts[input.dataset.tallyInput] ? String(tally.counts[input.dataset.tallyInput]) : '';
+    updateTally();
+  });
+  // Intro en una casilla no guarda la marca: solo confirma la cifra.
+  form.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Enter' && ev.target.closest('[data-tally-input]')) { ev.preventDefault(); ev.target.blur(); }
+  });
   form.matureCount.addEventListener('change', () => { setMatureCount(toInt(form.matureCount.value)); paintChoices(); });
   form.mature.addEventListener('change', () => {
     f.mature = form.mature.checked;
@@ -507,7 +511,7 @@ export function openMarkSheet({ catalog, species = null, occurrence = null, poin
       target = { pos: usePos };
     }
     save.disabled = true;
-    if (!editing && mode === 'tally') {
+    if (counting && f.status === 'present' && tallyTotal(tally) > 0) {
       const batch = tallyToMarks(categories, tally, { habitat: form.habitat.value, remarks: form.remarks.value });
       if (!batch.length) { showError('Cuenta al menos un individuo.', save); paintSave(); return; }
       const saved = [];
@@ -545,7 +549,6 @@ export function openMarkSheet({ catalog, species = null, occurrence = null, poin
   paintSpecies();
   paintPosition();
   paintKingdom();
-  if (!editing) paintMode();
   paintSave();
   watchGps();
   if (point && form.uncertainty) form.uncertainty.focus();

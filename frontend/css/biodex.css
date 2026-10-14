@@ -1293,26 +1293,29 @@ path.metric-gen-cell{stroke:var(--muted);stroke-width:2;stroke-dasharray:4 4;fil
 .settings .panel{background:var(--panel)}
 
 /* ===== P. F11e: conteo rápido (hoja de marca) y QR de invitación ================================== */
-.mode-toggle{display:grid;grid-template-columns:1fr 1fr}
-.mode-toggle button{min-height:var(--tap-big);font-weight:700}
 .tally{display:grid;gap:10px}
 .tally-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .tally-total{margin:0;font-size:var(--fs-md);color:var(--ink-soft)}
 .tally-sum{font-family:var(--font-display);font-size:var(--fs-xl);color:var(--ink);font-variant-numeric:tabular-nums}
 .tally-undo{min-height:var(--tap-big)}
 .tally-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.tally-cell{position:relative;display:grid}
-.tally-add{display:grid;justify-items:start;align-content:space-between;gap:4px;min-height:96px;padding:10px 12px;
-  border:2px solid var(--leaf-fill);border-radius:var(--radius-lg);background:var(--leaf-tint);color:var(--ink);
-  text-align:left;cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+.tally-cell{display:grid;border:2px solid var(--leaf-fill);border-radius:var(--radius-lg);overflow:hidden;background:var(--panel)}
+.tally-add{display:grid;justify-items:start;align-content:space-between;gap:4px;min-height:84px;padding:10px 12px;border:0;
+  background:var(--leaf-tint);color:var(--ink);text-align:left;cursor:pointer;touch-action:manipulation;
+  user-select:none;-webkit-user-select:none}
 .tally-add:active{background:var(--leaf-fill);color:var(--cream)}
-.tally-n{font-family:var(--font-display);font-size:2.2rem;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
-.tally-label{font-weight:700;font-size:var(--fs-sm);padding-right:44px}
-.tally-minus{position:absolute;right:6px;bottom:6px;width:var(--tap-min);height:var(--tap-min);border:2px solid var(--bark);
-  border-radius:var(--radius-md);background:var(--panel);color:var(--ink);font-size:1.4rem;font-weight:700;line-height:1;
-  cursor:pointer;touch-action:manipulation}
+.tally-label{font-weight:700;font-size:var(--fs-sm)}
+.tally-plus{font-family:var(--font-display);font-size:var(--fs-lg);font-weight:700;color:var(--leaf);line-height:1}
+.tally-add:active .tally-plus{color:var(--cream)}
+.tally-tools{display:grid;grid-template-columns:var(--tap-big) minmax(0,1fr);border-top:2px solid var(--leaf-fill)}
+.tally-minus{min-height:var(--tap-big);border:0;border-right:1px solid var(--line-strong);background:var(--panel);color:var(--ink);
+  font-size:1.4rem;font-weight:700;line-height:1;cursor:pointer;touch-action:manipulation}
 .tally-minus:disabled{opacity:.35;cursor:default}
-:root[data-theme="dark"] .tally-minus{border-color:var(--brass)}
+.tally-input{min-width:0;min-height:var(--tap-big);padding:0 10px;border:0;background:var(--panel);color:var(--ink);text-align:center;
+  font-family:var(--font-display);font-size:1.6rem;font-weight:700;font-variant-numeric:tabular-nums}
+.tally-input::placeholder{color:var(--faint)}
+.tally-input:focus{outline:none;box-shadow:inset 0 0 0 2px var(--leaf)}
+.tally-more{justify-self:start;padding-left:0;text-align:left}
 .tally .hint{margin:0}
 
 .qr-box{display:grid;justify-items:center;gap:10px;padding:12px;background:#FFFFFF;border-radius:var(--radius-lg)}
