@@ -5,6 +5,8 @@
 // ORCID. El owner invita (por email o con un enlace que se muestra UNA vez), revoca invitaciones,
 // cambia roles (conceder o quitar custodio explica lo que implica), expulsa y transfiere la propiedad
 // (pide la contraseña). Quien no es owner puede salir del catálogo.
+// F11e: tercera forma de invitar, «QR»: un enlace de varios usos que se enseña en grande para que lo
+// escaneen los que están al lado (components/qr.js). Cualquier enlace recién creado se puede ver en QR.
 // Niveles y Registro (owner): paneles a pantalla completa con su tabla.
 // Sin red se pinta lo último descargado («Datos de las HH:MM», meta de IndexedDB vía cachedRemote) y
 // todo lo que cambia algo se desactiva con «Necesita conexión».
@@ -17,6 +19,7 @@ import { openOverlay, confirmDialog } from '../components/overlay.js';
 import { cachedRemote, sensitivityLevels } from '../offline.js';
 import { handleNotMember, syncNow } from '../sync.js';
 import { outboxEntries } from '../marks.js';
+import { openInviteQr } from '../components/qr.js';
 
 export const ROLE_LABELS = { owner: 'Propietario', custodian: 'Custodio', editor: 'Editor', viewer: 'Lector' };
 const ROLE_HELP = {
@@ -66,7 +69,7 @@ export function mountTeam(el, catalog, { onLeft, onChanged } = {}) {
   let team = null;           // {data: {role, members}, at, fromDevice}
   let invites = null;        // {data: {invites}, at, fromDevice} (owner)
   let error = null;
-  let flash = null;          // invitación recién creada: {link, email, emailSent}
+  let flash = null;          // invitación recién creada: {link, email, emailSent, role, maxUses}
   let message = null;        // {kind, text}
   const isOwner = catalog.role === 'owner';
   const me = state.user && state.user.id;
@@ -148,13 +151,16 @@ export function mountTeam(el, catalog, { onLeft, onChanged } = {}) {
           <p class="flash-warn"><strong>Guárdalo ahora; no se volverá a mostrar.</strong></p>
           <div class="copy-row"><input class="copy-input" readonly value="${flash.link}" aria-label="Enlace de invitación">
             <button type="button" class="btn-secondary" data-copy>Copiar</button></div>
+          ${flash.email ? '' : html`<button type="button" class="btn-secondary" data-flash-qr>Mostrar QR</button>`}
           <button type="button" class="link-btn" data-flash-ok>Hecho</button>
         </div>` : html`
         <form class="form invite-form" novalidate>
           <div class="segmented" role="radiogroup" aria-label="Tipo de invitación">
             <button type="button" role="radio" data-kind="email" aria-checked="true" class="active">Por email</button>
             <button type="button" role="radio" data-kind="link" aria-checked="false">Enlace</button>
+            <button type="button" role="radio" data-kind="qr" aria-checked="false">QR</button>
           </div>
+          <p class="hint" data-for="qr" hidden>Para quien está a tu lado: se abre un QR que escanean con la cámara. Vale para varias personas.</p>
           <label class="field" data-for="email"><span>Email</span><input name="email" type="email" autocomplete="off" required></label>
           <div class="field-row">
             <label class="field"><span>Rol</span><select name="role">
@@ -192,6 +198,7 @@ export function mountTeam(el, catalog, { onLeft, onChanged } = {}) {
     on('[data-leave]', leave);
     on('[data-transfer]', transfer);
     on('[data-flash-ok]', () => { flash = null; paint(); });
+    on('[data-flash-qr]', showQr);
     on('[data-copy]', async (ev) => {
       const input = $('.copy-input', el);
       try { await navigator.clipboard.writeText(input.value); ev.target.textContent = 'Copiado'; } catch (e) {
@@ -214,7 +221,10 @@ export function mountTeam(el, catalog, { onLeft, onChanged } = {}) {
         x.setAttribute('aria-checked', String(on));
       });
       $('[data-for="email"]', form).hidden = kind !== 'email';
-      $('[data-for="link"]', form).hidden = kind !== 'link';
+      $('[data-for="link"]', form).hidden = kind === 'email';
+      $('[data-for="qr"]', form).hidden = kind !== 'qr';
+      // QR: pensado para un grupo en el campo → por defecto, todos los usos y dos días.
+      if (kind === 'qr') { form.maxUses.value = '20'; form.days.value = '2'; } else if (kind === 'link') { form.maxUses.value = '1'; form.days.value = '7'; }
     }));
     form.role.addEventListener('change', () => { $('[data-role-help]', form).textContent = ROLE_HELP[form.role.value] + '.'; });
     form.addEventListener('submit', async (ev) => {
@@ -232,9 +242,10 @@ export function mountTeam(el, catalog, { onLeft, onChanged } = {}) {
       button.disabled = true;
       try {
         const res = await apiPostJson(`${catPath(catalog)}/invites`, body);
-        flash = { link: res.link, email: body.email || null, emailSent: res.emailSent };
+        flash = { link: res.link, email: body.email || null, emailSent: res.emailSent, role: body.role, maxUses: body.maxUses || null };
         message = null;
         await load();
+        if (kind === 'qr') { showQr(); return; }
         const input = $('.copy-input', el);
         if (input) { input.focus(); input.select(); }
       } catch (e) {
@@ -243,6 +254,11 @@ export function mountTeam(el, catalog, { onLeft, onChanged } = {}) {
         button.disabled = false;
       }
     });
+  }
+
+  function showQr() {
+    if (!flash) return;
+    openInviteQr({ link: flash.link, catalog, role: ROLE_LABELS[flash.role] || flash.role, uses: flash.maxUses });
   }
 
   async function changeRole(userId, select) {

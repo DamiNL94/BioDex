@@ -4,7 +4,7 @@ Reglas que sigue todo el código de BioDex. El detalle de cada módulo está en 
 
 ## Stack
 - **Frontend** (`frontend/`): JavaScript sin framework ni paso de build, módulos ES nativos. Leaflet y
-  markercluster vendorizados, IndexedDB sin librerías y un Service Worker propio (`sw.js`).
+  markercluster vendorizados (y desde F11e qrcode-generator, MIT, para el QR de invitación), IndexedDB sin librerías y un Service Worker propio (`sw.js`).
 - **Backend** (`backend/`): PHP 8.3 sin framework + PDO. `Api/` tiene un fichero por recurso y `Lib/` las
   funciones de apoyo. Bajo `/api` solo se sirve JSON.
 - **Mapas**: WMTS del IGN (IGN Base, PNOA, MTN) a través de un proxy nginx en `/tiles/` (mismo origen), con
