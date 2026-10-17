@@ -769,9 +769,15 @@ svg.silhouette{display:block;width:62%;height:62%;fill:currentColor;stroke:none}
 .map-layers button{padding:0 12px;font-size:var(--fs-sm)}
 .map-bar-tools{display:flex;flex-wrap:wrap;gap:6px}
 .map-btn{padding:0 12px;font-size:var(--fs-xs);border-width:1px}
-.map-filters{margin:0 16px;display:grid;gap:12px;grid-template-columns:1fr 1fr}
-.map-filters .field:first-child,.map-filters .field:nth-child(2),.map-filters .form-actions{grid-column:1 / -1}
-.map-filters input[type="date"]{width:100%;min-height:var(--tap-min);padding:8px 10px;background:var(--panel);
+/* Columnas minmax(0,1fr): sin eso, el mínimo intrínseco del grupo Todas/Mías/Equipo y de los campos de fecha
+   ensanchaba la rejilla y la hoja se salía por la derecha en móviles estrechos. Anchos por clase (.mf-wide), no por
+   posición: en campo el <h3> de la hoja desplazaba los :nth-child y «Marcas» quedaba a media columna. */
+.map-filters{margin:0 16px;display:grid;gap:12px;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.map-filters>*{min-width:0}
+.map-filters .mf-wide,.map-filters .form-actions{grid-column:1 / -1}
+.map-filters .segmented{display:flex}
+.map-filters .segmented button{flex:1 1 0;min-width:0;padding:0 8px}
+.map-filters input[type="date"]{width:100%;min-width:0;min-height:var(--tap-min);padding:8px 10px;background:var(--panel);
   border:1px solid var(--line-strong);border-radius:var(--radius-md);color:var(--ink)}
 .map-note{padding:0 16px}
 .map-note:empty{display:none}
@@ -889,7 +895,9 @@ path.zone-draft{stroke:var(--sea);fill:var(--sea);fill-opacity:.08}
   .view.view-mapa{max-width:none;padding:14px 0 0;border-left:3px solid var(--leaf-fill)}
   .map-bar,.map-note{padding-left:32px;padding-right:32px}
   .map-filters{margin:0 32px;grid-template-columns:minmax(0,2fr) auto minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr) auto;align-items:end}
-  .map-filters .field:first-child,.map-filters .field:nth-child(2),.map-filters .form-actions{grid-column:auto}
+  .map-filters .mf-wide,.map-filters .form-actions{grid-column:auto}
+  .map-filters .segmented{display:inline-flex}
+  .map-filters .segmented button{flex:none;padding:0 16px}
   .map-note .guard-band{margin:0 -32px 6px;padding-left:32px}
   .zone-panel{left:12px;right:auto;top:12px;bottom:auto;width:400px;max-height:calc(100% - 24px);border-top:0;
     border:1px solid var(--line-strong);border-radius:var(--radius-lg)}

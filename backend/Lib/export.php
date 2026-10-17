@@ -555,29 +555,31 @@ function exportReadme(array $catalog, array $o, array $prep, array $meta): array
         $rows[] = $kv("dwca/", "Darwin Core Archive para GBIF u otras bases: occurrence.txt, measurementorfact.txt (individuos maduros), meta.xml y eml.xml. Para el validador de GBIF, comprime el CONTENIDO de dwca/ (meta.xml en la raíz del ZIP).");
     }
     if (in_array("plinian", $o["formats"], true)) $rows[] = $kv("pliniancore/", EXPORT_PLINIAN_README);
-    $rows[] = $kv("CSV", "Los mismos datos en CSV (UTF-8, separador «;», coma decimal) para abrir con doble clic en Excel en español.");
+    $rows[] = $kv("hojas/csv/", "Los mismos datos en CSV estándar para R, Python o QGIS: UTF-8, separador «,», punto decimal, fechas AAAA-MM-DD hh:mm (hora peninsular). Para una hoja de cálculo, usa este libro.");
     return $rows;
 }
 
-// --- CSV (Excel en español) ----------------------------------------------------------------------
+// --- CSV estándar (RFC 4180) ---------------------------------------------------------------------
+// Pensado para programas (R, Python, QGIS), no para hojas de cálculo: para eso va el XLSX. Antes era
+// «;» + coma decimal (Excel en español) y LibreOffice o Google Sheets lo partían mal.
 
 function exportCsvValue(mixed $cell): string {
     $style = null;
     if (is_array($cell)) { $style = $cell["s"] ?? null; $cell = $cell["v"] ?? null; }
     if ($cell === null) return "";
-    if ($cell instanceof DateTimeInterface) $s = $cell->format($style === "date" ? "d/m/Y" : "d/m/Y H:i");
+    if ($cell instanceof DateTimeInterface) $s = $cell->format($style === "date" ? "Y-m-d" : "Y-m-d H:i");
     elseif (is_float($cell) || (is_int($cell) && in_array($style, ["coord", "km2"], true))) {
-        $s = number_format((float) $cell, $style === "coord" ? 6 : ($style === "km2" ? 3 : 2), ",", "");
+        $s = number_format((float) $cell, $style === "coord" ? 6 : ($style === "km2" ? 3 : 2), ".", "");
     } else $s = (string) $cell;
-    return preg_match('/[;"\r\n]/u', $s) ? '"' . str_replace('"', '""', $s) . '"' : $s;
+    return preg_match('/[,"\r\n]/u', $s) ? '"' . str_replace('"', '""', $s) . '"' : $s;
 }
 
-/** Hoja → CSV con BOM, «;» y CRLF. En Observaciones se omite la fila de términos DwC. */
+/** Hoja → CSV UTF-8 sin BOM, «,» y CRLF (RFC 4180). En Observaciones se omite la fila de términos DwC. */
 function exportCsv(array $sheet): string {
     $rows = $sheet["rows"];
     if (($rows[1][0]["s"] ?? null) === "term") array_splice($rows, 1, 1);
-    $out = "\xEF\xBB\xBF";
-    foreach ($rows as $r) $out .= implode(";", array_map("exportCsvValue", $r)) . "\r\n";
+    $out = "";
+    foreach ($rows as $r) $out .= implode(",", array_map("exportCsvValue", $r)) . "\r\n";
     return $out;
 }
 
@@ -682,7 +684,7 @@ function exportBuild(PDO $pdo, string $catalogId, array $catalog, array $o, arra
             xlsxWrite($xlsxPath, $sheets, ["title" => $o["title"], "creator" => "BioDex " . $meta["version"]]);
             $zip->addFile($xlsxPath, "hojas/{$xlsxName}");
             foreach ($sheets as $sheet) {
-                if (!empty($sheet["csv"])) $zip->addFromString("hojas/{$sheet["csv"]}.csv", exportCsv($sheet));
+                if (!empty($sheet["csv"])) $zip->addFromString("hojas/csv/{$sheet["csv"]}.csv", exportCsv($sheet));
             }
         }
         if ($plinian !== null) $zip->addFromString(PLIC_FILE, $plinian);
@@ -719,7 +721,8 @@ function exportLeemeTxt(array $catalog, array $o, array $prep, array $meta, stri
         "        (meta.xml en la raíz del ZIP): https://www.gbif.org/tools/data-validator");
     if (in_array("sheets", $o["formats"], true)) array_push($lines,
         "hojas/  {$xlsxName} (ábrelo con doble clic; empieza por la pestaña «Léeme»)",
-        "        y los mismos datos en CSV (UTF-8, «;», coma decimal) para Excel en español.");
+        "hojas/csv/  los mismos datos en CSV estándar (UTF-8, «,», punto decimal, fechas AAAA-MM-DD hh:mm",
+        "        en hora peninsular) para R, Python o QGIS. Para mirarlos en una hoja de cálculo, usa el .xlsx.");
     if (in_array("plinian", $o["formats"], true)) array_push($lines,
         "pliniancore/  especies.xml: fichas de especie en Plinian Core " . PLIC_VERSION . " (TDWG), validado contra su XSD.",
         "        Taxonomía, categorías de amenaza oficiales (EIDOS) y, aparte, la evaluación BioDex de",

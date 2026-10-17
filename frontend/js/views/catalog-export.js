@@ -21,7 +21,7 @@ const MODES = [['public', 'Para publicar'], ['full', 'Completa (privada)']];
 const FORMATS = [
   ['dwc', 'Darwin Core (DwC-A)', true, 'Observaciones, para GBIF u otras bases de datos.', 'dwca/ (Darwin Core Archive)'],
   ['plinian', 'Plinian Core', false, 'Fichas de especie: estado de amenaza y distribución. No incluye observaciones.', 'pliniancore/ (Plinian Core)'],
-  ['sheets', 'Hojas (XLSX/CSV)', true, 'Para abrir con doble clic en Excel o LibreOffice.', 'hojas/ (Excel y CSV)'],
+  ['sheets', 'Hojas (XLSX/CSV)', true, 'XLSX para Excel o LibreOffice; CSV estándar para R, Python o QGIS.', 'hojas/ (Excel y CSV)'],
 ];
 
 const catPath = (catalog) => '/catalogs/' + encodeURIComponent(catalog.id);

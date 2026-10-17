@@ -178,7 +178,7 @@ check("no es una lista → 400", $code === 400, "HTTP {$code}");
 section("«Para publicar» con Plinian Core (editor)");
 [$code, $raw] = $exp($e, ["mode" => "public", "formats" => $all]);
 $pub = unzipAll($raw);
-check("200 con dwca/, hojas/, pliniancore/especies.xml y LEEME.txt", $code === 200 && isset($pub["dwca/occurrence.txt"], $pub["hojas/especies.csv"],
+check("200 con dwca/, hojas/, pliniancore/especies.xml y LEEME.txt", $code === 200 && isset($pub["dwca/occurrence.txt"], $pub["hojas/csv/especies.csv"],
     $pub[PLIC_FILE], $pub["LEEME.txt"]), "HTTP {$code} " . implode(", ", array_keys($pub)));
 $xml = $pub[PLIC_FILE] ?? "";
 check("valida contra el XSD vendorizado (" . PLIC_VERSION . ")", plinianValidate($xml) === [], implode(" | ", array_slice(plinianValidate($xml), 0, 3)));
@@ -295,7 +295,7 @@ foreach (["public" => $e, "full" => $o] as $mode => $jar) {
     $default = $zip([]);
     $explicit = $zip(["formats" => ["dwc", "sheets"]]);
     check("{$mode}: sin «formats», los ficheros de F10a y ni rastro de pliniancore", !array_filter(array_keys($default), fn($k) => str_starts_with($k, "pliniancore/"))
-        && !str_contains(implode("", $default), "pliniancore") && isset($default["dwca/eml.xml"], $default["hojas/notas.csv"]));
+        && !str_contains(implode("", $default), "pliniancore") && isset($default["dwca/eml.xml"], $default["hojas/csv/notas.csv"]));
     check("{$mode}: sin «formats» = [dwc, sheets] (salvo marcas de tiempo)", zipDiff($default, $explicit) === [], implode(", ", zipDiff($default, $explicit)));
     $dwcOnly = $zip(["formats" => ["dwc"]]);
     $dwca = fn(array $z) => array_filter($z, fn($k) => str_starts_with($k, "dwca/"), ARRAY_FILTER_USE_KEY);

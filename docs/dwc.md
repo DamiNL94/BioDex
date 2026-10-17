@@ -60,7 +60,7 @@ Sin maduros, no hay fichero ni `<extension>` en meta.xml.
 
 ## Hojas (`hojas/`)
 `BioDex_<catálogo>_<fecha>.xlsx` (Léeme, Observaciones, Especies, Evaluaciones UICN, Distribución, Notas) y los
-mismos datos en CSV (UTF-8 con BOM, `;`, coma decimal, fechas `dd/mm/aaaa hh:mm` en hora peninsular). Observaciones:
+mismos datos en `hojas/csv/` como CSV estándar para R, Python o QGIS (RFC 4180: UTF-8 sin BOM, `,`, punto decimal, fechas `AAAA-MM-DD hh:mm` en hora peninsular; hasta 1.5.1 eran `;` y coma decimal para Excel en español, y LibreOffice o Google Sheets los partían mal). Observaciones:
 cabecera en castellano con el término DwC debajo en gris, coordenadas con 6 decimales y UTM 30N (EPSG:25830), filas
 congeladas y autofiltro. Distribución: EOO/AOO definitivos del servidor (equipo, celda de 2 km), solo cifras.
 

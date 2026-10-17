@@ -454,14 +454,14 @@ export function mount(el, { go = () => {}, isStudio = () => false } = {}) {
     }
     render(form, html`
       ${studio ? '' : html`<h3 class="sheet-h">Filtros del mapa</h3>`}
-      <label class="field"><span>Especie</span><select name="taxonID"><option value="">Todas</option>
+      <label class="field mf-wide"><span>Especie</span><select name="taxonID"><option value="">Todas</option>
         ${taxa.map(({ t, name }) => html`<option value="${t}" ${filters.taxonID === t ? html`selected` : ''}>${name}</option>`)}</select></label>
-      <div class="field"><span id="whoLabel">Marcas</span>
+      <div class="field mf-wide"><span id="whoLabel">Marcas</span>
         <div class="segmented" role="radiogroup" aria-labelledby="whoLabel">
           ${[['all', 'Todas'], ['mine', 'Mías'], ['team', 'Equipo']].map(([v, label]) => html`<button type="button" role="radio"
             data-who="${v}" aria-checked="${filters.who === v}" class="${filters.who === v ? 'active' : ''}">${label}</button>`)}
         </div></div>
-      <label class="field"><span>Observador</span><select name="observer"><option value="">Cualquiera</option>
+      <label class="field mf-wide"><span>Observador</span><select name="observer"><option value="">Cualquiera</option>
         ${me && marks.some((o) => o.authorId === me) ? html`<option value="${me}" ${filters.observer === me ? html`selected` : ''}>Yo</option>` : ''}
         ${[...observers.entries()].map(([id, o]) => html`<option value="${id}" ${filters.observer === id ? html`selected` : ''}>${o.name}</option>`)}</select></label>
       <label class="field"><span>Desde</span><input type="date" name="from" value="${filters.from}"></label>

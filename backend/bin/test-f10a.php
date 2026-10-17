@@ -6,7 +6,7 @@
 //     coordenadas y con informationWithheld; nivel 4 exactas; también cuando exporta el owner.
 //   · occurrence.txt: una fila por marca no borrada, occurrenceID únicos, sin tabuladores internos,
 //     cabecera = meta.xml; meta.xml (contra el XSD de DwC si hay red) y eml.xml bien formados; XLSX
-//     válido (openpyxl si está; si no, cada XML del paquete); CSV con BOM y «;»; filtros.
+//     válido (openpyxl si está; si no, cada XML del paquete); CSV estándar (sin BOM, «,», punto decimal) en hojas/csv/; filtros.
 // Crea usuarios f10a-*@biodex.test, el catálogo «test-f10a …» y una especie propia; los borra al terminar.
 // ================================================================================================
 
@@ -200,7 +200,7 @@ check("200 y nombre …_publicar_….zip", $code === 200 && str_contains($hd["co
 $pub = unzipAll($raw);
 $names = array_keys($pub);
 foreach (["dwca/occurrence.txt", "dwca/measurementorfact.txt", "dwca/meta.xml", "dwca/eml.xml", "LEEME.txt",
-          "hojas/observaciones.csv", "hojas/especies.csv", "hojas/evaluaciones_uicn.csv", "hojas/distribucion.csv", "hojas/notas.csv"] as $f) {
+          "hojas/csv/observaciones.csv", "hojas/csv/especies.csv", "hojas/csv/evaluaciones_uicn.csv", "hojas/csv/distribucion.csv", "hojas/csv/notas.csv"] as $f) {
     check("contiene {$f}", isset($pub[$f]));
 }
 $xlsxName = current(array_filter($names, fn($n) => preg_match('#^hojas/BioDex_test_f10a_[0-9a-f]+_\d{4}-\d{2}-\d{2}\.xlsx$#', $n)));
@@ -313,10 +313,13 @@ if ($py === "si") {
 @unlink($tmpX);
 
 // CSV
-$csv = $pub["hojas/observaciones.csv"] ?? "";
+$csv = $pub["hojas/csv/observaciones.csv"] ?? "";
 $csvLines = explode("\r\n", rtrim($csv, "\r\n"));
-check("CSV: BOM, «;», cabecera en castellano y 5 filas", str_starts_with($csv, "\xEF\xBB\xBFID de la observación;Especie;") && count($csvLines) === 6);
-check("CSV: coma decimal en las coordenadas", str_contains($csv, ";37,050000;-3,350000;"));
+check("CSV: sin BOM, «,», cabecera en castellano y 5 filas", str_starts_with($csv, "ID de la observación,Especie,") && count($csvLines) === 6);
+$csvRows = array_map(fn($l) => str_getcsv($l, ",", '"', ""), $csvLines);
+check("CSV: todas las filas con las columnas de la cabecera", count(array_unique(array_map("count", $csvRows))) === 1);
+check("CSV: fechas ISO (AAAA-MM-DD hh:mm)", (bool) preg_match('/,\d{4}-\d{2}-\d{2} \d{2}:\d{2},/', $csv));
+check("CSV: punto decimal en las coordenadas", str_contains($csv, ",37.050000,-3.350000,"));
 check("LEEME.txt dice el modo", str_contains($pub["LEEME.txt"] ?? "", "PARA PUBLICAR"));
 
 // ------------------------------------------------------------------------------------------------
