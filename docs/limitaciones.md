@@ -1,13 +1,16 @@
-# Limitaciones conocidas (1.4.0 · F11d)
+# Limitaciones conocidas (1.5.1)
 
-Lista cerrada al terminar F10b (2026-09-30). Recoge lo que BioDex **no hace**, lo que hace de forma **orientativa** y
-lo que **no se ha podido probar** en esta máquina. Cada punto abierto de las listas de F3 a F10a está aquí o marcado
-como resuelto en su lista.
+Lista abierta al terminar F10b (2026-09-30) y puesta al día con 1.5.1 (2026-10-21). Recoge lo que BioDex **no hace**,
+lo que hace de forma **orientativa** y lo que **no se ha podido probar** en esta máquina. Cada punto abierto de las
+listas de F3 a F10a está aquí o marcado como resuelto en su lista.
 
 ## Alcance del prototipo
-- **Servidor local, sin publicar.** Todo corre en Docker en el portátil (`localhost:8090`); no hay dominio, copias
-  de seguridad ni HTTPS público. Para el móvil hace falta mkcert o depuración USB (README).
-- **Correo real sin probar.** Solo Mailpit. `Lib/mail.php` no hace AUTH ni STARTTLS: con un SMTP real no enviaría.
+- **Despliegue solo de prueba.** El desarrollo corre en Docker en local (`localhost:8090`); además hay un despliegue
+  de prueba en Railway (`docs/railway.md`) con HTTPS, pero con el dominio de Railway, sin copias de seguridad de MySQL
+  y con los datos de la demo cargados (las contraseñas de las cuentas demo están en el README).
+- **Sin correo real.** En local, Mailpit; en Railway no hay SMTP, así que el registro no verifica por correo: las cuentas
+  sin verificar entran igual y se unen a un equipo con enlace o QR. `Lib/mail.php` no hace AUTH ni STARTTLS: con un
+  SMTP real no enviaría.
 - **Los datos de la demo son ficticios.** Especies reales de EIDOS, marcas inventadas. `datasetName` sale con el nombre
   del catálogo («… (datos ficticios)») y el EML con «Datos ficticios para demostración: no publicar».
 
@@ -57,6 +60,8 @@ parado de verdad), no en un teléfono:
 - Descargas largas de zonas con el móvil bloqueado (el navegador puede congelar la pestaña; se reanuda).
 - Actualizar de v7 a v8 con datos (IndexedDB 3 → 4) y evaluar sin red de verdad.
 - Lector de pantalla (NVDA, TalkBack).
+- Conteo (F11e) en el campo: toques seguidos con prisa, «Deshacer» y cifra escrita; el QR de invitación leído con la
+  cámara de otro móvil (comprobado solo que el SVG generado se decodifica).
 - `navigator.storage.persist()`: en headless lo deniega el navegador; instalada, Edge y Chrome suelen concederlo.
 
 ## Comportamientos conocidos
