@@ -1,10 +1,38 @@
 # BioDex
 
-PWA de campo para biólogos: catálogos de especies (EIDOS), observaciones offline geolocalizadas, evaluación UICN y exportación Darwin Core.
+PWA de campo para biólogos de la conservación: catálogos de especies creados desde EIDOS (MITECO), marcas
+geolocalizadas que funcionan sin conexión, evaluación orientativa según los criterios de la UICN y exportación en
+Darwin Core y Plinian Core para volcar los datos en bases internacionales como GBIF.
 
-Prototipo (1.0.0 · demo): servidor local, sin publicar. Lo que aún no hace o no se ha probado:
-[`docs/limitaciones.md`](docs/limitaciones.md). Guion de la demostración: [`docs/demo.md`](docs/demo.md).
-Convenciones de código, permisos y seguridad de las coordenadas: [`docs/convenciones.md`](docs/convenciones.md).
+**Versión 1.5.1** · prototipo. Hay un despliegue de prueba en Railway (`docs/railway.md`); el desarrollo se hace en
+local con Docker. Lo que aún no hace o no se ha probado: [`docs/limitaciones.md`](docs/limitaciones.md). Guion de la
+demostración: [`docs/demo.md`](docs/demo.md). Convenciones de código, permisos y seguridad de las coordenadas:
+[`docs/convenciones.md`](docs/convenciones.md).
+
+## Qué hace
+- **Dos modos según la pantalla.** *Estudio* (≥ 900 px): crear catálogos, especies y equipos, revisar y exportar
+  datos. *Campo* (< 900 px): mapa a pantalla completa, lista de especies y «Listo para el campo» para llevarse el
+  catálogo, las fichas y las teselas del mapa antes de salir.
+- **Marcar es contar.** En una marca de presencia se cuentan individuos por categoría con un toque (fauna: macho,
+  hembra, juvenil, larva…; flora: plántula, vegetativa, en flor, en fruto…). Al guardar sale una ocurrencia Darwin Core
+  por categoría en el mismo punto, con los individuos maduros calculados. Las **ausencias** también se registran.
+- **Sin conexión de verdad.** IndexedDB y Service Worker propios: con el servidor caído o sin cobertura se sigue
+  marcando, y las marcas pendientes se sincronizan solas al volver la conexión.
+- **Coordenadas sensibles protegidas.** Cada especie tiene un nivel de sensibilidad; según el rol, el servidor
+  entrega las marcas de otros ya generalizadas y la coordenada exacta nunca sale hacia quien no debe.
+- **Equipos con roles** (owner, custodio, editor) e invitaciones por enlace o **código QR** para unirse en el campo.
+- **UICN.** EOO y AOO (celdas de 2 km por defecto, 1 km opcional) calculados en UTM 30N, y un asistente que recorre
+  los criterios A–E y explica cada umbral. El resultado es orientativo.
+- **Exportación** desde el servidor, completa (solo owner y custodio, queda registrada) o «para publicar»
+  (generalizada): Darwin Core Archive, fichas en Plinian Core 3.2.2.7 validadas contra su XSD, libro XLSX y CSV estándar
+  (RFC 4180) para R, Python o QGIS.
+- **Fotos de las especies**: Fototeca del MITECO vía EIDOS y, si no hay, iNaturalist, GBIF o Wikimedia Commons con
+  su autor y licencia; si ninguna sirve, una silueta propia del grupo.
+
+## Stack
+JavaScript sin framework ni paso de compilación (Leaflet y markercluster vendorizados, IndexedDB sin librerías,
+Service Worker propio) · PHP 8.3 sin framework + PDO · MySQL 8.4 · Docker (nginx, php-fpm, MySQL, Adminer, Mailpit) ·
+CI en GitHub Actions · despliegue de prueba en Railway (un contenedor nginx + php-fpm).
 
 ## Instalación desde cero (10 pasos)
 Necesitas Docker Desktop (Compose v2), Git, Edge o Chrome y conexión a internet (EIDOS y las teselas del IGN).
