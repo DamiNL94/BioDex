@@ -18,7 +18,8 @@ require_once __DIR__ . "/sync.php";      // syncNextSeq(), syncIsoUtc()
 
 /**
  * Definición de cada parámetro. type: number (value numérico) · text · choice (uno de `choices`).
- * criteria: lo que bloquea si falta (se pinta en la ficha; F11g y F11h lo usan para el asistente).
+ * criteria: lo que bloquea si falta (se pinta en la ficha y en la pestaña Evaluación UICN, F11g).
+ * fact (F11g): «sí · no · desconocido» (PARAMETER_FACT_CHOICES), con calidad, fuente y justificación.
  */
 const SPECIES_PARAMETERS = [
     "generation_length"   => ["type" => "number", "unit" => "años", "min" => 0.1, "max" => 500,
@@ -34,7 +35,29 @@ const SPECIES_PARAMETERS = [
     "life_form"           => ["type" => "choice", "unit" => null,
                               "choices" => ["perennial", "annual", "biennial", "monocarpic", "other"],
                               "criteria" => []],
+    // F11g: superficie de hábitat ocupado (maduros estimados = densidad × superficie; sin ella, la AOO como cota).
+    "occupied_habitat_km2" => ["type" => "number", "unit" => "km²", "min" => 0.000001, "max" => 10000000,
+                               "criteria" => ["C, D (maduros estimados)"]],
+    // F11g: hechos de B y C. BioDex puede SUGERIR uno (b(iii) con impactos en curso), pero solo cuenta
+    // cuando alguien lo fija aquí.
+    "decline_b_i"   => ["type" => "fact", "unit" => null, "criteria" => ["B b(i)"]],
+    "decline_b_ii"  => ["type" => "fact", "unit" => null, "criteria" => ["B b(ii)"]],
+    "decline_b_iii" => ["type" => "fact", "unit" => null, "criteria" => ["B b(iii)"]],
+    "decline_b_iv"  => ["type" => "fact", "unit" => null, "criteria" => ["B b(iv)"]],
+    "decline_b_v"   => ["type" => "fact", "unit" => null, "criteria" => ["B b(v)", "C2"]],
+    "fluct_c_i"     => ["type" => "fact", "unit" => null, "criteria" => ["B c(i)"]],
+    "fluct_c_ii"    => ["type" => "fact", "unit" => null, "criteria" => ["B c(ii)"]],
+    "fluct_c_iii"   => ["type" => "fact", "unit" => null, "criteria" => ["B c(iii)"]],
+    "fluct_c_iv"    => ["type" => "fact", "unit" => null, "criteria" => ["B c(iv)", "C2b"]],
+    "plausible_threat" => ["type" => "fact", "unit" => null, "criteria" => ["D2"]],
+    // F11g: ajuste regional (Directrices regionales v4.0, paso 2).
+    "regional_endemic"              => ["type" => "fact", "unit" => null, "criteria" => ["Ajuste regional"]],
+    "regional_immigration"          => ["type" => "fact", "unit" => null, "criteria" => ["Ajuste regional"]],
+    "regional_immigration_decrease" => ["type" => "fact", "unit" => null, "criteria" => ["Ajuste regional"]],
+    "regional_sink"                 => ["type" => "fact", "unit" => null, "criteria" => ["Ajuste regional"]],
 ];
+const PARAMETER_FACT_CHOICES = ["yes", "no", "unknown"];
+const PARAMETER_JUSTIFICATION_MAX = 4000;
 const PARAMETER_QUALITIES = ["observed", "estimated", "inferred", "suspected", "projected"];
 const PARAMETER_SOURCE_MAX = 1000;
 
@@ -58,6 +81,7 @@ function parameterOut(array $r): array {
         "valueMax" => $num($r["value_max"]),
         "quality"  => $r["quality"],
         "source"   => $r["source"],
+        "justification" => $r["justification"] ?? null,
         "setById"  => $r["set_by"] !== null ? (int) $r["set_by"] : null,
         "setBy"    => $r["set_by_name"] ?? null,
     ];
@@ -114,10 +138,11 @@ function parameterFields(string $key, array $b): array {
         }
         if ($value === null && $min === null) apiError("Falta «value» (o el intervalo «valueMin»–«valueMax»).", 400);
         $value = $value === null ? null : rtrim(rtrim(sprintf("%.6F", $value), "0"), ".");
-    } elseif ($def["type"] === "choice") {
+    } elseif ($def["type"] === "choice" || $def["type"] === "fact") {
+        $choices = $def["choices"] ?? PARAMETER_FACT_CHOICES;
         $value = $b["value"] ?? null;
-        if (!is_string($value) || !in_array($value, $def["choices"], true)) {
-            apiError("«value» debe ser uno de: " . implode(", ", $def["choices"]) . ".", 400);
+        if (!is_string($value) || !in_array($value, $choices, true)) {
+            apiError("«value» debe ser uno de: " . implode(", ", $choices) . ".", 400);
         }
     } else {
         $value = trim((string) ($b["value"] ?? ""));
@@ -131,8 +156,12 @@ function parameterFields(string $key, array $b): array {
     }
     $source = trim((string) ($b["source"] ?? ""));
     if (mb_strlen($source) > PARAMETER_SOURCE_MAX) apiError("«source» admite " . PARAMETER_SOURCE_MAX . " caracteres.", 400);
+    $justification = trim((string) ($b["justification"] ?? ""));
+    if (mb_strlen($justification) > PARAMETER_JUSTIFICATION_MAX) {
+        apiError("«justification» admite " . PARAMETER_JUSTIFICATION_MAX . " caracteres.", 400);
+    }
     return ["value" => $value, "value_min" => $min, "value_max" => $max, "quality" => $quality,
-            "source" => $source === "" ? null : $source];
+            "source" => $source === "" ? null : $source, "justification" => $justification === "" ? null : $justification];
 }
 
 /** Texto corto de un valor para access_log: «3 años (2–4) · estimado». */

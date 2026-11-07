@@ -10,7 +10,8 @@ const AUDIT_ACTIONS = ["view_exact", "export_full", "set_level", "grant_role", "
                        "invite_created", "invite_revoked", "member_joined", "member_removed", "member_left",
                        "set_reference",    // F8b: evaluación UICN de referencia del catálogo
                        "photo_review",     // F11b/F11d: revisión de una foto de respaldo (iNaturalist o GBIF)
-                       "set_parameter"];   // F11f: fijar, cambiar o borrar un parámetro de especie
+                       "set_parameter",    // F11f: fijar, cambiar o borrar un parámetro de especie
+                       "set_locations"];   // F11g: confirmar o cambiar el nº de localidades de una especie
 
 /** IP del cliente tal como la ve PHP (nginx pasa REMOTE_ADDR). null en CLI. */
 function clientIp(): ?string {

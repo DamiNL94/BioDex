@@ -471,7 +471,7 @@ if ($paramsPath) {
             ->execute([$userId, syncNextSeq($pdo), $catalogId, $taxonID, $paramKey]);
     } else {
         $same = $live && (string) $old["value"] === (string) $fields["value"] && $old["quality"] === $fields["quality"]
-            && $old["source"] === $fields["source"]
+            && $old["source"] === $fields["source"] && ($old["justification"] ?? null) === $fields["justification"]
             && ($old["value_min"] === null ? $fields["value_min"] === null : (float) $old["value_min"] === $fields["value_min"])
             && ($old["value_max"] === null ? $fields["value_max"] === null : (float) $old["value_max"] === $fields["value_max"]);
         if ($same) {
@@ -481,13 +481,13 @@ if ($paramsPath) {
             respond(["taxonID" => $taxonID, "parameter" => parameterOut($stmt->fetch()), "changed" => false]);
         }
         $pdo->prepare(
-            "INSERT INTO species_parameters (catalog_id, taxonID, param_key, value, value_min, value_max, quality, source, set_by, set_at, deleted_at, server_seq)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(), NULL, ?)
+            "INSERT INTO species_parameters (catalog_id, taxonID, param_key, value, value_min, value_max, quality, source, justification, set_by, set_at, deleted_at, server_seq)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(), NULL, ?)
              ON DUPLICATE KEY UPDATE value = VALUES(value), value_min = VALUES(value_min), value_max = VALUES(value_max),
-                quality = VALUES(quality), source = VALUES(source), set_by = VALUES(set_by), set_at = UTC_TIMESTAMP(), deleted_at = NULL,
+                quality = VALUES(quality), source = VALUES(source), justification = VALUES(justification), set_by = VALUES(set_by), set_at = UTC_TIMESTAMP(), deleted_at = NULL,
                 server_seq = VALUES(server_seq)"
         )->execute([$catalogId, $taxonID, $paramKey, $fields["value"], $fields["value_min"], $fields["value_max"],
-                    $fields["quality"], $fields["source"], $userId, syncNextSeq($pdo)]);
+                    $fields["quality"], $fields["source"], $fields["justification"], $userId, syncNextSeq($pdo)]);
     }
     $stmt = $pdo->prepare(parameterSelect("p.catalog_id = ? AND p.taxonID = ? AND p.param_key = ?"));
     $stmt->execute([$catalogId, $taxonID, $paramKey]);
