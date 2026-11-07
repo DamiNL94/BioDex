@@ -5,7 +5,8 @@
 // ================================================================================================
 
 import { readFileSync } from 'node:fs';
-import { evaluateIucn, NO_THREAT_MESSAGE } from './iucn-engine.js';
+import { evaluateIucn, assessIucn, NO_THREAT_MESSAGE } from './iucn-engine.js';
+import { prepareRecords, matureEstimate, subpopulations, fragmentation, proposeLocations, minstd } from './iucn-quantifiers.js';
 
 const criteria = JSON.parse(readFileSync(new URL('./iucn-criteria.json', import.meta.url), 'utf8'));
 
@@ -20,79 +21,66 @@ const check = (label, ok, detail = '') => {
 // B con disminución continua del hábitat (b(iii)) y las localidades indicadas.
 const B = (eoo, aoo, locations, extra = {}) => ({ B: { eoo, aoo, locations, decline: ['iii'], ...extra } });
 
-// [nombre, inputs, categoría esperada, cadena esperada]
-const TABLE = [
-  // --- B: el caso del recorrido y sus bordes -----------------------------------------------------
-  ['Artemisia: EOO 80, AOO 12, 3 localidades, b(iii) → EN, no CR', B(80, 12, 3), 'EN', 'EN B1ab(iii)+2ab(iii)'],
-  ['Artemisia con 1 localidad → CR B1ab(iii)', B(80, 12, 1), 'CR', 'CR B1ab(iii)'],
-  ['B1: EOO 99 km² con 1 localidad → CR', B(99, null, 1), 'CR', 'CR B1ab(iii)'],
-  ['B1: EOO 100 km² con 1 localidad → EN', B(100, null, 1), 'EN', 'EN B1ab(iii)'],
-  ['B1: EOO 4999 → EN', B(4999, null, 5), 'EN', 'EN B1ab(iii)'],
-  ['B1: EOO 5000 → VU', B(5000, null, 5), 'VU', 'VU B1ab(iii)'],
-  ['B1: EOO 20000 → no cumple', B(20000, null, 5), null, null],
-  ['B2: AOO 9 con 1 localidad → CR', B(null, 9, 1), 'CR', 'CR B2ab(iii)'],
-  ['B2: AOO 10 con 1 localidad → EN', B(null, 10, 1), 'EN', 'EN B2ab(iii)'],
-  ['B2: AOO 1999 → VU; 2000 no', B(null, 1999, 8), 'VU', 'VU B2ab(iii)'],
-  ['B2: AOO 2000 → no cumple', B(null, 2000, 8), null, null],
-  ['B(a): 5 localidades → EN', B(3000, null, 5), 'EN', 'EN B1ab(iii)'],
-  ['B(a): 6 localidades → VU', B(3000, null, 6), 'VU', 'VU B1ab(iii)'],
-  ['B(a): 10 localidades → VU; 11 → (a) no se cumple', B(3000, null, 10), 'VU', 'VU B1ab(iii)'],
-  ['B(a): 11 localidades → solo (b) → no cumple', B(3000, null, 11), null, null],
-  ['B: un solo subcriterio (b) sin localidades → no cumple', { B: { eoo: 50, aoo: 8, decline: ['iii'] } }, null, null],
-  ['B: fragmentación severa vale como (a) en CR', { B: { eoo: 50, severelyFragmented: true, decline: ['i', 'iii'] } }, 'CR', 'CR B1ab(i,iii)'],
-  ['B: (b) y (c) sin (a) → cumple en CR', { B: { eoo: 50, decline: ['v'], fluctuation: ['iv'] } }, 'CR', 'CR B1b(v)c(iv)'],
-  ['B: EOO 5 < AOO 12 → EOO = 12 (y aviso) → CR B1', B(5, 12, 1), 'CR', 'CR B1ab(iii)'],
+// --- Casos compartidos con PHP (shared/iucn-cases.json; bin/test-f11g.php los pasa también) ----------
+const CASES = JSON.parse(readFileSync(new URL('./iucn-cases.json', import.meta.url), 'utf8'));
+const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
-  // --- A ----------------------------------------------------------------------------------------
-  ['A2: 80 % con b y c → CR', { A: { reductionPct: 80, subcriterion: 'A2', basis: ['b', 'c'] } }, 'CR', 'CR A2bc'],
-  ['A2: 79 % → EN', { A: { reductionPct: 79, subcriterion: 'A2', basis: ['b', 'c'] } }, 'EN', 'EN A2bc'],
-  ['A2: 30 % → VU; 29 % no', { A: { reductionPct: 30, subcriterion: 'A2', basis: ['c'] } }, 'VU', 'VU A2c'],
-  ['A2: 29 % → no cumple', { A: { reductionPct: 29, subcriterion: 'A2', basis: ['c'] } }, null, null],
-  ['A1: 90 % → CR; umbrales propios de A1', { A: { reductionPct: 90, subcriterion: 'A1', basis: ['a'] } }, 'CR', 'CR A1a'],
-  ['A1: 89 % → EN', { A: { reductionPct: 89, subcriterion: 'A1', basis: ['a'] } }, 'EN', 'EN A1a'],
-  ['A1: 49 % → no cumple (VU exige 50)', { A: { reductionPct: 49, subcriterion: 'A1', basis: ['a'] } }, null, null],
-  ['A3 solo con (a) → rechazado, no cumple', { A: { reductionPct: 85, subcriterion: 'A3', basis: ['a'] } }, null, null],
-  ['A3 con (a) y (b) → (a) fuera: CR A3b', { A: { reductionPct: 85, subcriterion: 'A3', basis: ['a', 'b'] } }, 'CR', 'CR A3b'],
-
-  // --- C ----------------------------------------------------------------------------------------
-  ['C1: 249 maduros, 25 % en 3 años → CR', { C: { mature: 249, c1DeclinePct: 25, c1Years: 3 } }, 'CR', 'CR C1'],
-  ['C1: 250 maduros → EN (CR exige < 250)', { C: { mature: 250, c1DeclinePct: 25, c1Years: 3 } }, 'EN', 'EN C1'],
-  ['C1: 24 % en 3 años → no CR; EN tampoco (20 % en 5 años: sí) → EN', { C: { mature: 200, c1DeclinePct: 24, c1Years: 3 } }, 'EN', 'EN C1'],
-  ['C1: plazo con generaciones: 25 % en 12 años con generación de 12 → CR', { generationLength: 12, C: { mature: 100, c1DeclinePct: 25, c1Years: 12 } }, 'CR', 'CR C1'],
-  ['C2a(i): máx. 50 por subpoblación y disminución → CR', { C: { mature: 200, continuingDecline: true, maxPerSubpop: 50 } }, 'CR', 'CR C2a(i)'],
-  ['C2a(i): máx. 51 → EN', { C: { mature: 200, continuingDecline: true, maxPerSubpop: 51 } }, 'EN', 'EN C2a(i)'],
-  ['C2 sin disminución continua → no cumple', { C: { mature: 200, maxPerSubpop: 10 } }, null, null],
-  ['C2a(ii) 96 % y fluctuaciones con 2000 maduros → EN C2a(ii)b', { C: { mature: 2000, continuingDecline: true, pctInOneSubpop: 96, extremeFluctuation: true } }, 'EN', 'EN C2a(ii)b'],
-  ['C1+2: combinación en la misma categoría', { C: { mature: 9000, c1DeclinePct: 10, c1Years: 10, continuingDecline: true, pctInOneSubpop: 100 } }, 'VU', 'VU C1+2a(ii)'],
-  ['C: sin maduros → no se evalúa', { C: { c1DeclinePct: 50, c1Years: 3 } }, null, null],
-
-  // --- D ----------------------------------------------------------------------------------------
-  ['D: 49 maduros → CR D', { D: { mature: 49 } }, 'CR', 'CR D'],
-  ['D: 50 maduros → EN D', { D: { mature: 50 } }, 'EN', 'EN D'],
-  ['D: 999 maduros → VU D1', { D: { mature: 999 } }, 'VU', 'VU D1'],
-  ['D: 1000 maduros → no cumple', { D: { mature: 1000 } }, null, null],
-  ['D2 solo VU (AOO 19 y amenaza), aunque sea poco', { D: { plausibleThreat: true, aoo: 19 } }, 'VU', 'VU D2'],
-  ['D2: AOO 20 y 6 localidades → no cumple', { D: { plausibleThreat: true, aoo: 20, locations: 6 } }, null, null],
-  ['D2 sin amenaza plausible → no cumple', { D: { aoo: 4, locations: 1 } }, null, null],
-  ['D1+2 en VU', { D: { mature: 800, plausibleThreat: true, locations: 5 } }, 'VU', 'VU D1+2'],
-
-  // --- E ----------------------------------------------------------------------------------------
-  ['E: 50 % en 10 años → CR', { E: { probabilityPct: 50, horizonYears: 10 } }, 'CR', 'CR E'],
-  ['E: 49 % en 10 años → EN', { E: { probabilityPct: 49, horizonYears: 10 } }, 'EN', 'EN E'],
-  ['E: 20 % en 20 años → EN; en 21 → VU', { E: { probabilityPct: 20, horizonYears: 21 } }, 'VU', 'VU E'],
-  ['E: 9 % en 100 años → no cumple', { E: { probabilityPct: 9, horizonYears: 100 } }, null, null],
-
-  // --- Cadenas combinadas -----------------------------------------------------------------------
-  ['Combinada VU A2bc; D2', { A: { reductionPct: 35, subcriterion: 'A2', basis: ['b', 'c'] }, D: { plausibleThreat: true, locations: 3 } }, 'VU', 'VU A2bc; D2'],
-  ['Combinada: solo figura lo de la categoría más alta', { A: { reductionPct: 35, subcriterion: 'A2', basis: ['b'] }, ...B(80, 12, 3), D: { mature: 40 } }, 'CR', 'CR D'],
-  ['Combinada EN A2c; B1ab(iii)+2ab(iii); C2a(i)', { A: { reductionPct: 60, subcriterion: 'A2', basis: ['c'] }, ...B(80, 12, 3),
-    C: { mature: 1500, continuingDecline: true, maxPerSubpop: 200 } }, 'EN', 'EN A2c; B1ab(iii)+2ab(iii); C2a(i)'],
-];
-
-for (const [name, inputs, cat, str] of TABLE) {
-  const r = evaluateIucn(inputs, criteria);
-  check(name, r.category === cat && r.criteriaString === str, `${r.category} · ${r.criteriaString}`);
+for (const c of CASES.engine) {
+  const r = c.fn === 'assess' ? assessIucn(c.inputs, criteria) : evaluateIucn(c.inputs, criteria);
+  const e = c.expect;
+  const bad = [];
+  if ('category' in e && r.category !== e.category) bad.push(`categoría ${r.category}`);
+  if ('criteriaString' in e && r.criteriaString !== e.criteriaString) bad.push(`cadena ${r.criteriaString}`);
+  if ('baseCategory' in e && r.baseCategory !== e.baseCategory) bad.push(`base ${r.baseCategory}`);
+  if ('displayCategory' in e && r.displayCategory !== e.displayCategory) bad.push(`mostrada ${r.displayCategory}`);
+  if ('basis' in e && r.basis !== e.basis) bad.push(`base ${r.basis}`);
+  if ('dataMinimum' in e && r.dataMinimum !== e.dataMinimum) bad.push(`datos mínimos ${r.dataMinimum}`);
+  if ('rangeLow' in e && r.range.low !== e.rangeLow) bad.push(`rango bajo ${r.range.low}`);
+  if ('rangeHigh' in e && r.range.high !== e.rangeHigh) bad.push(`rango alto ${r.range.high}`);
+  if ('crosses' in e && r.range.crossesCategories !== e.crosses) bad.push('cruce');
+  if ('regionalApplied' in e && r.regional.applied !== e.regionalApplied) bad.push(`ajuste ${r.regional.applied}`);
+  if ('warningIncludes' in e && !r.warnings.some((w) => w.includes(e.warningIncludes))) bad.push(`avisos ${r.warnings.join(' | ')}`);
+  check(c.name, !bad.length, bad.join('; '));
 }
+
+/** Ejecuta un caso de cuantificadores → lo comparable con `expect` (igual en bin/test-f11g.php). */
+function runQuantifierCase(c) {
+  const pts = prepareRecords(c.records);
+  if (c.kind === 'mature') {
+    const m = matureEstimate(pts, { habitatKm2: c.habitatKm2 ?? null, aooKm2: c.aooKm2 ?? null });
+    return { min: m.min, best: m.best, max: m.max, nCounted: m.nCounted, doubleCountPairs: m.doubleCountPairs, method: m.method,
+      areaSource: m.areaSource, density: m.density, warnings: m.warnings };
+  }
+  const mature = matureEstimate(pts, {});
+  const sp = subpopulations(pts, c.separationKm, mature);
+  if (c.kind === 'subpops') {
+    return { count: sp.subpops.length, sizes: sp.subpops.map((s) => s.nRecords), nearestKm: sp.subpops.map((s) => s.nearestKm),
+      labelsX: sp.subpops.map((s) => Math.min(...s.points.map((p) => p.x))) };
+  }
+  if (c.kind === 'fragmentation') {
+    const f = fragmentation(sp.subpops, { minViable: c.minViable ?? null, dispersalKm: c.dispersalKm ?? null });
+    return { status: f.status, severe: f.severe, pctAoo: f.pctAoo, pctIndividuals: f.pctIndividuals, missing: f.missing };
+  }
+  const l = proposeLocations(sp.subpops, c.impacts || []);
+  return { count: l.count, threatened: l.threatened, groups: l.groups.map((g) => g.subpops) };
+}
+
+for (const c of CASES.quantifiers) {
+  const got = runQuantifierCase(c);
+  const bad = [];
+  for (const [k, v] of Object.entries(c.expect)) {
+    if (k === 'warningIncludes') { if (!got.warnings.some((w) => w.includes(v))) bad.push(`avisos ${got.warnings.join(' | ')}`); continue; }
+    if (!same(got[k], v)) bad.push(`${k} ${JSON.stringify(got[k])}`);
+  }
+  check(c.name, !bad.length, bad.join('; '));
+}
+
+// Bootstrap: misma semilla → mismo intervalo (la cifra exacta está en el caso y la comprueba también PHP).
+const bootCase = CASES.quantifiers.find((c) => c.expect.density);
+check('Bootstrap con semilla fija: dos ejecuciones dan lo mismo', bootCase
+  && same(runQuantifierCase(bootCase).density, runQuantifierCase(bootCase).density));
+check('MINSTD: primeros valores de la semilla 1', same([1, 2, 3].map(minstd(1)), [1, 2, 3].map(minstd(1))) && Math.abs(minstd(1)() - 48270 / 2147483646) < 1e-15);
+
 
 // --- Detalle, avisos y salidas sin categoría de amenaza -------------------------------------------
 let r = evaluateIucn(B(80, 12, 3), criteria);

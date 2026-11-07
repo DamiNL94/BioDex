@@ -414,3 +414,131 @@ export function criterionSummary(res) {
   if (res.status === 'incomplete') return 'Datos incompletos';
   return res.category ? `${res.category} · ${res.notation}` : 'No alcanza umbrales';
 }
+
+// ================================================================================================
+// F11g · Evaluación con incertidumbre (docs/iucn.md › «Cuantificadores e incertidumbre»).
+// ------------------------------------------------------------------------------------------------
+//   assessIucn(inputs, criteria) → evaluateIucn() con el MEJOR valor de cada dato + {displayCategory,
+//                                  range, dataMinimum, possiblyExtinct, regionalV4}
+// Un dato numérico puede llegar como número o como {best, min, max} (calidad y fuente van aparte). Se
+// evalúa tres veces: con el mejor valor, con el extremo MENOS amenazante de cada intervalo y con el MÁS
+// amenazante (rango plausible de las Guidelines). La categoría propuesta es la del mejor valor. Además:
+//   · Ningún criterio evaluable (todos sin datos o incompletos) → DD («menos de los datos mínimos»).
+//   · CR(PE) solo si el usuario lo decide (`possiblyExtinct: true`) y la categoría es CR; nunca solo.
+//   · Ajuste regional v4.0 (paso 2) por preguntas: `regionalV4 {endemic, immigration, immigrationDecrease,
+//     sink}` con yes · no · unknown → sin ajuste, rebajar o subir un escalón, con la justificación.
+// Port en PHP: backend/Lib/iucn.php (mismos casos: shared/iucn-cases.json).
+// ================================================================================================
+
+// Dirección de la amenaza de cada dato con intervalo: «lower» = cuanto más bajo, más amenazada.
+export const UNCERTAIN_FIELDS = {
+  A: { reductionPct: 'higher' },
+  B: { eoo: 'lower', aoo: 'lower', locations: 'lower' },
+  C: { mature: 'lower', maxPerSubpop: 'lower', pctInOneSubpop: 'higher', c1DeclinePct: 'higher' },
+  D: { mature: 'lower', aoo: 'lower', locations: 'lower' },
+  E: { probabilityPct: 'higher' },
+};
+const CATEGORY_RANK = { CR: 0, EN: 1, VU: 2 };
+const rankOf = (c) => (c in CATEGORY_RANK ? CATEGORY_RANK[c] : 3);
+const isRange = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
+
+/** Valor de un dato con intervalo para un escenario: best · low (menos amenaza) · high (más amenaza). */
+function scenarioValue(v, dir, scenario) {
+  if (!isRange(v)) return v;
+  const best = isMissing(v.best) ? null : v.best;
+  const lo = isMissing(v.min) ? best : v.min;
+  const hi = isMissing(v.max) ? best : v.max;
+  if (scenario === 'best') return best !== null ? best : (lo !== null ? lo : hi);
+  const wantHigh = (scenario === 'low') === (dir === 'lower');   // menos amenaza con «lower» → el máximo
+  return wantHigh ? hi : lo;
+}
+
+/** inputs con intervalos → inputs escalares de un escenario (lo demás, tal cual). */
+export function scenarioInputs(inputs, scenario) {
+  const out = { ...(inputs || {}) };
+  for (const [k, fields] of Object.entries(UNCERTAIN_FIELDS)) {
+    if (!out[k] || typeof out[k] !== 'object') continue;
+    const step = { ...out[k] };
+    for (const [f, dir] of Object.entries(fields)) if (f in step) step[f] = scenarioValue(step[f], dir, scenario);
+    out[k] = step;
+  }
+  return out;
+}
+
+/**
+ * Paso 2 de las Directrices regionales v4.0 (fig. 2) sobre la categoría preliminar del paso 1:
+ * endémica del área → sin ajuste; sin inmigración significativa de propágulos (o no se sabe) → sin ajuste;
+ * se espera que la inmigración disminuya (o no se sabe) → sin ajuste; si no, ¿la población regional es un
+ * sumidero? sí → subir un escalón; no o no se sabe → rebajar un escalón (efecto rescate).
+ * → {direction: up|down|null, path: [textos], justification}
+ */
+export function regionalStep2(q) {
+  const a = q || {};
+  const path = [];
+  const done = (direction, last) => { path.push(last); return { direction, path, justification: path.join(' ') }; };
+  if (a.endemic === 'yes') return done(null, 'Endémica del área de evaluación: no hay ajuste regional.');
+  if (a.immigration !== 'yes') {
+    return done(null, a.immigration === 'no' ? 'No recibe inmigración significativa de propágulos: sin ajuste.'
+      : 'No se sabe si recibe inmigración significativa de propágulos: sin ajuste.');
+  }
+  path.push('Recibe inmigración significativa de propágulos capaces de reproducirse en la región.');
+  if (a.immigrationDecrease !== 'no') {
+    return done(null, a.immigrationDecrease === 'yes' ? 'Se espera que la inmigración disminuya: sin ajuste.'
+      : 'No se sabe si la inmigración disminuirá: sin ajuste.');
+  }
+  path.push('No se espera que la inmigración disminuya.');
+  if (a.sink === 'yes') return done('up', 'La población regional es un sumidero: se sube un escalón.');
+  return done('down', a.sink === 'no' ? 'La población regional no es un sumidero: se rebaja un escalón (efecto rescate).'
+    : 'No se sabe si es un sumidero: se rebaja un escalón (efecto rescate).');
+}
+
+/** ¿Hay al menos un criterio evaluado (cumplido o no)? */
+const anyEvaluated = (r) => Object.values(r.byCriterion).some((c) => c.status === 'met' || c.status === 'not_met');
+
+export function assessIucn(inputs, criteria) {
+  const inp = { ...(inputs || {}) };
+  let regionalV4 = null;
+  if (inp.regionalV4) {
+    regionalV4 = regionalStep2(inp.regionalV4);
+    inp.regional = regionalV4.direction ? { direction: regionalV4.direction, justification: regionalV4.justification } : { direction: null };
+  }
+  const best = evaluateIucn(scenarioInputs(inp, 'best'), criteria);
+  const low = evaluateIucn(scenarioInputs(inp, 'low'), criteria);
+  const high = evaluateIucn(scenarioInputs(inp, 'high'), criteria);
+
+  const dataMinimum = anyEvaluated(best) || anyEvaluated(low) || anyEvaluated(high);
+  if (!dataMinimum && best.basis !== 'criteria') {
+    if (best.basis === 'expert') best.warnings.push(`Sin datos mínimos no procede ${best.baseCategory} por juicio experto: sale DD.`);
+    best.baseCategory = criteria.outcomes.dataDeficient;
+    best.category = best.baseCategory;
+    best.basis = 'insufficient';
+    best.message = 'Datos insuficientes (DD): ningún criterio tiene los datos mínimos para evaluarse.';
+    best.regional = { ...best.regional, from: best.category, to: best.category, applied: false };
+  }
+
+  // CR(PE): solo por decisión del usuario y solo sobre CR.
+  let possiblyExtinct = false;
+  if (inp.possiblyExtinct === true) {
+    if (best.category === 'CR') possiblyExtinct = true;
+    else best.warnings.push('«Posiblemente extinta» (PE) solo se aplica a CR: no se tiene en cuenta.');
+  }
+  if (possiblyExtinct && best.criteriaString && best.baseCategory === 'CR') best.criteriaString = best.criteriaString.replace(/^CR /, 'CR(PE) ');
+
+  const threatened = (r) => (r.baseCategory in CATEGORY_RANK ? r.baseCategory : null);
+  const lowCat = threatened(low);
+  const highCat = threatened(high);
+  const range = { low: lowCat, lowString: lowCat ? low.criteriaString : null, high: highCat, highString: highCat ? high.criteriaString : null,
+    crossesCategories: rankOf(lowCat) !== rankOf(highCat) };
+  if (range.crossesCategories) {
+    best.warnings.push(`Los datos inciertos cruzan categorías: de ${lowCat || 'no amenazada'} a ${highCat || 'no amenazada'}.`);
+  }
+  return { ...best, displayCategory: possiblyExtinct ? 'CR(PE)' : best.category, possiblyExtinct, range, dataMinimum, regionalV4 };
+}
+
+/** «VU–EN», «EN» o «no amenazada–VU»: el rango plausible, de menos a más amenaza. */
+export function rangeLabel(range) {
+  if (!range) return '';
+  const a = range.low || 'no amenazada';
+  const b = range.high || 'no amenazada';
+  return a === b ? a : `${a}–${b}`;
+}

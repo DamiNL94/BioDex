@@ -1,0 +1,1907 @@
+{
+ "description": "Casos compartidos del motor UICN (shared/iucn-engine.js · backend/Lib/iucn.php) y de los cuantificadores de F11g (shared/iucn-quantifiers.js). Los ejecutan node shared/iucn-engine.test.js y bin/test-f11g.php: mismos resultados en JS y PHP.",
+ "engine": [
+  {
+   "name": "Artemisia: EOO 80, AOO 12, 3 localidades, b(iii) → EN, no CR",
+   "fn": "evaluate",
+   "inputs": {
+    "B": {
+     "eoo": 80,
+     "aoo": 12,
+     "locations": 3,
+     "decline": [
+      "iii"
+     ]
+    }
+   },
+   "expect": {
+    "category": "EN",
+    "criteriaString": "EN B1ab(iii)+2ab(iii)"
+   }
+  },
+  {
+   "name": "Artemisia con 1 localidad → CR B1ab(iii)",
+   "fn": "evaluate",
+   "inputs": {
+    "B": {
+     "eoo": 80,
+     "aoo": 12,
+     "locations": 1,
+     "decline": [
+      "iii"
+     ]
+    }
+   },
+   "expect": {
+    "category": "CR",
+    "criteriaString": "CR B1ab(iii)"
+   }
+  },
+  {
+   "name": "B1: EOO 99 km² con 1 localidad → CR",
+   "fn": "evaluate",
+   "inputs": {
+    "B": {
+     "eoo": 99,
+     "aoo": null,
+     "locations": 1,
+     "decline": [
+      "iii"
+     ]
+    }
+   },
+   "expect": {
+    "category": "CR",
+    "criteriaString": "CR B1ab(iii)"
+   }
+  },
+  {
+   "name": "B1: EOO 100 km² con 1 localidad → EN",
+   "fn": "evaluate",
+   "inputs": {
+    "B": {
+     "eoo": 100,
+     "aoo": null,
+     "locations": 1,
+     "decline": [
+      "iii"
+     ]
+    }
+   },
+   "expect": {
+    "category": "EN",
+    "criteriaString": "EN B1ab(iii)"
+   }
+  },
+  {
+   "name": "B1: EOO 4999 → EN",
+   "fn": "evaluate",
+   "inputs": {
+    "B": {
+     "eoo": 4999,
+     "aoo": null,
+     "locations": 5,
+     "decline": [
+      "iii"
+     ]
+    }
+   },
+   "expect": {
+    "category": "EN",
+    "criteriaString": "EN B1ab(iii)"
+   }
+  },
+  {
+   "name": "B1: EOO 5000 → VU",
+   "fn": "evaluate",
+   "inputs": {
+    "B": {
+     "eoo": 5000,
+     "aoo": null,
+     "locations": 5,
+     "decline": [
+      "iii"
+     ]
+    }
+   },
+   "expect": {
+    "category": "VU",
+    "criteriaString": "VU B1ab(iii)"
+   }
+  },
+  {
+   "name": "B1: EOO 20000 → no cumple",
+   "fn": "evaluate",
+   "inputs": {
+    "B": {
+     "eoo": 20000,
+     "aoo": null,
+     "locations": 5,
+     "decline": [
+      "iii"
+     ]
+    }
+   },
+   "expect": {
+    "category": null,
+    "criteriaString": null
+   }
+  },
+  {
+   "name": "B2: AOO 9 con 1 localidad → CR",
+   "fn": "evaluate",
+   "inputs": {
+    "B": {
+     "eoo": null,
+     "aoo": 9,
+     "locations": 1,
+     "decline": [
+      "iii"
+     ]
+    }
+   },
+   "expect": {
+    "category": "CR",
+    "criteriaString": "CR B2ab(iii)"
+   }
+  },
+  {
+   "name": "B2: AOO 10 con 1 localidad → EN",
+   "fn": "evaluate",
+   "inputs": {
+    "B": {
+     "eoo": null,
+     "aoo": 10,
+     "locations": 1,
+     "decline": [
+      "iii"
+     ]
+    }
+   },
+   "expect": {
+    "category": "EN",
+    "criteriaString": "EN B2ab(iii)"
+   }
+  },
+  {
+   "name": "B2: AOO 1999 → VU; 2000 no",
+   "fn": "evaluate",
+   "inputs": {
+    "B": {
+     "eoo": null,
+     "aoo": 1999,
+     "locations": 8,
+     "decline": [
+      "iii"
+     ]
+    }
+   },
+   "expect": {
+    "category": "VU",
+    "criteriaString": "VU B2ab(iii)"
+   }
+  },
+  {
+   "name": "B2: AOO 2000 → no cumple",
+   "fn": "evaluate",
+   "inputs": {
+    "B": {
+     "eoo": null,
+     "aoo": 2000,
+     "locations": 8,
+     "decline": [
+      "iii"
+     ]
+    }
+   },
+   "expect": {
+    "category": null,
+    "criteriaString": null
+   }
+  },
+  {
+   "name": "B(a): 5 localidades → EN",
+   "fn": "evaluate",
+   "inputs": {
+    "B": {
+     "eoo": 3000,
+     "aoo": null,
+     "locations": 5,
+     "decline": [
+      "iii"
+     ]
+    }
+   },
+   "expect": {
+    "category": "EN",
+    "criteriaString": "EN B1ab(iii)"
+   }
+  },
+  {
+   "name": "B(a): 6 localidades → VU",
+   "fn": "evaluate",
+   "inputs": {
+    "B": {
+     "eoo": 3000,
+     "aoo": null,
+     "locations": 6,
+     "decline": [
+      "iii"
+     ]
+    }
+   },
+   "expect": {
+    "category": "VU",
+    "criteriaString": "VU B1ab(iii)"
+   }
+  },
+  {
+   "name": "B(a): 10 localidades → VU; 11 → (a) no se cumple",
+   "fn": "evaluate",
+   "inputs": {
+    "B": {
+     "eoo": 3000,
+     "aoo": null,
+     "locations": 10,
+     "decline": [
+      "iii"
+     ]
+    }
+   },
+   "expect": {
+    "category": "VU",
+    "criteriaString": "VU B1ab(iii)"
+   }
+  },
+  {
+   "name": "B(a): 11 localidades → solo (b) → no cumple",
+   "fn": "evaluate",
+   "inputs": {
+    "B": {
+     "eoo": 3000,
+     "aoo": null,
+     "locations": 11,
+     "decline": [
+      "iii"
+     ]
+    }
+   },
+   "expect": {
+    "category": null,
+    "criteriaString": null
+   }
+  },
+  {
+   "name": "B: un solo subcriterio (b) sin localidades → no cumple",
+   "fn": "evaluate",
+   "inputs": {
+    "B": {
+     "eoo": 50,
+     "aoo": 8,
+     "decline": [
+      "iii"
+     ]
+    }
+   },
+   "expect": {
+    "category": null,
+    "criteriaString": null
+   }
+  },
+  {
+   "name": "B: fragmentación severa vale como (a) en CR",
+   "fn": "evaluate",
+   "inputs": {
+    "B": {
+     "eoo": 50,
+     "severelyFragmented": true,
+     "decline": [
+      "i",
+      "iii"
+     ]
+    }
+   },
+   "expect": {
+    "category": "CR",
+    "criteriaString": "CR B1ab(i,iii)"
+   }
+  },
+  {
+   "name": "B: (b) y (c) sin (a) → cumple en CR",
+   "fn": "evaluate",
+   "inputs": {
+    "B": {
+     "eoo": 50,
+     "decline": [
+      "v"
+     ],
+     "fluctuation": [
+      "iv"
+     ]
+    }
+   },
+   "expect": {
+    "category": "CR",
+    "criteriaString": "CR B1b(v)c(iv)"
+   }
+  },
+  {
+   "name": "B: EOO 5 < AOO 12 → EOO = 12 (y aviso) → CR B1",
+   "fn": "evaluate",
+   "inputs": {
+    "B": {
+     "eoo": 5,
+     "aoo": 12,
+     "locations": 1,
+     "decline": [
+      "iii"
+     ]
+    }
+   },
+   "expect": {
+    "category": "CR",
+    "criteriaString": "CR B1ab(iii)"
+   }
+  },
+  {
+   "name": "A2: 80 % con b y c → CR",
+   "fn": "evaluate",
+   "inputs": {
+    "A": {
+     "reductionPct": 80,
+     "subcriterion": "A2",
+     "basis": [
+      "b",
+      "c"
+     ]
+    }
+   },
+   "expect": {
+    "category": "CR",
+    "criteriaString": "CR A2bc"
+   }
+  },
+  {
+   "name": "A2: 79 % → EN",
+   "fn": "evaluate",
+   "inputs": {
+    "A": {
+     "reductionPct": 79,
+     "subcriterion": "A2",
+     "basis": [
+      "b",
+      "c"
+     ]
+    }
+   },
+   "expect": {
+    "category": "EN",
+    "criteriaString": "EN A2bc"
+   }
+  },
+  {
+   "name": "A2: 30 % → VU; 29 % no",
+   "fn": "evaluate",
+   "inputs": {
+    "A": {
+     "reductionPct": 30,
+     "subcriterion": "A2",
+     "basis": [
+      "c"
+     ]
+    }
+   },
+   "expect": {
+    "category": "VU",
+    "criteriaString": "VU A2c"
+   }
+  },
+  {
+   "name": "A2: 29 % → no cumple",
+   "fn": "evaluate",
+   "inputs": {
+    "A": {
+     "reductionPct": 29,
+     "subcriterion": "A2",
+     "basis": [
+      "c"
+     ]
+    }
+   },
+   "expect": {
+    "category": null,
+    "criteriaString": null
+   }
+  },
+  {
+   "name": "A1: 90 % → CR; umbrales propios de A1",
+   "fn": "evaluate",
+   "inputs": {
+    "A": {
+     "reductionPct": 90,
+     "subcriterion": "A1",
+     "basis": [
+      "a"
+     ]
+    }
+   },
+   "expect": {
+    "category": "CR",
+    "criteriaString": "CR A1a"
+   }
+  },
+  {
+   "name": "A1: 89 % → EN",
+   "fn": "evaluate",
+   "inputs": {
+    "A": {
+     "reductionPct": 89,
+     "subcriterion": "A1",
+     "basis": [
+      "a"
+     ]
+    }
+   },
+   "expect": {
+    "category": "EN",
+    "criteriaString": "EN A1a"
+   }
+  },
+  {
+   "name": "A1: 49 % → no cumple (VU exige 50)",
+   "fn": "evaluate",
+   "inputs": {
+    "A": {
+     "reductionPct": 49,
+     "subcriterion": "A1",
+     "basis": [
+      "a"
+     ]
+    }
+   },
+   "expect": {
+    "category": null,
+    "criteriaString": null
+   }
+  },
+  {
+   "name": "A3 solo con (a) → rechazado, no cumple",
+   "fn": "evaluate",
+   "inputs": {
+    "A": {
+     "reductionPct": 85,
+     "subcriterion": "A3",
+     "basis": [
+      "a"
+     ]
+    }
+   },
+   "expect": {
+    "category": null,
+    "criteriaString": null
+   }
+  },
+  {
+   "name": "A3 con (a) y (b) → (a) fuera: CR A3b",
+   "fn": "evaluate",
+   "inputs": {
+    "A": {
+     "reductionPct": 85,
+     "subcriterion": "A3",
+     "basis": [
+      "a",
+      "b"
+     ]
+    }
+   },
+   "expect": {
+    "category": "CR",
+    "criteriaString": "CR A3b"
+   }
+  },
+  {
+   "name": "C1: 249 maduros, 25 % en 3 años → CR",
+   "fn": "evaluate",
+   "inputs": {
+    "C": {
+     "mature": 249,
+     "c1DeclinePct": 25,
+     "c1Years": 3
+    }
+   },
+   "expect": {
+    "category": "CR",
+    "criteriaString": "CR C1"
+   }
+  },
+  {
+   "name": "C1: 250 maduros → EN (CR exige < 250)",
+   "fn": "evaluate",
+   "inputs": {
+    "C": {
+     "mature": 250,
+     "c1DeclinePct": 25,
+     "c1Years": 3
+    }
+   },
+   "expect": {
+    "category": "EN",
+    "criteriaString": "EN C1"
+   }
+  },
+  {
+   "name": "C1: 24 % en 3 años → no CR; EN tampoco (20 % en 5 años: sí) → EN",
+   "fn": "evaluate",
+   "inputs": {
+    "C": {
+     "mature": 200,
+     "c1DeclinePct": 24,
+     "c1Years": 3
+    }
+   },
+   "expect": {
+    "category": "EN",
+    "criteriaString": "EN C1"
+   }
+  },
+  {
+   "name": "C1: plazo con generaciones: 25 % en 12 años con generación de 12 → CR",
+   "fn": "evaluate",
+   "inputs": {
+    "generationLength": 12,
+    "C": {
+     "mature": 100,
+     "c1DeclinePct": 25,
+     "c1Years": 12
+    }
+   },
+   "expect": {
+    "category": "CR",
+    "criteriaString": "CR C1"
+   }
+  },
+  {
+   "name": "C2a(i): máx. 50 por subpoblación y disminución → CR",
+   "fn": "evaluate",
+   "inputs": {
+    "C": {
+     "mature": 200,
+     "continuingDecline": true,
+     "maxPerSubpop": 50
+    }
+   },
+   "expect": {
+    "category": "CR",
+    "criteriaString": "CR C2a(i)"
+   }
+  },
+  {
+   "name": "C2a(i): máx. 51 → EN",
+   "fn": "evaluate",
+   "inputs": {
+    "C": {
+     "mature": 200,
+     "continuingDecline": true,
+     "maxPerSubpop": 51
+    }
+   },
+   "expect": {
+    "category": "EN",
+    "criteriaString": "EN C2a(i)"
+   }
+  },
+  {
+   "name": "C2 sin disminución continua → no cumple",
+   "fn": "evaluate",
+   "inputs": {
+    "C": {
+     "mature": 200,
+     "maxPerSubpop": 10
+    }
+   },
+   "expect": {
+    "category": null,
+    "criteriaString": null
+   }
+  },
+  {
+   "name": "C2a(ii) 96 % y fluctuaciones con 2000 maduros → EN C2a(ii)b",
+   "fn": "evaluate",
+   "inputs": {
+    "C": {
+     "mature": 2000,
+     "continuingDecline": true,
+     "pctInOneSubpop": 96,
+     "extremeFluctuation": true
+    }
+   },
+   "expect": {
+    "category": "EN",
+    "criteriaString": "EN C2a(ii)b"
+   }
+  },
+  {
+   "name": "C1+2: combinación en la misma categoría",
+   "fn": "evaluate",
+   "inputs": {
+    "C": {
+     "mature": 9000,
+     "c1DeclinePct": 10,
+     "c1Years": 10,
+     "continuingDecline": true,
+     "pctInOneSubpop": 100
+    }
+   },
+   "expect": {
+    "category": "VU",
+    "criteriaString": "VU C1+2a(ii)"
+   }
+  },
+  {
+   "name": "C: sin maduros → no se evalúa",
+   "fn": "evaluate",
+   "inputs": {
+    "C": {
+     "c1DeclinePct": 50,
+     "c1Years": 3
+    }
+   },
+   "expect": {
+    "category": null,
+    "criteriaString": null
+   }
+  },
+  {
+   "name": "D: 49 maduros → CR D",
+   "fn": "evaluate",
+   "inputs": {
+    "D": {
+     "mature": 49
+    }
+   },
+   "expect": {
+    "category": "CR",
+    "criteriaString": "CR D"
+   }
+  },
+  {
+   "name": "D: 50 maduros → EN D",
+   "fn": "evaluate",
+   "inputs": {
+    "D": {
+     "mature": 50
+    }
+   },
+   "expect": {
+    "category": "EN",
+    "criteriaString": "EN D"
+   }
+  },
+  {
+   "name": "D: 999 maduros → VU D1",
+   "fn": "evaluate",
+   "inputs": {
+    "D": {
+     "mature": 999
+    }
+   },
+   "expect": {
+    "category": "VU",
+    "criteriaString": "VU D1"
+   }
+  },
+  {
+   "name": "D: 1000 maduros → no cumple",
+   "fn": "evaluate",
+   "inputs": {
+    "D": {
+     "mature": 1000
+    }
+   },
+   "expect": {
+    "category": null,
+    "criteriaString": null
+   }
+  },
+  {
+   "name": "D2 solo VU (AOO 19 y amenaza), aunque sea poco",
+   "fn": "evaluate",
+   "inputs": {
+    "D": {
+     "plausibleThreat": true,
+     "aoo": 19
+    }
+   },
+   "expect": {
+    "category": "VU",
+    "criteriaString": "VU D2"
+   }
+  },
+  {
+   "name": "D2: AOO 20 y 6 localidades → no cumple",
+   "fn": "evaluate",
+   "inputs": {
+    "D": {
+     "plausibleThreat": true,
+     "aoo": 20,
+     "locations": 6
+    }
+   },
+   "expect": {
+    "category": null,
+    "criteriaString": null
+   }
+  },
+  {
+   "name": "D2 sin amenaza plausible → no cumple",
+   "fn": "evaluate",
+   "inputs": {
+    "D": {
+     "aoo": 4,
+     "locations": 1
+    }
+   },
+   "expect": {
+    "category": null,
+    "criteriaString": null
+   }
+  },
+  {
+   "name": "D1+2 en VU",
+   "fn": "evaluate",
+   "inputs": {
+    "D": {
+     "mature": 800,
+     "plausibleThreat": true,
+     "locations": 5
+    }
+   },
+   "expect": {
+    "category": "VU",
+    "criteriaString": "VU D1+2"
+   }
+  },
+  {
+   "name": "E: 50 % en 10 años → CR",
+   "fn": "evaluate",
+   "inputs": {
+    "E": {
+     "probabilityPct": 50,
+     "horizonYears": 10
+    }
+   },
+   "expect": {
+    "category": "CR",
+    "criteriaString": "CR E"
+   }
+  },
+  {
+   "name": "E: 49 % en 10 años → EN",
+   "fn": "evaluate",
+   "inputs": {
+    "E": {
+     "probabilityPct": 49,
+     "horizonYears": 10
+    }
+   },
+   "expect": {
+    "category": "EN",
+    "criteriaString": "EN E"
+   }
+  },
+  {
+   "name": "E: 20 % en 20 años → EN; en 21 → VU",
+   "fn": "evaluate",
+   "inputs": {
+    "E": {
+     "probabilityPct": 20,
+     "horizonYears": 21
+    }
+   },
+   "expect": {
+    "category": "VU",
+    "criteriaString": "VU E"
+   }
+  },
+  {
+   "name": "E: 9 % en 100 años → no cumple",
+   "fn": "evaluate",
+   "inputs": {
+    "E": {
+     "probabilityPct": 9,
+     "horizonYears": 100
+    }
+   },
+   "expect": {
+    "category": null,
+    "criteriaString": null
+   }
+  },
+  {
+   "name": "Combinada VU A2bc; D2",
+   "fn": "evaluate",
+   "inputs": {
+    "A": {
+     "reductionPct": 35,
+     "subcriterion": "A2",
+     "basis": [
+      "b",
+      "c"
+     ]
+    },
+    "D": {
+     "plausibleThreat": true,
+     "locations": 3
+    }
+   },
+   "expect": {
+    "category": "VU",
+    "criteriaString": "VU A2bc; D2"
+   }
+  },
+  {
+   "name": "Combinada: solo figura lo de la categoría más alta",
+   "fn": "evaluate",
+   "inputs": {
+    "A": {
+     "reductionPct": 35,
+     "subcriterion": "A2",
+     "basis": [
+      "b"
+     ]
+    },
+    "B": {
+     "eoo": 80,
+     "aoo": 12,
+     "locations": 3,
+     "decline": [
+      "iii"
+     ]
+    },
+    "D": {
+     "mature": 40
+    }
+   },
+   "expect": {
+    "category": "CR",
+    "criteriaString": "CR D"
+   }
+  },
+  {
+   "name": "Combinada EN A2c; B1ab(iii)+2ab(iii); C2a(i)",
+   "fn": "evaluate",
+   "inputs": {
+    "A": {
+     "reductionPct": 60,
+     "subcriterion": "A2",
+     "basis": [
+      "c"
+     ]
+    },
+    "B": {
+     "eoo": 80,
+     "aoo": 12,
+     "locations": 3,
+     "decline": [
+      "iii"
+     ]
+    },
+    "C": {
+     "mature": 1500,
+     "continuingDecline": true,
+     "maxPerSubpop": 200
+    }
+   },
+   "expect": {
+    "category": "EN",
+    "criteriaString": "EN A2c; B1ab(iii)+2ab(iii); C2a(i)"
+   }
+  },
+  {
+   "name": "Intervalo de EOO que cruza CR/EN: mejor CR, rango EN–CR",
+   "fn": "assess",
+   "inputs": {
+    "B": {
+     "decline": [
+      "iii"
+     ],
+     "eoo": {
+      "best": 80,
+      "min": 60,
+      "max": 150
+     },
+     "aoo": 30,
+     "locations": 1
+    }
+   },
+   "expect": {
+    "category": "CR",
+    "criteriaString": "CR B1ab(iii)",
+    "rangeLow": "EN",
+    "rangeHigh": "CR",
+    "crosses": true
+   }
+  },
+  {
+   "name": "Maduros en intervalo para D: 45 (40–60) → CR, rango EN–CR",
+   "fn": "assess",
+   "inputs": {
+    "D": {
+     "mature": {
+      "best": 45,
+      "min": 40,
+      "max": 60
+     }
+    }
+   },
+   "expect": {
+    "category": "CR",
+    "criteriaString": "CR D",
+    "rangeLow": "EN",
+    "rangeHigh": "CR",
+    "crosses": true
+   }
+  },
+  {
+   "name": "Borde exacto: 50 maduros (49–50) → EN D; el extremo amenazado da CR",
+   "fn": "assess",
+   "inputs": {
+    "D": {
+     "mature": {
+      "best": 50,
+      "min": 49,
+      "max": 50
+     }
+    }
+   },
+   "expect": {
+    "category": "EN",
+    "criteriaString": "EN D",
+    "rangeLow": "EN",
+    "rangeHigh": "CR",
+    "crosses": true
+   }
+  },
+  {
+   "name": "Sin ningún dato → DD (datos mínimos)",
+   "fn": "assess",
+   "inputs": {},
+   "expect": {
+    "category": "DD",
+    "criteriaString": null,
+    "basis": "insufficient",
+    "dataMinimum": false
+   }
+  },
+  {
+   "name": "A y E pendientes, B sin EOO ni AOO, C y D sin maduros → DD",
+   "fn": "assess",
+   "inputs": {
+    "A": {
+     "skip": true
+    },
+    "B": {
+     "eoo": null,
+     "aoo": null,
+     "decline": [
+      "iii"
+     ]
+    },
+    "C": {
+     "mature": null
+    },
+    "D": {
+     "mature": null
+    },
+    "E": {
+     "skip": true
+    }
+   },
+   "expect": {
+    "category": "DD",
+    "basis": "insufficient",
+    "dataMinimum": false
+   }
+  },
+  {
+   "name": "Evaluado y sin umbral → sin categoría (NT o LC a juicio), no DD",
+   "fn": "assess",
+   "inputs": {
+    "D": {
+     "mature": 5000
+    }
+   },
+   "expect": {
+    "category": null,
+    "criteriaString": null,
+    "basis": "none",
+    "dataMinimum": true
+   }
+  },
+  {
+   "name": "Evaluado y sin umbral con NT elegido → NT",
+   "fn": "assess",
+   "inputs": {
+    "D": {
+     "mature": 5000
+    },
+    "expertCategory": "NT"
+   },
+   "expect": {
+    "category": "NT",
+    "basis": "expert"
+   }
+  },
+  {
+   "name": "LC por juicio sin datos mínimos → DD",
+   "fn": "assess",
+   "inputs": {
+    "expertCategory": "LC"
+   },
+   "expect": {
+    "category": "DD",
+    "basis": "insufficient",
+    "warningIncludes": "Sin datos mínimos"
+   }
+  },
+  {
+   "name": "CR(PE) solo por decisión del usuario",
+   "fn": "assess",
+   "inputs": {
+    "D": {
+     "mature": 10
+    },
+    "possiblyExtinct": true
+   },
+   "expect": {
+    "category": "CR",
+    "displayCategory": "CR(PE)",
+    "criteriaString": "CR(PE) D"
+   }
+  },
+  {
+   "name": "Sin decisión no hay PE",
+   "fn": "assess",
+   "inputs": {
+    "D": {
+     "mature": 10
+    }
+   },
+   "expect": {
+    "category": "CR",
+    "displayCategory": "CR",
+    "criteriaString": "CR D"
+   }
+  },
+  {
+   "name": "PE sobre EN se ignora",
+   "fn": "assess",
+   "inputs": {
+    "D": {
+     "mature": 100
+    },
+    "possiblyExtinct": true
+   },
+   "expect": {
+    "category": "EN",
+    "displayCategory": "EN",
+    "warningIncludes": "(PE)"
+   }
+  },
+  {
+   "name": "Regional v4.0: inmigración, no disminuye, no es sumidero → rebaja EN → VU",
+   "fn": "assess",
+   "inputs": {
+    "B": {
+     "decline": [
+      "iii"
+     ],
+     "eoo": 80,
+     "aoo": 12,
+     "locations": 3
+    },
+    "regionalV4": {
+     "immigration": "yes",
+     "immigrationDecrease": "no",
+     "sink": "no"
+    }
+   },
+   "expect": {
+    "category": "VU",
+    "baseCategory": "EN",
+    "criteriaString": "EN B1ab(iii)+2ab(iii)",
+    "regionalApplied": true
+   }
+  },
+  {
+   "name": "Regional v4.0: sumidero → sube EN → CR",
+   "fn": "assess",
+   "inputs": {
+    "B": {
+     "decline": [
+      "iii"
+     ],
+     "eoo": 80,
+     "aoo": 12,
+     "locations": 3
+    },
+    "regionalV4": {
+     "immigration": "yes",
+     "immigrationDecrease": "no",
+     "sink": "yes"
+    }
+   },
+   "expect": {
+    "category": "CR",
+    "baseCategory": "EN",
+    "regionalApplied": true
+   }
+  },
+  {
+   "name": "Regional v4.0: sumidero desconocido → rebaja",
+   "fn": "assess",
+   "inputs": {
+    "B": {
+     "decline": [
+      "iii"
+     ],
+     "eoo": 80,
+     "aoo": 12,
+     "locations": 3
+    },
+    "regionalV4": {
+     "immigration": "yes",
+     "immigrationDecrease": "no",
+     "sink": "unknown"
+    }
+   },
+   "expect": {
+    "category": "VU",
+    "regionalApplied": true
+   }
+  },
+  {
+   "name": "Regional v4.0: inmigración desconocida → sin ajuste",
+   "fn": "assess",
+   "inputs": {
+    "B": {
+     "decline": [
+      "iii"
+     ],
+     "eoo": 80,
+     "aoo": 12,
+     "locations": 3
+    },
+    "regionalV4": {
+     "immigration": "unknown"
+    }
+   },
+   "expect": {
+    "category": "EN",
+    "regionalApplied": false
+   }
+  },
+  {
+   "name": "Regional v4.0: la inmigración disminuirá → sin ajuste",
+   "fn": "assess",
+   "inputs": {
+    "B": {
+     "decline": [
+      "iii"
+     ],
+     "eoo": 80,
+     "aoo": 12,
+     "locations": 3
+    },
+    "regionalV4": {
+     "immigration": "yes",
+     "immigrationDecrease": "yes",
+     "sink": "no"
+    }
+   },
+   "expect": {
+    "category": "EN",
+    "regionalApplied": false
+   }
+  },
+  {
+   "name": "Regional v4.0: endémica del área → sin ajuste",
+   "fn": "assess",
+   "inputs": {
+    "B": {
+     "decline": [
+      "iii"
+     ],
+     "eoo": 80,
+     "aoo": 12,
+     "locations": 3
+    },
+    "regionalV4": {
+     "endemic": "yes",
+     "immigration": "yes",
+     "immigrationDecrease": "no",
+     "sink": "no"
+    }
+   },
+   "expect": {
+    "category": "EN",
+    "regionalApplied": false
+   }
+  },
+  {
+   "name": "Regional v4.0: DD no se ajusta",
+   "fn": "assess",
+   "inputs": {
+    "regionalV4": {
+     "immigration": "yes",
+     "immigrationDecrease": "no",
+     "sink": "yes"
+    }
+   },
+   "expect": {
+    "category": "DD",
+    "regionalApplied": false
+   }
+  },
+  {
+   "name": "Varios criterios con intervalos: EN B…; C2a(i); D",
+   "fn": "assess",
+   "inputs": {
+    "B": {
+     "eoo": 80,
+     "aoo": {
+      "best": 12,
+      "min": 8,
+      "max": 16
+     },
+     "locations": 3,
+     "decline": [
+      "iii",
+      "v"
+     ]
+    },
+    "C": {
+     "mature": {
+      "best": 200,
+      "min": 150,
+      "max": 300
+     },
+     "continuingDecline": true,
+     "maxPerSubpop": {
+      "best": 120,
+      "min": 100,
+      "max": 180
+     }
+    },
+    "D": {
+     "mature": {
+      "best": 200,
+      "min": 150,
+      "max": 300
+     }
+    }
+   },
+   "expect": {
+    "category": "EN",
+    "criteriaString": "EN B1ab(iii,v)+2ab(iii,v); C2a(i); D",
+    "rangeLow": "EN",
+    "rangeHigh": "EN",
+    "crosses": false
+   }
+  },
+  {
+   "name": "VU D2 con la AOO de B (B solo con (a))",
+   "fn": "assess",
+   "inputs": {
+    "B": {
+     "eoo": 15,
+     "aoo": 12,
+     "locations": 2
+    },
+    "D": {
+     "plausibleThreat": true
+    }
+   },
+   "expect": {
+    "category": "VU",
+    "criteriaString": "VU D2"
+   }
+  },
+  {
+   "name": "C2a(ii) en intervalo que cruza el umbral de EN (95 %)",
+   "fn": "assess",
+   "inputs": {
+    "C": {
+     "mature": 2000,
+     "continuingDecline": true,
+     "pctInOneSubpop": {
+      "best": 96,
+      "min": 90,
+      "max": 100
+     }
+    }
+   },
+   "expect": {
+    "category": "EN",
+    "criteriaString": "EN C2a(ii)",
+    "rangeLow": null,
+    "rangeHigh": "EN",
+    "crosses": true
+   }
+  },
+  {
+   "name": "Fragmentación grave como (a) con intervalo de AOO",
+   "fn": "assess",
+   "inputs": {
+    "B": {
+     "aoo": {
+      "best": 9,
+      "min": 8,
+      "max": 12
+     },
+     "severelyFragmented": true,
+     "decline": [
+      "iii"
+     ]
+    }
+   },
+   "expect": {
+    "category": "CR",
+    "criteriaString": "CR B2ab(iii)",
+    "rangeLow": "EN",
+    "rangeHigh": "CR",
+    "crosses": true
+   }
+  }
+ ],
+ "quantifiers": [
+  {
+   "name": "Enlace simple: a 1000 m justos van juntas; a 1000,6 m, separadas",
+   "kind": "subpops",
+   "separationKm": 1,
+   "records": [
+    {
+     "occurrenceID": "r000",
+     "x": 0,
+     "y": 0,
+     "eventDate": "2026-05-01T10:00:00Z"
+    },
+    {
+     "occurrenceID": "r001",
+     "x": 1000,
+     "y": 0,
+     "eventDate": "2026-05-01T10:00:00Z"
+    },
+    {
+     "occurrenceID": "r002",
+     "x": 2000.6,
+     "y": 0,
+     "eventDate": "2026-05-01T10:00:00Z"
+    }
+   ],
+   "expect": {
+    "count": 2,
+    "sizes": [
+     2,
+     1
+    ],
+    "nearestKm": [
+     1.001,
+     1.001
+    ]
+   }
+  },
+  {
+   "name": "Enlace simple encadena (0, 900, 1800, 2700 m con 1 km) → una sola",
+   "kind": "subpops",
+   "separationKm": 1,
+   "records": [
+    {
+     "occurrenceID": "r000",
+     "x": 2700,
+     "y": 0,
+     "eventDate": "2026-05-01T10:00:00Z"
+    },
+    {
+     "occurrenceID": "r001",
+     "x": 0,
+     "y": 0,
+     "eventDate": "2026-05-01T10:00:00Z"
+    },
+    {
+     "occurrenceID": "r002",
+     "x": 1800,
+     "y": 0,
+     "eventDate": "2026-05-01T10:00:00Z"
+    },
+    {
+     "occurrenceID": "r003",
+     "x": 900,
+     "y": 0,
+     "eventDate": "2026-05-01T10:00:00Z"
+    }
+   ],
+   "expect": {
+    "count": 1,
+    "sizes": [
+     4
+    ],
+    "nearestKm": [
+     null
+    ]
+   }
+  },
+  {
+   "name": "Etiquetas de oeste a este y vecina más cercana",
+   "kind": "subpops",
+   "separationKm": 0.5,
+   "records": [
+    {
+     "occurrenceID": "r000",
+     "x": 10000,
+     "y": 0,
+     "eventDate": "2026-05-01T10:00:00Z"
+    },
+    {
+     "occurrenceID": "r001",
+     "x": 0,
+     "y": 0,
+     "eventDate": "2026-05-01T10:00:00Z"
+    },
+    {
+     "occurrenceID": "r002",
+     "x": 3000,
+     "y": 4000,
+     "eventDate": "2026-05-01T10:00:00Z"
+    }
+   ],
+   "expect": {
+    "count": 3,
+    "sizes": [
+     1,
+     1,
+     1
+    ],
+    "labelsX": [
+     0,
+     3000,
+     10000
+    ],
+    "nearestKm": [
+     5,
+     5,
+     8.062
+    ]
+   }
+  },
+  {
+   "name": "Maduros: la más reciente por celda de 50 m y día; aviso de doble conteo en días distintos",
+   "kind": "mature",
+   "records": [
+    {
+     "occurrenceID": "r000",
+     "x": 10,
+     "y": 10,
+     "eventDate": "2026-05-01T08:00:00Z",
+     "mature_count": 5
+    },
+    {
+     "occurrenceID": "r001",
+     "x": 20,
+     "y": 20,
+     "eventDate": "2026-05-01T12:00:00Z",
+     "mature_count": 7
+    },
+    {
+     "occurrenceID": "r002",
+     "x": 30,
+     "y": 30,
+     "eventDate": "2026-05-02T09:00:00Z",
+     "mature_count": 6
+    },
+    {
+     "occurrenceID": "r003",
+     "x": 5000,
+     "y": 0,
+     "eventDate": "2026-05-01T09:00:00Z",
+     "mature_count": 3
+    },
+    {
+     "occurrenceID": "r004",
+     "x": 5000,
+     "y": 0,
+     "eventDate": "2026-05-01T09:00:00Z"
+    }
+   ],
+   "expect": {
+    "min": 16,
+    "best": 16,
+    "max": 16,
+    "nCounted": 3,
+    "doubleCountPairs": 1,
+    "warningIncludes": "doble conteo"
+   }
+  },
+  {
+   "name": "Maduros: solo el último año de datos",
+   "kind": "mature",
+   "records": [
+    {
+     "occurrenceID": "r000",
+     "x": 0,
+     "y": 0,
+     "eventDate": "2026-06-01T10:00:00Z",
+     "mature_count": 10
+    },
+    {
+     "occurrenceID": "r001",
+     "x": 1000,
+     "y": 0,
+     "eventDate": "2025-06-01T10:00:00Z",
+     "mature_count": 4
+    },
+    {
+     "occurrenceID": "r002",
+     "x": 2000,
+     "y": 0,
+     "eventDate": "2025-05-31T10:00:00Z",
+     "mature_count": 100
+    }
+   ],
+   "expect": {
+    "min": 14,
+    "nCounted": 2
+   }
+  },
+  {
+   "name": "Maduros estimados: densidad de parcelas × hábitat, IC 95 % por bootstrap (semilla fija)",
+   "kind": "mature",
+   "habitatKm2": 0.02,
+   "records": [
+    {
+     "occurrenceID": "r000",
+     "x": 0,
+     "y": 0,
+     "eventDate": "2026-05-01T10:00:00Z",
+     "mature_count": 12,
+     "sampleSizeValue": 100
+    },
+    {
+     "occurrenceID": "r001",
+     "x": 300,
+     "y": 0,
+     "eventDate": "2026-05-01T10:00:00Z",
+     "mature_count": 3,
+     "sampleSizeValue": 50
+    },
+    {
+     "occurrenceID": "r002",
+     "x": 600,
+     "y": 0,
+     "eventDate": "2026-05-01T10:00:00Z",
+     "mature_count": 20,
+     "sampleSizeValue": 200
+    },
+    {
+     "occurrenceID": "r003",
+     "x": 900,
+     "y": 0,
+     "eventDate": "2026-05-01T10:00:00Z",
+     "mature_count": 0,
+     "sampleSizeValue": 100
+    },
+    {
+     "occurrenceID": "r004",
+     "x": 1200,
+     "y": 0,
+     "eventDate": "2026-05-01T10:00:00Z",
+     "mature_count": 9,
+     "sampleSizeValue": 100
+    },
+    {
+     "occurrenceID": "r005",
+     "x": 1500,
+     "y": 0,
+     "eventDate": "2026-05-01T10:00:00Z",
+     "mature_count": 15,
+     "sampleSizeValue": 150
+    }
+   ],
+   "expect": {
+    "min": 59,
+    "best": 1567,
+    "max": 2100,
+    "method": "density",
+    "density": {
+     "mean": 78333.333,
+     "low": 45000,
+     "high": 105000,
+     "reps": 1000,
+     "plots": 6
+    }
+   }
+  },
+  {
+   "name": "Maduros: sin hábitat, la AOO como cota superior (solo el máximo)",
+   "kind": "mature",
+   "aooKm2": 4,
+   "records": [
+    {
+     "occurrenceID": "r000",
+     "x": 0,
+     "y": 0,
+     "eventDate": "2026-05-01T10:00:00Z",
+     "mature_count": 4,
+     "sampleSizeValue": 400
+    },
+    {
+     "occurrenceID": "r001",
+     "x": 300,
+     "y": 0,
+     "eventDate": "2026-05-01T10:00:00Z",
+     "mature_count": 2,
+     "sampleSizeValue": 400
+    }
+   ],
+   "expect": {
+    "min": 6,
+    "best": 6,
+    "method": "density-aoo-bound",
+    "areaSource": "aoo"
+   }
+  },
+  {
+   "name": "Fragmentación: justo el 50 % de la AOO en pequeñas y aisladas → no grave",
+   "kind": "fragmentation",
+   "separationKm": 5,
+   "minViable": 50,
+   "dispersalKm": 10,
+   "records": [
+    {
+     "occurrenceID": "r000",
+     "x": 0,
+     "y": 0,
+     "eventDate": "2026-05-01T10:00:00Z",
+     "mature_count": 500
+    },
+    {
+     "occurrenceID": "r001",
+     "x": 2500,
+     "y": 0,
+     "eventDate": "2026-05-01T10:00:00Z",
+     "mature_count": 500
+    },
+    {
+     "occurrenceID": "r002",
+     "x": 30000,
+     "y": 0,
+     "eventDate": "2026-05-01T10:00:00Z",
+     "mature_count": 5
+    },
+    {
+     "occurrenceID": "r003",
+     "x": 60000,
+     "y": 0,
+     "eventDate": "2026-05-01T10:00:00Z",
+     "mature_count": 5
+    }
+   ],
+   "expect": {
+    "status": "evaluated",
+    "severe": false,
+    "pctAoo": 50,
+    "pctIndividuals": 0.99
+   }
+  },
+  {
+   "name": "Fragmentación: más del 50 % → grave",
+   "kind": "fragmentation",
+   "separationKm": 5,
+   "minViable": 50,
+   "dispersalKm": 10,
+   "records": [
+    {
+     "occurrenceID": "r000",
+     "x": 0,
+     "y": 0,
+     "eventDate": "2026-05-01T10:00:00Z",
+     "mature_count": 500
+    },
+    {
+     "occurrenceID": "r001",
+     "x": 2500,
+     "y": 0,
+     "eventDate": "2026-05-01T10:00:00Z",
+     "mature_count": 500
+    },
+    {
+     "occurrenceID": "r002",
+     "x": 30000,
+     "y": 0,
+     "eventDate": "2026-05-01T10:00:00Z",
+     "mature_count": 5
+    },
+    {
+     "occurrenceID": "r003",
+     "x": 60000,
+     "y": 0,
+     "eventDate": "2026-05-01T10:00:00Z",
+     "mature_count": 5
+    },
+    {
+     "occurrenceID": "r004",
+     "x": 90000,
+     "y": 0,
+     "eventDate": "2026-05-01T10:00:00Z",
+     "mature_count": 2
+    }
+   ],
+   "expect": {
+    "status": "evaluated",
+    "severe": true,
+    "pctAoo": 60
+   }
+  },
+  {
+   "name": "Fragmentación: dispersión mayor que la distancia entre subpoblaciones → no aisladas",
+   "kind": "fragmentation",
+   "separationKm": 5,
+   "minViable": 50,
+   "dispersalKm": 40,
+   "records": [
+    {
+     "occurrenceID": "r000",
+     "x": 0,
+     "y": 0,
+     "eventDate": "2026-05-01T10:00:00Z",
+     "mature_count": 500
+    },
+    {
+     "occurrenceID": "r001",
+     "x": 2500,
+     "y": 0,
+     "eventDate": "2026-05-01T10:00:00Z",
+     "mature_count": 500
+    },
+    {
+     "occurrenceID": "r002",
+     "x": 30000,
+     "y": 0,
+     "eventDate": "2026-05-01T10:00:00Z",
+     "mature_count": 5
+    },
+    {
+     "occurrenceID": "r003",
+     "x": 60000,
+     "y": 0,
+     "eventDate": "2026-05-01T10:00:00Z",
+     "mature_count": 5
+    },
+    {
+     "occurrenceID": "r004",
+     "x": 90000,
+     "y": 0,
+     "eventDate": "2026-05-01T10:00:00Z",
+     "mature_count": 2
+    }
+   ],
+   "expect": {
+    "status": "evaluated",
+    "severe": false,
+    "pctAoo": 0
+   }
+  },
+  {
+   "name": "Fragmentación sin parámetros → no evaluable y qué falta",
+   "kind": "fragmentation",
+   "separationKm": 5,
+   "records": [
+    {
+     "occurrenceID": "r000",
+     "x": 0,
+     "y": 0,
+     "eventDate": "2026-05-01T10:00:00Z",
+     "mature_count": 500
+    },
+    {
+     "occurrenceID": "r001",
+     "x": 2500,
+     "y": 0,
+     "eventDate": "2026-05-01T10:00:00Z",
+     "mature_count": 500
+    },
+    {
+     "occurrenceID": "r002",
+     "x": 30000,
+     "y": 0,
+     "eventDate": "2026-05-01T10:00:00Z",
+     "mature_count": 5
+    },
+    {
+     "occurrenceID": "r003",
+     "x": 60000,
+     "y": 0,
+     "eventDate": "2026-05-01T10:00:00Z",
+     "mature_count": 5
+    }
+   ],
+   "expect": {
+    "status": "not_evaluable",
+    "missing": [
+     "min_viable_subpop",
+     "dispersal_distance"
+    ]
+   }
+  },
+  {
+   "name": "Localidades: dos subpoblaciones bajo el mismo impacto más grave = 1; la otra, sin amenaza",
+   "kind": "locations",
+   "separationKm": 1,
+   "records": [
+    {
+     "occurrenceID": "r000",
+     "x": 0,
+     "y": 0,
+     "eventDate": "2026-05-01T10:00:00Z"
+    },
+    {
+     "occurrenceID": "r001",
+     "x": 5000,
+     "y": 0,
+     "eventDate": "2026-05-01T10:00:00Z"
+    },
+    {
+     "occurrenceID": "r002",
+     "x": 20000,
+     "y": 0,
+     "eventDate": "2026-05-01T10:00:00Z"
+    }
+   ],
+   "impacts": [
+    {
+     "impactID": "a0000000-0000-4000-8000-000000000001",
+     "threatCode": "2.3",
+     "intensity": "high",
+     "scopePct": 50,
+     "timing": "ongoing",
+     "x": 2500,
+     "y": 0,
+     "radiusM": 3000
+    },
+    {
+     "impactID": "a0000000-0000-4000-8000-000000000002",
+     "threatCode": "6.1",
+     "intensity": "low",
+     "scopePct": 90,
+     "timing": "ongoing",
+     "x": 0,
+     "y": 0,
+     "radiusM": 100
+    },
+    {
+     "impactID": "a0000000-0000-4000-8000-000000000003",
+     "threatCode": "7.1",
+     "intensity": "high",
+     "scopePct": 100,
+     "timing": "past",
+     "x": 20000,
+     "y": 0,
+     "radiusM": 500
+    }
+   ],
+   "expect": {
+    "count": 2,
+    "threatened": 1,
+    "groups": [
+     [
+      "S1",
+      "S2"
+     ],
+     [
+      "S3"
+     ]
+    ]
+   }
+  }
+ ]
+}
