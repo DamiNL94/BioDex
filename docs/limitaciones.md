@@ -1,6 +1,6 @@
-# Limitaciones conocidas (1.5.1)
+# Limitaciones conocidas (1.6.0)
 
-Lista abierta al terminar F10b (2026-09-30) y puesta al día con 1.5.1 (2026-10-21). Recoge lo que BioDex **no hace**,
+Lista abierta al terminar F10b (2026-09-30) y puesta al día con 1.6.0 (F11f, 2026-11-07). Recoge lo que BioDex **no hace**,
 lo que hace de forma **orientativa** y lo que **no se ha podido probar** en esta máquina. Cada punto abierto de las
 listas de F3 a F10a está aquí o marcado como resuelto en su lista.
 
@@ -45,6 +45,10 @@ listas de F3 a F10a está aquí o marcado como resuelto en su lista.
   Las localidades no se calculan: las introduce quien evalúa.
 - **Sin red, cifras provisionales**: el móvil solo cuenta las marcas exactas que tiene (las ajenas generalizadas no
   cuentan); el rótulo lo dice, falta validarlo con usuarios.
+- **Parámetros de especie sin uso todavía** (F11f, `docs/parametros.md`): se guardan, se sincronizan y se ve qué
+  criterios bloquean, pero el asistente actual aún no los lee (F11g y F11h). La separación por defecto (1 km) solo se
+  da para grupos sésiles o poco móviles; es una convención de trabajo, no un valor publicado para cada especie.
+  Se editan solo con red.
 - **Referencia independiente sin pasar.** No hay Python aquí: `backend/bin/metrics-reference.py` (pyproj + shapely)
   está escrito pero no ejecutado; los casos se contrastaron con PROJ.
 - Una evaluación de referencia que se edita después sigue siendo la referencia, sin aviso.
@@ -62,12 +66,20 @@ parado de verdad), no en un teléfono:
 - Lector de pantalla (NVDA, TalkBack).
 - Conteo (F11e) en el campo: toques seguidos con prisa, «Deshacer» y cifra escrita; el QR de invitación leído con la
   cámara de otro móvil (comprobado solo que el SVG generado se decodifica).
+- F11f en el campo: la letra de 17 px y los objetivos de 48/56 px con guantes y al sol, el buscador con el teclado
+  de Android (abreviaturas) y «cerca» con un GPS real. Lo automático (Playwright en Chromium, 390×844 y 1280×800, con
+  la API simulada) cubre marcar contando desde el buscador, el estado de las pestañas, «atrás», un parámetro visto sin
+  red y la auditoría de objetivos táctiles.
 - `navigator.storage.persist()`: en headless lo deniega el navegador; instalada, Edge y Chrome suelen concederlo.
 
 ## Comportamientos conocidos
 - Con nginx parado la vuelta se detecta por `/health` cada 30 s: la sincronización tarda hasta ~30 s (21–29 s medidos).
 - La estimación de MB de una zona usa medias provinciales: en ciudad se queda corta (Alhambra: 1,2 MB estimados, 1,6 reales).
 - La lista de miembros no se refresca sola: al cambiar de pestaña se recarga.
+- «Cerca» en la pestaña Especies solo aparece si el permiso de ubicación ya estaba concedido (no se pide al abrir la
+  pestaña); en la hoja de marcar llega con el GPS de la propia hoja.
+- En la sección de inicio el «atrás» del sistema pide una segunda pulsación para salir; en las demás vuelve primero a
+  la de inicio (F11f). Quien esperase volver a la pestaña anterior (no a la de inicio) lo notará.
 - Notas y marcas editadas a la vez en dos dispositivos: gana la última escritura.
 - `view_exact` se registra en cada petición de la owner o del custodio que recibe exactas ajenas (ficha, mapa, cada
   sincronización): el registro crece deprisa. Pendiente decidir si una fila por día y especie.

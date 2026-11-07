@@ -4,7 +4,7 @@ PWA de campo para biólogos de la conservación: catálogos de especies creados 
 geolocalizadas que funcionan sin conexión, evaluación orientativa según los criterios de la UICN y exportación en
 Darwin Core y Plinian Core para volcar los datos en bases internacionales como GBIF.
 
-**Versión 1.5.1** · prototipo. Hay un despliegue de prueba en Railway (`docs/railway.md`); el desarrollo se hace en
+**Versión 1.6.0** · prototipo. Hay un despliegue de prueba en Railway (`docs/railway.md`); el desarrollo se hace en
 local con Docker. Lo que aún no hace o no se ha probado: [`docs/limitaciones.md`](docs/limitaciones.md). Guion de la
 demostración: [`docs/demo.md`](docs/demo.md). Convenciones de código, permisos y seguridad de las coordenadas:
 [`docs/convenciones.md`](docs/convenciones.md).
@@ -13,6 +13,11 @@ demostración: [`docs/demo.md`](docs/demo.md). Convenciones de código, permisos
 - **Dos modos según la pantalla.** *Estudio* (≥ 900 px): crear catálogos, especies y equipos, revisar y exportar
   datos. *Campo* (< 900 px): mapa a pantalla completa, lista de especies y «Listo para el campo» para llevarse el
   catálogo, las fichas y las teselas del mapa antes de salir.
+- **Pensada para usarla de pie** (F11f, `docs/interfaz.md`). En campo, botones de 48–56 px y letra de 17 px, un
+  botón flotante «Marcar», un buscador que encuentra la especie por nombre común, científico o abreviatura (`pinnev`)
+  con las recientes y las de alrededor primero, pestañas que vuelven como se dejaron y un «atrás» que no saca de la app.
+- **Página de cada especie** con Resumen, Registros (minimapa), **Parámetros** (generación, distancias, individuo
+  maduro…: `docs/parametros.md`) y Evaluación UICN.
 - **Marcar es contar.** En una marca de presencia se cuentan individuos por categoría con un toque (fauna: macho,
   hembra, juvenil, larva…; flora: plántula, vegetativa, en flor, en fruto…). Al guardar sale una ocurrencia Darwin Core
   por categoría en el mismo punto, con los individuos maduros calculados. Las **ausencias** también se registran.
@@ -96,11 +101,21 @@ docker compose exec php php bin/test-f10b.php   # datos de demostración (reinic
 docker compose exec php php bin/test-f10c.php   # Plinian Core
 docker compose exec php php bin/test-f11b.php   # fotos de respaldo (iNaturalist) y siluetas
 docker compose exec php php bin/test-f11d.php   # fotos de respaldo de GBIF y Commons, copias locales y cascada
+docker compose exec php php bin/test-f11f.php   # parámetros de especie (permisos, access_log y pull)
 node shared/iucn-engine.test.js && node shared/geo-metrics.test.js && node frontend/tests/utm.test.mjs
 node frontend/tests/tally.test.mjs && node frontend/tests/qr.test.mjs   # conteo rápido y QR de invitación (F11e)
 node frontend/tests/species-search.test.mjs   # buscador de especies (F11f)
 ```
-En GitHub, `.github/workflows/ci.yml` comprueba en cada push la sintaxis de PHP, el Service Worker y las pruebas de JS.
+Interfaz (F11f, Playwright con la API simulada, en móvil 390×844 y escritorio 1280×800; no necesita Docker):
+```bash
+cd frontend/tests/e2e && npm ci && npx playwright install chromium && npx playwright test
+```
+Marcar contando desde el buscador, volver a una pestaña con su estado, «atrás» que cierra la hoja, editar un
+parámetro y verlo tras recargar sin red, y la auditoría de objetivos táctiles (ninguno por debajo de 48 px en campo).
+La API la simula `mock-api.mjs` con respuestas de la demo grabadas en `fixtures/` (datos ficticios).
+
+En GitHub, `.github/workflows/ci.yml` comprueba en cada push la sintaxis de PHP, el Service Worker, las pruebas de JS
+y las de interfaz.
 
 Los iconos de la PWA salen de `backend/bin/make-icons.php` (necesita ext-gd, que el contenedor no trae):
 `php -d extension=gd backend/bin/make-icons.php` en el anfitrión.

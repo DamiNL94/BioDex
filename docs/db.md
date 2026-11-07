@@ -30,6 +30,7 @@ Mapeo columna ← vista de EIDOS: `docs/eidos.md`. `order` es palabra reservada:
 | `catalog_invites` | Invitaciones por código (F6) | PK `id`, `code_hash` único (SHA-256 del código; el código en claro solo sale al crearla), `email` (NULL = enlace), `role` editor/viewer, `max_uses` (1 por email; ≤ 20 enlace) y `uses`, `expires_at`, `revoked_at`, `created_by`. Quién entró por cada una: `access_log` (`member_joined`) |
 | `invite_attempts` | Códigos inexistentes (F6) | `user_id`, `attempted_at`: 10 por usuario y hora → 429 |
 | `catalog_species` | Especies del catálogo | PK (`catalog_id`, `taxonID`), `added_by`, `deleted_at` |
+| `species_parameters` | Parámetros de una especie en un catálogo (F11f, migración 014; `docs/parametros.md`) | PK (`catalog_id`, `taxonID`, `param_key`; KEY es palabra reservada) → `catalogs` (cascada), `species`; `value` (número como texto o texto; NULL con solo intervalo), `value_min`/`value_max` DECIMAL, `quality` observed·estimated·inferred·suspected·projected, `source`, `set_by` → `users` (SET NULL), `set_at`, `deleted_at` (tombstone para el pull), `server_seq` (contador común de `sync_seq`). Claves válidas en `Lib/parameters.php` |
 | `species_sensitivity` | Nivel 1–4 por especie y catálogo | PK (`catalog_id`, `taxonID`) → `catalog_species`; `level` efectivo, `suggested_level` (desde EIDOS), `reason`, `set_by` (NULL = sugerencia sin confirmar) |
 
 Permisos por rol: `backend/Lib/authz.php` (`CATALOG_PERMISSIONS`). Niveles y generalización: `shared/sensitivity.json`
@@ -58,7 +59,7 @@ el resto, generalizada según `species_sensitivity.level`).
 ## Auditoría
 | Tabla | Propósito | Campos clave |
 |---|---|---|
-| `access_log` | Rastro de accesos sensibles | `action` view_exact/export_full/set_level/grant_role/revoke_role/login_failed (F6) invite_created/invite_revoked/member_joined/member_removed/member_left y (F8b) set_reference, `user_id`, `catalog_id`, `target` (`user:<id> editor → custodian`, `invite:<id> …`, F10a `zip completo: n registros, m especies`), `ip`, `created_at`; las FK pasan a NULL al borrar, el rastro se conserva. (F11b) photo_review (F11d: de cualquier fuente). `GET /catalogs/{id}/audit` lo devuelve legible |
+| `access_log` | Rastro de accesos sensibles | `action` view_exact/export_full/set_level/grant_role/revoke_role/login_failed (F6) invite_created/invite_revoked/member_joined/member_removed/member_left y (F8b) set_reference, `user_id`, `catalog_id`, `target` (`user:<id> editor → custodian`, `invite:<id> …`, F10a `zip completo: n registros, m especies`), `ip`, `created_at`; las FK pasan a NULL al borrar, el rastro se conserva. (F11b) photo_review (F11d: de cualquier fuente). (F11f) set_parameter. `GET /catalogs/{id}/audit` lo devuelve legible |
 
 ## Borrados
 - Lógicos (`deleted_at`) en `catalogs`, `catalog_species`, `occurrences`, `species_notes` y `species_assessments`.

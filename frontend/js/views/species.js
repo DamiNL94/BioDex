@@ -43,6 +43,7 @@ export function iucnEntries(byCategory) {
 let pendingFamily;
 // F11f: estado del buscador del modo campo (texto y grupo) y última posición; sobreviven a cambiar de pestaña.
 const fieldKeep = {};
+let studioText = '';   // texto del filtro en estudio: también vuelve como se dejó
 let lastPos = null;
 export function filterSpeciesByFamily(family) {
   pendingFamily = family;
@@ -61,7 +62,7 @@ export function mount(el, { go }) {
   let device = null;        // registro local del catálogo si las especies salen del dispositivo
   // Filtros y orden: se recuerdan por dispositivo (comodidad), salvo la familia, que es de un viaje.
   const saved = store.get('biodex.speciesFilters', {});
-  const f = { text: '', group: saved.group || '', category: saved.category || '', level: saved.level || '',
+  const f = { text: studioText, group: saved.group || '', category: saved.category || '', level: saved.level || '',
     family: '', sort: saved.sort || 'name', photos: false };
   let lastOpened = null;    // taxonID de la ficha abierta desde la lista (↑/↓)
   let reviewStatus = '';   // aviso tras aceptar o rechazar una foto (lo lee el lector de pantalla)
@@ -193,6 +194,7 @@ export function mount(el, { go }) {
       const t = ev.target;
       if (!t.name) return;
       f[t.name] = t.value;
+      if (t.name === 'text') studioText = t.value;
       if (t.name !== 'text') store.set('biodex.speciesFilters', { group: f.group, category: f.category, level: f.level, sort: f.sort });
       paintRows();
     });
@@ -382,7 +384,7 @@ export function mount(el, { go }) {
   }
 
   const unsubscribe = subscribe((key) => {
-    if (key === 'activeCatalog') { data = null; f.family = ''; fieldKeep.query = ''; fieldKeep.group = ''; load(); }
+    if (key === 'activeCatalog') { data = null; f.family = ''; f.text = ''; studioText = ''; fieldKeep.query = ''; fieldKeep.group = ''; load(); }
     if (key === 'online' && state.online && (device || !data)) load();
     if (key === 'download' && !data && state.activeCatalog && !state.downloads[state.activeCatalog.id]) load();
   });

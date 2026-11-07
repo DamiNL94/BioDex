@@ -9,7 +9,7 @@
 // ================================================================================================
 
 // Ficheros de shared/ que sirve nginx (location /shared/ de biodex-app.conf) y que la app usa sin red.
-const SHARED_SERVED = ["shared/iucn-engine.js", "shared/iucn-criteria.json", "shared/geo-metrics.js"];
+const SHARED_SERVED = ["shared/iucn-engine.js", "shared/iucn-criteria.json", "shared/geo-metrics.js", "shared/species-groups.json"];
 
 $front = realpath(__DIR__ . "/../../frontend");
 if ($front === false || !is_file("{$front}/sw.js")) {
@@ -49,7 +49,8 @@ foreach (SHARED_SERVED as $a) {
 $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($front, FilesystemIterator::SKIP_DOTS));
 foreach ($it as $file) {
     $rel = str_replace("\\", "/", substr($file->getPathname(), strlen($front) + 1));
-    if ($rel === "sw.js" || str_starts_with($rel, "public/tiles/")) continue;
+    // tests/: pruebas (las de interfaz traen node_modules de Playwright), nunca se sirven a la app.
+    if ($rel === "sw.js" || str_starts_with($rel, "public/tiles/") || str_starts_with($rel, "tests/")) continue;
     if (preg_match('/\.(js|css)$/', $rel) && !in_array($rel, $assets, true)) {
         $fail("{$rel} no está en SHELL_ASSETS (añádelo y sube VERSION)");
     }

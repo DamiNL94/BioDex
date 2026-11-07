@@ -766,8 +766,8 @@ html.is-field{font-size:106.25%}
 @media (max-width:899px){ .tab,.auth-screen .btn-primary{min-height:var(--tap-big)} }
 @media (min-width:900px) and (pointer:fine){ .icon-btn{width:36px;height:36px;min-width:36px;min-height:36px} }
 /* F11f: lo que en campo se quedaba por debajo de 48 px */
-.is-field .leaflet-bar a{width:var(--tap-min);height:var(--tap-min);line-height:var(--tap-min)}
-.is-field .leaflet-container a.leaflet-popup-close-button{width:var(--tap-min);height:var(--tap-min);line-height:var(--tap-min)}
+.is-field .leaflet-container .leaflet-bar a{width:var(--tap-min);height:var(--tap-min);line-height:var(--tap-min)}
+.is-field .leaflet-container a.leaflet-popup-close-button.leaflet-popup-close-button{width:var(--tap-min);height:var(--tap-min);line-height:var(--tap-min)}
 .is-field .leaflet-popup-content{margin-right:52px}
 .is-studio .export-picks .check{min-height:0}
 @media (prefers-reduced-motion:reduce){ *{transition:none !important} }

@@ -24,7 +24,9 @@ Reglas que sigue todo el código de BioDex. El detalle de cada módulo está en 
 - `occurrenceID` es un UUID v4 generado en el cliente. `/api/sync` es idempotente y funciona en dos sentidos:
   *push* de lo propio y *pull* de lo del equipo con un cursor (`server_seq`). Ver `docs/sync.md`.
 - Todo HTML dinámico del frontend pasa por la plantilla `html``…``` de `util.js`, que escapa cada valor.
-- Sin dependencias nuevas sin justificarlo en el commit.
+- Sin dependencias nuevas sin justificarlo en el commit. La app no usa npm; las pruebas de interfaz sí (Playwright,
+  solo en `frontend/tests/e2e/`, fuera de la imagen y del Service Worker).
+- Modo campo y modo estudio, tamaños táctiles, buscador y navegación: `docs/interfaz.md`.
 - Commits pequeños, con el mensaje en castellano y el prefijo de la fase del plan (`F2: login y registro`).
 
 ## Permisos

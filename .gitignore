@@ -1,4 +1,7 @@
 node_modules/
+# Resultados de Playwright (frontend/tests/e2e)
+test-results/
+playwright-report/
 vendor/
 mysql-data/
 .env
