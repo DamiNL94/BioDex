@@ -24,6 +24,7 @@ import { openSpeciesNew } from './species-new.js';
 import { IUCN_CODES, iucnBadge, iucnClass, silhouette } from '../components/species-card.js';
 import { openSpeciesDetail } from './species-detail.js';
 import { openAddSpecies } from './catalog-builder.js';
+import { mountSpeciesPicker, quietPosition } from '../components/species-picker.js';
 
 export { IUCN_CODES };
 const ADD_ROLES = ['owner', 'custodian', 'editor'];
@@ -38,6 +39,9 @@ export function iucnEntries(byCategory) {
 
 // Filtro por familia pedido desde el árbol del catálogo; lo recoge el próximo montaje de la vista.
 let pendingFamily;
+// F11f: estado del buscador del modo campo (texto y grupo) y última posición; sobreviven a cambiar de pestaña.
+const fieldKeep = {};
+let lastPos = null;
 export function filterSpeciesByFamily(family) {
   pendingFamily = family;
 }
@@ -132,6 +136,8 @@ export function mount(el, { go }) {
     const canAdd = ADD_ROLES.includes(catalog.role);
     const reviews = data.photoReviews;   // solo llega a owner y custodio, y con servidor
     if (!reviews || (!reviews.length && !f.photos)) f.photos = false;
+    const field = !isStudio();   // F11f: en campo, el buscador de components/species-picker.js
+    if (field) f.group = '';     // en campo el grupo va en los chips del buscador
     const opt = (value, label, current) => html`<option value="${value}" ${current === value ? html`selected` : ''}>${label}</option>`;
     paint(html`
       <div class="page-head">
@@ -141,16 +147,16 @@ export function mount(el, { go }) {
         ${canAdd && device ? html`<button type="button" class="btn-secondary" id="newSpeciesBtn">Crear especie</button>` : ''}
       </div>
       ${species.length ? html`
-        <form class="list-filters" role="search" aria-label="Filtrar especies" novalidate>
-          <label class="field lf-text"><span>Buscar en el catálogo</span>
-            <input type="search" name="text" value="${f.text}" autocomplete="off" placeholder="Nombre científico o común"></label>
+        <form class="list-filters${field ? ' is-field-filters' : ''}" role="search" aria-label="Filtrar especies" novalidate>
+          ${field ? '' : html`<label class="field lf-text"><span>Buscar en el catálogo</span>
+            <input type="search" name="text" value="${f.text}" autocomplete="off" placeholder="Nombre científico o común"></label>`}
           <button type="button" class="btn-secondary lf-toggle" aria-expanded="false" aria-controls="lfSheet">Filtros</button>
           <div class="lf-sheet" id="lfSheet" role="group" aria-label="Filtros y orden">
           <div class="lf-sheet-head"><h3>Filtros</h3></div>
-          <label class="field"><span>Grupo</span><select name="group">${opt('', 'Todos', f.group)}${groups.map((g) => opt(g, g, f.group))}</select></label>
+          ${field ? '' : html`<label class="field"><span>Grupo</span><select name="group">${opt('', 'Todos', f.group)}${groups.map((g) => opt(g, g, f.group))}</select></label>`}
           <label class="field"><span>Categoría</span><select name="category">${opt('', 'Todas', f.category)}${cats.map((c) => opt(c, c === 'none' ? 'Sin evaluar' : c, f.category))}</select></label>
           <label class="field"><span>Nivel</span><select name="level">${opt('', 'Todos', f.level)}${['1', '2', '3', '4'].map((n) => opt(n, `Nivel ${n}`, f.level))}</select></label>
-          <label class="field"><span>Ordenar por</span><select name="sort">${opt('name', 'Nombre', f.sort)}${opt('category', 'Categoría (CR → LC)', f.sort)}${opt('group', 'Grupo', f.sort)}</select></label>
+          ${field ? '' : html`<label class="field"><span>Ordenar por</span><select name="sort">${opt('name', 'Nombre', f.sort)}${opt('category', 'Categoría (CR → LC)', f.sort)}${opt('group', 'Grupo', f.sort)}</select></label>`}
           <button type="button" class="btn-primary lf-done">Ver especies</button>
           </div>
         </form>
@@ -158,10 +164,11 @@ export function mount(el, { go }) {
           <button type="button" class="chip" id="photoReviewBtn" aria-pressed="${f.photos ? 'true' : 'false'}"
             >Fotos por revisar (${reviews.length})</button></p>` : ''}
         <div class="chips" id="familyChip"></div>
+        ${field ? html`<div id="fieldPicker"></div>` : html`
         <p class="search-count" id="listCount" role="status" aria-live="polite"></p>
         <div class="table-head" aria-hidden="true">
           <span>Especie</span><span>Grupo</span><span>UICN</span><span>Sensibilidad</span><span></span></div>
-        <ul class="rows species-rows" id="speciesList"></ul>
+        <ul class="rows species-rows" id="speciesList"></ul>`}
         <section class="photo-reviews" id="photoReviews" aria-labelledby="pr-title" hidden></section>` : html`
         <section class="placeholder">
           <h3>Este catálogo aún no tiene especies</h3>
@@ -196,7 +203,8 @@ export function mount(el, { go }) {
       if (first) first.focus();
     });
     $('.lf-done', el).addEventListener('click', () => { if (!Nav.close('filtros-especies')) closeSheet(); toggle.focus(); });
-    $('#speciesList', el).addEventListener('click', (ev) => {
+    const listEl = $('#speciesList', el);
+    if (listEl) listEl.addEventListener('click', (ev) => {
       const mark = ev.target.closest('[data-mark]');
       if (mark) {
         const sp = data.species.find((s) => s.taxonID === mark.dataset.mark);
@@ -236,7 +244,7 @@ export function mount(el, { go }) {
         store.set('biodex.speciesFilters', { group: f.group, category: f.category, level: f.level, sort: f.sort });
       }
       paintRows();
-      form.text.focus();
+      if (form.text) form.text.focus();
     });
     paintRows();
   }
@@ -318,6 +326,8 @@ export function mount(el, { go }) {
     const n = chips.filter(([k]) => k !== 'family').length;
     const toggle = $('.lf-toggle', el);
     if (toggle) toggle.textContent = n ? `Filtros (${n})` : 'Filtros';
+    const pickBox = $('#fieldPicker', el);
+    if (pickBox) { paintFieldPicker(pickBox, rows); return; }
     $('#listCount', el).textContent = rows.length === total ? plural(total, 'especie', 'especies')
       : `${rows.length} de ${plural(total, 'especie', 'especies')}`;
     const markable = canMark(data.catalog);
@@ -330,6 +340,27 @@ export function mount(el, { go }) {
         <span class="sp-level">${sensitivityBadge(s.sensitivity)}</span>
       </button>${markable ? html`<button type="button" class="sp-mark" data-mark="${s.taxonID}"
         ><span class="lbl-studio">Marcar aquí</span><span class="lbl-field">Marcar</span><span class="sr-only"> ${sciNameText(s)}</span></button>` : ''}</li>`)}` : html`<li class="empty"><p class="muted">Ninguna especie cumple los filtros.</p></li>`);
+  }
+
+  // F11f — campo: buscador único (texto, abreviatura, chips de grupo; recientes y «cerca» arriba) sobre lo
+  // que dejan Categoría, Nivel y Familia. El texto y el grupo viven en `fieldKeep` (módulo): la pestaña
+  // vuelve como se dejó.
+  let picker = null;
+  function paintFieldPicker(box, rows) {
+    if (picker) picker.destroy();
+    const catalog = data.catalog;
+    picker = mountSpeciesPicker(box, {
+      species: rows, catalogId: catalog.id, keep: fieldKeep, position: () => lastPos,
+      label: `Buscar en «${catalog.name}»`,
+      onPick: (sp) => {
+        lastOpened = sp.taxonID;
+        openSpeciesDetail(sp.taxonID, { onChanged: load, onOpen: (id) => { lastOpened = id; } });
+      },
+      onMark: canMark(catalog) ? (sp) => openMarkHere(sp, catalog, { onSaved: () => picker && picker.refresh() }) : null,
+    });
+    if (!lastPos) {
+      quietPosition().then((p) => { if (p && alive) { lastPos = p; if (picker) picker.setPosition(); } });
+    }
   }
 
   // Ficha abierta desde la lista: anterior/siguiente según el orden y los filtros que se ven ahora.
@@ -345,10 +376,10 @@ export function mount(el, { go }) {
   }
 
   const unsubscribe = subscribe((key) => {
-    if (key === 'activeCatalog') { data = null; f.family = ''; load(); }
+    if (key === 'activeCatalog') { data = null; f.family = ''; fieldKeep.query = ''; fieldKeep.group = ''; load(); }
     if (key === 'online' && state.online && (device || !data)) load();
     if (key === 'download' && !data && state.activeCatalog && !state.downloads[state.activeCatalog.id]) load();
   });
   load();
-  return () => { alive = false; unsubscribe(); if (Nav.has('filtros-especies')) Nav.close('filtros-especies'); };
+  return () => { alive = false; unsubscribe(); if (picker) picker.destroy(); if (Nav.has('filtros-especies')) Nav.close('filtros-especies'); };
 }

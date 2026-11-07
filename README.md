@@ -98,6 +98,7 @@ docker compose exec php php bin/test-f11b.php   # fotos de respaldo (iNaturalist
 docker compose exec php php bin/test-f11d.php   # fotos de respaldo de GBIF y Commons, copias locales y cascada
 node shared/iucn-engine.test.js && node shared/geo-metrics.test.js && node frontend/tests/utm.test.mjs
 node frontend/tests/tally.test.mjs && node frontend/tests/qr.test.mjs   # conteo rápido y QR de invitación (F11e)
+node frontend/tests/species-search.test.mjs   # buscador de especies (F11f)
 ```
 En GitHub, `.github/workflows/ci.yml` comprueba en cada push la sintaxis de PHP, el Service Worker y las pruebas de JS.
 

@@ -29,7 +29,7 @@
  * Las peticiones de la descarga de zonas (cabecera X-BioDex-Zone) van directas a la red: allí un fallo
  * tiene que ser un fallo, no una tesela vacía.
  */
-var VERSION = 'v18';
+var VERSION = 'v19';
 var CACHE = 'biodex-shell-' + VERSION;
 var NET_TIMEOUT_MS = 3000;
 var TILE_TIMEOUT_MS = 5000;
@@ -62,6 +62,7 @@ var SHELL_ASSETS = [
   'js/nav.js', 'js/util.js', 'js/state.js', 'js/api.js', 'js/auth.js', 'js/app.js',
   'js/db.js', 'js/offline.js', 'js/marks.js', 'js/sync.js', 'js/metrics.js',
   'js/tally.js',   // F11e: conteo rápido
+  'js/species-search.js',   // F11f: buscador de especies (sin DOM)
 
   // js/geo/ y js/map/ (F7)
   'js/geo/utm.js',
@@ -76,6 +77,7 @@ var SHELL_ASSETS = [
   'vendor/qrcode-generator/qrcode.js',   // F11e: QR de invitación
 
   // js/components/
+  'js/components/species-picker.js',   // F11f: buscador del modo campo
   'js/components/overlay.js', 'js/components/species-card.js', 'js/components/marks.js', 'js/components/species-notes.js',
   'js/components/species-assessments.js', 'js/components/species-distribution.js',
   'js/components/catalog-switcher.js',   // F11c: cambiar de catálogo desde la cabecera

@@ -21,13 +21,14 @@
 // ================================================================================================
 
 import { state } from '../state.js';
-import { html, render, $, $$, sciName, sciNameText } from '../util.js';
+import { html, render, $, $$, sciName } from '../util.js';
 import { apiGetJson } from '../api.js';
 import { openOverlay, confirmDialog } from '../components/overlay.js';
 import { createMark, updateMark, markFields, MARK_ROLES, GEOREF_MAP } from '../marks.js';
 import { requestSync } from '../sync.js';
 import { remoteOrLocal, localCatalogData, localSpecies } from '../offline.js';
 import { toUtm, formatUtm } from '../geo/utm.js';
+import { mountSpeciesPicker } from '../components/species-picker.js';
 import { tallyCategories, emptyTally, tallyAdd, tallySet, tallyUndo, tallyKeep, tallyTotal, tallyToMarks } from '../tally.js';
 
 const LOW_ACCURACY_M = 50;
@@ -84,12 +85,13 @@ export function openMarkSheet({ catalog, species = null, occurrence = null, poin
   const editing = !!occurrence;
   const title = editing ? 'Editar marca' : point ? 'Marcar en este punto' : 'Marcar aquí';
   let watchId = null;
+  let picker = null;          // buscador de especies (F11f), si la hoja elige la especie
   const counting = !editing;   // marca nueva = conteo; editar = una ocurrencia
   let tally = emptyTally();
   let showExtra = false;
   let tallyKingdom = null;
   const ov = openOverlay({ key: editing ? 'editar-marca' : 'hoja-marca', title, variant: 'side', className: 'mark-sheet',
-    onClose: () => { if (watchId !== null) navigator.geolocation.clearWatch(watchId); if (onClose) onClose(); },
+    onClose: () => { if (watchId !== null) navigator.geolocation.clearWatch(watchId); if (picker) picker.destroy(); if (onClose) onClose(); },
     isDirty: () => counting && tallyTotal(tally) > 0,
     confirmClose: () => confirmDialog({ key: 'descartar-conteo', title: 'Descartar el conteo', danger: true,
       confirmLabel: 'Descartar', text: html`<p>Llevas <strong>${tallyTotal(tally)}</strong> individuos contados sin guardar.</p>` }) });
@@ -177,47 +179,70 @@ export function openMarkSheet({ catalog, species = null, occurrence = null, poin
   form.count.value = String(f.count);
 
   // --- Especie -----------------------------------------------------------------------------------
+  // F11f: sin especie de partida (Mapa, botón flotante), el buscador del modo campo (components/
+  // species-picker.js): nombre común, científico o abreviatura, recientes y «cerca» arriba. Elegida, se
+  // pliega en una línea con «Cambiar» para que el conteo quede a la vista.
+
+  let pickerOpen = !taxonHint;
+  let nearAt = 0;
+  const here = () => (point ? { lat: point.lat, lng: point.lng }
+    : pos ? { lat: pos.coords.latitude, lng: pos.coords.longitude } : null);
+
   function paintSpecies() {
     const box = $('.mark-sp', form);
     if (species) {
       render(box, html`<p class="mark-species">${sciName(species)}<span class="muted"> · ${catalog.name}</span></p>`);
       return;
     }
-    render(box, html`<div class="field"><span>Especie</span>
-      <input type="search" name="q" placeholder="Buscar en «${catalog.name}»…" autocomplete="off" aria-label="Buscar especie">
-      <div class="pick-list" role="radiogroup" aria-label="Especie"><p class="muted">Cargando especies…</p></div></div>`);
-    form.q.addEventListener('input', paintPickList);
-    $('.pick-list', box).addEventListener('change', (ev) => {
-      if (ev.target.name !== 'taxon') return;
-      chosen = speciesList.find((s) => s.taxonID === ev.target.value) || null;
-      paintKingdom();
-      paintSave();
-    });
+    render(box, html`<div class="field mark-pick"><span id="msSp">Especie</span>
+      <div class="mark-chosen" hidden></div>
+      <div class="mark-picker" aria-labelledby="msSp"><p class="muted">Cargando especies…</p></div></div>`);
     remoteOrLocal(() => apiGetJson('/catalogs/' + encodeURIComponent(catalog.id)), () => localCatalogData(catalog.id))
       .then((res) => {
-        speciesList = [...res.data.species].sort((a, b) => sciNameText(a).localeCompare(sciNameText(b), 'es'));
+        speciesList = res.data.species;
         if (taxonHint) chosen = speciesList.find((s) => s.taxonID === taxonHint) || null;
-        if (ov.isOpen()) { paintPickList(); paintKingdom(); paintSave(); }
+        if (!chosen) pickerOpen = true;
+        if (ov.isOpen()) { paintPicker(); paintKingdom(); paintSave(); }
       })
       .catch(() => {
-        const list = $('.pick-list', box);
+        const list = $('.mark-picker', box);
         if (ov.isOpen() && list) render(list, html`<p class="guard-band warn">Sin conexión y sin el catálogo descargado no hay especies que elegir.</p>`);
       });
   }
 
-  function paintPickList() {
-    const list = $('.pick-list', form);
-    if (!list) return;
-    const q = form.q.value.trim().toLowerCase();
-    const match = speciesList.filter((s) => !q || sciNameText(s).toLowerCase().includes(q) ||
-      String(s.vernacularName || '').toLowerCase().includes(q));
-    const shown = match.slice(0, 60);
-    if (chosen && !shown.includes(chosen) && match.includes(chosen)) shown.unshift(chosen);
-    render(list, shown.length ? html`${shown.map((s) => html`<label class="check pick-row">
-        <input type="radio" name="taxon" value="${s.taxonID}" ${chosen && s.taxonID === chosen.taxonID ? html`checked` : ''}>
-        <span>${sciName(s)}${s.vernacularName ? html`<span class="muted"> · ${s.vernacularName}</span>` : ''}</span></label>`)}
-      ${match.length > shown.length ? html`<p class="hint">y ${match.length - shown.length} más: afina la búsqueda.</p>` : ''}`
-      : html`<p class="muted">${speciesList.length ? 'Ninguna especie coincide.' : 'Este catálogo no tiene especies en el dispositivo.'}</p>`);
+  function paintPicker() {
+    const box = $('.mark-sp', form);
+    const chosenBox = $('.mark-chosen', box);
+    const pickBox = $('.mark-picker', box);
+    chosenBox.hidden = !chosen || pickerOpen;
+    pickBox.hidden = !pickerOpen;
+    if (chosen) {
+      render(chosenBox, html`<p class="mark-species">${chosen.vernacularName ? html`<strong>${chosen.vernacularName}</strong> · ` : ''}${sciName(chosen)}</p>
+        <button type="button" class="btn-secondary mark-change" data-change-species>Cambiar<span class="sr-only"> de especie</span></button>`);
+    }
+    if (!pickerOpen) { if (picker) { picker.destroy(); picker = null; } return; }
+    if (picker) picker.destroy();
+    picker = mountSpeciesPicker(pickBox, {
+      species: speciesList, catalogId: catalog.id, keep: pickKeep, position: here, selectedId: chosen && chosen.taxonID,
+      label: `Buscar especie en «${catalog.name}»`,
+      onPick: (sp) => {
+        chosen = sp;
+        pickerOpen = false;
+        paintPicker();
+        paintKingdom();
+        paintSave();
+        const first = $('[data-tally]', form) || save;
+        first.focus();
+      },
+    });
+  }
+  const pickKeep = {};
+
+  /** La posición llega con la hoja abierta: «cerca» se recalcula al llegar y, después, cada 15 s como mucho. */
+  function nearChanged() {
+    if (!picker || Date.now() - nearAt < 15000) return;
+    nearAt = Date.now();
+    picker.setPosition();
   }
 
   // --- Posición --------------------------------------------------------------------------------
@@ -268,6 +293,7 @@ export function openMarkSheet({ catalog, species = null, occurrence = null, poin
       posError = null;
       paintPosition();
       paintSave();
+      nearChanged();
     }, (e) => {
       if (!ov.isOpen()) return;
       posError = gpsError(e);
@@ -439,6 +465,7 @@ export function openMarkSheet({ catalog, species = null, occurrence = null, poin
       }
       return;
     }
+    if (ev.target.closest('[data-change-species]')) { pickerOpen = true; paintPicker(); if (picker) picker.focus(); return; }
     if (ev.target.closest('[data-cancel]')) ov.close();
   });
   form.count.addEventListener('change', () => setCount(toInt(form.count.value)));
@@ -452,7 +479,7 @@ export function openMarkSheet({ catalog, species = null, occurrence = null, poin
   });
   // Intro en una casilla no guarda la marca: solo confirma la cifra.
   form.addEventListener('keydown', (ev) => {
-    if (ev.key === 'Enter' && ev.target.closest('[data-tally-input]')) { ev.preventDefault(); ev.target.blur(); }
+    if (ev.key === 'Enter' && (ev.target.closest('[data-tally-input]') || ev.target.name === 'pkq')) { ev.preventDefault(); ev.target.blur(); }
   });
   form.matureCount.addEventListener('change', () => { setMatureCount(toInt(form.matureCount.value)); paintChoices(); });
   form.mature.addEventListener('change', () => {
@@ -491,7 +518,7 @@ export function openMarkSheet({ catalog, species = null, occurrence = null, poin
     ev.preventDefault();
     err.hidden = true;
     const sp = species || chosen;
-    if (!sp) { showError('Elige la especie.', form.q); return; }
+    if (!sp) { pickerOpen = true; if (speciesList.length) paintPicker(); showError('Elige la especie.', $('.mark-picker input', form) || save); return; }
     const fields = collect();
     let target = null;
     if (!editing && point) {
@@ -552,7 +579,7 @@ export function openMarkSheet({ catalog, species = null, occurrence = null, poin
   paintSave();
   watchGps();
   if (point && form.uncertainty) form.uncertainty.focus();
-  else if (!species && form.q) form.q.focus();
+  else if (!species) { /* F11f: sin teclado de entrada; los recientes y «cerca» se tocan directamente */ }
   else save.focus();
   return ov;
 }

@@ -1357,3 +1357,50 @@ svg.qr-code{width:min(78vw,320px);height:auto;display:block;stroke:none}
 .qr-dialog .qr-catalog{margin:0;font-family:var(--font-display);font-size:var(--fs-lg);text-align:center}
 .qr-dialog .hint{text-align:center}
 .qr-dialog .sheet-body{display:grid;gap:12px}
+
+/* ===== Q. F11f: buscador de especies del modo campo (components/species-picker.js) ================ */
+.picker{display:grid;gap:calc(var(--tap-gap) * 1.5);min-width:0}
+.pk-search input{min-height:var(--tap-main);font-size:var(--fs-md)}
+.pk-chips{display:flex;gap:var(--tap-gap);overflow-x:auto;padding:2px 0 4px;margin:0 -2px;scrollbar-width:none}
+.pk-chips::-webkit-scrollbar{display:none}
+.pk-chip{flex:none;min-height:var(--tap-min);padding:0 14px;font-size:var(--fs-sm)}
+.pk-chip[aria-pressed="true"]{background:var(--leaf-fill);border-color:var(--leaf-fill);color:var(--cream)}
+.pk-chip-n{font-size:var(--fs-xs);font-weight:700;opacity:.8}
+.pk-count{min-height:0}
+.pk-list{list-style:none;margin:0;padding:0;display:grid;gap:var(--tap-gap)}
+.pk-tier{margin:6px 0 -2px;color:var(--muted);font-size:var(--fs-xs);font-weight:700;letter-spacing:var(--tracking-caps);
+  text-transform:uppercase}
+.pk-item{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:stretch;gap:0}
+.pk-row,.pk-card{display:grid;align-items:center;width:100%;min-height:64px;padding:4px 12px 4px 4px;border:1px solid var(--line);
+  border-radius:var(--radius-sm);background:var(--surface);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.pk-row{grid-template-columns:56px minmax(0,1fr);gap:12px}
+.pk-row:hover,.pk-card:hover{border-color:var(--line-strong);box-shadow:var(--shadow-sm)}
+.pk-row.is-chosen,.pk-card.is-chosen{border-color:var(--leaf);box-shadow:inset 0 0 0 1px var(--leaf);background:var(--leaf-tint)}
+.pk-media,.pk-card-media{display:block;width:56px;height:56px;overflow:hidden;border-radius:var(--radius-sm);background:var(--surface-alt)}
+.pk-media img,.pk-card-media img{display:block;width:100%;height:100%;object-fit:cover}
+.pk-media .sil-box,.pk-card-media .sil-box{width:100%;height:100%;aspect-ratio:auto;border:0}
+.pk-names{display:grid;gap:1px;min-width:0}
+.pk-common{font-weight:700;font-size:var(--fs-md);line-height:1.25;overflow-wrap:anywhere}
+.pk-sci{color:var(--ink-soft);font-size:var(--fs-sm);overflow-wrap:anywhere}
+.pk-near{color:var(--leaf);font-size:var(--fs-xs);font-weight:700}
+.pk-mark{min-width:var(--tap-main);padding:0 14px;border:1px solid var(--line);border-left:0;background:var(--surface);color:var(--leaf);
+  font-weight:700;cursor:pointer;border-radius:0 var(--radius-sm) var(--radius-sm) 0}
+.pk-item:has(.pk-mark) .pk-row,.pk-item:has(.pk-mark) .pk-card{border-radius:var(--radius-sm) 0 0 var(--radius-sm)}
+.pk-mark:hover{background:var(--leaf-fill);color:var(--cream)}
+.pk-more,.pk-empty{list-style:none;margin:4px 0 0}
+/* Con 8 especies o menos: rejilla de tarjetas (foto grande, nombre debajo) */
+.picker.is-grid .pk-list{grid-template-columns:repeat(2,minmax(0,1fr))}
+.picker.is-grid .pk-tier{grid-column:1 / -1}
+.picker.is-grid .pk-item{grid-template-columns:1fr;grid-template-rows:1fr auto}
+.pk-card{grid-template-columns:1fr;align-content:start;gap:8px;padding:6px 6px 10px}
+.pk-card-media{width:100%;height:auto;aspect-ratio:4/3}
+.picker.is-grid .pk-mark{min-height:var(--tap-min);border-left:1px solid var(--line);border-top:0;border-radius:0 0 var(--radius-sm) var(--radius-sm)}
+.picker.is-grid .pk-item:has(.pk-mark) .pk-card{border-radius:var(--radius-sm) var(--radius-sm) 0 0}
+@media (min-width:600px){ .picker.is-grid .pk-list{grid-template-columns:repeat(3,minmax(0,1fr))} }
+/* En la hoja de marcar: elegida la especie, una línea con «Cambiar» */
+.mark-pick{gap:8px}
+.mark-chosen{display:flex;align-items:center;justify-content:space-between;gap:var(--tap-gap);padding:8px 8px 8px 12px;
+  background:var(--leaf-tint);border-left:var(--rule) solid var(--leaf-fill);border-radius:var(--radius-sm)}
+.mark-chosen .mark-species{margin:0;min-width:0;overflow-wrap:anywhere}
+.mark-change{flex:none}
+.list-filters.is-field-filters{display:flex;justify-content:flex-end;margin-bottom:4px}
