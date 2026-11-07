@@ -9,7 +9,7 @@
 //   occurrences     occurrenceID → marca DwC + status (pending · synced · rejected), reason, authorId,
 //                   generalized, serverSeq, clientUpdatedAt, deletedAt, catalogId
 //   outbox          id autoincremental → {kind: species · occurrence · delete · note · noteDelete ·
-//                   assessment · assessmentDelete, ref,
+//                   assessment · assessmentDelete · impact · impactDelete (F11g), ref,
 //                   catalogId, attempts, lastError, rejected?}
 //   meta            key → value (cursor:<catalogId>, syncv:<catalogId>, deviceId, lastSync, persistAsked…)
 //   zones           id → zona de mapa para usar sin conexión (F7, js/map/zones.js): {id, name, bounds,
@@ -23,11 +23,17 @@
 //                   authorId, recordedBy, clientUpdatedAt, status (de sincronización, como las marcas), reason,
 //                   serverSeq, deletedAt}
 //   parameters      [catalogId, taxonID, key] → parámetro de una especie en un catálogo (F11f): {catalogId, taxonID,
-//                   key, value, valueMin, valueMax, quality, source, setBy, setById, setAt, serverSeq}. Solo bajan
-//                   por el pull (se editan con red, owner y custodio): nunca van a la cola.
+//                   key, value, valueMin, valueMax, quality, source, justification, setBy, setById, setAt, serverSeq}.
+//                   Solo bajan por el pull (se editan con red, owner y custodio): nunca van a la cola.
+//   impacts         impactID → impacto registrado en campo (F11g): {impactID, catalogId, threatCode, quickKey,
+//                   decimalLatitude, decimalLongitude, radiusM, polygon, eventDate, intensity, scopePct, timing, note,
+//                   species: [taxonID], authorId, recordedBy, generalized, clientUpdatedAt, status, reason, serverSeq,
+//                   deletedAt}. Cola `impact` / `impactDelete`, como las marcas.
+//   locations       [catalogId, taxonID] → nº de localidades confirmado (F11g): {count, groups, justification, quality,
+//                   source, separationKm, setBy, setAt, serverSeq}. Solo bajan por el pull (se editan con red).
 // ================================================================================================
 
-const DB_VERSION = 5;   // 2 (F7): zones · 3 (F8a): notes · 4 (F8b): assessments · 5 (F11f): parameters
+const DB_VERSION = 6;   // 2 (F7): zones · 3 (F8a): notes · 4 (F8b): assessments · 5 (F11f): parameters · 6 (F11g): impacts, locations
 let current = null;       // {name, db}
 
 const req = (r) => new Promise((resolve, reject) => {
@@ -54,6 +60,11 @@ function upgrade(db, oldVersion) {
     const params = db.createObjectStore('parameters', { keyPath: ['catalogId', 'taxonID', 'key'] });
     params.createIndex('catalogId', 'catalogId');
     params.createIndex('catalogTaxon', ['catalogId', 'taxonID']);
+  }
+  if (oldVersion < 6) {
+    const impacts = db.createObjectStore('impacts', { keyPath: 'impactID' });
+    impacts.createIndex('catalogId', 'catalogId');
+    db.createObjectStore('locations', { keyPath: ['catalogId', 'taxonID'] });
   }
 }
 

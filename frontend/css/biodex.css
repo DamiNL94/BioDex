@@ -1472,3 +1472,72 @@ svg.qr-code{width:min(78vw,320px);height:auto;display:block;stroke:none}
   .detail-tab{flex:1 1 0;min-width:0;padding:4px 6px;white-space:normal;line-height:1.15;text-align:center}
   .detail-tab[aria-selected="true"]::after{left:4px;right:4px}
 }
+
+/* ===== F11g · Impactos, evaluación UICN con cuantificadores, subpoblaciones y GBIF ===================== */
+.status-toggle.three{grid-template-columns:repeat(3,1fr)}
+.status-toggle button.active{background:var(--leaf-fill);color:var(--cream)}
+.status-toggle button:disabled{opacity:.5;cursor:not-allowed}
+/* Hoja de impacto: botones grandes, como el conteo */
+.impact-quick{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--tap-gap)}
+.impact-quick-btn{min-height:var(--tap-big);padding:8px 12px;border:2px solid var(--line-strong);border-radius:var(--radius-md);
+  background:var(--surface-alt);color:var(--ink);font-weight:800;font-size:var(--fs-md);text-align:left;cursor:pointer}
+.impact-quick-btn.active,.impact-quick-btn:hover{border-color:var(--warn);background:var(--warn-bg)}
+.impact-quick-btn .muted{font-weight:400;font-size:var(--fs-xs)}
+.impact-tree{margin-top:12px;display:grid;gap:4px}
+.impact-tree-items{display:grid;gap:2px;padding:4px 0 8px 12px}
+.impact-tree-items .link-btn{min-height:var(--tap-min);text-align:left}
+.impact-chosen{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.impact-species-scroll{max-height:240px;overflow:auto;display:grid;gap:4px;padding-right:4px}
+.impact-species legend{font-weight:700}
+/* Pestaña Evaluación UICN */
+.iucn-tab{display:grid;gap:14px}
+.iucn-head{border-left:6px solid var(--iucn-dd);padding:10px 14px;background:var(--surface);border-radius:var(--radius-md);box-shadow:var(--shadow-sm)}
+.iucn-cat-line{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:2px 0}
+.iucn-cat-line .assess-cat{font-size:var(--fs-xl)}
+.iucn-cat-label{font-weight:700}
+.iucn-string{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:var(--fs-md);margin:4px 0}
+.iucn-range{margin:4px 0}
+.iucn-choices{display:grid;gap:8px;margin-top:10px}
+.crit-card{border:1px solid var(--line);border-radius:var(--radius-md);padding:10px 12px;background:var(--surface)}
+.crit-card.is-determining{border-color:var(--brass);box-shadow:inset 4px 0 0 var(--brass)}
+.crit-card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.crit-card-head h5{margin:0}
+.crit-key{display:inline-block;min-width:1.6em;text-align:center;font-weight:800;color:var(--cream);background:var(--ink-soft);border-radius:var(--radius-sm);margin-right:4px}
+.crit-data{display:grid;grid-template-columns:max-content 1fr;gap:4px 12px;margin:8px 0}
+.crit-data dt{color:var(--muted);font-size:var(--fs-sm)}
+.crit-data dd{margin:0}
+.crit-needs{background:var(--warn-bg);color:var(--warn-ink);border-radius:var(--radius-sm);padding:6px 10px;margin-top:8px}
+.crit-needs ul{margin:4px 0 0;padding-left:18px}
+.crit-needs .link-btn{color:inherit;text-decoration:underline}
+.crit-reasons{padding-left:18px;font-size:var(--fs-sm)}
+.facts{list-style:none;padding:0;margin:4px 0 8px;display:grid;gap:6px}
+.fact{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--line)}
+.fact-label{flex:1 1 220px}
+.fact-just{flex-basis:100%}
+.fact-meta{font-size:var(--fs-xs)}
+.fact.is-editing{display:block}
+.badge.suggest{background:var(--sea-tint);color:var(--ink)}
+.locations{margin:8px 0;padding:8px 10px;border:1px dashed var(--line-strong);border-radius:var(--radius-sm)}
+.loc-groups{margin:4px 0;padding-left:18px}
+.field-inline{display:flex;align-items:center;gap:10px}
+.field-inline>span{min-width:3em;font-weight:700}
+.snap-compare tr.is-changed td{background:var(--warn-bg);font-weight:700}
+.snap-check{display:inline-flex;margin-left:auto}
+/* Subpoblaciones: 8 colores (tabla y mapa) */
+.sp-c0{--sp:#2E6E4E} .sp-c1{--sp:#9E5610} .sp-c2{--sp:#2B5C8A} .sp-c3{--sp:#7A3B69}
+.sp-c4{--sp:#6B7A12} .sp-c5{--sp:#A23B2A} .sp-c6{--sp:#3E7C7C} .sp-c7{--sp:#5B4A9E}
+.subpop-swatch{display:inline-block;width:.8em;height:.8em;border-radius:2px;background:var(--sp);margin-right:6px;vertical-align:-1px}
+path.subpop-shape{stroke:var(--sp);stroke-width:2.5;fill:var(--sp);fill-opacity:.18}
+path.subpop-shape.is-cell{stroke-width:1;fill-opacity:.12;stroke-dasharray:3 3}
+path.subpop-shape.is-generalized{stroke-dasharray:6 4;fill-opacity:.10}
+.subpop-label{font-weight:800;background:var(--surface);border:1px solid var(--line-strong);box-shadow:none}
+path.impact-shape{stroke:var(--danger);stroke-width:2;stroke-dasharray:6 4;fill:var(--danger);fill-opacity:.10}
+path.impact-shape.is-past{stroke:var(--muted);fill:var(--muted)}
+path.impact-shape.is-future{fill-opacity:.04}
+.map-btn-subpops.is-active{background:var(--leaf-fill);color:var(--cream)}
+/* Comparación con GBIF */
+.gbif-map{height:260px;border-radius:var(--radius-md);margin:8px 0}
+path.gbif-pt.is-gbif{stroke:#2B5C8A;fill:#2B5C8A;fill-opacity:.55}
+path.gbif-pt.is-biodex{stroke:var(--brass-ink);fill:var(--brass);fill-opacity:.9}
+.legend-dot{display:inline-block;width:.8em;height:.8em;border-radius:50%;vertical-align:-1px;margin:0 4px 0 8px}
+.legend-dot.is-gbif{background:#2B5C8A} .legend-dot.is-biodex{background:var(--brass)}

@@ -28,6 +28,7 @@ import { mountSpeciesPicker, quietPosition } from '../components/species-picker.
 import { fold } from '../species-search.js';
 import { fabStack } from '../components/fab.js';
 import { openMarkSheet } from './mark-sheet.js';
+import { openImpactSheet } from './impact-sheet.js';
 
 export { IUCN_CODES };
 const ADD_ROLES = ['owner', 'custodian', 'editor'];
@@ -182,6 +183,8 @@ export function mount(el, { go }) {
     // F11f: botón flotante «Marcar» (campo): la hoja con el buscador de especies.
     const fab = $('.fab-stack [data-mark]', el);
     if (fab) fab.addEventListener('click', () => openMarkSheet({ catalog, onSaved: () => picker && picker.refresh() }));
+    const impactFab = $('.fab-stack [data-impact]', el);
+    if (impactFab) impactFab.addEventListener('click', () => openImpactSheet({ catalog }));
     const add = $('#addSpeciesBtn', el);
     if (add) add.addEventListener('click', () => openAddSpecies(catalog, { onChanged: load }));
     // Sin servidor no hay buscador (EIDOS), pero sí se puede dar de alta una especie de usuario: se

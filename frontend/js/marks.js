@@ -8,6 +8,7 @@
 // Hay como mucho UNA entrada de cola por marca o nota: la última intención (crear/editar o borrar) gana.
 // Notas (F8a): almacén `notes`, cola `note` / `noteDelete`, mismas reglas que las marcas.
 // Evaluaciones UICN (F8b): almacén `assessments`, cola `assessment` / `assessmentDelete`, mismas reglas.
+// Impactos (F11g): almacén `impacts`, cola `impact` / `impactDelete`, mismas reglas.
 // ================================================================================================
 
 import { state } from './state.js';
@@ -17,7 +18,7 @@ export const MARK_ROLES = ['owner', 'custodian', 'editor'];
 // Términos que viajan en el push (el resto de campos del registro local son del dispositivo).
 const PUSH_FIELDS = ['occurrenceID', 'taxonID', 'eventDate', 'decimalLatitude', 'decimalLongitude',
   'coordinateUncertaintyInMeters', 'basisOfRecord', 'occurrenceStatus', 'individualCount', 'mature_count',
-  'lifeStage', 'sex', 'habitat', 'georeferenceProtocol', 'georeferenceRemarks', 'occurrenceRemarks', 'clientUpdatedAt'];
+  'lifeStage', 'sex', 'habitat', 'georeferenceProtocol', 'georeferenceRemarks', 'occurrenceRemarks', 'sampleSizeValue', 'clientUpdatedAt'];
 const NOTE_PUSH_FIELDS = ['noteID', 'taxonID', 'text', 'clientUpdatedAt'];
 export const BACKUP_FORMAT = 'biodex-backup';
 export const GEOREF_GPS = 'GPS del dispositivo';
@@ -61,6 +62,7 @@ export function notePayload(note) {
 
 const text = (v) => (typeof v === 'string' && v.trim() ? v.trim() : null);
 const count = (v) => (Number.isInteger(v) && v >= 0 ? v : null);
+const area = (v) => { const n = typeof v === 'string' ? Number(v.replace(',', '.')) : v; return typeof n === 'number' && Number.isFinite(n) && n > 0 ? n : null; };
 
 /**
  * Campos editables de la hoja de marca, ya limpios y coherentes con las reglas del servidor
@@ -76,6 +78,7 @@ export function markFields(f = {}) {
     occurrenceStatus: absent ? 'absent' : 'present',
     individualCount,
     mature_count: mature,
+    sampleSizeValue: absent ? null : area(f.sampleSizeValue),   // F11g: superficie contada (m²): la marca es una parcela
     lifeStage: absent ? null : text(f.lifeStage),
     sex: absent ? null : text(f.sex),
     habitat: text(f.habitat),
@@ -95,7 +98,7 @@ async function enqueue(t, entry) {
  * punto marcado en el mapa, con la precisión que estima el usuario, obligatoria). `fields`: los de
  * markFields(). Devuelve la marca guardada.
  */
-export async function createMark({ catalogId, taxonID, pos = null, point = null, fields = {} }) {
+export async function createMark({ catalogId, taxonID, pos = null, point = null, fields = {}, eventDate = null }) {
   let where;
   if (point) {
     const unc = Math.round(Number(point.uncertainty));
@@ -110,7 +113,7 @@ export async function createMark({ catalogId, taxonID, pos = null, point = null,
   const now = isoNow();
   const occ = {
     occurrenceID: uuid(), catalogId, taxonID,
-    eventDate: now,
+    eventDate: eventDate || now,   // F11g: las marcas de un mismo conteo comparten fecha (son un solo recuento)
     ...where,
     basisOfRecord: 'HumanObservation',
     ...markFields(fields),
@@ -271,6 +274,93 @@ export async function assessmentsFor(catalogId, taxonID) {
     .sort((a, b) => (b.isReference - a.isReference) || (Date.parse(b.clientUpdatedAt) - Date.parse(a.clientUpdatedAt)));
 }
 
+// --- Impactos (F11g) -----------------------------------------------------------------------------
+// Registrados en campo, también sin red. Punto + radio (GPS o punto del mapa) o polígono. Cada uno con su
+// amenaza del esquema UICN v3.3 (shared/iucn-threats.json) y las especies del catálogo afectadas.
+
+const IMPACT_PUSH_FIELDS = ['impactID', 'threatCode', 'quickKey', 'decimalLatitude', 'decimalLongitude', 'radiusM', 'polygon',
+  'eventDate', 'intensity', 'scopePct', 'timing', 'note', 'species', 'clientUpdatedAt'];
+export const IMPACT_INTENSITIES = { low: 'Baja', medium: 'Media', high: 'Alta' };
+export const IMPACT_TIMINGS = { past: 'Pasado', ongoing: 'En curso', future: 'Futuro' };
+export const IMPACT_RADIUS_DEFAULT = 25;
+
+export function impactPayload(i) {
+  const out = {};
+  for (const k of IMPACT_PUSH_FIELDS) if (i[k] !== undefined && i[k] !== null) out[k] = i[k];
+  out.species = Array.isArray(i.species) ? i.species : [];
+  return out;
+}
+
+/** Campos editables de un impacto, limpios y con las reglas del servidor (Lib/sync.php › syncValidateImpact). */
+export function impactFields(f = {}) {
+  if (!f.threatCode) throw new Error('Elige la amenaza.');
+  if (!IMPACT_INTENSITIES[f.intensity]) throw new Error('Elige la intensidad.');
+  if (!IMPACT_TIMINGS[f.timing]) throw new Error('Elige si es pasado, en curso o futuro.');
+  const raw = f.scopePct === null || f.scopePct === undefined ? '' : String(f.scopePct).trim();
+  const scope = raw === '' ? null : Number(raw.replace(',', '.'));
+  if (scope !== null && (!Number.isFinite(scope) || scope < 0 || scope > 100)) throw new Error('El alcance va de 0 a 100 %.');
+  const note = text(f.note);
+  if (note && note.length > NOTE_MAX) throw new Error('La nota pasa de ' + NOTE_MAX + ' caracteres.');
+  return { threatCode: f.threatCode, quickKey: f.quickKey || null, intensity: f.intensity, timing: f.timing, scopePct: scope, note,
+    species: [...new Set(f.species || [])] };
+}
+
+/** Impacto nuevo: punto + radio (`point` {lat, lng}, `radiusM`) o `polygon` [[lat, lon]…]. Sin red también. */
+export async function createImpact({ catalogId, point = null, radiusM = IMPACT_RADIUS_DEFAULT, polygon = null, fields }) {
+  const f = impactFields(fields);
+  let where;
+  if (polygon && polygon.length >= 3) {
+    const lat = polygon.reduce((s, v) => s + v[0], 0) / polygon.length;
+    const lon = polygon.reduce((s, v) => s + v[1], 0) / polygon.length;
+    where = { decimalLatitude: lat, decimalLongitude: lon, radiusM: null, polygon };
+  } else {
+    if (!point || !Number.isFinite(point.lat) || !Number.isFinite(point.lng)) throw new Error('Sin posición no se puede registrar el impacto.');
+    const r = Math.round(Number(radiusM));
+    if (!Number.isFinite(r) || r < 1 || r > 100000) throw new Error('El radio va de 1 m a 100 km.');
+    where = { decimalLatitude: point.lat, decimalLongitude: point.lng, radiusM: r, polygon: null };
+  }
+  const now = isoNow();
+  const imp = { impactID: uuid(), catalogId, ...where, ...f, eventDate: fields.eventDate || now, clientUpdatedAt: now,
+    authorId: state.user.id, recordedBy: state.user.name || state.user.email, generalized: false,
+    status: 'pending', reason: null, serverSeq: null, deletedAt: null };
+  await tx(['impacts', 'outbox'], 'readwrite', async (t) => {
+    await t.put('impacts', imp);
+    await enqueue(t, { kind: 'impact', ref: imp.impactID, catalogId });
+  });
+  return imp;
+}
+
+/** Edita un impacto propio (no su sitio ni su fecha). */
+export async function updateImpact(impactID, fields) {
+  const f = impactFields(fields);
+  return tx(['impacts', 'outbox'], 'readwrite', async (t) => {
+    const imp = await t.get('impacts', impactID);
+    if (!imp || imp.authorId !== state.user.id || imp.deletedAt) return null;
+    const next = { ...imp, ...f, clientUpdatedAt: isoNow(), status: 'pending', reason: null };
+    await t.put('impacts', next);
+    await enqueue(t, { kind: 'impact', ref: impactID, catalogId: imp.catalogId });
+    return next;
+  });
+}
+
+/** Borrado lógico de un impacto propio; se sincroniza. */
+export async function deleteImpact(impactID) {
+  await tx(['impacts', 'outbox'], 'readwrite', async (t) => {
+    const imp = await t.get('impacts', impactID);
+    if (!imp || imp.authorId !== state.user.id) return;
+    const now = isoNow();
+    await t.put('impacts', { ...imp, deletedAt: now, clientUpdatedAt: now, status: 'pending', reason: null });
+    await enqueue(t, { kind: 'impactDelete', ref: impactID, catalogId: imp.catalogId });
+  });
+}
+
+/** Impactos visibles de un catálogo (de una especie, si se da), más recientes primero. */
+export async function impactsFor(catalogId, taxonID = null) {
+  return (await byIndex('impacts', 'catalogId', catalogId))
+    .filter((i) => !i.deletedAt && (!taxonID || (i.species || []).includes(taxonID)))
+    .sort((a, b) => Date.parse(b.eventDate) - Date.parse(a.eventDate));
+}
+
 /** Notas visibles de una especie en un catálogo, en orden cronológico (las más antiguas primero). */
 export async function notesFor(catalogId, taxonID) {
   return (await byIndex('notes', 'taxonID', taxonID))
@@ -300,13 +390,14 @@ export async function queueCounts() {
 /** Almacén del registro al que apunta una entrada de la cola (null para especies). */
 export const storeOf = (kind) => (kind === 'note' || kind === 'noteDelete' ? 'notes'
   : kind === 'assessment' || kind === 'assessmentDelete' ? 'assessments'
-    : kind === 'species' ? null : 'occurrences');
+    : kind === 'impact' || kind === 'impactDelete' ? 'impacts'
+      : kind === 'species' ? null : 'occurrences');
 
 /** Entrada de cola que es un borrado (de marca, nota o evaluación). */
-export const isDeleteKind = (kind) => kind === 'delete' || kind === 'noteDelete' || kind === 'assessmentDelete';
+export const isDeleteKind = (kind) => kind === 'delete' || kind === 'noteDelete' || kind === 'assessmentDelete' || kind === 'impactDelete';
 
 /** Almacenes con registros en cola (para las transacciones que los tocan todos). */
-export const RECORD_STORES = ['occurrences', 'notes', 'assessments'];
+export const RECORD_STORES = ['occurrences', 'notes', 'assessments', 'impacts'];
 
 /** Rechazadas con su marca, nota o evaluación, para Ajustes › Sincronización. */
 export async function rejectedItems() {
@@ -316,6 +407,7 @@ export async function rejectedItems() {
     occurrence: storeOf(e.kind) === 'occurrences' ? await get('occurrences', e.ref) : null,
     note: storeOf(e.kind) === 'notes' ? await get('notes', e.ref) : null,
     assessment: storeOf(e.kind) === 'assessments' ? await get('assessments', e.ref) : null,
+    impact: storeOf(e.kind) === 'impacts' ? await get('impacts', e.ref) : null,
     species: e.kind === 'species' ? await get('species', e.ref) : null,
   })));
 }
@@ -382,6 +474,7 @@ export async function buildBackup(catalogId = null) {
   const species = [];
   const notes = [];
   const assessments = [];
+  const impacts = [];
   const catalogIds = new Set();
   for (const e of entries) {
     catalogIds.add(e.catalogId);
@@ -394,6 +487,12 @@ export async function buildBackup(catalogId = null) {
       const a = await get('assessments', e.ref);
       if (a) assessments.push({ catalogId: a.catalogId, action: e.kind === 'assessmentDelete' ? 'delete' : 'upsert',
         ...assessmentPayload(a), recordedBy: a.recordedBy, deletedAt: a.deletedAt || null });
+      continue;
+    }
+    if (storeOf(e.kind) === 'impacts') {
+      const i = await get('impacts', e.ref);
+      if (i) impacts.push({ catalogId: i.catalogId, action: e.kind === 'impactDelete' ? 'delete' : 'upsert', ...impactPayload(i),
+        recordedBy: i.recordedBy, deletedAt: i.deletedAt || null });
       continue;
     }
     if (storeOf(e.kind) === 'notes') {
@@ -412,10 +511,10 @@ export async function buildBackup(catalogId = null) {
     const c = await get('catalogs', id);
     catalogs.push({ id, name: c ? c.name : null });
   }
-  // version 2 (F8a): + notes · 3 (F8b): + assessments. El importador acepta también los anteriores.
+  // version 2 (F8a): + notes · 3 (F8b): + assessments · 4 (F11g): + impacts. El importador acepta también los anteriores.
   return {
-    format: BACKUP_FORMAT, version: 3, exportedAt: isoNow(), userId: state.user.id, userEmail: state.user.email,
-    catalogs, species, occurrences, notes, assessments,
+    format: BACKUP_FORMAT, version: 4, exportedAt: isoNow(), userId: state.user.id, userEmail: state.user.email,
+    catalogs, species, occurrences, notes, assessments, impacts,
   };
 }
 
@@ -471,6 +570,14 @@ export async function importBackup(backup) {
       await t.put('notes', { ...fields, status: 'pending', reason: null, authorId: state.user.id,
         serverSeq: null, deletedAt: n.deletedAt || null });
       await enqueue(t, { kind: action === 'delete' ? 'noteDelete' : 'note', ref: n.noteID, catalogId: n.catalogId });
+      added++;
+    }
+    for (const i of Array.isArray(backup.impacts) ? backup.impacts : []) {
+      if (!i || !i.impactID || !i.catalogId || await t.get('impacts', i.impactID)) { skipped++; continue; }
+      const { action, ...fields } = i;
+      await t.put('impacts', { ...fields, status: 'pending', reason: null, authorId: state.user.id, generalized: false,
+        serverSeq: null, deletedAt: i.deletedAt || null });
+      await enqueue(t, { kind: action === 'delete' ? 'impactDelete' : 'impact', ref: i.impactID, catalogId: i.catalogId });
       added++;
     }
     for (const a of Array.isArray(backup.assessments) ? backup.assessments : []) {

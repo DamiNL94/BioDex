@@ -29,7 +29,7 @@
  * Las peticiones de la descarga de zonas (cabecera X-BioDex-Zone) van directas a la red: allí un fallo
  * tiene que ser un fallo, no una tesela vacía.
  */
-var VERSION = 'v19';
+var VERSION = 'v20';
 var CACHE = 'biodex-shell-' + VERSION;
 var NET_TIMEOUT_MS = 3000;
 var TILE_TIMEOUT_MS = 5000;
@@ -90,13 +90,18 @@ var SHELL_ASSETS = [
   'js/views/search.js', 'js/views/catalog-builder.js', 'js/views/species-new.js', 'js/views/species-detail.js',
   'js/views/catalog-team.js', 'js/views/join.js', 'js/views/mark-sheet.js', 'js/views/iucn-wizard.js',
   'js/views/catalog-export.js',
+  // F11g: impactos, evaluación UICN con cuantificadores, subpoblaciones en el mapa y comparación con GBIF
+  'js/views/impact-sheet.js', 'js/assessment.js', 'js/components/species-iucn.js', 'js/components/gbif-compare-map.js',
+  'js/map/subpops-layer.js',
 
   // shared/ (F8b): motor UICN y sus umbrales, servidos por nginx en /shared/ — el asistente funciona sin red
   'shared/iucn-engine.js', 'shared/iucn-criteria.json',
   // shared/ (F9): EOO y AOO provisionales sin red
   'shared/geo-metrics.js',
   // shared/ (F11f): grupos de especies (separación por defecto entre subpoblaciones) sin red
-  'shared/species-groups.json'
+  'shared/species-groups.json',
+  // shared/ (F11g): cuantificadores (maduros, subpoblaciones, fragmentación, localidades) y amenazas UICN sin red
+  'shared/iucn-quantifiers.js', 'shared/iucn-threats.json'
 
 ];
 

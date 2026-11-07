@@ -17,6 +17,8 @@
 //     «Individuo maduro» (con varios: «¿cuántos maduros?») → lifeStage adult + mature_count, estado
 //     vital según el reino y sexo (solo fauna).
 //   · Hábitat (se recuerda el último de esta sesión) y observaciones.
+//   · F11g: «Superficie contada (m²)», opcional: la marca es una PARCELA y su densidad de maduros sirve para
+//     estimar el total (docs/iucn.md). Las marcas de un mismo conteo comparten fecha y superficie.
 // Vocabularios: los de GBIF que valida el servidor (Lib/sync.php); aquí solo sus etiquetas.
 // ================================================================================================
 
@@ -24,7 +26,7 @@ import { state } from '../state.js';
 import { html, render, $, $$, sciName } from '../util.js';
 import { apiGetJson } from '../api.js';
 import { openOverlay, confirmDialog } from '../components/overlay.js';
-import { createMark, updateMark, markFields, MARK_ROLES, GEOREF_MAP } from '../marks.js';
+import { createMark, updateMark, markFields, isoNow, MARK_ROLES, GEOREF_MAP } from '../marks.js';
 import { requestSync } from '../sync.js';
 import { remoteOrLocal, localCatalogData, localSpecies } from '../offline.js';
 import { toUtm, formatUtm } from '../geo/utm.js';
@@ -162,6 +164,9 @@ export function openMarkSheet({ catalog, species = null, occurrence = null, poin
           </div></div>
       </div>
 
+      <label class="field area-field"><span>Superficie contada (m²) <em>(opcional: si has contado en una parcela)</em></span>
+        <input type="number" name="sampleArea" inputmode="decimal" min="0.01" max="100000000" step="any"
+          value="${o.sampleSizeValue ?? ''}" placeholder="p. ej. 100 (10 × 10 m)"></label>
       <label class="field"><span>Hábitat <em>(opcional)</em></span>
         <input name="habitat" maxlength="500" autocomplete="off" value="${habitat0}" placeholder="Encinar, roquedo calizo, borde de arroyo…"></label>
       <label class="field"><span>Observaciones <em>(opcional)</em></span>
@@ -396,6 +401,7 @@ export function openMarkSheet({ catalog, species = null, occurrence = null, poin
     $('.present-only', form).hidden = absent || counting;
     $('.absent-hint', form).hidden = !absent;
     $('.tally', form).hidden = absent || !counting;
+    $('.area-field', form).hidden = absent;
     form.mature.checked = f.mature;
     const many = f.mature && f.count > 1;
     $('.mature-field', form).hidden = !many;
@@ -504,6 +510,7 @@ export function openMarkSheet({ catalog, species = null, occurrence = null, poin
       habitat: form.habitat.value,
       occurrenceRemarks: form.remarks.value,
       georeferenceRemarks: form.georefRemarks ? form.georefRemarks.value : null,
+      sampleSizeValue: form.sampleArea.value,
     };
     return markFields(fields);
   }
@@ -542,9 +549,12 @@ export function openMarkSheet({ catalog, species = null, occurrence = null, poin
       const batch = tallyToMarks(categories, tally, { habitat: form.habitat.value, remarks: form.remarks.value });
       if (!batch.length) { showError('Cuenta al menos un individuo.', save); paintSave(); return; }
       const saved = [];
+      // F11g: un conteo es UN recuento: misma fecha y misma superficie en todas sus marcas.
+      const eventDate = isoNow();
       try {
         for (const fields of batch) {
-          saved.push(await createMark({ catalogId: catalog.id, taxonID: sp.taxonID, ...target, fields: markFields(fields) }));
+          saved.push(await createMark({ catalogId: catalog.id, taxonID: sp.taxonID, ...target, eventDate,
+            fields: markFields({ ...fields, sampleSizeValue: form.sampleArea.value }) }));
         }
       } catch (e) {
         if (saved.length) requestSync();

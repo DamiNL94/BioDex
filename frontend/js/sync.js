@@ -19,7 +19,7 @@
 import { apiGetJson, apiPostJson } from './api.js';
 import { state, subscribe, setSync, setDownload, setActiveCatalog } from './state.js';
 import { tx, getAll, get, put, getMeta, setMeta, hasDb } from './db.js';
-import { deviceId, pushPayload, notePayload, assessmentPayload, assessmentFromServer, storeOf, queueCounts, outboxEntries,
+import { deviceId, pushPayload, notePayload, assessmentPayload, assessmentFromServer, impactPayload, storeOf, queueCounts, outboxEntries,
   RECORD_STORES } from './marks.js';
 import { downloadCatalog, forgetCatalog, isDownloading } from './offline.js';
 
@@ -28,7 +28,7 @@ const PERIOD_MS = 5 * 60 * 1000;
 // trae también `notes`. Un cursor de antes pudo saltarse notas (se lo comía una versión anterior de la
 // app que no las guardaba): con una versión menor se vuelve a pedir desde 0. 3 (F8b): + `assessments`.
 // 4 (F11f): + `parameters` (parámetros de especie).
-const PULL_VERSION = 4;
+const PULL_VERSION = 5;   // 5 (F11g): + `impacts` y `locations`
 const BACKOFF_S = [30, 60, 120, 300];
 const PUSH_BATCH = 200;
 const PULL_LIMIT = 500;
@@ -130,6 +130,7 @@ const ENTITIES = {
   occurrences: { id: 'occurrenceID', results: 'results', stale: 'occurrence', deleteKind: 'delete' },
   notes: { id: 'noteID', results: 'noteResults', stale: 'note', deleteKind: 'noteDelete' },
   assessments: { id: 'assessmentID', results: 'assessmentResults', stale: 'assessment', deleteKind: 'assessmentDelete' },
+  impacts: { id: 'impactID', results: 'impactResults', stale: 'impact', deleteKind: 'impactDelete' },   // F11g
 };
 
 async function applyResults(catalogId, entries, res) {
@@ -171,7 +172,7 @@ async function pushCatalog(catalogId, entries, device) {
   for (let i = 0; i < entries.length; i += PUSH_BATCH) {
     const batch = entries.slice(i, i + PUSH_BATCH);
     const body = { catalogId, deviceId: device, occurrences: [], deletes: [], notes: [], noteDeletes: [],
-      assessments: [], assessmentDeletes: [] };
+      assessments: [], assessmentDeletes: [], impacts: [], impactDeletes: [] };
     const sent = [];
     for (const e of batch) {
       const store = storeOf(e.kind);
@@ -180,6 +181,8 @@ async function pushCatalog(catalogId, entries, device) {
       if (e.kind === 'delete') body.deletes.push({ occurrenceID: e.ref, clientUpdatedAt: rec.clientUpdatedAt });
       else if (e.kind === 'noteDelete') body.noteDeletes.push({ noteID: e.ref, clientUpdatedAt: rec.clientUpdatedAt });
       else if (e.kind === 'assessmentDelete') body.assessmentDeletes.push({ assessmentID: e.ref, clientUpdatedAt: rec.clientUpdatedAt });
+      else if (e.kind === 'impactDelete') body.impactDeletes.push({ impactID: e.ref, clientUpdatedAt: rec.clientUpdatedAt });
+      else if (e.kind === 'impact') body.impacts.push(impactPayload(rec));
       else if (e.kind === 'note') body.notes.push(notePayload(rec));
       else if (e.kind === 'assessment') body.assessments.push(assessmentPayload(rec));
       else body.occurrences.push(pushPayload(rec));
@@ -212,14 +215,19 @@ function fromServer(store, it, catalogId) {
 /** Aplica un lote del pull. Lo que tenga un cambio local en cola no se pisa (el push decide). */
 async function applyPulled(catalogId, res) {
   const { cursor, role } = res;
-  await tx([...RECORD_STORES, 'parameters', 'outbox', 'meta', 'catalogs'], 'readwrite', async (t) => {
+  await tx([...RECORD_STORES, 'parameters', 'locations', 'outbox', 'meta', 'catalogs'], 'readwrite', async (t) => {
     // F11f: parámetros de especie. No tienen cola (se editan con red): lo del servidor manda siempre.
     for (const p of res.parameters || []) {
       if (p.deleted) await t.del('parameters', [catalogId, p.taxonID, p.key]);
       else await t.put('parameters', { ...p, catalogId });
     }
+    // F11g: localidades confirmadas (sin cola, como los parámetros).
+    for (const l of res.locations || []) {
+      if (l.deleted) await t.del('locations', [catalogId, l.taxonID]);
+      else await t.put('locations', { ...l, catalogId });
+    }
     for (const [store, list, idKey] of [['occurrences', res.items || [], 'occurrenceID'], ['notes', res.notes || [], 'noteID'],
-      ['assessments', res.assessments || [], 'assessmentID']]) {
+      ['assessments', res.assessments || [], 'assessmentID'], ['impacts', res.impacts || [], 'impactID']]) {
       for (const it of list) {
         if ((await t.byIndex('outbox', 'ref', it[idKey])).length) continue;
         if (it.deleted) { await t.del(store, it[idKey]); continue; }
@@ -241,9 +249,13 @@ async function applyPulled(catalogId, res) {
  */
 async function resetForeignMarks(catalogId, epoch) {
   const me = state.user && state.user.id;
-  await tx(['occurrences', 'meta'], 'readwrite', async (t) => {
+  await tx(['occurrences', 'impacts', 'meta'], 'readwrite', async (t) => {
     for (const o of await t.byIndex('occurrences', 'catalogId', catalogId)) {
       if (o.authorId !== me) await t.del('occurrences', o.occurrenceID);
+    }
+    // F11g: los impactos ajenos también llevan sitio (generalizado según el nivel de sus especies).
+    for (const i of await t.byIndex('impacts', 'catalogId', catalogId)) {
+      if (i.authorId !== me) await t.del('impacts', i.impactID);
     }
     await t.put('meta', { key: 'cursor:' + catalogId, value: 0 });
     await t.put('meta', { key: 'epoch:' + catalogId, value: epoch });

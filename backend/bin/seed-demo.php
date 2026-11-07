@@ -51,6 +51,10 @@ const ARTEMISIA_POINTS = [
     [36.9900, -3.3300], [36.9910, -3.3285], [36.9893, -3.3312], [36.9905, -3.3320],   // loma sur
 ];
 const ARTEMISIA_ABSENT = [37.0400, -3.3300];
+// F11g: especies de los cuantificadores UICN (datos ficticios). EN por B: tres núcleos a varios km; VU D2: una mancha.
+const DEMO_EN_B = "650";     // Rothmaleria granatensis
+const DEMO_VU_D2 = "6452";   // Odontites viscosus subsp. granatensis
+const DEMO_EN_B_CORES = [[37.1300, -3.3800], [37.1050, -3.3350], [37.0820, -3.3620]];
 
 // ------------------------------------------------------------------------------------------------
 // 1. Cuentas: se crean verificadas o, si ya están, se les devuelve la contraseña de la demo.
@@ -218,6 +222,88 @@ expect($code, [200], "subir la evaluación", $r);
 if (($r["assessmentResults"][0]["status"] ?? "") !== "accepted") fail("evaluación rechazada: " . json_encode($r["assessmentResults"], JSON_UNESCAPED_UNICODE));
 [$code, $r] = http("PUT", "/api/catalogs/{$cat}/species/" . ARTEMISIA . "/reference-assessment", ["assessmentID" => $assessmentID], $jar["owner"]);
 expect($code, [200], "marcar la evaluación de referencia", $r);
+
+// ------------------------------------------------------------------------------------------------
+// 5b. F11g · Cuantificadores UICN: una especie EN por B (tres núcleos con parcelas y recuentos, impactos en
+//     curso, b(iii) y 3 localidades confirmadas) y otra VU D2 (una sola mancha sin recuento de maduros y una
+//     amenaza plausible). Las dos con su evaluación guardada (instantánea, recalculada en el servidor).
+$addSpecies = function (string $taxon) use ($cat, &$jar): void {
+    [$code, $r] = http("POST", "/api/catalogs/{$cat}/species", ["taxonID" => $taxon], $jar["owner"]);
+    expect($code, [200, 201], "añadir {$taxon} al catálogo", $r);
+};
+$addSpecies(DEMO_EN_B);
+$addSpecies(DEMO_VU_D2);
+$f11gMarks = ["owner" => [], "custodian" => [], "editor" => []];
+$k = 0;
+foreach (DEMO_EN_B_CORES as $c => [$lat, $lon]) {
+    foreach ([[0, 0, 60, 100], [0.0012, 0.0009, 45, 100], [-0.0010, 0.0014, 80, 200]] as [$dLat, $dLon, $mature, $area]) {
+        $who = $authors[$k++ % 3];
+        $day = sprintf("2026-07-%02dT10:%02d:00+02:00", 8 + $c * 6, 10 + $k);
+        $f11gMarks[$who][] = ["occurrenceID" => uuidV4(), "taxonID" => DEMO_EN_B, "eventDate" => $day,
+            "clientUpdatedAt" => (new DateTimeImmutable($day))->setTimezone(new DateTimeZone("UTC"))->format("Y-m-d\TH:i:s.000\Z"),
+            "decimalLatitude" => round($lat + $dLat, 7), "decimalLongitude" => round($lon + $dLon, 7), "coordinateUncertaintyInMeters" => 5,
+            "individualCount" => $mature + 12, "mature_count" => $mature, "lifeStage" => "flowering", "sampleSizeValue" => $area,
+            "habitat" => "Matorral almohadillado sobre micaesquistos"];
+    }
+}
+foreach ([[37.1560, -3.4210], [37.1566, -3.4202], [37.1552, -3.4215], [37.1571, -3.4220]] as $i => [$lat, $lon]) {
+    $day = sprintf("2026-08-%02dT11:00:00+02:00", 3 + $i);
+    $f11gMarks["editor"][] = ["occurrenceID" => uuidV4(), "taxonID" => DEMO_VU_D2, "eventDate" => $day,
+        "clientUpdatedAt" => (new DateTimeImmutable($day))->setTimezone(new DateTimeZone("UTC"))->format("Y-m-d\TH:i:s.000\Z"),
+        "decimalLatitude" => $lat, "decimalLongitude" => $lon, "coordinateUncertaintyInMeters" => 8, "individualCount" => 20 + 7 * $i,
+        "habitat" => "Talud de la pista, sobre esquistos removidos"];
+}
+foreach ($f11gMarks as $who => $list) {
+    [$code, $r] = http("POST", "/api/sync/push", ["catalogId" => $cat, "deviceId" => $device[$who], "occurrences" => $list], $jar[$who]);
+    expect($code, [200], "subir las marcas F11g de {$who}", $r);
+    if (array_filter($r["results"], fn($x) => $x["status"] !== "accepted")) fail("marcas F11g rechazadas: " . json_encode($r["results"]));
+}
+// Impactos en curso, uno por núcleo (tres eventos distintos → tres localidades), registrados por la editora.
+$impacts = [];
+foreach ([["6.1", "trampling", "high", 40], ["2.3", "grazing", "medium", 25], ["4.1", "works", "high", 60]] as $c => [$code_, $quick, $int, $scope]) {
+    [$lat, $lon] = DEMO_EN_B_CORES[$c];
+    $impacts[] = ["impactID" => uuidV4(), "threatCode" => $code_, "quickKey" => $quick, "decimalLatitude" => $lat, "decimalLongitude" => $lon,
+        "radiusM" => 300, "eventDate" => sprintf("2026-07-%02dT12:00:00+02:00", 8 + $c * 6), "intensity" => $int, "scopePct" => $scope,
+        "timing" => "ongoing", "note" => DEMO_NOTICE, "species" => [DEMO_EN_B], "clientUpdatedAt" => sprintf("2026-07-%02dT10:30:00.000Z", 8 + $c * 6)];
+}
+$impacts[] = ["impactID" => uuidV4(), "threatCode" => "4.1", "quickKey" => "works", "decimalLatitude" => 37.1562, "decimalLongitude" => -3.4212,
+    "radiusM" => 150, "eventDate" => "2026-08-04T12:00:00+02:00", "intensity" => "high", "scopePct" => 100, "timing" => "future",
+    "note" => "Ensanche previsto de la pista. " . DEMO_NOTICE, "species" => [DEMO_VU_D2], "clientUpdatedAt" => "2026-08-04T10:30:00.000Z"];
+[$code, $r] = http("POST", "/api/sync/push", ["catalogId" => $cat, "deviceId" => $device["editor"], "impacts" => $impacts], $jar["editor"]);
+expect($code, [200], "subir los impactos", $r);
+if (array_filter($r["impactResults"], fn($x) => $x["status"] !== "accepted")) fail("impactos rechazados: " . json_encode($r["impactResults"]));
+// Parámetros y hechos (la custodia)
+$put = function (string $taxon, string $key, array $body) use ($cat, &$jar): void {
+    [$code, $r] = http("PUT", "/api/catalogs/{$cat}/species/{$taxon}/parameters/{$key}", $body, $jar["custodian"]);
+    expect($code, [200], "fijar {$key} de {$taxon}", $r);
+};
+$put(DEMO_EN_B, "separation_distance", ["value" => 1, "quality" => "estimated", "source" => "Valor por defecto del grupo (planta con flor) en BioDex"]);
+$put(DEMO_EN_B, "occupied_habitat_km2", ["value" => 0.6, "valueMin" => 0.4, "valueMax" => 0.9, "quality" => "estimated", "source" => "Cartografía de hábitat (ficticia)"]);
+$put(DEMO_EN_B, "decline_b_iii", ["value" => "yes", "quality" => "inferred",
+    "justification" => "Pisoteo, pastoreo y obras en curso en los tres núcleos reducen la calidad del hábitat. " . DEMO_NOTICE]);
+$put(DEMO_VU_D2, "plausible_threat", ["value" => "yes", "quality" => "projected",
+    "justification" => "Una única mancha en el talud de la pista: el ensanche previsto la eliminaría en muy poco tiempo. " . DEMO_NOTICE]);
+[$code, $a] = http("GET", "/api/catalogs/{$cat}/species/" . DEMO_EN_B . "/assessment", null, $jar["custodian"]);
+expect($code, [200], "evaluación de " . DEMO_EN_B, $a);
+$groups = array_map(fn($g) => array_intersect_key($g, array_flip(["label", "subpops", "impactID", "threatCode", "noThreat"])), $a["locationsProposal"]["groups"]);
+[$code, $r] = http("PUT", "/api/catalogs/{$cat}/species/" . DEMO_EN_B . "/locations", ["count" => $a["locationsProposal"]["count"], "groups" => $groups,
+    "justification" => "Cada núcleo sufre un evento de amenaza distinto (pisoteo, pastoreo, obras): tres localidades. " . DEMO_NOTICE,
+    "quality" => "inferred", "separationKm" => 1], $jar["custodian"]);
+expect($code, [200], "confirmar las localidades", $r);
+$snapshots = [];
+foreach ([DEMO_EN_B, DEMO_VU_D2] as $taxon) {
+    [$code, $a] = http("GET", "/api/catalogs/{$cat}/species/{$taxon}/assessment", null, $jar["custodian"]);
+    expect($code, [200], "evaluación de {$taxon}", $a);
+    $snapshots[$taxon] = $a["result"]["criteriaString"] ?? $a["result"]["category"];
+    [$code, $r] = http("POST", "/api/sync/push", ["catalogId" => $cat, "deviceId" => $device["custodian"], "assessments" => [[
+        "assessmentID" => uuidV4(), "taxonID" => $taxon, "status" => "final", "clientUpdatedAt" => "2026-08-20T09:00:00.000Z",
+        "inputs" => $a["inputs"], "result" => ["quantifiers" => ["origin" => "server", "nPoints" => $a["nPoints"]]],
+        "justification" => DEMO_NOTICE]]], $jar["custodian"]);
+    expect($code, [200], "guardar la evaluación de {$taxon}", $r);
+}
+if ($snapshots[DEMO_EN_B] !== "EN B1ab(iii)+2ab(iii)" || $snapshots[DEMO_VU_D2] !== "VU D2") {
+    fail("las especies de F11g no dan lo esperado: " . json_encode($snapshots, JSON_UNESCAPED_UNICODE));
+}
 
 // 6. La demo exporta Plinian Core (F10c): el servidor valida el XML contra el XSD y, si no valida, no da ZIP.
 foreach (["public"] as $mode) {   // la completa dejaría una fila export_full en el Registro de la demo

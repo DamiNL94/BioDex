@@ -37,6 +37,10 @@ export const PARAMETERS = [
   { key: 'life_form', label: 'Forma de vida', type: 'choice', unit: null,
     choices: { perennial: 'Perenne', annual: 'Anual', biennial: 'Bianual', monocarpic: 'Monocárpica (florece una vez)', other: 'Otra' },
     help: 'Orienta la duración de la generación y cómo contar individuos.', criteria: [] },
+  // F11g: con parcelas de superficie conocida, maduros estimados = densidad media × esta superficie.
+  { key: 'occupied_habitat_km2', label: 'Superficie de hábitat ocupado', type: 'number', unit: 'km²', step: 'any',
+    help: 'Superficie de hábitat donde vive la especie en el área. Con las parcelas (marcas con superficie contada) estima el total de maduros; sin ella, la AOO es solo una cota superior.',
+    criteria: ['C, D (maduros estimados)'] },
 ];
 export const QUALITY_LABELS = { observed: 'Observado', estimated: 'Estimado', inferred: 'Inferido', suspected: 'Sospechado', projected: 'Proyectado' };
 const EDIT_ROLES = ['owner', 'custodian'];
@@ -57,7 +61,7 @@ export function valueText(def, p) {
 
 /** Valor por defecto del grupo sin red: shared/species-groups.json (lo precachea el SW). */
 let groupsCfg = null;
-async function localDefaults(sp) {
+export async function localParameterDefaults(sp) {
   try {
     if (!groupsCfg) groupsCfg = await fetch('/shared/species-groups.json').then((r) => (r.ok ? r.json() : null));
   } catch (e) { groupsCfg = null; }
@@ -73,7 +77,7 @@ async function localParameters(catalog, sp) {
   const cat = await get('catalogs', catalog.id);
   if (!cat || !cat.downloadedAt) return null;
   const parameters = await byIndex('parameters', 'catalogTaxon', [catalog.id, sp.taxonID]);
-  return { parameters, defaults: await localDefaults(sp), canEdit: false };
+  return { parameters, defaults: await localParameterDefaults(sp), canEdit: false };
 }
 
 /**
@@ -271,6 +275,14 @@ export function mountParameters(el, { species, catalog }) {
     if (btn) btn.focus();
   }
 
+  /** F11g: desde la pestaña Evaluación UICN, «rellenar este parámetro»: lo abre (si se puede editar) y lo enfoca. */
+  function focusKey(key) {
+    if (!data) { refresh().then(() => focusKey(key)); return; }
+    if (canEdit()) { editing = key; paint(); return; }
+    const item = $(`.param[data-key="${key}"]`, el);
+    if (item) { item.setAttribute('tabindex', '-1'); item.scrollIntoView({ block: 'center' }); item.focus(); }
+  }
+
   refresh();
-  return { refresh, destroy() { alive = false; } };
+  return { refresh, focusKey, destroy() { alive = false; } };
 }

@@ -64,7 +64,7 @@ function demoReset(PDO $pdo): array {
     try {
         foreach ([[$cats, "catalog_id"], [$users, "user_id"]] as [$ids, $col]) {
             if (!$ids) continue;
-            foreach (["occurrences", "species_notes", "species_assessments", "access_log"] as $t) {
+            foreach (["occurrences", "species_notes", "species_assessments", "impacts", "access_log"] as $t) {   // F11g: impactos
                 $st = $pdo->prepare("DELETE FROM {$t} WHERE {$col} IN ({$in($ids)})");
                 $st->execute($ids);
                 if ($t === "occurrences") $marks += $st->rowCount();

@@ -62,7 +62,7 @@ if (preg_match('#^/api/catalogs/([0-9a-f-]{36})/export(?:/(preview))?/?$#', $pat
     require __DIR__ . "/exports.php";
     exit;
 }
-if (!preg_match('#^/api/catalogs(?:/([0-9a-f-]{36})(?:/(tree|species|offline)(?:/([^/]+)(?:/(sensitivity|reference-assessment|metrics|parameters|assessment|locations)(?:/([a-z_]+))?)?)?)?)?/?$#', $path, $m)) {
+if (!preg_match('#^/api/catalogs(?:/([0-9a-f-]{36})(?:/(tree|species|offline)(?:/([^/]+)(?:/(sensitivity|reference-assessment|metrics|parameters|assessment|locations)(?:/([a-z0-9_]+))?)?)?)?)?/?$#', $path, $m)) {
     apiError("Recurso no encontrado.", 404);
 }
 $catalogId = $m[1] ?? null;

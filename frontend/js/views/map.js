@@ -33,6 +33,7 @@ import { localCatalog, localSpeciesOf, sensitivityLevels } from '../offline.js';
 import { openOverlay, confirmDialog } from '../components/overlay.js';
 import { openMarkSheet, canMark } from './mark-sheet.js';
 import { fabStack } from '../components/fab.js';
+import { openImpactSheet } from './impact-sheet.js';
 import { openSpeciesDetail } from './species-detail.js';
 import { toUtm, formatUtm } from '../geo/utm.js';
 import { LAYERS, tileTemplate, attributionFor, MAP_MAX_ZOOM } from '../map/layers.js';
@@ -40,6 +41,9 @@ import { createMarksLayer, applyFilters, activeFilterCount, markShape, observerC
 import { listZones, onZones, pauseZone, deleteZone } from '../map/zones.js';
 import { openZoneEditor, openZonesList, boundsOf, progressText } from '../map/zone-ui.js';
 import { createMetricsLayer } from '../map/metrics-layer.js';
+import { createSubpopsLayer } from '../map/subpops-layer.js';
+import { speciesAssessment } from '../assessment.js';
+import { impactsFor } from '../marks.js';
 import { speciesMetrics, PROVISIONAL_TEXT, fmtMetricsDate, fmtKm2 } from '../metrics.js';
 
 const GRANADA = [[36.7, -4.3], [38.0, -2.2]];
@@ -50,6 +54,7 @@ const LOW_ACCURACY_M = 50;
 let filters = { taxonID: '', observer: '', who: 'all', from: '', to: '' };
 let filtersCatalog = null;
 let showMetrics = false;   // capa «EOO / AOO» (F9), también sobrevive a cambiar de pestaña
+let showSubpops = false;   // capa «Subpoblaciones» (F11g, estudio), ídem
 
 const ICON = {
   locate: html`<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></svg>`,
@@ -103,6 +108,7 @@ export function mount(el, { go = () => {}, isStudio = () => false } = {}) {
             ><span class="lbl-studio">Ver como lista</span><span class="lbl-field">Lista</span></button>
           <button type="button" class="btn-secondary map-btn" data-zones>Zonas</button>
           <button type="button" class="btn-secondary map-btn map-btn-metrics" data-metrics aria-pressed="false">EOO / AOO</button>
+          ${studio ? html`<button type="button" class="btn-secondary map-btn map-btn-subpops" data-subpops aria-pressed="false">Subpoblaciones</button>` : ''}
           <button type="button" class="icon-btn map-layers-btn" data-layers-btn aria-expanded="false" aria-controls="mapLayers"
             aria-label="Capas del mapa" title="Capas">${ICON.layers}</button>
         </div>
@@ -333,6 +339,52 @@ export function mount(el, { go = () => {}, isStudio = () => false } = {}) {
     paintFilters();
   });
 
+  // --- Subpoblaciones e impactos de la especie elegida (F11g, estudio) ----------------------------
+  const subpopsLayer = createSubpopsLayer(map);
+  let subpops = null;       // {taxonID, drawn, source, data} | {error} | {loading}
+  let subpopsSeq = 0;
+  async function refreshSubpops({ fitAfter = false } = {}) {
+    const cat = state.activeCatalog;
+    const btn = $('[data-subpops]', el);
+    if (btn) { btn.setAttribute('aria-pressed', String(showSubpops)); btn.classList.toggle('is-active', showSubpops); }
+    const mine = ++subpopsSeq;
+    if (!showSubpops || !cat || !filters.taxonID) { subpopsLayer.clear(); subpops = null; paintNote(); return; }
+    const taxonID = filters.taxonID;
+    subpops = { loading: true, taxonID };
+    paintNote();
+    try {
+      const [res, impacts] = await Promise.all([speciesAssessment(cat, speciesById.get(taxonID) || { taxonID }),
+        hasDb() ? impactsFor(cat.id, taxonID) : []]);
+      if (!alive || mine !== subpopsSeq) return;
+      subpops = { taxonID, source: res.source, data: res.data, nImpacts: impacts.length, drawn: subpopsLayer.set(res.data, impacts) };
+      if (fitAfter) subpopsLayer.fitTo();
+    } catch (e) {
+      if (!alive || mine !== subpopsSeq) return;
+      subpopsLayer.clear();
+      subpops = { error: e.message };
+    }
+    paintNote();
+  }
+  const subBtn = $('[data-subpops]', el);
+  if (subBtn) {
+    subBtn.addEventListener('click', () => {
+      showSubpops = !showSubpops;
+      if (showSubpops && !filters.taxonID) { const form = $('#mapFilters', el); if (form.hidden) $('[data-filters]', el).click(); }
+      refreshSubpops({ fitAfter: true });
+    });
+  }
+  function subpopsNote() {
+    if (!showSubpops) return '';
+    if (!filters.taxonID) return html`<p class="hint map-metrics">Subpoblaciones: elige una especie en Filtros.</p>`;
+    if (!subpops || subpops.loading) return html`<p class="hint map-metrics">Calculando subpoblaciones…</p>`;
+    if (subpops.error) return html`<p class="guard-band warn">Subpoblaciones: ${subpops.error}</p>`;
+    const sp = subpops.data.subpopulations || {};
+    return html`<p class="hint map-metrics"><strong>${plural(subpops.drawn.count, 'subpoblación', 'subpoblaciones')}</strong>
+      (enlace simple a ${sp.separationKm ?? '—'} km)${subpops.nImpacts ? html` · ${plural(subpops.nImpacts, 'impacto', 'impactos')}` : ''}
+      · ${subpops.source === 'server' ? 'calculado en el servidor' : 'provisional, con las marcas exactas del dispositivo'}
+      ${subpops.drawn.access === 'generalized' ? ' · posiciones generalizadas' : subpops.drawn.access === 'none' ? ' · sin geometría (nivel 1)' : ''}</p>`;
+  }
+
   function metricsNote() {
     if (!showMetrics) return '';
     if (!filters.taxonID) return html`<p class="hint map-metrics">EOO / AOO: elige una especie en Filtros.</p>`;
@@ -379,6 +431,7 @@ export function mount(el, { go = () => {}, isStudio = () => false } = {}) {
   function repaintMarks() {
     const me = state.user && state.user.id;
     if (showMetrics && (!metrics || metrics.taxonID !== filters.taxonID) && !(metrics && metrics.loading)) refreshMetrics({ fitAfter: true });
+    if (showSubpops && (!subpops || subpops.taxonID !== filters.taxonID)) refreshSubpops({ fitAfter: true });
     visible = applyFilters(marks, filters, me);
     colors = layer.set(visible);
     paintNote();
@@ -405,7 +458,8 @@ export function mount(el, { go = () => {}, isStudio = () => false } = {}) {
       <p class="hint map-count">${plural(visible.length - withheld, 'marca', 'marcas')} en el mapa${n ? ` (${plural(n, 'filtro', 'filtros')})` : ''}
         ${cells ? html` · ${plural(cells, 'ubicación generalizada', 'ubicaciones generalizadas')}, dibujadas como su celda` : ''}
         ${withheld ? html` · ${plural(withheld, 'retenida', 'retenidas')} (nivel 1, sin ubicación)` : ''}</p>
-      ${metricsNote()}`);
+      ${metricsNote()}
+      ${subpopsNote()}`);
   }
 
   function paintLegend() {
@@ -607,6 +661,10 @@ export function mount(el, { go = () => {}, isStudio = () => false } = {}) {
   $('[data-mark]', el).addEventListener('click', () => {
     openMarkSheet({ catalog: state.activeCatalog, initialPos: pos, taxonHint: filters.taxonID, onSaved: loadMarks });
   });
+  // F11g: «Impacto», junto a «Marcar»: la hoja de impacto con la última posición del GPS.
+  $('[data-impact]', el).addEventListener('click', () => {
+    openImpactSheet({ catalog: state.activeCatalog, initialPos: pos, onSaved: loadMarks });
+  });
 
   let pointMarker = null;
   function clearPointMarker() { if (pointMarker) { pointMarker.remove(); pointMarker = null; } }
@@ -691,8 +749,8 @@ export function mount(el, { go = () => {}, isStudio = () => false } = {}) {
     if (!zonesTimer) zonesTimer = setTimeout(() => { zonesTimer = null; loadZones(); }, 250);
   });
   const unsubscribe = subscribe((key) => {
-    if (key === 'sync' && !state.sync.running) { loadMarks(); refreshMetrics(); }
-    if (key === 'online' && state.online) refreshMetrics();
+    if (key === 'sync' && !state.sync.running) { loadMarks(); refreshMetrics(); refreshSubpops(); }
+    if (key === 'online' && state.online) { refreshMetrics(); refreshSubpops(); }
     // Descarga del catálogo terminada: ya hay fichas y marcas del equipo en el dispositivo.
     if (key === 'activeCatalog' || key === 'user' || key === 'download') loadMarks();
   });
@@ -703,6 +761,7 @@ export function mount(el, { go = () => {}, isStudio = () => false } = {}) {
   loadMarks();
   loadZones();
   refreshMetrics();
+  refreshSubpops();
   requestAnimationFrame(fit);
 
   return () => {
@@ -719,6 +778,7 @@ export function mount(el, { go = () => {}, isStudio = () => false } = {}) {
     if (editor) editor.close();
     layer.destroy();
     metricsLayer.clear();
+    subpopsLayer.clear();
     map.remove();
   };
 }

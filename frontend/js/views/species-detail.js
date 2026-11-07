@@ -10,6 +10,8 @@
 // su resumen, y las notas de cuaderno de la especie (F8a). Tras las evaluaciones UICN oficiales de EIDOS,
 // aparte y rotulada «Evaluación BioDex», la del asistente del equipo (F8b; no las sustituye). Tras las
 // marcas, «Distribución»: EOO y AOO de la especie en el catálogo (F9).
+// F11g: la pestaña «Evaluación UICN» es components/species-iucn.js (cuantificadores, criterios A–E con lo que
+// falta, hechos, localidades, GBIF e instantáneas); sustituye al asistente de F8b.
 // F11b/F11d: sin fotos de la Fototeca, la foto de respaldo aceptada de iNaturalist, GBIF o Wikimedia Commons
 // (con su crédito y enlace) o la silueta del grupo. Una foto de respaldo que no carga se cambia por la
 // silueta, nunca una imagen rota.
@@ -22,7 +24,7 @@ import { openOverlay } from '../components/overlay.js';
 import { iucnBadge, iucnClass, silhouette, silhouetteData, swapToSilhouette, PHOTO_SOURCES } from '../components/species-card.js';
 import { mountMarks } from '../components/marks.js';
 import { mountNotes } from '../components/species-notes.js';
-import { mountAssessments } from '../components/species-assessments.js';
+import { mountSpeciesIucn } from '../components/species-iucn.js';
 import { mountDistribution } from '../components/species-distribution.js';
 import { mountMinimap } from '../components/species-minimap.js';
 import { mountParameters } from '../components/species-parameters.js';
@@ -281,7 +283,7 @@ export function openSpeciesDetail(taxonID, { onChanged, step, onOpen } = {}) {
             <div class="params-box"></div></section>
         </div>
         <div class="detail-panel" data-panel="iucn" ${panel('iucn')}>
-          <section class="detail-sec assess-sec" aria-labelledby="d-biodex"><h4 id="d-biodex">Evaluación BioDex</h4>
+          <section class="detail-sec assess-sec" aria-labelledby="d-biodex"><h4 id="d-biodex">Evaluación UICN en «${catalogData.catalog.name}»</h4>
             <div class="assess-box"></div></section>
         </div>` : ''}
       </article>`);
@@ -316,8 +318,8 @@ export function openSpeciesDetail(taxonID, { onChanged, step, onOpen } = {}) {
       const catalog = { ...catalogData.catalog, role: catalogData.catalog.role };
       marks = mountMarks($('.marks-box', ov.body), { species: sp, catalog, levels, sensitivity: inCatalog.sensitivity });
       notes = mountNotes($('.notes-box', ov.body), { species: sp, catalog });
-      assessments = mountAssessments($('.assess-box', ov.body), { species: sp, catalog });
       distribution = mountDistribution($('.dist-box', ov.body), { species: sp, catalog });
+      assessments = null;
       // Minimapa y parámetros se montan al abrir su pestaña: Leaflet necesita el tamaño real del contenedor.
       const showTab = (key, { focus = false } = {}) => {
         lastDetailTab = key;
@@ -333,6 +335,11 @@ export function openSpeciesDetail(taxonID, { onChanged, step, onOpen } = {}) {
           else minimap.resize();
         }
         if (key === 'params' && !params) params = mountParameters($('.params-box', ov.body), { species: sp, catalog });
+        // F11g: la evaluación se calcula al abrir su pestaña (pide al servidor o calcula en el dispositivo).
+        if (key === 'iucn' && !assessments) {
+          assessments = mountSpeciesIucn($('.assess-box', ov.body), { species: sp, catalog,
+            goToParam: (k) => { showTab('params', { focus: true }); if (params) params.focusKey(k); } });
+        }
       };
       const tablist = $('.detail-tabs', ov.body);
       tablist.addEventListener('click', (ev) => {
