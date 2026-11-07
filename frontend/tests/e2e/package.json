@@ -4,7 +4,7 @@
   "description": "Pruebas de interfaz de BioDex con Playwright y la API simulada (F11f). Solo para pruebas: la app no tiene paso de build ni dependencias de npm.",
   "type": "module",
   "scripts": {
-    "test": "playwright test"
+    "test": "node run.mjs"
   },
   "devDependencies": {
     "@playwright/test": "1.65.0"

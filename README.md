@@ -108,8 +108,20 @@ node frontend/tests/species-search.test.mjs   # buscador de especies (F11f)
 ```
 Interfaz (F11f, Playwright con la API simulada, en móvil 390×844 y escritorio 1280×800; no necesita Docker):
 ```bash
-cd frontend/tests/e2e && npm ci && npx playwright install chromium && npx playwright test
+cd frontend/tests/e2e
 ```
+```bash
+npm ci
+```
+```bash
+npx playwright install chromium
+```
+```bash
+npm test
+```
+Usa `npm test` (no `npx playwright test`): en Windows, si la ruta se escribe con otras mayúsculas («desktop\biodex»),
+Playwright carga su librería dos veces y falla con «did not expect test() to be called here»; `run.mjs` lo evita.
+Solo un tamaño o una prueba: `npm test -- --project=movil -g "atrás"`.
 Marcar contando desde el buscador, volver a una pestaña con su estado, «atrás» que cierra la hoja, editar un
 parámetro y verlo tras recargar sin red, y la auditoría de objetivos táctiles (ninguno por debajo de 48 px en campo).
 La API la simula `mock-api.mjs` con respuestas de la demo grabadas en `fixtures/` (datos ficticios).
