@@ -278,11 +278,55 @@ function go(route, { returnTo: rt = null } = {}) {
   if (route === current && !rt) return;
   dropReturn();
   show(route);
+  syncSection(route);
   if (rt) setReturn(rt);
 }
 
+// --- «Atrás» entre secciones (F11f) ---------------------------------------------------------------
+// Cambiar de pestaña no apila historial por sí solo, así que «atrás» desde Especies salía de la app (o
+// pedía la doble pulsación). Ahora, fuera de la sección de inicio (Mapa en campo, Catálogos en estudio)
+// hay un nivel «seccion» en BioDexNav: «atrás» cierra primero lo que haya abierto encima (hojas, modales,
+// «← Volver a…») y después vuelve a la sección de inicio. Solo allí aparece «pulsa atrás otra vez para
+// salir». Ir de una pestaña a otra no apila niveles: el camino de vuelta es siempre uno.
+let leavingSection = false;
+function syncSection(route) {
+  if (route === defaultRoute()) {
+    if (Nav.has('seccion')) { leavingSection = true; Nav.close('seccion'); leavingSection = false; }
+    return;
+  }
+  if (!Nav.has('seccion')) {
+    Nav.open('seccion', () => {
+      if (leavingSection) return;
+      dropReturn();
+      show(defaultRoute());
+    });
+  }
+}
+
+// --- Cada pestaña vuelve como se dejó (F11f) --------------------------------------------------------
+// Texto, filtros y encuadre los guarda cada vista (species.js, map.js, catalogs.js); aquí, el desplazamiento.
+// Las vistas pintan tras cargar (a veces de la red): se reintenta hasta que la página es lo bastante alta.
+const scrollByRoute = {};
+let restoreToken = 0;
+function restoreScroll(route) {
+  const target = scrollByRoute[route] || 0;
+  const token = ++restoreToken;
+  if (!target) { window.scrollTo(0, 0); return; }
+  const until = Date.now() + 2000;
+  const step = () => {
+    if (token !== restoreToken || current !== route) return;
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    if (max >= target - 2) { window.scrollTo(0, target); return; }
+    if (Date.now() < until) requestAnimationFrame(step); else window.scrollTo(0, max);
+  };
+  requestAnimationFrame(step);
+}
+// Un toque o la rueda mientras se restaura: manda el usuario.
+['wheel', 'touchstart', 'keydown'].forEach((t) => window.addEventListener(t, () => { restoreToken++; }, { passive: true }));
+
 function show(route, force = false) {
   if (route === current && !force) return;
+  if (current) scrollByRoute[current] = window.scrollY;
   if (cleanup) { cleanup(); cleanup = null; }
   current = route;
   try { history.replaceState(history.state, '', '#/' + route); } catch (e) { /* file:// */ }
@@ -295,6 +339,7 @@ function show(route, force = false) {
   view.className = 'view view-' + route;
   document.body.dataset.route = route;
   cleanup = ROUTES[route].view.mount(view, { go, onLogout, isStudio }) || null;
+  restoreScroll(route);
 }
 
 /** Cerrar sesión desde Ajustes. Devuelve false si el usuario lo cancela (marcas sin sincronizar). */
@@ -336,7 +381,8 @@ window.addEventListener('hashchange', () => {
     try { history.replaceState(history.state, '', '#/' + current); } catch (e) { /* file:// */ }
   }
 });
-window.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') Nav.back(); });
+// Escape cierra hojas y paneles, pero no cambia de sección (eso es del «atrás» del sistema, F11f).
+window.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && !(Nav.depth() === 1 && Nav.has('seccion'))) Nav.back(); });
 window.addEventListener('biodex:unauthorized', () => {
   if (!current) return;
   setNotice({ kind: 'warn', text: sessionExpiredText() });

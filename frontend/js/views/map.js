@@ -32,6 +32,7 @@ import { hasDb, byIndex, get } from '../db.js';
 import { localCatalog, localSpeciesOf, sensitivityLevels } from '../offline.js';
 import { openOverlay, confirmDialog } from '../components/overlay.js';
 import { openMarkSheet, canMark } from './mark-sheet.js';
+import { fabStack } from '../components/fab.js';
 import { openSpeciesDetail } from './species-detail.js';
 import { toUtm, formatUtm } from '../geo/utm.js';
 import { LAYERS, tileTemplate, attributionFor, MAP_MAX_ZOOM } from '../map/layers.js';
@@ -116,7 +117,7 @@ export function mount(el, { go = () => {}, isStudio = () => false } = {}) {
             <button type="button" class="map-fab" data-follow aria-pressed="false" aria-label="Seguir mi posición" title="Seguir mi posición">${ICON.follow}</button>
             <button type="button" class="map-fab" data-legend aria-expanded="false" aria-controls="mapLegend" aria-label="Leyenda" title="Leyenda">${ICON.info}</button>
           </div>
-          <button type="button" class="btn-primary mark-fab" data-mark>${ICON.pin}<span>Marcar aquí</span></button>
+          ${fabStack()}
           <div class="zone-strip" id="zoneStrip" hidden></div>
           <div class="map-float">
             <div class="map-legend" id="mapLegend" hidden></div>

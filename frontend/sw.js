@@ -63,6 +63,7 @@ var SHELL_ASSETS = [
   'js/db.js', 'js/offline.js', 'js/marks.js', 'js/sync.js', 'js/metrics.js',
   'js/tally.js',   // F11e: conteo rápido
   'js/species-search.js',   // F11f: buscador de especies (sin DOM)
+  'js/flags.js',   // F11f: funciones ocultas tras un flag (Impacto)
 
   // js/geo/ y js/map/ (F7)
   'js/geo/utm.js',
@@ -77,7 +78,7 @@ var SHELL_ASSETS = [
   'vendor/qrcode-generator/qrcode.js',   // F11e: QR de invitación
 
   // js/components/
-  'js/components/species-picker.js',   // F11f: buscador del modo campo
+  'js/components/species-picker.js', 'js/components/fab.js',   // F11f: buscador y botones flotantes del modo campo
   'js/components/overlay.js', 'js/components/species-card.js', 'js/components/marks.js', 'js/components/species-notes.js',
   'js/components/species-assessments.js', 'js/components/species-distribution.js',
   'js/components/catalog-switcher.js',   // F11c: cambiar de catálogo desde la cabecera

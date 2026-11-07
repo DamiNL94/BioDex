@@ -818,10 +818,11 @@ html.is-field{font-size:106.25%}
   border:1px solid var(--line-strong);border-radius:var(--radius-md);background:var(--panel);color:var(--leaf);
   box-shadow:var(--shadow-sm);cursor:pointer}
 .map-fab.is-active{background:var(--leaf-fill);color:var(--cream);border-color:var(--brass)}
-.mark-fab{position:absolute;right:10px;bottom:34px;z-index:1;min-height:var(--tap-big);box-shadow:var(--shadow);
+.fab-stack{position:absolute;right:10px;bottom:34px;z-index:1;display:flex;flex-direction:column;align-items:flex-end;gap:var(--tap-gap)}
+.mark-fab{min-height:var(--tap-big);box-shadow:var(--shadow);
   border-left:var(--rule) solid var(--brass)}
 .mark-fab svg{width:20px;height:20px}
-.is-editing-zone .mark-fab,.is-editing-zone .map-fabs{display:none}
+.is-editing-zone .fab-stack,.is-editing-zone .map-fabs{display:none}
 
 /* Pie: posición */
 .foot-label{letter-spacing:var(--tracking-caps);text-transform:uppercase;font-weight:700;font-size:var(--fs-xs);color:var(--muted)}
@@ -913,7 +914,7 @@ path.zone-draft{stroke:var(--sea);fill:var(--sea);fill-opacity:.08}
   .map-note .guard-band{margin:0 -32px 6px;padding-left:32px}
   .zone-panel{left:12px;right:auto;top:12px;bottom:auto;width:400px;max-height:calc(100% - 24px);border-top:0;
     border:1px solid var(--line-strong);border-radius:var(--radius-lg)}
-  .mark-fab{bottom:40px;right:14px}
+  .fab-stack{bottom:40px;right:14px}
 }
 
 /* ===== H. F8a: hoja de marca, resumen y notas ================================================== */
@@ -1301,7 +1302,7 @@ path.metric-gen-cell{stroke:var(--muted);stroke-width:2;stroke-dasharray:4 4;fil
     background:var(--panel);box-shadow:0 -12px 40px rgba(20,22,15,.35)}
   .map-filters .form-actions{justify-content:space-between}
   .map-analysis{grid-column:1 / -1}
-  .mark-fab{bottom:28px}
+  .fab-stack{bottom:28px}
   .map-side{display:none}
 }
 /* Estudio: barra en una fila, lista acoplada, leyenda flotante */
@@ -1404,3 +1405,13 @@ svg.qr-code{width:min(78vw,320px);height:auto;display:block;stroke:none}
 .mark-chosen .mark-species{margin:0;min-width:0;overflow-wrap:anywhere}
 .mark-change{flex:none}
 .list-filters.is-field-filters{display:flex;justify-content:flex-end;margin-bottom:4px}
+
+/* ===== R. F11f: botones flotantes del modo campo (components/fab.js) =============================== */
+/* A la altura del pulgar: abajo a la derecha, por encima de la barra de pestañas, en Mapa y Especies. */
+.is-field .fab-stack{position:fixed;right:16px;bottom:calc(var(--nav-h) + env(safe-area-inset-bottom) + 16px);z-index:15}
+.is-field .fab-stack .mark-fab{min-height:var(--tap-main);padding:0 22px;font-size:var(--fs-md);border-radius:28px}
+.is-field .fab-stack .mark-fab svg{width:22px;height:22px}
+.impact-fab{min-height:var(--tap-main);padding:0 18px;border-radius:28px;border-color:var(--bark);color:var(--ink);box-shadow:var(--shadow-sm)}
+.impact-fab:disabled{opacity:.7;cursor:not-allowed}
+/* Que el botón no tape la última fila de la lista */
+.is-field .view-especies{padding-bottom:calc(var(--nav-h) + var(--tap-main) + 48px + env(safe-area-inset-bottom))}

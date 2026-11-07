@@ -25,6 +25,8 @@ import { IUCN_CODES, iucnBadge, iucnClass, silhouette } from '../components/spec
 import { openSpeciesDetail } from './species-detail.js';
 import { openAddSpecies } from './catalog-builder.js';
 import { mountSpeciesPicker, quietPosition } from '../components/species-picker.js';
+import { fabStack } from '../components/fab.js';
+import { openMarkSheet } from './mark-sheet.js';
 
 export { IUCN_CODES };
 const ADD_ROLES = ['owner', 'custodian', 'editor'];
@@ -173,8 +175,12 @@ export function mount(el, { go }) {
         <section class="placeholder">
           <h3>Este catálogo aún no tiene especies</h3>
           <p>${canAdd ? 'Búscalas en EIDOS con «Añadir especies».' : 'Quien lo administra aún no ha añadido ninguna.'}</p>
-        </section>`}`);
+        </section>`}
+      ${field && species.length > 0 && canMark(catalog) ? fabStack({ label: 'Marcar' }) : ''}`);
 
+    // F11f: botón flotante «Marcar» (campo): la hoja con el buscador de especies.
+    const fab = $('.fab-stack [data-mark]', el);
+    if (fab) fab.addEventListener('click', () => openMarkSheet({ catalog, onSaved: () => picker && picker.refresh() }));
     const add = $('#addSpeciesBtn', el);
     if (add) add.addEventListener('click', () => openAddSpecies(catalog, { onChanged: load }));
     // Sin servidor no hay buscador (EIDOS), pero sí se puede dar de alta una especie de usuario: se
