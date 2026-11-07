@@ -67,6 +67,8 @@ let droppingReturn = false;
 function applyMode() {
   document.body.classList.toggle('is-studio', studioQuery.matches);
   document.body.classList.toggle('is-field', !studioQuery.matches);
+  // F11f: la letra base del modo campo (17 px) cuelga de <html>, para que los rem escalen con ella.
+  document.documentElement.classList.toggle('is-field', !studioQuery.matches);
 }
 applyMode();
 

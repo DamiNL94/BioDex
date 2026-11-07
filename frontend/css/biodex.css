@@ -47,7 +47,11 @@
   --rule:3px;
   --shadow-sm:0 4px 14px rgba(26,26,23,.10);
   --shadow:0 16px 44px rgba(26,26,23,.18);
-  --tap-min:44px; --tap-big:48px;
+  /* F11f — objetivos táctiles (salida de campo de Sierra Nevada: botones pequeños).
+     --tap-min: mínimo de cualquier control en modo campo · --tap-main: la acción principal (guardar, casillas del
+     conteo, botón de marcar) · --tap-gap: separación mínima entre dos objetivos. --tap-big queda como alias de
+     --tap-main. En modo estudio (ratón) se conservan los 44/48 px de antes (body.is-studio, bloque F). */
+  --tap-min:48px; --tap-main:56px; --tap-gap:8px; --tap-big:var(--tap-main);
   --nav-h:64px;
   /* F11c: escala de espaciado y ancho de la barra lateral (modo estudio) */
   --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px;
@@ -752,12 +756,20 @@ svg.silhouette{display:block;width:62%;height:62%;fill:currentColor;stroke:none}
 :root[data-theme="dark"] .nav-exit-toast{background:#2A2117}
 
 /* ===== F. Áreas táctiles (bloque F de NaturDex) ================================================ */
-/* --tap-min (44 px) en todo control; --tap-big (48 px) en lo que se pulsa de pie y con prisa. */
+/* --tap-min en todo control; --tap-main en lo que se pulsa de pie y con prisa. F11f: en campo, 48 y 56 px y letra base
+   de 17 px (html.is-field: los rem escalan con ella); en estudio, los 44 y 48 px de antes. */
+body.is-studio{--tap-min:44px;--tap-main:48px}
+html.is-field{font-size:106.25%}
 .btn-primary,.btn-secondary,.link-btn,.segmented button,.auth-tab,.tab,.band-close,
 .field input{min-height:var(--tap-min)}
 .icon-btn,.band-close{min-width:var(--tap-min)}
 @media (max-width:899px){ .tab,.auth-screen .btn-primary{min-height:var(--tap-big)} }
 @media (min-width:900px) and (pointer:fine){ .icon-btn{width:36px;height:36px;min-width:36px;min-height:36px} }
+/* F11f: lo que en campo se quedaba por debajo de 48 px */
+.is-field .leaflet-bar a{width:var(--tap-min);height:var(--tap-min);line-height:var(--tap-min)}
+.is-field .leaflet-container a.leaflet-popup-close-button{width:var(--tap-min);height:var(--tap-min);line-height:var(--tap-min)}
+.is-field .leaflet-popup-content{margin-right:52px}
+.is-studio .export-picks .check{min-height:0}
 @media (prefers-reduced-motion:reduce){ *{transition:none !important} }
 
 /* ===== G. F7: mapa ============================================================================= */
@@ -1093,7 +1105,7 @@ path.metric-gen-cell{stroke:var(--muted);stroke-width:2;stroke-dasharray:4 4;fil
 .export-form .segmented button:disabled{opacity:.5;cursor:not-allowed}
 .export-dates{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .export-picks{max-height:240px;overflow:auto;padding:4px 10px;border:1px solid var(--line);border-radius:var(--radius-md);background:var(--panel)}
-.export-picks .check{align-items:flex-start;padding:4px 0;min-height:0}
+.export-picks .check{align-items:flex-start;padding:4px 0}
 .export-picks .check input{margin-top:1px}
 .export-formats .check{align-items:flex-start}
 .export-formats .check input{margin-top:2px}
@@ -1114,6 +1126,16 @@ path.metric-gen-cell{stroke:var(--muted);stroke-width:2;stroke-dasharray:4 4;fil
 .mark-sheet .sheet-title{color:#FFFFFF}
 .mark-sheet .sheet-back,.mark-sheet .sheet-close{color:var(--cream)}
 .mark-sheet .sheet-back:hover,.mark-sheet .sheet-close:hover{background:rgba(251,247,238,.12);color:#FFFFFF}
+/* F11f: contraste AAA (7:1) en los textos de la hoja de marcar, que se lee a pleno sol. Se oscurecen (claro) o
+   aclaran (oscuro) los tonos secundarios solo aquí dentro; las razones están en docs/interfaz.md. */
+.mark-sheet{--muted:#4A4A43;--ink-soft:#3A3A33;--warn-ink:#6B4511;--danger:#7E3516;--danger-ink:#7E3516;--faint:#4A4A43}
+.mark-sheet .sheet-actions{gap:calc(var(--tap-gap) * 3)}
+.mark-sheet .sheet-actions .btn-primary{min-height:var(--tap-main)}
+.mark-sheet .gps-wait{color:var(--ink-soft)}
+:root[data-theme="dark"] .mark-sheet{--muted:#C3BBA5;--ink-soft:#E0D8C3;--leaf:#9FD1B3;--leaf-fill:#1F4D34;--warn-ink:#F0C27A;--danger:#F0A68F;
+  --danger-ink:#F0A68F;--faint:#C3BBA5}
+:root[data-theme="dark"] .mark-sheet .status-toggle button.active[data-status="absent"]{background:#7E3516}
+:root[data-theme="dark"] .mark-sheet .mark-generalized,:root[data-theme="dark"] .mark-sheet .badge.danger{color:var(--danger-ink)}
 
 /* ===== L. F11c: Catálogos ======================================================================== */
 .sec-title{margin:24px 0 8px;font-size:var(--fs-md);font-family:var(--font-ui);font-weight:700;color:var(--ink-soft)}
@@ -1206,7 +1228,7 @@ path.metric-gen-cell{stroke:var(--muted);stroke-width:2;stroke-dasharray:4 4;fil
   .view-especies .page-head{flex-wrap:nowrap;align-items:center;margin-bottom:10px}
   .view-especies .page-head h2{font-size:var(--fs-lg)}
   .view-especies .page-head .muted{display:none}   /* el catálogo ya está en la barra superior */
-  .view-especies .page-head .btn-secondary{min-height:36px;padding:0 12px}
+  .view-especies .page-head .btn-secondary{padding:0 12px}
   .cat-list .empty{padding:12px 0;border:0;background:none}
   .species-rows{gap:6px}
   .species-rows .sp{padding:10px 12px;row-gap:2px}
@@ -1240,7 +1262,7 @@ path.metric-gen-cell{stroke:var(--muted);stroke-width:2;stroke-dasharray:4 4;fil
 .map-legend .hint{margin:0}
 .map-foot{display:block;padding:0;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-lg);
   box-shadow:var(--shadow-sm);font-size:var(--fs-sm)}
-.pos-toggle{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 12px 0 8px;border:0;background:none;
+.pos-toggle{display:inline-flex;align-items:center;gap:6px;min-height:var(--tap-min);padding:0 12px 0 8px;border:0;background:none;
   color:var(--ink);font:inherit;font-weight:600;cursor:pointer}
 .pos-toggle svg{width:18px;height:18px;color:var(--me)}
 .pos-toggle .foot-label{display:none}
@@ -1301,27 +1323,29 @@ path.metric-gen-cell{stroke:var(--muted);stroke-width:2;stroke-dasharray:4 4;fil
 .settings .panel{background:var(--panel)}
 
 /* ===== P. F11e: conteo rápido (hoja de marca) y QR de invitación ================================== */
-.tally{display:grid;gap:10px}
-.tally-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+/* F11f: las casillas son la acción más repetida → «+1» de 88 px y cifra de 2,25 rem; «Deshacer» y «−» lejos
+   de la zona de contar (separación de --tap-gap × 2) para no restar sin querer con guantes. */
+.tally{display:grid;gap:calc(var(--tap-gap) * 1.5)}
+.tally-head{display:flex;align-items:center;justify-content:space-between;gap:calc(var(--tap-gap) * 2)}
 .tally-total{margin:0;font-size:var(--fs-md);color:var(--ink-soft)}
 .tally-sum{font-family:var(--font-display);font-size:var(--fs-xl);color:var(--ink);font-variant-numeric:tabular-nums}
-.tally-undo{min-height:var(--tap-big)}
-.tally-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.tally-undo{min-height:var(--tap-main)}
+.tally-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:calc(var(--tap-gap) * 1.5)}
 .tally-cell{display:grid;border:2px solid var(--leaf-fill);border-radius:var(--radius-lg);overflow:hidden;background:var(--panel)}
-.tally-add{display:grid;justify-items:start;align-content:space-between;gap:4px;min-height:84px;padding:10px 12px;border:0;
+.tally-add{display:grid;justify-items:start;align-content:space-between;gap:4px;min-height:88px;padding:10px 12px;border:0;
   background:var(--leaf-tint);color:var(--ink);text-align:left;cursor:pointer;touch-action:manipulation;
   user-select:none;-webkit-user-select:none}
 .tally-add:active{background:var(--leaf-fill);color:var(--cream)}
-.tally-label{font-weight:700;font-size:var(--fs-sm)}
-.tally-plus{font-family:var(--font-display);font-size:var(--fs-lg);font-weight:700;color:var(--leaf);line-height:1}
+.tally-label{font-weight:700;font-size:var(--fs-md);line-height:1.25}
+.tally-plus{font-family:var(--font-display);font-size:var(--fs-xl);font-weight:700;color:var(--leaf);line-height:1}
 .tally-add:active .tally-plus{color:var(--cream)}
-.tally-tools{display:grid;grid-template-columns:var(--tap-big) minmax(0,1fr);border-top:2px solid var(--leaf-fill)}
-.tally-minus{min-height:var(--tap-big);border:0;border-right:1px solid var(--line-strong);background:var(--panel);color:var(--ink);
-  font-size:1.4rem;font-weight:700;line-height:1;cursor:pointer;touch-action:manipulation}
+.tally-tools{display:grid;grid-template-columns:var(--tap-main) minmax(0,1fr);border-top:2px solid var(--leaf-fill)}
+.tally-minus{min-height:64px;border:0;border-right:1px solid var(--line-strong);background:var(--surface-alt);color:var(--ink);
+  font-size:1.6rem;font-weight:700;line-height:1;cursor:pointer;touch-action:manipulation}
 .tally-minus:disabled{opacity:.35;cursor:default}
-.tally-input{min-width:0;min-height:var(--tap-big);padding:0 10px;border:0;background:var(--panel);color:var(--ink);text-align:center;
-  font-family:var(--font-display);font-size:1.6rem;font-weight:700;font-variant-numeric:tabular-nums}
-.tally-input::placeholder{color:var(--faint)}
+.tally-input{min-width:0;min-height:64px;padding:0 10px;border:0;background:var(--panel);color:var(--ink);text-align:center;
+  font-family:var(--font-display);font-size:2.25rem;font-weight:700;font-variant-numeric:tabular-nums}
+.tally-input::placeholder{color:var(--muted)}
 .tally-input:focus{outline:none;box-shadow:inset 0 0 0 2px var(--leaf)}
 .tally-more{justify-self:start;padding-left:0;text-align:left}
 .tally .hint{margin:0}

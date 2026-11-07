@@ -88,7 +88,7 @@ export function createMarksLayer(map, { ctx, onOpenSpecies }) {
     showCoverageOnHover: false, maxClusterRadius: 50, spiderfyOnMaxZoom: true,
     iconCreateFunction: (c) => Lf.divIcon({ className: 'mk-cluster-wrap',
       html: html`<span class="mk-cluster" aria-hidden="true">${c.getChildCount()}</span>`.str,
-      iconSize: [44, 44] }),
+      iconSize: [48, 48] }),
   });
   const cells = Lf.featureGroup();
   clusters.addTo(map);
@@ -150,7 +150,7 @@ export function createMarksLayer(map, { ctx, onOpenSpecies }) {
           title: label, keyboard: true, riseOnHover: true,
           icon: Lf.divIcon({ className: 'mk-wrap',
             html: html`<span class="${markerClass(o, colors)}"></span><span class="sr-only">${label}</span>`.str,
-            iconSize: [44, 44], iconAnchor: [22, 22], popupAnchor: [0, -14] }),   // 44 px de toque, 18 px de punto
+            iconSize: [48, 48], iconAnchor: [24, 24], popupAnchor: [0, -14] }),   // 48 px de toque (F11f), 18 px de punto
         });
         points.push(layer);
       }

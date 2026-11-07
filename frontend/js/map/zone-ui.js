@@ -85,7 +85,7 @@ export function openZoneEditor(map, host, { onClose } = {}) {
   const corners = ['sw', 'nw', 'ne', 'se'];
   const handles = corners.map(() => Lf.marker([0, 0], {
     draggable: true, keyboard: false, title: 'Arrastra para ajustar la zona',
-    icon: Lf.divIcon({ className: 'zone-handle-wrap', html: html`<span class="zone-handle"></span>`.str, iconSize: [44, 44], iconAnchor: [22, 22] }),
+    icon: Lf.divIcon({ className: 'zone-handle-wrap', html: html`<span class="zone-handle"></span>`.str, iconSize: [48, 48], iconAnchor: [24, 24] }),
   }).addTo(map));
 
   function cornerLatLng(c) {

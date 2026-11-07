@@ -616,7 +616,7 @@ export function mount(el, { go = () => {}, isStudio = () => false } = {}) {
     clearPointMarker();
     pointMarker = Lf.marker(ev.latlng, { interactive: false, keyboard: false,
       icon: Lf.divIcon({ className: 'mk-wrap', html: html`<span class="mk mk-own is-mappoint is-draft"></span>`.str,
-        iconSize: [44, 44], iconAnchor: [22, 22] }) }).addTo(map);
+        iconSize: [48, 48], iconAnchor: [24, 24] }) }).addTo(map);
     openMarkSheet({ catalog, point: { lat: ev.latlng.lat, lng: ev.latlng.lng }, taxonHint: filters.taxonID,
       onSaved: loadMarks, onClose: clearPointMarker });
   });
