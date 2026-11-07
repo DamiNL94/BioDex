@@ -2,7 +2,8 @@
 // components/species-minimap.js — minimapa de la pestaña «Registros» de la ficha (F11f): las marcas de
 // la especie en el catálogo activo sobre IGN Base (las mismas teselas que el Mapa, por /tiles/; sin red
 // salen de las zonas descargadas o de la caché de uso).
-// Solo marcas con coordenadas: las generalizadas al nivel 1 no tienen punto y se cuentan aparte.
+// Solo marcas con coordenada exacta: las generalizadas (celda de 1–10 km o sin punto) no se dibujan como un punto que
+// no es; se cuentan aparte y su celda está en la pestaña Mapa.
 // Las propias, cuadradas y sólidas; las del equipo, redondas; las ausencias, con aspa (las clases del Mapa).
 // Sin interacción salvo el zoom: es para situarse; para trabajar está la pestaña Mapa.
 // ================================================================================================
@@ -24,12 +25,12 @@ export function mountMinimap(el, { species, catalog }) {
     if (!alive) return;
     const me = new Set(marks.own.map((o) => o.occurrenceID));
     const all = [...marks.own, ...marks.others];
-    const located = all.filter((o) => o.decimalLatitude !== null && o.decimalLatitude !== undefined);
+    const located = all.filter((o) => !o.generalized && o.decimalLatitude !== null && o.decimalLatitude !== undefined);
     const hidden = all.length - located.length;
     if (!Lf || !located.length) {
       if (map) { map.remove(); map = null; }
       render(el, html`<p class="muted minimap-empty">${all.length
-        ? `Ninguna de las ${all.length} marcas tiene coordenadas que puedas ver (ubicación reservada).`
+        ? `Ninguna de las ${all.length} marcas tiene coordenada exacta que puedas ver (generalizadas o reservadas; su celda, en Mapa).`
         : 'Sin marcas con posición en este catálogo.'}</p>`);
       return;
     }
@@ -51,7 +52,7 @@ export function mountMinimap(el, { species, catalog }) {
     }
     const note = el.querySelector('.minimap-note');
     if (note) note.textContent = `${plural(located.length, 'marca', 'marcas')} en el mapa`
-      + (hidden ? ` · ${hidden} con ubicación reservada (sin punto)` : '') + '.';
+      + (hidden ? ` · ${hidden} generalizadas o reservadas (sin punto; su celda, en Mapa)` : '') + '.';
     resize();
   }
 

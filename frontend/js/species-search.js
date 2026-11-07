@@ -101,13 +101,14 @@ export function recentFromMarks(marks, userId, max = RECENT_MAX) {
 
 /**
  * Especies con algún registro (propio o del equipo, presente) a menos de `radius` m de `pos`
- * ({lat, lng}): taxonID → distancia mínima. Las marcas sin coordenadas (generalizadas al nivel 1) no cuentan.
+ * ({lat, lng}): taxonID → distancia mínima. Las generalizadas no cuentan: su punto es una celda de 1–10 km (o no hay
+ * punto, nivel 1) y daría un «a 120 m» falso.
  */
 export function nearFromMarks(marks, pos, radius = NEAR_M) {
   const near = new Map();
   if (!pos || !Number.isFinite(pos.lat) || !Number.isFinite(pos.lng)) return near;
   for (const o of marks || []) {
-    if (!o || o.deletedAt || o.occurrenceStatus === 'absent') continue;
+    if (!o || o.deletedAt || o.generalized || o.occurrenceStatus === 'absent') continue;
     const lat = Number(o.decimalLatitude);
     const lng = Number(o.decimalLongitude);
     if (o.decimalLatitude === null || o.decimalLatitude === undefined || !Number.isFinite(lat) || !Number.isFinite(lng)) continue;

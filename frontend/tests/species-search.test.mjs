@@ -96,6 +96,7 @@ const near = nearFromMarks([
   { taxonID: '6', decimalLatitude: here.lat + dLat(120), decimalLongitude: here.lng },
   { taxonID: '1', decimalLatitude: here.lat + dLat(800), decimalLongitude: here.lng },           // lejos
   { taxonID: '5', decimalLatitude: null, decimalLongitude: null },                                  // generalizada (nivel 1)
+  { taxonID: '7', decimalLatitude: here.lat, decimalLongitude: here.lng, generalized: true },         // celda: no es «cerca»
   { taxonID: '3', decimalLatitude: here.lat, decimalLongitude: here.lng, occurrenceStatus: 'absent' }, // ausencia
 ], here);
 assert.deepEqual([...near.keys()].sort(), ['2', '6']);

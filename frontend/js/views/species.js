@@ -25,6 +25,7 @@ import { IUCN_CODES, iucnBadge, iucnClass, silhouette } from '../components/spec
 import { openSpeciesDetail } from './species-detail.js';
 import { openAddSpecies } from './catalog-builder.js';
 import { mountSpeciesPicker, quietPosition } from '../components/species-picker.js';
+import { fold } from '../species-search.js';
 import { fabStack } from '../components/fab.js';
 import { openMarkSheet } from './mark-sheet.js';
 
@@ -54,7 +55,6 @@ function sensitivityBadge(s) {
   return html`<span class="badge level level-${s.level}">Nivel ${s.level}${s.confirmed ? '' : ' · sugerido'}</span>`;
 }
 
-const fold = (s) => String(s || '').normalize('NFD').replace(/\p{Mn}+/gu, '').toLowerCase();
 
 export function mount(el, { go }) {
   let alive = true;
@@ -195,7 +195,7 @@ export function mount(el, { go }) {
       if (!t.name) return;
       f[t.name] = t.value;
       if (t.name === 'text') studioText = t.value;
-      if (t.name !== 'text') store.set('biodex.speciesFilters', { group: f.group, category: f.category, level: f.level, sort: f.sort });
+      if (t.name !== 'text') store.set('biodex.speciesFilters', { group: isStudio() ? f.group : (saved.group || ''), category: f.category, level: f.level, sort: f.sort });
       paintRows();
     });
     form.addEventListener('submit', (ev) => ev.preventDefault());
@@ -249,7 +249,7 @@ export function mount(el, { go }) {
       if (chip.dataset.clear !== 'family') {
         const sel = form.elements[chip.dataset.clear];
         if (sel) sel.value = '';
-        store.set('biodex.speciesFilters', { group: f.group, category: f.category, level: f.level, sort: f.sort });
+        store.set('biodex.speciesFilters', { group: isStudio() ? f.group : (saved.group || ''), category: f.category, level: f.level, sort: f.sort });
       }
       paintRows();
       if (form.text) form.text.focus();

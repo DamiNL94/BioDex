@@ -466,7 +466,7 @@ if ($paramsPath) {
     if ($fields === null) {
         // Dejarlo sin valor: tombstone con server_seq nuevo. Si ya estaba vacío, no hay nada que hacer.
         if (!$live) { $pdo->commit(); respond(["taxonID" => $taxonID, "parameter" => null, "changed" => false]); }
-        $pdo->prepare("UPDATE species_parameters SET deleted_at = NOW(), set_by = ?, set_at = NOW(), server_seq = ?
+        $pdo->prepare("UPDATE species_parameters SET deleted_at = UTC_TIMESTAMP(), set_by = ?, set_at = UTC_TIMESTAMP(), server_seq = ?
                         WHERE catalog_id = ? AND taxonID = ? AND param_key = ?")
             ->execute([$userId, syncNextSeq($pdo), $catalogId, $taxonID, $paramKey]);
     } else {
@@ -482,9 +482,9 @@ if ($paramsPath) {
         }
         $pdo->prepare(
             "INSERT INTO species_parameters (catalog_id, taxonID, param_key, value, value_min, value_max, quality, source, set_by, set_at, deleted_at, server_seq)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NULL, ?)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(), NULL, ?)
              ON DUPLICATE KEY UPDATE value = VALUES(value), value_min = VALUES(value_min), value_max = VALUES(value_max),
-                quality = VALUES(quality), source = VALUES(source), set_by = VALUES(set_by), set_at = NOW(), deleted_at = NULL,
+                quality = VALUES(quality), source = VALUES(source), set_by = VALUES(set_by), set_at = UTC_TIMESTAMP(), deleted_at = NULL,
                 server_seq = VALUES(server_seq)"
         )->execute([$catalogId, $taxonID, $paramKey, $fields["value"], $fields["value_min"], $fields["value_max"],
                     $fields["quality"], $fields["source"], $userId, syncNextSeq($pdo)]);
