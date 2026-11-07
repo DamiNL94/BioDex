@@ -17,13 +17,15 @@
 
 import { apiGetJson, apiPutJson } from '../api.js';
 import { state } from '../state.js';
-import { html, render, $, sciName, sciNameText } from '../util.js';
+import { html, render, $, sciName, sciNameText, isStudio } from '../util.js';
 import { openOverlay } from '../components/overlay.js';
 import { iucnBadge, iucnClass, silhouette, silhouetteData, swapToSilhouette, PHOTO_SOURCES } from '../components/species-card.js';
 import { mountMarks } from '../components/marks.js';
 import { mountNotes } from '../components/species-notes.js';
 import { mountAssessments } from '../components/species-assessments.js';
 import { mountDistribution } from '../components/species-distribution.js';
+import { mountMinimap } from '../components/species-minimap.js';
+import { mountParameters } from '../components/species-parameters.js';
 import { remoteOrLocal, localSpecies, localCatalogData, sensitivityLevels, localNote } from '../offline.js';
 
 // --- Estado legal en versalitas: «CEEA · VULNERABLE», «DIR. HÁBITATS · ANEXO II» -------------------
@@ -117,6 +119,10 @@ function photoBlock(sp) {
   return silhouetteBlock(sp);
 }
 
+// F11f: pestañas de la página de especie. La elegida se recuerda al pasar de ficha (↑/↓) y al volver.
+const DETAIL_TABS = [['summary', 'Resumen'], ['records', 'Registros'], ['params', 'Parámetros'], ['iucn', 'Evaluación UICN']];
+let lastDetailTab = 'summary';
+
 function fmtDate(s) {
   if (!s) return '';
   const d = new Date(String(s).replace(' ', 'T'));
@@ -134,9 +140,12 @@ export function openSpeciesDetail(taxonID, { onChanged, step, onOpen } = {}) {
   let notes = null;
   let assessments = null;
   let distribution = null;
+  let minimap = null;
+  let params = null;
   let fromDevice = false;   // sin servidor: el nivel no se puede cambiar
-  const ov = openOverlay({ key: 'ficha-especie', title: 'Ficha de especie', variant: 'side', className: 'species-detail',
-    onClose: () => { alive = false; for (const m of [marks, notes, assessments, distribution]) if (m) m.destroy(); } });
+  // F11f: en estudio, página propia (pantalla completa con «← Volver»); en campo ya lo era.
+  const ov = openOverlay({ key: 'ficha-especie', title: 'Ficha de especie', variant: isStudio() ? 'full' : 'side', className: 'species-detail',
+    onClose: () => { alive = false; for (const m of [marks, notes, assessments, distribution, minimap, params]) if (m) m.destroy(); } });
   render(ov.body, html`<p class="muted">Cargando ficha…</p>`);
 
   if (onOpen) onOpen(taxonID);
@@ -192,28 +201,36 @@ export function openSpeciesDetail(taxonID, { onChanged, step, onOpen } = {}) {
     const cls = sp.classification || {};
     const ranks = [['Reino', cls.kingdom], ['Filo', cls.phylum], ['Clase', cls.class], ['Orden', cls.order], ['Familia', cls.family]];
     const legal = sp.legalStatus;
+    // F11f: página de la especie en el catálogo, con pestañas Resumen · Registros · Parámetros · Evaluación UICN.
+    // Fuera del catálogo activo (abierta desde el buscador de EIDOS) solo hay Resumen, sin pestañas.
+    const tabs = inCatalog ? DETAIL_TABS : [];
+    if (!tabs.some(([k]) => k === lastDetailTab)) lastDetailTab = 'summary';
+    const panel = (key) => (tabs.length ? html`role="tabpanel" id="dp-${key}" aria-labelledby="dt-${key}" ${lastDetailTab === key ? '' : html`hidden`}` : '');
     render(ov.body, html`
       <article class="detail">
         ${device ? html`<p class="copy-note" role="status">${localNote(device)}</p>` : ''}
-        ${photoBlock(sp)}
 
         <header class="detail-head iucn-edge-${iucnClass(sp.iucnPrimary && sp.iucnPrimary.code)}">
-          <h3 class="detail-name">${sciName(sp)}</h3>
           ${sp.vernacularName ? html`<p class="detail-common">${sp.vernacularName}</p>` : ''}
-          <p class="row-meta"><span class="badge">${sp.taxonomicGroup || 'Sin grupo'}</span>
+          <h3 class="detail-name">${sciName(sp)}</h3>
+          <p class="row-meta">${sp.iucnPrimary ? iucnBadge(sp.iucnPrimary, { primary: true }) : ''}<span class="badge">${sp.taxonomicGroup || 'Sin grupo'}</span>
             ${sp.taxonRank ? html`<span class="badge">${sp.taxonRank}</span>` : ''}
             ${sp.source === 'user' ? html`<span class="badge warn">Especie de usuario</span>` : ''}</p>
         </header>
+
+        ${tabs.length ? html`<div class="detail-tabs" role="tablist" aria-label="Secciones de la especie">${tabs.map(([key, label]) => html`
+          <button type="button" role="tab" class="detail-tab" id="dt-${key}" data-tab="${key}" aria-controls="dp-${key}"
+            aria-selected="${lastDetailTab === key ? 'true' : 'false'}" tabindex="${lastDetailTab === key ? '0' : '-1'}">${label}</button>`)}
+        </div>` : ''}
+
+        <div class="detail-panel" data-panel="summary" ${panel('summary')}>
+        ${photoBlock(sp)}
         ${sp.source === 'user' ? html`<p class="guard-band warn">Esta especie no está en EIDOS; revisa la clasificación antes de usarla.</p>` : ''}
 
         <section class="detail-sec" aria-labelledby="d-sens"><h4 id="d-sens">Nivel de sensibilidad</h4>
           <div class="sens-box"></div></section>
 
-        ${inCatalog ? html`<section class="detail-sec" aria-labelledby="d-marks"><h4 id="d-marks">Marcas en «${catalogData.catalog.name}»</h4>
-          <div class="marks-box"></div></section>
-        <section class="detail-sec dist-sec" aria-labelledby="d-dist"><h4 id="d-dist">Distribución</h4>
-          <div class="dist-box"></div></section>
-        <section class="detail-sec" aria-labelledby="d-notes"><h4 id="d-notes">Notas de la especie</h4>
+        ${inCatalog ? html`<section class="detail-sec" aria-labelledby="d-notes"><h4 id="d-notes">Notas de la especie</h4>
           <div class="notes-box"></div></section>` : ''}
 
         <section class="detail-sec" aria-labelledby="d-cls"><h4 id="d-cls">Clasificación</h4>
@@ -238,9 +255,6 @@ export function openSpeciesDetail(taxonID, { onChanged, step, onOpen } = {}) {
           </table>` : html`<p class="muted">Sin evaluaciones UICN vigentes en EIDOS.</p>`}
         </section>
 
-        ${inCatalog ? html`<section class="detail-sec assess-sec" aria-labelledby="d-biodex"><h4 id="d-biodex">Evaluación BioDex</h4>
-          <div class="assess-box"></div></section>` : ''}
-
         <section class="detail-sec" aria-labelledby="d-legal"><h4 id="d-legal">Estado legal</h4>
           ${legal ? html`
             <h5>Nacional</h5>${legalList(legal.national)}
@@ -252,6 +266,24 @@ export function openSpeciesDetail(taxonID, { onChanged, step, onOpen } = {}) {
 
         ${sp.eidosUrl ? html`<p class="detail-sec"><a class="btn-secondary" href="${sp.eidosUrl}" target="_blank"
           rel="noopener noreferrer">Ver en EIDOS</a></p>` : ''}
+        </div>
+
+        ${inCatalog ? html`
+        <div class="detail-panel" data-panel="records" ${panel('records')}>
+          <section class="detail-sec" aria-labelledby="d-marks"><h4 id="d-marks">Marcas en «${catalogData.catalog.name}»</h4>
+            <div class="minimap-box"></div>
+            <div class="marks-box"></div></section>
+          <section class="detail-sec dist-sec" aria-labelledby="d-dist"><h4 id="d-dist">Distribución</h4>
+            <div class="dist-box"></div></section>
+        </div>
+        <div class="detail-panel" data-panel="params" ${panel('params')}>
+          <section class="detail-sec" aria-labelledby="d-params"><h4 id="d-params">Parámetros en «${catalogData.catalog.name}»</h4>
+            <div class="params-box"></div></section>
+        </div>
+        <div class="detail-panel" data-panel="iucn" ${panel('iucn')}>
+          <section class="detail-sec assess-sec" aria-labelledby="d-biodex"><h4 id="d-biodex">Evaluación BioDex</h4>
+            <div class="assess-box"></div></section>
+        </div>` : ''}
       </article>`);
     paintSensitivity(sp, catalogData, inCatalog, levels);
     // Fotos que no están guardadas en el dispositivo: fuera, en vez del icono de imagen rota. La de
@@ -278,12 +310,46 @@ export function openSpeciesDetail(taxonID, { onChanged, step, onOpen } = {}) {
       swapToSilhouette(ev.target, photo.querySelector('.detail-photo-media'));
     }, true);
     if (inCatalog) {
-      for (const m of [marks, notes, assessments, distribution]) if (m) m.destroy();
+      for (const m of [marks, notes, assessments, distribution, minimap, params]) if (m) m.destroy();
+      minimap = null;
+      params = null;
       const catalog = { ...catalogData.catalog, role: catalogData.catalog.role };
       marks = mountMarks($('.marks-box', ov.body), { species: sp, catalog, levels, sensitivity: inCatalog.sensitivity });
       notes = mountNotes($('.notes-box', ov.body), { species: sp, catalog });
       assessments = mountAssessments($('.assess-box', ov.body), { species: sp, catalog });
       distribution = mountDistribution($('.dist-box', ov.body), { species: sp, catalog });
+      // Minimapa y parámetros se montan al abrir su pestaña: Leaflet necesita el tamaño real del contenedor.
+      const showTab = (key, { focus = false } = {}) => {
+        lastDetailTab = key;
+        for (const b of ov.body.querySelectorAll('.detail-tab')) {
+          const on = b.dataset.tab === key;
+          b.setAttribute('aria-selected', String(on));
+          b.tabIndex = on ? 0 : -1;
+          if (on && focus) b.focus();
+        }
+        for (const p of ov.body.querySelectorAll('.detail-panel')) p.hidden = p.dataset.panel !== key;
+        if (key === 'records') {
+          if (!minimap) minimap = mountMinimap($('.minimap-box', ov.body), { species: sp, catalog });
+          else minimap.resize();
+        }
+        if (key === 'params' && !params) params = mountParameters($('.params-box', ov.body), { species: sp, catalog });
+      };
+      const tablist = $('.detail-tabs', ov.body);
+      tablist.addEventListener('click', (ev) => {
+        const b = ev.target.closest('[data-tab]');
+        if (b) showTab(b.dataset.tab);
+      });
+      // Flechas, Inicio y Fin entre pestañas (patrón ARIA de pestañas con activación automática).
+      tablist.addEventListener('keydown', (ev) => {
+        const keys = DETAIL_TABS.map(([k]) => k);
+        const i = keys.indexOf(lastDetailTab);
+        const next = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: keys.length - 1 }[ev.key];
+        if (next === undefined) return;
+        ev.preventDefault();
+        ev.stopPropagation();   // ↑/↓ y ←/→ no pasan de ficha desde aquí
+        showTab(keys[(next + keys.length) % keys.length], { focus: true });
+      });
+      showTab(lastDetailTab);
     }
   }
 

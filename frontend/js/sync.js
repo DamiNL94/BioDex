@@ -27,7 +27,8 @@ const PERIOD_MS = 5 * 60 * 1000;
 // Versión del protocolo de pull que tiene aplicada cada catálogo (meta `syncv:<id>`). 2 (F8a): el pull
 // trae también `notes`. Un cursor de antes pudo saltarse notas (se lo comía una versión anterior de la
 // app que no las guardaba): con una versión menor se vuelve a pedir desde 0. 3 (F8b): + `assessments`.
-const PULL_VERSION = 3;
+// 4 (F11f): + `parameters` (parámetros de especie).
+const PULL_VERSION = 4;
 const BACKOFF_S = [30, 60, 120, 300];
 const PUSH_BATCH = 200;
 const PULL_LIMIT = 500;
@@ -211,7 +212,12 @@ function fromServer(store, it, catalogId) {
 /** Aplica un lote del pull. Lo que tenga un cambio local en cola no se pisa (el push decide). */
 async function applyPulled(catalogId, res) {
   const { cursor, role } = res;
-  await tx([...RECORD_STORES, 'outbox', 'meta', 'catalogs'], 'readwrite', async (t) => {
+  await tx([...RECORD_STORES, 'parameters', 'outbox', 'meta', 'catalogs'], 'readwrite', async (t) => {
+    // F11f: parámetros de especie. No tienen cola (se editan con red): lo del servidor manda siempre.
+    for (const p of res.parameters || []) {
+      if (p.deleted) await t.del('parameters', [catalogId, p.taxonID, p.key]);
+      else await t.put('parameters', { ...p, catalogId });
+    }
     for (const [store, list, idKey] of [['occurrences', res.items || [], 'occurrenceID'], ['notes', res.notes || [], 'noteID'],
       ['assessments', res.assessments || [], 'assessmentID']]) {
       for (const it of list) {

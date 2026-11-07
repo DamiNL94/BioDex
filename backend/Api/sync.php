@@ -8,7 +8,7 @@
 //                          assessments:[…], assessmentDeletes:[{assessmentID, clientUpdatedAt}]}
 //                         permiso mark → {results:[…], noteResults:[…], assessmentResults:[…]}
 //   GET  /api/sync/pull?catalogId=&since=&limit=500
-//                         permiso view → {items, notes, assessments, cursor, hasMore, catalogContentSeq, role,
+//                         permiso view → {items, notes, assessments, parameters (F11f), cursor, hasMore, catalogContentSeq, role,
 //                                         visibilityEpoch}
 // Cada tipo de entidad (SYNC_ENTITIES) sigue las mismas reglas y comparte el contador server_seq.
 // Sin rol en el catálogo (expulsado o catálogo borrado): 403 {error, code: "not_member"}; el móvil
@@ -24,6 +24,7 @@ require_once __DIR__ . "/../Lib/session.php";
 require_once __DIR__ . "/../Lib/authz.php";
 require_once __DIR__ . "/../Lib/audit.php";
 require_once __DIR__ . "/../Lib/sync.php";
+require_once __DIR__ . "/../Lib/parameters.php";   // parámetros de especie en el pull (F11f)
 
 const UUID_RE = '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/';
 // Reintentos de un elemento ante clave duplicada (dos pushes a la vez de la misma marca nueva),
@@ -323,6 +324,11 @@ $stmt = $pdo->prepare(assessmentSelect("a.catalog_id = ? AND a.server_seq > ?") 
 $stmt->execute([$catalogId, $since]);
 foreach ($stmt->fetchAll() as $r) $rows[] = ["assessment", $r];
 
+// Parámetros de especie (F11f): sin coordenadas; los fijan owner y custodio por la API y aquí solo bajan.
+$stmt = $pdo->prepare(parameterSelect("p.catalog_id = ? AND p.server_seq > ?") . " ORDER BY p.server_seq LIMIT " . ($limit + 1));
+$stmt->execute([$catalogId, $since]);
+foreach ($stmt->fetchAll() as $r) $rows[] = ["parameter", $r];
+
 usort($rows, fn($a, $b) => (int) $a[1]["server_seq"] <=> (int) $b[1]["server_seq"]);
 $hasMore = count($rows) > $limit;
 $rows = array_slice($rows, 0, $limit);
@@ -330,10 +336,12 @@ $rows = array_slice($rows, 0, $limit);
 $items = [];
 $notes = [];
 $assessments = [];
+$parameters = [];
 $exactForeign = 0;
 foreach ($rows as [$kind, $r]) {
     if ($kind === "note") { $notes[] = noteOut($r); continue; }
     if ($kind === "assessment") { $assessments[] = assessmentOut($r); continue; }
+    if ($kind === "parameter") { $parameters[] = parameterOut($r); continue; }
     // Sin nivel registrado → normalizeSensitivityLevel() cae al más restrictivo (1).
     $level = normalizeSensitivityLevel($r["sens_level"]);
     $item = occurrenceOut($r, $level, $role, $userId);
@@ -350,6 +358,7 @@ respond([
     "items"             => $items,
     "notes"             => $notes,
     "assessments"       => $assessments,
+    "parameters"        => $parameters,
     "cursor"            => $rows ? (int) end($rows)[1]["server_seq"] : $since,
     "hasMore"           => $hasMore,
     "catalogContentSeq" => (int) $stmt->fetchColumn(),

@@ -22,6 +22,7 @@ const CATALOG_PERMISSIONS = [
     "export_full"    => ["owner", "custodian"],
     "set_reference"  => ["owner"],                                   // evaluación UICN de referencia (F8b)
     "review_photos"  => ["owner", "custodian"],                      // fotos de respaldo por sinónimo (F11b, F11d)
+    "set_parameter"  => ["owner", "custodian"],                      // parámetros de especie (F11f)
 ];
 
 /** Rol del usuario en el catálogo, o null si no es miembro o el catálogo está borrado. */

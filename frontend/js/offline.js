@@ -211,12 +211,13 @@ export const isDownloading = (catalogId) => downloads.has(catalogId);
 
 /** Borra un catálogo del dispositivo (expulsado, salido o borrado): fichas, marcas, notas, evaluaciones, meta e imágenes. */
 export async function forgetCatalog(catalogId) {
-  await tx(['catalogs', 'catalogSpecies', 'occurrences', 'notes', 'assessments', 'outbox', 'meta'], 'readwrite', async (t) => {
+  await tx(['catalogs', 'catalogSpecies', 'occurrences', 'notes', 'assessments', 'parameters', 'outbox', 'meta'], 'readwrite', async (t) => {
     await t.del('catalogs', catalogId);
     for (const r of await t.byIndex('catalogSpecies', 'catalogId', catalogId)) await t.del('catalogSpecies', [catalogId, r.taxonID]);
     for (const o of await t.byIndex('occurrences', 'catalogId', catalogId)) await t.del('occurrences', o.occurrenceID);
     for (const n of await t.byIndex('notes', 'catalogId', catalogId)) await t.del('notes', n.noteID);
     for (const a of await t.byIndex('assessments', 'catalogId', catalogId)) await t.del('assessments', a.assessmentID);
+    for (const p of await t.byIndex('parameters', 'catalogId', catalogId)) await t.del('parameters', [catalogId, p.taxonID, p.key]);
     for (const o of await t.getAll('outbox')) if (o.catalogId === catalogId) await t.del('outbox', o.id);
     for (const prefix of CATALOG_META) await t.del('meta', prefix + catalogId);
     // EOO/AOO guardados (F9, js/metrics.js): metrics:<catálogo>:<taxón>:<ámbito>:<celda>

@@ -1415,3 +1415,60 @@ svg.qr-code{width:min(78vw,320px);height:auto;display:block;stroke:none}
 .impact-fab:disabled{opacity:.7;cursor:not-allowed}
 /* Que el botón no tape la última fila de la lista */
 .is-field .view-especies{padding-bottom:calc(var(--nav-h) + var(--tap-main) + 48px + env(safe-area-inset-bottom))}
+
+/* ===== S. F11f: página de especie (pestañas, minimapa y parámetros) ================================ */
+.detail-head .detail-common{margin:0;font-family:var(--font-display);font-size:var(--fs-lg);font-weight:700;color:var(--ink)}
+.detail-head .row-meta .badge.iucn{margin-right:8px}
+.detail-tabs{position:sticky;top:0;z-index:1;display:flex;gap:2px;margin:8px -16px 4px;padding:0 8px;overflow-x:auto;
+  background:var(--paper);border-bottom:1px solid var(--line);scrollbar-width:none}
+.detail-tabs::-webkit-scrollbar{display:none}
+.detail-tab{position:relative;flex:none;min-height:var(--tap-min);padding:0 14px;border:0;background:none;color:var(--muted);
+  font-weight:700;font-size:var(--fs-sm);white-space:nowrap;cursor:pointer}
+.detail-tab:hover{color:var(--ink)}
+.detail-tab[aria-selected="true"]{color:var(--leaf)}
+.detail-tab[aria-selected="true"]::after{content:"";position:absolute;left:8px;right:8px;bottom:-1px;height:3px;background:var(--leaf-fill)}
+.detail-panel>.detail-sec:first-child{border-top:0}
+.minimap-box{margin-bottom:12px}
+.minimap{height:240px;border:1px solid var(--line);border-radius:var(--radius-md);background:var(--surface-alt)}
+.minimap-note{margin:6px 0 0}
+.minimap .mk-wrap{display:flex;align-items:center;justify-content:center}
+/* Parámetros */
+.params-summary{display:grid;gap:4px;margin:0 0 12px;padding:10px 12px;background:var(--surface);border:1px solid var(--line);
+  border-left:var(--rule) solid var(--leaf);border-radius:var(--radius-sm)}
+.params-summary.has-missing{border-left-color:var(--warn)}
+.params-summary p{margin:0}
+.params-count strong{font-family:var(--font-display);font-size:var(--fs-xl)}
+.params-blocked{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.params-blocked .eyebrow{margin:0 4px 0 0}
+.crit-tag{display:inline-block;padding:1px 8px;border:1px solid var(--warn);border-radius:999px;color:var(--warn-ink);
+  font-size:var(--fs-sm);font-weight:700}
+.params-ok{color:var(--leaf);font-weight:600}
+.params{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.param{display:grid;gap:4px;padding:10px 12px;background:var(--surface);border:1px solid var(--line);
+  border-left:var(--rule) solid var(--line-strong);border-radius:var(--radius-sm)}
+.param.is-set{border-left-color:var(--leaf)}
+.param.is-missing{border-left-color:var(--warn);border-style:dashed;border-left-style:solid}
+.param.is-default{border-left-color:var(--brass)}
+.param p{margin:0}
+.param-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 10px}
+.param .param-label{margin:0;font-family:var(--font-ui);font-size:var(--fs-md);font-weight:700;color:var(--ink);text-transform:none;letter-spacing:0}
+.param-unit{font-weight:400;color:var(--muted);font-size:var(--fs-sm)}
+.param-value{font-family:var(--font-display);font-size:var(--fs-lg);font-weight:700;overflow-wrap:anywhere;white-space:pre-line}
+.param-meta{display:flex;flex-wrap:wrap;align-items:center;gap:2px 10px;font-size:var(--fs-sm)}
+.param-meta .badge+.muted{margin-left:0}
+.param-source{font-size:var(--fs-sm);color:var(--ink-soft);overflow-wrap:anywhere}
+.param-for{color:var(--ink-soft);font-weight:600}
+.param-actions{margin-top:4px}
+.param-form{margin-top:6px}
+.param-range{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (min-width:900px){
+  .overlay-full.species-detail .sheet-body>.detail{max-width:960px;margin:0 auto;width:100%}
+  .detail-tabs{margin-left:-32px;margin-right:-32px;padding:0 24px}
+  .minimap{height:320px}
+}
+/* Campo: las cuatro pestañas caben a 375 px (reparto igual, el rótulo largo en dos líneas) */
+@media (max-width:899px){
+  .detail-tabs{padding:0}
+  .detail-tab{flex:1 1 0;min-width:0;padding:4px 6px;white-space:normal;line-height:1.15;text-align:center}
+  .detail-tab[aria-selected="true"]::after{left:4px;right:4px}
+}

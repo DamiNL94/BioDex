@@ -22,9 +22,12 @@
 //                   (draft · final; en la API se llama `status`), isReference, referenceSetBy, referenceSetAt,
 //                   authorId, recordedBy, clientUpdatedAt, status (de sincronización, como las marcas), reason,
 //                   serverSeq, deletedAt}
+//   parameters      [catalogId, taxonID, key] → parámetro de una especie en un catálogo (F11f): {catalogId, taxonID,
+//                   key, value, valueMin, valueMax, quality, source, setBy, setById, setAt, serverSeq}. Solo bajan
+//                   por el pull (se editan con red, owner y custodio): nunca van a la cola.
 // ================================================================================================
 
-const DB_VERSION = 4;   // 2 (F7): almacén zones · 3 (F8a): almacén notes · 4 (F8b): almacén assessments
+const DB_VERSION = 5;   // 2 (F7): zones · 3 (F8a): notes · 4 (F8b): assessments · 5 (F11f): parameters
 let current = null;       // {name, db}
 
 const req = (r) => new Promise((resolve, reject) => {
@@ -46,6 +49,11 @@ function upgrade(db, oldVersion) {
     const assessments = db.createObjectStore('assessments', { keyPath: 'assessmentID' });
     assessments.createIndex('catalogId', 'catalogId');
     assessments.createIndex('taxonID', 'taxonID');
+  }
+  if (oldVersion < 5) {
+    const params = db.createObjectStore('parameters', { keyPath: ['catalogId', 'taxonID', 'key'] });
+    params.createIndex('catalogId', 'catalogId');
+    params.createIndex('catalogTaxon', ['catalogId', 'taxonID']);
   }
 }
 

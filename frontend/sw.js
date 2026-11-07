@@ -79,6 +79,7 @@ var SHELL_ASSETS = [
 
   // js/components/
   'js/components/species-picker.js', 'js/components/fab.js',   // F11f: buscador y botones flotantes del modo campo
+  'js/components/species-minimap.js', 'js/components/species-parameters.js',   // F11f: página de especie
   'js/components/overlay.js', 'js/components/species-card.js', 'js/components/marks.js', 'js/components/species-notes.js',
   'js/components/species-assessments.js', 'js/components/species-distribution.js',
   'js/components/catalog-switcher.js',   // F11c: cambiar de catálogo desde la cabecera
@@ -93,7 +94,9 @@ var SHELL_ASSETS = [
   // shared/ (F8b): motor UICN y sus umbrales, servidos por nginx en /shared/ — el asistente funciona sin red
   'shared/iucn-engine.js', 'shared/iucn-criteria.json',
   // shared/ (F9): EOO y AOO provisionales sin red
-  'shared/geo-metrics.js'
+  'shared/geo-metrics.js',
+  // shared/ (F11f): grupos de especies (separación por defecto entre subpoblaciones) sin red
+  'shared/species-groups.json'
 
 ];
 

@@ -16,6 +16,9 @@
 //   PUT    /api/catalogs/{id}/species/{taxonID}/reference-assessment  set_reference (owner) {assessmentID|null}
 //          → evaluación UICN de referencia de la especie en el catálogo (F8b), a access_log
 //   GET    /api/catalogs/{id}/species/{taxonID}/metrics?scope=team|me&cell=2|1  view: EOO/AOO (F9)
+//   GET    /api/catalogs/{id}/species/{taxonID}/parameters        view: parámetros de la especie (F11f)
+//   PUT    /api/catalogs/{id}/species/{taxonID}/parameters/{key}  set_parameter (owner, custodian) → access_log
+//   DELETE /api/catalogs/{id}/species/{taxonID}/parameters/{key}  set_parameter: lo deja sin valor
 // Miembros, invitaciones, salir, transferir y registro (F6): Api/teams.php, incluido desde aquí.
 // Exportación (F10a): POST /api/catalogs/{id}/export[/preview] → Api/exports.php, incluido desde aquí.
 // content_seq sube con cada cambio de lo que lleva el paquete offline (especies, niveles, nombre):
@@ -32,6 +35,7 @@ require_once __DIR__ . "/../Lib/photos.php";    // fuentes de fotos de respaldo 
 require_once __DIR__ . "/../Lib/teams.php";
 require_once __DIR__ . "/../Lib/sync.php";      // syncNextSeq(), assessmentOut() (F8b)
 require_once __DIR__ . "/../Lib/metrics.php";   // speciesMetrics() (F9)
+require_once __DIR__ . "/../Lib/parameters.php"; // parámetros de especie (F11f)
 
 const CATALOG_NAME_MAX = 120;
 // Especies por alta de catálogo: cada una sin ficha en caché son ~7 peticiones a EIDOS (~1,5 s).
@@ -54,7 +58,7 @@ if (preg_match('#^/api/catalogs/([0-9a-f-]{36})/export(?:/(preview))?/?$#', $pat
     require __DIR__ . "/exports.php";
     exit;
 }
-if (!preg_match('#^/api/catalogs(?:/([0-9a-f-]{36})(?:/(tree|species|offline)(?:/([^/]+)(?:/(sensitivity|reference-assessment|metrics))?)?)?)?/?$#', $path, $m)) {
+if (!preg_match('#^/api/catalogs(?:/([0-9a-f-]{36})(?:/(tree|species|offline)(?:/([^/]+)(?:/(sensitivity|reference-assessment|metrics|parameters)(?:/([a-z_]+))?)?)?)?)?/?$#', $path, $m)) {
     apiError("Recurso no encontrado.", 404);
 }
 $catalogId = $m[1] ?? null;
@@ -63,6 +67,9 @@ $taxonID   = isset($m[3]) ? rawurldecode($m[3]) : null;
 $sensPath  = isset($m[4]);
 $refPath   = ($m[4] ?? null) === "reference-assessment";
 $metricsPath = ($m[4] ?? null) === "metrics";
+$paramsPath  = ($m[4] ?? null) === "parameters";   // F11f
+$paramKey    = $m[5] ?? null;
+if (!$paramsPath && $paramKey !== null) apiError("Recurso no encontrado.", 404);
 
 // ------------------------------------------------------------------------------------------------
 
@@ -422,6 +429,73 @@ if ($metricsPath) {
     $row = catalogSpeciesRow($pdo, $catalogId, $taxonID);
     $level = normalizeSensitivityLevel($row["sens_level"]);
     respond(speciesMetrics($pdo, $catalogId, $taxonID, $userId, $role, $level, $scope, $cell));
+}
+
+// --- /api/catalogs/{id}/species/{taxonID}/parameters[/{key}] (F11f) -------------------------------
+// GET (view): los parámetros con valor, los valores por defecto del grupo y si el usuario puede editar.
+// PUT/DELETE {key} (set_parameter: owner y custodio): fija o deja sin valor uno. Cada cambio toma server_seq
+// nuevo (el pull lo lleva a todos los móviles; el borrado, como tombstone) y va a access_log con el antes
+// y el después. Reglas de cada clave en Lib/parameters.php; docs/parametros.md.
+
+if ($paramsPath) {
+    if ($paramKey === null) {
+        if ($method !== "GET") apiMethodNotAllowed("GET");
+        $role = requireCatalogPermission($pdo, $catalogId, $userId, "view");
+        catalogSpeciesRow($pdo, $catalogId, $taxonID);
+        $stmt = $pdo->prepare(parameterSelect("p.catalog_id = ? AND p.taxonID = ? AND p.deleted_at IS NULL") . " ORDER BY p.param_key");
+        $stmt->execute([$catalogId, $taxonID]);
+        respond([
+            "taxonID"    => $taxonID,
+            "parameters" => array_map("parameterOut", $stmt->fetchAll()),
+            "defaults"   => parameterDefaults($pdo, $taxonID),
+            "canEdit"    => catalogCan($role, "set_parameter"),
+        ]);
+    }
+    if (!isset(SPECIES_PARAMETERS[$paramKey])) apiError("Parámetro desconocido: «{$paramKey}».", 404);
+    if ($method !== "PUT" && $method !== "DELETE") apiMethodNotAllowed("PUT o DELETE");
+    requireCatalogPermission($pdo, $catalogId, $userId, "set_parameter");
+    catalogSpeciesRow($pdo, $catalogId, $taxonID);
+    $fields = $method === "PUT" ? parameterFields($paramKey, requireJsonBody("{value, valueMin?, valueMax?, quality?, source?}")) : null;
+
+    $pdo->beginTransaction();
+    $stmt = $pdo->prepare("SELECT * FROM species_parameters WHERE catalog_id = ? AND taxonID = ? AND param_key = ? FOR UPDATE");
+    $stmt->execute([$catalogId, $taxonID, $paramKey]);
+    $old = $stmt->fetch() ?: null;
+    $live = $old !== null && $old["deleted_at"] === null;
+
+    if ($fields === null) {
+        // Dejarlo sin valor: tombstone con server_seq nuevo. Si ya estaba vacío, no hay nada que hacer.
+        if (!$live) { $pdo->commit(); respond(["taxonID" => $taxonID, "parameter" => null, "changed" => false]); }
+        $pdo->prepare("UPDATE species_parameters SET deleted_at = NOW(), set_by = ?, set_at = NOW(), server_seq = ?
+                        WHERE catalog_id = ? AND taxonID = ? AND param_key = ?")
+            ->execute([$userId, syncNextSeq($pdo), $catalogId, $taxonID, $paramKey]);
+    } else {
+        $same = $live && (string) $old["value"] === (string) $fields["value"] && $old["quality"] === $fields["quality"]
+            && $old["source"] === $fields["source"]
+            && ($old["value_min"] === null ? $fields["value_min"] === null : (float) $old["value_min"] === $fields["value_min"])
+            && ($old["value_max"] === null ? $fields["value_max"] === null : (float) $old["value_max"] === $fields["value_max"]);
+        if ($same) {
+            $pdo->commit();
+            $stmt = $pdo->prepare(parameterSelect("p.catalog_id = ? AND p.taxonID = ? AND p.param_key = ?"));
+            $stmt->execute([$catalogId, $taxonID, $paramKey]);
+            respond(["taxonID" => $taxonID, "parameter" => parameterOut($stmt->fetch()), "changed" => false]);
+        }
+        $pdo->prepare(
+            "INSERT INTO species_parameters (catalog_id, taxonID, param_key, value, value_min, value_max, quality, source, set_by, set_at, deleted_at, server_seq)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NULL, ?)
+             ON DUPLICATE KEY UPDATE value = VALUES(value), value_min = VALUES(value_min), value_max = VALUES(value_max),
+                quality = VALUES(quality), source = VALUES(source), set_by = VALUES(set_by), set_at = NOW(), deleted_at = NULL,
+                server_seq = VALUES(server_seq)"
+        )->execute([$catalogId, $taxonID, $paramKey, $fields["value"], $fields["value_min"], $fields["value_max"],
+                    $fields["quality"], $fields["source"], $userId, syncNextSeq($pdo)]);
+    }
+    $stmt = $pdo->prepare(parameterSelect("p.catalog_id = ? AND p.taxonID = ? AND p.param_key = ?"));
+    $stmt->execute([$catalogId, $taxonID, $paramKey]);
+    $new = $stmt->fetch();
+    logAccess($pdo, $userId, "set_parameter", $catalogId,
+        "{$taxonID}: {$paramKey} " . parameterDescribe($live ? $old : null) . " → " . parameterDescribe($new));
+    $pdo->commit();
+    respond(["taxonID" => $taxonID, "parameter" => $new["deleted_at"] === null ? parameterOut($new) : null, "changed" => true]);
 }
 
 if ($refPath) {

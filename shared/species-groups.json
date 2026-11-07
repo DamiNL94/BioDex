@@ -21,6 +21,13 @@
     "generic": "organismo"
   },
   "default": "generic",
+  "default_separation_km_description": "F11f: distancia de separación por defecto entre subpoblaciones (km) por grupo; null = sin valor por defecto (hay que fijarla en Parámetros). Se muestra «por defecto del grupo» hasta que owner o custodio la confirmen (docs/parametros.md). 1 km solo para grupos sésiles o poco móviles.",
+  "default_separation_km": {
+    "flowering-plant": 1, "fern": 1, "gymnosperm": 1, "bryophyte": 1, "fungus": 1, "lichen": 1, "alga": 1,
+    "mollusc": 1, "arachnid": 1, "invertebrate": 1,
+    "insect": null, "crustacean": null, "bird": null, "mammal": null, "reptile": null, "amphibian": null, "fish": null,
+    "generic": null
+  },
   "rules": [
     { "rank": "class",   "in": ["Lecanoromycetes", "Arthoniomycetes", "Lichinomycetes"], "group": "lichen" },
     { "rank": "kingdom", "in": ["Fungi"], "group": "fungus" },
