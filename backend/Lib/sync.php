@@ -12,6 +12,7 @@
 // ================================================================================================
 
 require_once __DIR__ . "/sensitivity.php";
+require_once __DIR__ . "/iucn.php";          // amenazas UICN de los impactos (F11g)
 
 const SYNC_MAX_ITEMS        = 200;     // marcas + borrados por push
 const SYNC_PULL_MAX_LIMIT   = 500;
@@ -27,6 +28,13 @@ const SYNC_JUSTIFICATION_MAX   = 4000;
 const ASSESSMENT_CATEGORIES    = ["CR", "EN", "VU", "NT", "LC", "DD"];
 const ASSESSMENT_STATUSES      = ["draft", "final"];
 const ASSESSMENT_ADJUSTMENTS   = ["down", "up"];
+// Impactos (F11g) y superficie contada de una marca
+const SYNC_SAMPLE_AREA_MAX     = 100000000;   // m² (100 km²)
+const SYNC_IMPACT_RADIUS_MAX   = 100000;      // m
+const SYNC_IMPACT_POLYGON_MAX  = 200;         // vértices
+const SYNC_IMPACT_SPECIES_MAX  = 200;
+const IMPACT_INTENSITIES       = ["low", "medium", "high"];
+const IMPACT_TIMINGS           = ["past", "ongoing", "future"];
 
 // Vocabularios cerrados (F8a). lifeStage y sex: vocabulario de GBIF; las etiquetas en castellano son
 // cosa de la interfaz (frontend/js/views/mark-sheet.js).
@@ -156,6 +164,9 @@ function syncValidateOccurrence(mixed $o): array {
     if ($protocol === GEOREF_MAP && $uncertain < 1) {
         syncReject("missing_field", "Un punto marcado en el mapa necesita la precisión estimada («coordinateUncertaintyInMeters» ≥ 1).");
     }
+    // F11g: superficie contada (m²): la marca es una parcela y su densidad sirve para estimar maduros.
+    $area = syncPositiveNumber($o, "sampleSizeValue", SYNC_SAMPLE_AREA_MAX);
+    if ($area !== null && $status === "absent") syncReject("invalid_absence", "Una ausencia no lleva superficie contada («sampleSizeValue»).");
 
     return [
         "occurrenceID"                  => $o["occurrenceID"],
@@ -173,8 +184,133 @@ function syncValidateOccurrence(mixed $o): array {
         "georeferenceProtocol"          => $protocol,
         "occurrenceRemarks"             => syncText($o, "occurrenceRemarks", SYNC_REMARKS_MAX),
         "mature_count"                  => $mature,
+        "sampleSizeValue"               => $area,
         "client_updated_at"             => syncClientUpdatedAt($o["clientUpdatedAt"] ?? null),
     ];
+}
+
+/** Número > 0 y ≤ $max (admite enteros y decimales); null si falta. */
+function syncPositiveNumber(array $o, string $field, float $max): ?float {
+    $v = $o[$field] ?? null;
+    if ($v === null) return null;
+    if ((!is_int($v) && !is_float($v)) || !is_finite((float) $v) || $v <= 0 || $v > $max) {
+        syncReject("invalid_field", "«{$field}» debe ser un número mayor que 0 y como mucho {$max}.");
+    }
+    return (float) $v;
+}
+
+/**
+ * Impacto del cuerpo de un push (F11g) → columnas de impacts + `_species` (taxonIDs afectados; los escribe
+ * syncPushItem en impact_species). Punto + radio o polígono (uno de los dos); amenaza del esquema UICN v3.3.
+ */
+function syncValidateImpact(mixed $i): array {
+    if (!is_array($i) || array_is_list($i)) syncReject("invalid_item", "Cada impacto debe ser un objeto.");
+    if (!isUuidV4($i["impactID"] ?? null)) syncReject("invalid_uuid", "«impactID» debe ser un UUID v4 en minúsculas.");
+    $code = $i["threatCode"] ?? null;
+    if (!is_string($code) || !isset(iucnThreatLabels()[$code])) syncReject("invalid_vocabulary", "«threatCode» debe ser un código del esquema de amenazas de la UICN (p. ej. 2.3).");
+    $quick = $i["quickKey"] ?? null;
+    if ($quick !== null && !in_array($quick, array_column(iucnThreats()["quick"], "key"), true)) syncReject("invalid_vocabulary", "«quickKey» desconocido.");
+    $radius = syncUint($i, "radiusM", false);
+    if ($radius !== null && ($radius < 1 || $radius > SYNC_IMPACT_RADIUS_MAX)) syncReject("invalid_field", "«radiusM» debe estar entre 1 y " . SYNC_IMPACT_RADIUS_MAX . " m.");
+    $polygon = $i["polygon"] ?? null;
+    if ($polygon !== null) {
+        if (!is_array($polygon) || !array_is_list($polygon) || count($polygon) < 3 || count($polygon) > SYNC_IMPACT_POLYGON_MAX) {
+            syncReject("invalid_field", "«polygon» debe ser una lista de 3 a " . SYNC_IMPACT_POLYGON_MAX . " vértices [lat, lon].");
+        }
+        foreach ($polygon as $v) {
+            if (!is_array($v) || count($v) !== 2 || !is_numeric($v[0]) || !is_numeric($v[1]) || abs($v[0]) > 90 || abs($v[1]) > 180) {
+                syncReject("invalid_coordinates", "Cada vértice de «polygon» es [lat, lon].");
+            }
+        }
+        $polygon = array_map(fn($v) => [round((float) $v[0], 6), round((float) $v[1], 6)], $polygon);
+    }
+    if (($radius === null) === ($polygon === null)) syncReject("missing_field", "Un impacto lleva radio («radiusM») o polígono («polygon»), uno de los dos.");
+    $scope = $i["scopePct"] ?? null;
+    if ($scope !== null && ((!is_int($scope) && !is_float($scope)) || $scope < 0 || $scope > 100)) syncReject("invalid_field", "«scopePct» debe estar entre 0 y 100.");
+    $species = $i["species"] ?? [];
+    if (!is_array($species) || !array_is_list($species) || count($species) > SYNC_IMPACT_SPECIES_MAX) {
+        syncReject("invalid_field", "«species» debe ser una lista de como mucho " . SYNC_IMPACT_SPECIES_MAX . " taxonID.");
+    }
+    $taxa = [];
+    foreach ($species as $t) {
+        if (is_int($t)) $t = (string) $t;
+        if (!is_string($t) || $t === "" || strlen($t) > 64) syncReject("invalid_taxon", "Cada especie de «species» es un taxonID.");
+        $taxa[$t] = true;
+    }
+    return [
+        "impactID"          => $i["impactID"],
+        "threat_code"       => $code,
+        "quick_key"         => $quick,
+        "decimalLatitude"   => syncCoordinate($i, "decimalLatitude", 90),
+        "decimalLongitude"  => syncCoordinate($i, "decimalLongitude", 180),
+        "radius_m"          => $radius,
+        "polygon"           => $polygon === null ? null : json_encode($polygon),
+        "event_date"        => syncUtcDate($i["eventDate"] ?? null, "eventDate")->format("Y-m-d H:i:s"),
+        "intensity"         => syncEnum($i, "intensity", IMPACT_INTENSITIES) ?? syncReject("missing_field", "Falta «intensity» (low, medium, high)."),
+        "scope_pct"         => $scope === null ? null : (float) $scope,
+        "timing"            => syncEnum($i, "timing", IMPACT_TIMINGS) ?? syncReject("missing_field", "Falta «timing» (past, ongoing, future)."),
+        "note"              => syncText($i, "note", SYNC_NOTE_MAX),
+        "client_updated_at" => syncClientUpdatedAt($i["clientUpdatedAt"] ?? null),
+        "_species"          => array_keys($taxa),
+    ];
+}
+
+/**
+ * Impacto tal como sale hacia $viewerId (F11g). Su sitio delata dónde viven las especies afectadas, así que
+ * sigue la regla de applyVisibility() con el nivel MÁS restrictivo de esas especies en el catálogo (sin
+ * especies, 4): a quien no es el autor ni ve exactas, el centro generalizado, el radio ampliado a la celda y
+ * sin polígono. $row lleva `recorded_by`; $species = taxonIDs; $level = nivel mínimo.
+ */
+function impactOut(array $row, array $species, int $level, string $role, int $viewerId): array {
+    $meta = [
+        "impactID"        => $row["impactID"],
+        "userId"          => (int) $row["user_id"],
+        "clientUpdatedAt" => syncIsoUtc($row["client_updated_at"]),
+        "serverSeq"       => (int) $row["server_seq"],
+    ];
+    if ($row["deleted_at"] !== null) return $meta + ["deleted" => true];
+    $v = applyVisibility(["user_id" => $row["user_id"], "decimalLatitude" => $row["decimalLatitude"], "decimalLongitude" => $row["decimalLongitude"],
+                          "coordinateUncertaintyInMeters" => $row["radius_m"] !== null ? (int) $row["radius_m"] : null], $level, $role, $viewerId);
+    $generalized = array_key_exists("dataGeneralizations", $v);
+    $polygon = $row["polygon"] !== null ? json_decode($row["polygon"], true) : null;
+    return $meta + [
+        "deleted"          => false,
+        "recordedBy"       => $row["recorded_by"] ?? null,
+        "threatCode"       => $row["threat_code"],
+        "quickKey"         => $row["quick_key"],
+        "decimalLatitude"  => $v["decimalLatitude"] === null ? null : (float) $v["decimalLatitude"],
+        "decimalLongitude" => $v["decimalLongitude"] === null ? null : (float) $v["decimalLongitude"],
+        "radiusM"          => $generalized ? ($v["coordinateUncertaintyInMeters"] ?? null) : ($row["radius_m"] !== null ? (int) $row["radius_m"] : null),
+        "polygon"          => $generalized ? null : $polygon,
+        "eventDate"        => syncIsoUtc($row["event_date"]),
+        "intensity"        => $row["intensity"],
+        "scopePct"         => $row["scope_pct"] === null ? null : (float) $row["scope_pct"],
+        "timing"           => $row["timing"],
+        "note"             => $row["note"],
+        "species"          => array_values($species),
+        "generalized"      => $generalized,
+    ];
+}
+
+/**
+ * Impactos con sus especies y el nivel mínimo de ellas → [[row, species[], level]]. $where sobre el alias i.
+ */
+function impactRows(PDO $pdo, string $where, array $params, string $catalogId, string $suffix = ""): array {
+    $stmt = $pdo->prepare("SELECT i.*, u.name AS recorded_by FROM impacts i JOIN users u ON u.id = i.user_id WHERE {$where} {$suffix}");
+    $stmt->execute($params);
+    $rows = $stmt->fetchAll();
+    if (!$rows) return [];
+    $ids = array_column($rows, "impactID");
+    $stmt = $pdo->prepare("SELECT s.impactID, s.taxonID, ss.level FROM impact_species s
+                             LEFT JOIN species_sensitivity ss ON ss.catalog_id = ? AND ss.taxonID = s.taxonID
+                            WHERE s.impactID IN (" . implode(",", array_fill(0, count($ids), "?")) . ") ORDER BY s.taxonID");
+    $stmt->execute([$catalogId, ...$ids]);
+    $sp = [];
+    foreach ($stmt->fetchAll() as $r) $sp[$r["impactID"]][] = [(string) $r["taxonID"], normalizeSensitivityLevel($r["level"])];
+    return array_map(function ($r) use ($sp) {
+        $list = $sp[$r["impactID"]] ?? [];
+        return [$r, array_column($list, 0), $list ? min(array_column($list, 1)) : 4];
+    }, $rows);
 }
 
 /** Nota de especie del cuerpo de un push → columnas de species_notes. */
@@ -213,6 +349,15 @@ function syncValidateAssessment(mixed $a): array {
         $json[$field] = $v === [] ? "{}" : $enc;
     }
     $result = $a["result"];
+    // F11g: una evaluación del motor 2 (instantánea de la pestaña Evaluación UICN) se recalcula AQUÍ con el port
+    // en PHP (el definitivo): se guardan sus entradas tal cual llegaron y el resultado del servidor.
+    if (($a["inputs"]["engine"] ?? null) === 2) {
+        $server = assessIucn($a["inputs"]);
+        $result = array_merge($result, $server, ["computedBy" => "server"]);
+        $enc = json_encode($result, JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION);
+        if ($enc === false || strlen($enc) > SYNC_ASSESSMENT_JSON_MAX) syncReject("invalid_field", "«result» no puede pasar de " . SYNC_ASSESSMENT_JSON_MAX . " bytes.");
+        $json["result"] = $enc;
+    }
     foreach (["category", "baseCategory"] as $k) {
         $cat = $result[$k] ?? null;
         if ($cat !== null && !in_array($cat, ASSESSMENT_CATEGORIES, true)) {
@@ -308,6 +453,7 @@ function occurrenceOut(array $row, int $level, string $role, int $viewerId): arr
         "georeferenceRemarks"           => $v["georeferenceRemarks"],
         "occurrenceRemarks"             => $v["occurrenceRemarks"],
         "mature_count"                  => $int($v["mature_count"]),
+        "sampleSizeValue"               => $num($v["sampleSizeValue"] ?? null),
         "generalized"                   => $generalized,
     ] + ($generalized ? [
         "dataGeneralizations" => $v["dataGeneralizations"],

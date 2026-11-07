@@ -70,8 +70,9 @@ export function prepareRecords(records, project = null) {
     const w = when(r.eventDate);
     const mature = Number.isInteger(r.mature_count) && r.mature_count >= 0 ? r.mature_count : null;
     const area = toNum(r.sampleSizeValue);
+    const author = r.authorId ?? r.user_id ?? r.userId ?? null;
     out.push({ id: r.occurrenceID || String(out.length), x, y, lat, lon, t: w ? w.t : null, day: w ? w.day : null,
-      mature, area: area !== null && area > 0 ? area : null });
+      mature, area: area !== null && area > 0 ? area : null, author: author === null ? null : String(author) });
   }
   return out;
 }
@@ -87,15 +88,30 @@ function countedPoints(points) {
 
 const later = (a, b) => (a.t !== b.t ? a.t > b.t : a.id > b.id);   // a es más reciente que b
 
-/** La marca más reciente por clave (celda de 50 m + día, o solo celda). */
+/**
+ * El recuento más reciente por clave (celda de 50 m + día, o solo celda). Un RECUENTO son las marcas del
+ * mismo autor a ≤ EVENT_WINDOW_MS de la más reciente: el conteo por casillas (F11e) guarda una marca por
+ * categoría en el mismo punto, y sus maduros se SUMAN. → un punto por clave: el de la marca más reciente,
+ * con `mature` sumado y la superficie de la primera que la tenga.
+ */
+export const EVENT_WINDOW_MS = 60000;
 function latestBy(list, keyOf) {
-  const m = new Map();
+  const groups = new Map();
   for (const p of list) {
     const k = keyOf(p);
-    const cur = m.get(k);
-    if (!cur || later(p, cur)) m.set(k, p);
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(p);
   }
-  return [...m.values()].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  const out = [];
+  for (const g of groups.values()) {
+    let last = g[0];
+    for (const p of g) if (later(p, last)) last = p;
+    const members = g.filter((p) => p === last || (p.author === last.author && last.t - p.t <= EVENT_WINDOW_MS))
+      .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+    const withArea = members.find((p) => p.area !== null);
+    out.push({ ...last, mature: members.reduce((s, p) => s + p.mature, 0), area: withArea ? withArea.area : null, members: members.length });
+  }
+  return out.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 }
 const cellKey = (p, size) => `${Math.floor(p.x / size)},${Math.floor(p.y / size)}`;
 

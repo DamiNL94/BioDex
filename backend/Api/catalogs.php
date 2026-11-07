@@ -19,6 +19,9 @@
 //   GET    /api/catalogs/{id}/species/{taxonID}/parameters        view: parámetros de la especie (F11f)
 //   PUT    /api/catalogs/{id}/species/{taxonID}/parameters/{key}  set_parameter (owner, custodian) → access_log
 //   DELETE /api/catalogs/{id}/species/{taxonID}/parameters/{key}  set_parameter: lo deja sin valor
+//   GET    /api/catalogs/{id}/species/{taxonID}/assessment[?gbif=1] view: cuantificadores y motor UICN definitivos (F11g)
+//   PUT    /api/catalogs/{id}/species/{taxonID}/locations  set_parameter: nº de localidades confirmado → access_log (F11g)
+//   DELETE /api/catalogs/{id}/species/{taxonID}/locations  set_parameter: vuelve a «sin confirmar»
 // Miembros, invitaciones, salir, transferir y registro (F6): Api/teams.php, incluido desde aquí.
 // Exportación (F10a): POST /api/catalogs/{id}/export[/preview] → Api/exports.php, incluido desde aquí.
 // content_seq sube con cada cambio de lo que lleva el paquete offline (especies, niveles, nombre):
@@ -36,6 +39,7 @@ require_once __DIR__ . "/../Lib/teams.php";
 require_once __DIR__ . "/../Lib/sync.php";      // syncNextSeq(), assessmentOut() (F8b)
 require_once __DIR__ . "/../Lib/metrics.php";   // speciesMetrics() (F9)
 require_once __DIR__ . "/../Lib/parameters.php"; // parámetros de especie (F11f)
+require_once __DIR__ . "/../Lib/assessment.php"; // evaluación UICN calculada en el servidor y localidades (F11g)
 
 const CATALOG_NAME_MAX = 120;
 // Especies por alta de catálogo: cada una sin ficha en caché son ~7 peticiones a EIDOS (~1,5 s).
@@ -58,7 +62,7 @@ if (preg_match('#^/api/catalogs/([0-9a-f-]{36})/export(?:/(preview))?/?$#', $pat
     require __DIR__ . "/exports.php";
     exit;
 }
-if (!preg_match('#^/api/catalogs(?:/([0-9a-f-]{36})(?:/(tree|species|offline)(?:/([^/]+)(?:/(sensitivity|reference-assessment|metrics|parameters)(?:/([a-z_]+))?)?)?)?)?/?$#', $path, $m)) {
+if (!preg_match('#^/api/catalogs(?:/([0-9a-f-]{36})(?:/(tree|species|offline)(?:/([^/]+)(?:/(sensitivity|reference-assessment|metrics|parameters|assessment|locations)(?:/([a-z_]+))?)?)?)?)?/?$#', $path, $m)) {
     apiError("Recurso no encontrado.", 404);
 }
 $catalogId = $m[1] ?? null;
@@ -69,6 +73,8 @@ $refPath   = ($m[4] ?? null) === "reference-assessment";
 $metricsPath = ($m[4] ?? null) === "metrics";
 $paramsPath  = ($m[4] ?? null) === "parameters";   // F11f
 $paramKey    = $m[5] ?? null;
+$assessPath  = ($m[4] ?? null) === "assessment";   // F11g
+$locPath     = ($m[4] ?? null) === "locations";    // F11g
 if (!$paramsPath && $paramKey !== null) apiError("Recurso no encontrado.", 404);
 
 // ------------------------------------------------------------------------------------------------
@@ -429,6 +435,60 @@ if ($metricsPath) {
     $row = catalogSpeciesRow($pdo, $catalogId, $taxonID);
     $level = normalizeSensitivityLevel($row["sens_level"]);
     respond(speciesMetrics($pdo, $catalogId, $taxonID, $userId, $role, $level, $scope, $cell));
+}
+
+// --- /api/catalogs/{id}/species/{taxonID}/assessment y /locations (F11g) ------------------------------
+// GET assessment (view): cálculo definitivo con las exactas (Lib/assessment.php); la geometría según confianza.
+// PUT/DELETE locations (set_parameter: owner y custodio): nº de localidades confirmado con su agrupación y
+// justificación. server_seq nuevo (el pull lo lleva al móvil, el borrado como tombstone) y access_log.
+
+if ($assessPath) {
+    if ($method !== "GET") apiMethodNotAllowed("GET");
+    $role = requireCatalogPermission($pdo, $catalogId, $userId, "view");
+    $row = catalogSpeciesRow($pdo, $catalogId, $taxonID);
+    $level = normalizeSensitivityLevel($row["sens_level"]);
+    $out = speciesAssessment($pdo, $catalogId, $taxonID, $userId, $role, $level);
+    if (($_GET["gbif"] ?? "") === "1") {
+        require_once __DIR__ . "/../Lib/gbif-compare.php";
+        $out["gbif"] = gbifComparison($pdo, $catalogId, $taxonID, $out, metricsGeometryAccess($role, $level, "team"), $level);
+    }
+    respond($out);
+}
+
+if ($locPath) {
+    if ($method !== "PUT" && $method !== "DELETE") apiMethodNotAllowed("PUT o DELETE");
+    requireCatalogPermission($pdo, $catalogId, $userId, "set_parameter");
+    catalogSpeciesRow($pdo, $catalogId, $taxonID);
+    $fields = $method === "PUT" ? locationsFields(requireJsonBody("{count, groups, justification, quality?, source?, separationKm?}")) : null;
+    $pdo->beginTransaction();
+    $stmt = $pdo->prepare("SELECT * FROM species_locations WHERE catalog_id = ? AND taxonID = ? FOR UPDATE");
+    $stmt->execute([$catalogId, $taxonID]);
+    $old = $stmt->fetch() ?: null;
+    $live = $old !== null && $old["deleted_at"] === null;
+    $describe = fn(?array $r) => $r === null || $r["deleted_at"] !== null ? "sin confirmar"
+        : "{$r["n_locations"]} " . ((int) $r["n_locations"] === 1 ? "localidad" : "localidades");
+    if ($fields === null) {
+        if (!$live) { $pdo->commit(); respond(["taxonID" => $taxonID, "locations" => null, "changed" => false]); }
+        $pdo->prepare("UPDATE species_locations SET deleted_at = UTC_TIMESTAMP(), set_by = ?, set_at = UTC_TIMESTAMP(), server_seq = ?
+                        WHERE catalog_id = ? AND taxonID = ?")->execute([$userId, syncNextSeq($pdo), $catalogId, $taxonID]);
+    } else {
+        $pdo->prepare(
+            "INSERT INTO species_locations (catalog_id, taxonID, n_locations, location_groups, justification, quality, source, separation_km,
+                    set_by, set_at, deleted_at, server_seq)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(), NULL, ?)
+             ON DUPLICATE KEY UPDATE n_locations = VALUES(n_locations), location_groups = VALUES(location_groups),
+                    justification = VALUES(justification), quality = VALUES(quality), source = VALUES(source),
+                    separation_km = VALUES(separation_km), set_by = VALUES(set_by), set_at = UTC_TIMESTAMP(), deleted_at = NULL,
+                    server_seq = VALUES(server_seq)"
+        )->execute([$catalogId, $taxonID, $fields["n_locations"], $fields["location_groups"], $fields["justification"], $fields["quality"],
+                    $fields["source"], $fields["separation_km"], $userId, syncNextSeq($pdo)]);
+    }
+    $stmt = $pdo->prepare(locationsSelect("l.catalog_id = ? AND l.taxonID = ?"));
+    $stmt->execute([$catalogId, $taxonID]);
+    $new = $stmt->fetch();
+    logAccess($pdo, $userId, "set_locations", $catalogId, "{$taxonID}: " . $describe($live ? $old : null) . " → " . $describe($new));
+    $pdo->commit();
+    respond(["taxonID" => $taxonID, "locations" => $new["deleted_at"] === null ? locationsOut($new) : null, "changed" => true]);
 }
 
 // --- /api/catalogs/{id}/species/{taxonID}/parameters[/{key}] (F11f) -------------------------------

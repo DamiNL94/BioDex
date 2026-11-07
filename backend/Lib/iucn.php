@@ -559,21 +559,32 @@ function iucnPrepareRecords(array $records): array {
         $m = $r["mature_count"] ?? null;
         $mature = is_int($m) && $m >= 0 ? $m : (is_string($m) && ctype_digit($m) ? (int) $m : null);
         $area = iucnToNum($r["sampleSizeValue"] ?? null);
+        $author = $r["authorId"] ?? $r["user_id"] ?? $r["userId"] ?? null;
         $out[] = ["id" => (string) ($r["occurrenceID"] ?? count($out)), "x" => $x, "y" => $y, "lat" => $lat, "lon" => $lon,
-                  "t" => $w["t"] ?? null, "day" => $w["day"] ?? null, "mature" => $mature, "area" => $area !== null && $area > 0 ? $area : null];
+                  "t" => $w["t"] ?? null, "day" => $w["day"] ?? null, "mature" => $mature, "area" => $area !== null && $area > 0 ? $area : null,
+                  "author" => $author === null ? null : (string) $author];
     }
     return $out;
 }
 
 function iucnLater(array $a, array $b): bool { return $a["t"] !== $b["t"] ? $a["t"] > $b["t"] : strcmp($a["id"], $b["id"]) > 0; }
 
+const IUCN_EVENT_WINDOW_MS = 60000;
+
+/** Recuento más reciente por clave; las marcas del mismo autor a ≤ 60 s suman (ver latestBy() de JS). */
 function iucnLatestBy(array $list, callable $keyOf): array {
-    $m = [];
-    foreach ($list as $p) {
-        $k = $keyOf($p);
-        if (!isset($m[$k]) || iucnLater($p, $m[$k])) $m[$k] = $p;
+    $groups = [];
+    foreach ($list as $p) $groups[$keyOf($p)][] = $p;
+    $out = [];
+    foreach ($groups as $g) {
+        $last = $g[0];
+        foreach ($g as $p) if (iucnLater($p, $last)) $last = $p;
+        $members = array_values(array_filter($g, fn($p) => $p["id"] === $last["id"] || ($p["author"] === $last["author"] && $last["t"] - $p["t"] <= IUCN_EVENT_WINDOW_MS)));
+        usort($members, fn($a, $b) => strcmp($a["id"], $b["id"]));
+        $area = null;
+        foreach ($members as $p) if ($p["area"] !== null) { $area = $p["area"]; break; }
+        $out[] = array_merge($last, ["mature" => array_sum(array_column($members, "mature")), "area" => $area, "members" => count($members)]);
     }
-    $out = array_values($m);
     usort($out, fn($a, $b) => strcmp($a["id"], $b["id"]));
     return $out;
 }

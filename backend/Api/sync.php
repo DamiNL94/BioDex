@@ -5,10 +5,11 @@
 // ------------------------------------------------------------------------------------------------
 //   POST /api/sync/push   {catalogId, deviceId, occurrences:[…], deletes:[{occurrenceID, clientUpdatedAt}],
 //                          notes:[…], noteDeletes:[{noteID, clientUpdatedAt}],
-//                          assessments:[…], assessmentDeletes:[{assessmentID, clientUpdatedAt}]}
-//                         permiso mark → {results:[…], noteResults:[…], assessmentResults:[…]}
+//                          assessments:[…], assessmentDeletes:[{assessmentID, clientUpdatedAt}],
+//                          impacts:[…], impactDeletes:[{impactID, clientUpdatedAt}] (F11g)}
+//                         permiso mark → {results:[…], noteResults:[…], assessmentResults:[…], impactResults:[…]}
 //   GET  /api/sync/pull?catalogId=&since=&limit=500
-//                         permiso view → {items, notes, assessments, parameters (F11f), cursor, hasMore, catalogContentSeq, role,
+//                         permiso view → {items, notes, assessments, parameters (F11f), impacts y locations (F11g), cursor, hasMore, catalogContentSeq, role,
 //                                         visibilityEpoch}
 // Cada tipo de entidad (SYNC_ENTITIES) sigue las mismas reglas y comparte el contador server_seq.
 // Sin rol en el catálogo (expulsado o catálogo borrado): 403 {error, code: "not_member"}; el móvil
@@ -25,6 +26,7 @@ require_once __DIR__ . "/../Lib/authz.php";
 require_once __DIR__ . "/../Lib/audit.php";
 require_once __DIR__ . "/../Lib/sync.php";
 require_once __DIR__ . "/../Lib/parameters.php";   // parámetros de especie en el pull (F11f)
+require_once __DIR__ . "/../Lib/assessment.php";   // localidades confirmadas en el pull (F11g)
 
 const UUID_RE = '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/';
 // Reintentos de un elemento ante clave duplicada (dos pushes a la vez de la misma marca nueva),
@@ -85,12 +87,17 @@ const SYNC_ENTITIES = [
     "assessment" => ["table" => "species_assessments", "id" => "assessmentID", "list" => "assessments",
                      "deletes" => "assessmentDeletes", "results" => "assessmentResults", "pull" => "assessments",
                      "validate" => "syncValidateAssessment", "noun" => "La evaluación", "reference" => true],
+    // F11g: impactos. Sin taxonID propio: sus especies van en impact_species («_species» del validador).
+    "impact"     => ["table" => "impacts", "id" => "impactID", "list" => "impacts", "deletes" => "impactDeletes",
+                     "results" => "impactResults", "pull" => "impacts", "validate" => "syncValidateImpact", "noun" => "El impacto",
+                     "taxon" => false, "children" => "impact_species"],
 ];
 
 /** Fila actual del elemento, bloqueada hasta el final de la transacción; null si no existe. */
 function syncLockRow(PDO $pdo, array $ent, string $id): ?array {
     $extra = empty($ent["reference"]) ? "" : ", is_reference";
-    $stmt = $pdo->prepare("SELECT `{$ent["id"]}`, catalog_id, taxonID, user_id, client_updated_at, server_seq, deleted_at{$extra}
+    $taxon = ($ent["taxon"] ?? true) ? "taxonID, " : "";
+    $stmt = $pdo->prepare("SELECT `{$ent["id"]}`, catalog_id, {$taxon}user_id, client_updated_at, server_seq, deleted_at{$extra}
                              FROM `{$ent["table"]}` WHERE `{$ent["id"]}` = ? FOR UPDATE");
     $stmt->execute([$id]);
     return $stmt->fetch() ?: null;
@@ -108,6 +115,11 @@ function syncCurrent(PDO $pdo, array $ent, string $id, string $role, int $userId
         $stmt->execute([$id]);
         return assessmentOut($stmt->fetch());
     }
+    if ($ent["table"] === "impacts") {
+        $catalogId = $pdo->query("SELECT catalog_id FROM impacts WHERE impactID = " . $pdo->quote($id))->fetchColumn();
+        [[$row, $species, $level]] = impactRows($pdo, "i.impactID = ?", [$id], (string) $catalogId);
+        return impactOut($row, $species, $level, $role, $userId);
+    }
     $stmt = $pdo->prepare(
         "SELECT o.*, u.name AS recorded_by, ss.level AS sens_level
            FROM occurrences o
@@ -122,7 +134,7 @@ function syncCurrent(PDO $pdo, array $ent, string $id, string $role, int $userId
 
 /** Clave de la versión del servidor en un «stale»: `occurrence`, `note` o `assessment`. */
 function syncStaleKey(array $ent): string {
-    return ["species_notes" => "note", "species_assessments" => "assessment"][$ent["table"]] ?? "occurrence";
+    return ["species_notes" => "note", "species_assessments" => "assessment", "impacts" => "impact"][$ent["table"]] ?? "occurrence";
 }
 
 /**
@@ -151,10 +163,20 @@ function syncOwnershipRejection(PDO $pdo, array $ent, array $existing, string $c
     return [$ent["id"] => $existing[$ent["id"]], "status" => "rejected", "reason" => $reason[0], "detail" => $reason[1]];
 }
 
+/** F11g: filas hijas del elemento (especies de un impacto): se sustituyen por las del push. */
+function syncWriteChildren(PDO $pdo, array $ent, string $id, ?array $children): void {
+    if (empty($ent["children"]) || $children === null) return;
+    $pdo->prepare("DELETE FROM `{$ent["children"]}` WHERE `{$ent["id"]}` = ?")->execute([$id]);
+    $ins = $pdo->prepare("INSERT INTO `{$ent["children"]}` (`{$ent["id"]}`, taxonID) VALUES (?, ?)");
+    foreach ($children as $t) $ins->execute([$id, $t]);
+}
+
 function syncPushItem(PDO $pdo, array $ent, string $catalogId, int $userId, ?string $deviceId, string $role, array $c): array {
     $idField = $ent["id"];
     $table = $ent["table"];
     $id = $c[$idField];
+    $children = $c["_species"] ?? null;
+    unset($c["_species"]);
     $pdo->beginTransaction();
     $existing = syncLockRow($pdo, $ent, $id);
 
@@ -163,6 +185,7 @@ function syncPushItem(PDO $pdo, array $ent, string $catalogId, int $userId, ?str
         $cols = array_keys($c);
         $pdo->prepare("INSERT INTO `{$table}` (`" . implode("`, `", $cols) . "`) VALUES (" . rtrim(str_repeat("?, ", count($cols)), ", ") . ")")
             ->execute(array_values($c));
+        syncWriteChildren($pdo, $ent, $id, $children);
         $pdo->commit();
         return [$idField => $id, "status" => "accepted", "serverSeq" => $c["server_seq"]];
     }
@@ -187,6 +210,7 @@ function syncPushItem(PDO $pdo, array $ent, string $catalogId, int $userId, ?str
     $sets = implode(", ", array_map(fn($k) => "`{$k}` = ?", array_keys($c)));
     $pdo->prepare("UPDATE `{$table}` SET {$sets}, deleted_at = NULL WHERE `{$idField}` = ?")
         ->execute([...array_values($c), $id]);
+    syncWriteChildren($pdo, $ent, $id, $children);
     $pdo->commit();
     return [$idField => $id, "status" => "accepted", "serverSeq" => $c["server_seq"]];
 }
@@ -232,7 +256,7 @@ function syncRejected(array $ent, mixed $item, SyncRejection $e): array {
 
 if ($action === "push") {
     if ($method !== "POST") apiMethodNotAllowed("POST");
-    $body = requireJsonBody("{catalogId, deviceId, occurrences, deletes, notes, noteDeletes, assessments, assessmentDeletes}");
+    $body = requireJsonBody("{catalogId, deviceId, occurrences, deletes, notes, noteDeletes, assessments, assessmentDeletes, impacts, impactDeletes}");
     $catalogId = $body["catalogId"] ?? null;
     if (!is_string($catalogId) || !preg_match(UUID_RE, $catalogId)) apiError("«catalogId» debe ser el id del catálogo.", 400);
     $deviceId = $body["deviceId"] ?? null;
@@ -258,7 +282,9 @@ if ($action === "push") {
         foreach ($body[$ent["list"]] ?? [] as $item) {
             try {
                 $c = ($ent["validate"])($item);
-                if (!isset($taxa[$c["taxonID"]])) syncReject("taxon_not_in_catalog", "La especie {$c["taxonID"]} no está en el catálogo.");
+                foreach (($ent["taxon"] ?? true) ? [$c["taxonID"]] : $c["_species"] as $t) {
+                    if (!isset($taxa[$t])) syncReject("taxon_not_in_catalog", "La especie {$t} no está en el catálogo.");
+                }
             } catch (SyncRejection $e) {
                 $results[] = syncRejected($ent, $item, $e);
                 continue;
@@ -305,7 +331,7 @@ $stmt = $pdo->prepare(
       LIMIT " . ($limit + 1)
 );
 $stmt->execute([$catalogId, $since]);
-$rows = array_map(fn($r) => ["occurrence", $r], $stmt->fetchAll());
+$rows = array_map(fn($r) => ["occurrence", $r, null], $stmt->fetchAll());
 
 // Notas: sin coordenadas, no pasan por applyVisibility(); solo llegan hasta aquí miembros con «view».
 $stmt = $pdo->prepare(
@@ -317,17 +343,27 @@ $stmt = $pdo->prepare(
       LIMIT " . ($limit + 1)
 );
 $stmt->execute([$catalogId, $since]);
-foreach ($stmt->fetchAll() as $r) $rows[] = ["note", $r];
+foreach ($stmt->fetchAll() as $r) $rows[] = ["note", $r, null];
 
 // Evaluaciones UICN (F8b): tampoco llevan coordenadas; las mismas reglas que las notas.
 $stmt = $pdo->prepare(assessmentSelect("a.catalog_id = ? AND a.server_seq > ?") . " ORDER BY a.server_seq LIMIT " . ($limit + 1));
 $stmt->execute([$catalogId, $since]);
-foreach ($stmt->fetchAll() as $r) $rows[] = ["assessment", $r];
+foreach ($stmt->fetchAll() as $r) $rows[] = ["assessment", $r, null];
 
 // Parámetros de especie (F11f): sin coordenadas; los fijan owner y custodio por la API y aquí solo bajan.
 $stmt = $pdo->prepare(parameterSelect("p.catalog_id = ? AND p.server_seq > ?") . " ORDER BY p.server_seq LIMIT " . ($limit + 1));
 $stmt->execute([$catalogId, $since]);
-foreach ($stmt->fetchAll() as $r) $rows[] = ["parameter", $r];
+foreach ($stmt->fetchAll() as $r) $rows[] = ["parameter", $r, null];
+
+// Localidades confirmadas (F11g): sin coordenadas (subpoblaciones por etiqueta); las fijan owner y custodio.
+$stmt = $pdo->prepare(locationsSelect("l.catalog_id = ? AND l.server_seq > ?") . " ORDER BY l.server_seq LIMIT " . ($limit + 1));
+$stmt->execute([$catalogId, $since]);
+foreach ($stmt->fetchAll() as $r) $rows[] = ["locations", $r, null];
+
+// Impactos (F11g): llevan sitio; impactOut() lo generaliza con el nivel más restrictivo de sus especies.
+foreach (impactRows($pdo, "i.catalog_id = ? AND i.server_seq > ?", [$catalogId, $since], $catalogId, "ORDER BY i.server_seq LIMIT " . ($limit + 1)) as $x) {
+    $rows[] = ["impact", $x[0], $x];
+}
 
 usort($rows, fn($a, $b) => (int) $a[1]["server_seq"] <=> (int) $b[1]["server_seq"]);
 $hasMore = count($rows) > $limit;
@@ -337,8 +373,12 @@ $items = [];
 $notes = [];
 $assessments = [];
 $parameters = [];
+$impacts = [];
+$locations = [];
 $exactForeign = 0;
-foreach ($rows as [$kind, $r]) {
+foreach ($rows as [$kind, $r, $extra]) {
+    if ($kind === "locations") { $locations[] = locationsOut($r); continue; }
+    if ($kind === "impact") { $impacts[] = impactOut($r, $extra[1], $extra[2], $role, $userId); continue; }
     if ($kind === "note") { $notes[] = noteOut($r); continue; }
     if ($kind === "assessment") { $assessments[] = assessmentOut($r); continue; }
     if ($kind === "parameter") { $parameters[] = parameterOut($r); continue; }
@@ -359,6 +399,8 @@ respond([
     "notes"             => $notes,
     "assessments"       => $assessments,
     "parameters"        => $parameters,
+    "impacts"           => $impacts,
+    "locations"         => $locations,
     "cursor"            => $rows ? (int) end($rows)[1]["server_seq"] : $since,
     "hasMore"           => $hasMore,
     "catalogContentSeq" => (int) $stmt->fetchColumn(),

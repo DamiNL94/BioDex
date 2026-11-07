@@ -1523,6 +1523,64 @@
    }
   },
   {
+   "name": "Maduros: un conteo por casillas (mismo autor, < 60 s) suma; otro autor en el mismo minuto, no",
+   "kind": "mature",
+   "records": [
+    {
+     "occurrenceID": "t001",
+     "x": 10,
+     "y": 10,
+     "eventDate": "2026-05-01T10:00:00.100Z",
+     "mature_count": 5,
+     "authorId": 7
+    },
+    {
+     "occurrenceID": "t002",
+     "x": 10,
+     "y": 10,
+     "eventDate": "2026-05-01T10:00:00.200Z",
+     "mature_count": 3,
+     "authorId": 7
+    },
+    {
+     "occurrenceID": "t003",
+     "x": 10,
+     "y": 10,
+     "eventDate": "2026-05-01T10:00:00.300Z",
+     "mature_count": 2,
+     "authorId": 7
+    },
+    {
+     "occurrenceID": "t004",
+     "x": 12,
+     "y": 12,
+     "eventDate": "2026-05-01T09:59:30Z",
+     "mature_count": 9,
+     "authorId": 8
+    },
+    {
+     "occurrenceID": "t005",
+     "x": 3000,
+     "y": 0,
+     "eventDate": "2026-05-01T08:00:00Z",
+     "mature_count": 4,
+     "authorId": 7
+    },
+    {
+     "occurrenceID": "t006",
+     "x": 3000,
+     "y": 0,
+     "eventDate": "2026-05-01T09:00:00Z",
+     "mature_count": 6,
+     "authorId": 7
+    }
+   ],
+   "expect": {
+    "min": 16,
+    "nCounted": 2
+   }
+  },
+  {
    "name": "Maduros: solo el último año de datos",
    "kind": "mature",
    "records": [
