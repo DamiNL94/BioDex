@@ -15,6 +15,8 @@ Se declaran en `SYNC_ENTITIES` (`Api/sync.php`); añadir uno es añadir una entr
 | notas de especie | `species_notes` | `noteID` | `notes` · `noteDeletes` | `noteResults` | `notes` | no |
 | evaluaciones UICN (F8b) | `species_assessments` | `assessmentID` | `assessments` · `assessmentDeletes` | `assessmentResults` | `assessments` | no |
 | parámetros de especie (F11f) | `species_parameters` | (`taxonID`, `key`) | — (se fijan con `PUT …/parameters/{key}`, `docs/parametros.md`) | — | `parameters` | no |
+| impactos (F11g) | `impacts` (+ `impact_species`) | `impactID` | `impacts` · `impactDeletes` | `impactResults` | `impacts` | sí: `applyVisibility()` con el nivel más restrictivo de sus especies (generalizado: sin polígono y el radio ampliado a la celda) |
+| localidades confirmadas (F11g) | `species_locations` | (`taxonID`) | — (`PUT …/locations`) | — | `locations` | no |
 
 Las notas y las evaluaciones no llevan coordenadas y no pasan por `applyVisibility()`, pero **solo las recibe quien
 tiene permiso `view`** en el catálogo (el pull lo exige; un no miembro recibe 403 `not_member` y nada más). Subirlas
@@ -96,7 +98,7 @@ explica el motivo en castellano.
 
 ## Pull
 `GET /api/sync/pull?catalogId=&since=0&limit=500` (1–500). Permiso `view`. Devuelve
-`{items, notes, assessments, parameters, cursor, hasMore, catalogContentSeq, role, visibilityEpoch}`. Una página son los `limit`
+`{items, notes, assessments, parameters, impacts, locations, cursor, hasMore, catalogContentSeq, role, visibilityEpoch}`. Una página son los `limit`
 primeros `server_seq > since` **de todos los tipos** (el contador es común), repartidos en `items` (marcas), `notes` y
 `assessments` (y `parameters`, F11f), cada lista en orden; `cursor` es el último `server_seq` de la página y vale para todos. **Incluidas las borradas**
 (`{occurrenceID | noteID, taxonID, userId, clientUpdatedAt, serverSeq, deleted: true}`, sin coordenadas, texto ni
@@ -111,7 +113,7 @@ solo trae identidad y `deleted: true`). En el móvil van al almacén `parameters
 del servidor manda siempre.
 
 Móvil de antes de F8a: su cursor pudo pasar por encima de notas que no guardaba. `sync.js` guarda la versión del
-pull aplicada por catálogo (`meta syncv:<id>`: 2 en F8a, 3 en F8b con `assessments`, 4 en F11f con `parameters`) y, con una menor, vuelve a pedir
+pull aplicada por catálogo (`meta syncv:<id>`: 2 en F8a, 3 en F8b con `assessments`, 4 en F11f con `parameters`, 5 en F11g con `impacts` y `locations`) y, con una menor, vuelve a pedir
 desde 0 una vez.
 
 - Sin rol (expulsado o catálogo borrado) → **403 `{error, code: "not_member"}`**: el móvil borra sus datos de

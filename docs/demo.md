@@ -23,6 +23,16 @@ hay que rehacerlas antes del ensayo.
 Cierre (si sobra tiempo): limitaciones en `docs/limitaciones.md` (prototipo local, evaluación orientativa, pruebas en
 móvil real pendientes).
 
+### Cuantificadores UICN (F11g, 2–3 minutos más si hay tiempo; sin capturas aún)
+El seed añade dos especies con datos ficticios: *Rothmaleria granatensis* (tres núcleos con parcelas y recuentos,
+tres impactos en curso de pisoteo, pastoreo y obras, b(iii) fijado y **3 localidades confirmadas** → **EN
+B1ab(iii)+2ab(iii)**) y *Odontites viscosus* subsp. *granatensis* (una sola mancha junto a la pista, amenaza
+plausible por el ensanche previsto → **VU D2**).
+- Móvil: botón «Impacto» → «Pisoteo» → Alta → Guardar, sin red (sigue con `docker compose stop nginx`).
+- Escritorio: Especies › *Rothmaleria* › «Evaluación UICN»: categoría, rango plausible, tarjetas A–E con lo que falta,
+  subpoblaciones y localidades por amenaza. Mapa › Filtros › *Rothmaleria* › «Subpoblaciones». «Añadir registros de
+  GBIF» para el póster (déficit wallaceano: «solo BioDex» frente a «BioDex + GBIF»; necesita red y GBIF puede tardar).
+
 ## Plan B general
 - **Capturas**: las de la tabla, en `docs/design/`, abiertas en una presentación o en el visor de fotos, en orden.
 - **Vídeo de respaldo**: grabar el recorrido entero la víspera con la grabadora de pantalla de Windows (Recortes ›

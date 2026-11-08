@@ -1,6 +1,6 @@
-# Limitaciones conocidas (1.6.0)
+# Limitaciones conocidas (1.7.0)
 
-Lista abierta al terminar F10b (2026-09-30) y puesta al día con 1.6.0 (F11f, 2026-11-07). Recoge lo que BioDex **no hace**,
+Lista abierta al terminar F10b (2026-09-30) y puesta al día con 1.7.0 (F11g, 2026-11-08). Recoge lo que BioDex **no hace**,
 lo que hace de forma **orientativa** y lo que **no se ha podido probar** en esta máquina. Cada punto abierto de las
 listas de F3 a F10a está aquí o marcado como resuelto en su lista.
 
@@ -45,10 +45,22 @@ listas de F3 a F10a está aquí o marcado como resuelto en su lista.
   Las localidades no se calculan: las introduce quien evalúa.
 - **Sin red, cifras provisionales**: el móvil solo cuenta las marcas exactas que tiene (las ajenas generalizadas no
   cuentan); el rótulo lo dice, falta validarlo con usuarios.
-- **Parámetros de especie sin uso todavía** (F11f, `docs/parametros.md`): se guardan, se sincronizan y se ve qué
-  criterios bloquean, pero el asistente actual aún no los lee (F11g y F11h). La separación por defecto (1 km) solo se
-  da para grupos sésiles o poco móviles; es una convención de trabajo, no un valor publicado para cada especie.
-  Se editan solo con red.
+- **Parámetros de especie** (F11f, `docs/parametros.md`): F11g ya los usa para B, C y D (A, C1 y E esperan a F11h).
+  La separación por defecto (1 km) solo se da para grupos sésiles o poco móviles; es una convención de trabajo, no un
+  valor publicado para cada especie. Se editan solo con red, como los hechos y las localidades.
+- **Cuantificadores (F11g)**: las subpoblaciones por enlace simple dependen por completo de la distancia de separación;
+  la densidad × superficie supone parcelas representativas (sin diseño de muestreo ni detectabilidad); el reparto de
+  la estimación por subpoblación es por celdas de AOO, no por hábitat. La fragmentación y las localidades son
+  propuestas: las decide quien evalúa. El orden de las preguntas del ajuste regional está escrito a partir de las
+  Directrices v4.0 sin cotejarlo con su figura 2; y la versión 16 de las Guidelines solo se ha visto en una copia de
+  Artsdatabanken. Con datos inciertos la propuesta es la del mejor valor (actitud ante el riesgo neutra), sin opción
+  de cambiarla.
+- **Sin red, la evaluación es provisional**: el dispositivo solo cuenta las marcas exactas que tiene; a un editor de
+  una especie sensible le salen menos subpoblaciones y maduros que al servidor (lo rotula).
+- **Comparación con GBIF**: busca en el recuadro de las marcas del catálogo, no en un polígono del área de estudio, y
+  hasta 3000 registros; los registros de GBIF no se depuran (duplicados, cultivados, antiguos). Sin DOI (una búsqueda
+  no lo tiene).
+- **Impactos fuera del DwC-A** (`docs/dwc.md`): solo van en la hoja «Impactos».
 - **Referencia independiente sin pasar.** No hay Python aquí: `backend/bin/metrics-reference.py` (pyproj + shapely)
   está escrito pero no ejecutado; los casos se contrastaron con PROJ.
 - Una evaluación de referencia que se edita después sigue siendo la referencia, sin aviso.

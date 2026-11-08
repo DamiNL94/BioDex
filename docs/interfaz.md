@@ -87,14 +87,19 @@ Fin; la elegida se recuerda al pasar de ficha con ↑/↓):
 | Resumen | Foto, nombres, categorías UICN oficiales, estado legal, nivel de sensibilidad, notas, clasificación y descripción |
 | Registros | Minimapa de las marcas (IGN Base; propias cuadradas, del equipo redondas), la lista con su resumen y EOO/AOO |
 | Parámetros | Características de la especie en el catálogo (`docs/parametros.md`) |
-| Evaluación UICN | El asistente actual sin cambios (F11g lo sustituye) |
+| Evaluación UICN | F11g: categoría propuesta, rango plausible y cadena; una tarjeta por criterio (A–E) con sus datos, el umbral que cumple y qué falta (con enlace al parámetro o al hecho); hechos, localidades, ajuste regional, comparación con GBIF y evaluaciones guardadas (`docs/iucn.md`) |
 
 Fuera del catálogo activo (abierta desde el buscador de EIDOS) solo hay Resumen. En estudio es una página a
 pantalla completa con «← Volver».
 
-## Funciones ocultas tras un flag
-`js/flags.js`, por dispositivo (`localStorage biodex.flags`, p. ej. `{"impact": true}` desde la consola):
+## Impacto (F11g)
+El botón flotante «Impacto», encima de «Marcar» (Mapa y Especies en campo; Mapa en estudio), abre
+`views/impact-sheet.js`: botones grandes con los impactos habituales (pisoteo, residuos, ganado o sobrepastoreo,
+recolección, obras o pistas, incendio, especies invasoras) y «Otro» con el árbol completo de la UICN; después el sitio
+(GPS o punto del mapa + radio, o perímetro recorrido a pie añadiendo vértices), intensidad, temporalidad, alcance,
+fecha, especies afectadas (por defecto las que tienen marcas en el sitio) y nota. Funciona sin red.
+En el mapa de estudio, el botón «Subpoblaciones» dibuja las de la especie elegida en Filtros y sus impactos.
 
-| Flag | Qué enseña | Lo rellena |
-|---|---|---|
-| `impact` | Segundo botón flotante «Impacto», junto a «Marcar» (desactivado) | F11g |
+## Funciones ocultas tras un flag
+`js/flags.js`, por dispositivo (`localStorage biodex.flags`). Ahora mismo no hay ninguna: `impact` se activó para
+todos en F11g.

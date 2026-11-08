@@ -1,4 +1,4 @@
-# Evaluación UICN (F8b)
+# Evaluación UICN (F8b, F11g)
 
 Motor: `shared/iucn-engine.js` (`evaluateIucn(inputs, criteria)`, JS puro). Umbrales: `shared/iucn-criteria.json`, única
 fuente; en el código no hay ninguno. nginx sirve **solo** esos dos ficheros en `/shared/` (sin copia en `frontend/`: la
@@ -80,3 +80,100 @@ exhaustiva la EOO y la AOO salen por debajo de las reales. Un editor sin red en 
 sus marcas. El casco convexo incluye zonas no habitables: así lo define la UICN y BioDex no las recorta.
 La rejilla anclada puede variar la AOO (de ahí el rango). Pendiente: contrastar la referencia con shapely/pyproj
 (`backend/bin/metrics-reference.py`); hoy es PROJ (`cs2cs`) + envoltura de Jarvis.
+
+## Cuantificadores e incertidumbre (F11g)
+La pestaña **Evaluación UICN** de la página de especie (`components/species-iucn.js`) sustituye al asistente: calcula
+las entradas de B, C y D a partir de las marcas, los parámetros (`docs/parametros.md`), los impactos y las localidades
+confirmadas, y pasa el motor. El asistente de F8b solo queda para editar las evaluaciones antiguas.
+
+Código: `shared/iucn-quantifiers.js` (dispositivo, PROVISIONAL con las marcas exactas que tiene) y su port
+`backend/Lib/iucn.php` (servidor, DEFINITIVO con las coordenadas exactas: `GET …/species/{taxonID}/assessment`,
+`Lib/assessment.php`). El motor también tiene port en PHP (`evaluateIucn`, `assessIucn`). Casos compartidos en
+`shared/iucn-cases.json` (cada umbral y su borde, intervalos que cruzan categorías, DD, CR(PE), ajuste regional,
+combinaciones; enlace simple con distancias límite, deduplicación, bootstrap con semilla fija, fragmentación y
+localidades): `node shared/iucn-engine.test.js` y `bin/test-f11g.php` dan lo mismo.
+
+### Datos inciertos
+Cada dato numérico del motor es `{best, min, max}` y lleva su calidad (observado · estimado · inferido · sospechado
+· proyectado) y su fuente. `assessIucn()` evalúa tres veces: con el **mejor valor** (la categoría propuesta), con el
+extremo **menos** amenazante de cada intervalo y con el **más** amenazante; esos dos dan el **rango plausible**
+(«VU–EN»), como piden las Guidelines para datos inciertos (actitud ante el riesgo neutra: la propuesta es la del
+mejor valor). Si los extremos caen en categorías distintas, se avisa.
+- **DD**: si ningún criterio tiene los datos mínimos para evaluarse (todos «sin datos» o «incompletos»), sale DD;
+  NT o LC a juicio experto solo se aceptan cuando algún criterio se ha evaluado y no alcanza umbrales.
+- **CR(PE)**: nunca lo propone BioDex; solo si el usuario marca «posiblemente extinta» y la categoría es CR.
+- La categoría final es la más alta de los criterios cumplidos; la cadena se normaliza («EN B1ab(iii)+2ab(iii)»,
+  «VU D2»).
+
+### Individuos maduros (`matureEstimate`)
+- **Mínimo (observado)**: suma de `mature_count` del recuento más reciente por **celda de 50 m y día de campaña**
+  (fecha UTC), dentro del **último año de datos**. Un recuento son las marcas del mismo autor a ≤ 60 s de la más
+  reciente (el conteo por casillas de F11e guarda una marca por categoría en el mismo punto): sus maduros se suman.
+  Aviso de posible doble conteo: dos recuentos a menos de 50 m en días distintos.
+- **Mejor y máximo (estimados)**: con **parcelas** (marcas con superficie contada, DwC `sampleSizeValue` en m²; la
+  más reciente por celda de 50 m), densidad media D = media(maduros / superficie), en maduros por km², con IC 95 %
+  por bootstrap (1000 remuestreos, semilla 20261107, generador MINSTD de Park–Miller idéntico en JS y PHP; percentiles
+  2,5 y 97,5). Mejor = máx(mínimo, D × H); máximo = máx(mejor, D(97,5) × H), con H = `occupied_habitat_km2`. Sin H,
+  la AOO como cota superior: solo el máximo (D(97,5) × AOO), y se dice.
+- Por subpoblación: el mínimo es el suyo; mejor y máximo, la estimación total repartida por su parte de celdas de la AOO.
+
+### Subpoblaciones (`subpopulations`)
+Enlace simple sobre las presencias en UTM 30N: dos registros a **≤** `separation_distance` van en la misma, y por
+transitividad todo lo encadenado (sin parámetro, el valor por defecto del grupo, con aviso). Etiquetas S1, S2… de
+oeste a este. De cada una: registros, maduros (mínimo, mejor, máximo), celdas de 2 km, casco (solo a quien ve
+exactas) y distancia a la vecina más cercana (de borde a borde, km). C2a(i) = máximo de maduros en una subpoblación;
+C2a(ii) = % de maduros en la mayor (solo si todas tienen recuento). En el mapa de estudio, capa «Subpoblaciones»
+(`map/subpops-layer.js`): un color por subpoblación; a quien no ve exactas, un círculo en el centro generalizado.
+
+### Fragmentación grave (`fragmentation`)
+Subpoblación **pequeña** si sus maduros (mejor valor) < `min_viable_subpop`; **aislada** si su vecina más cercana está
+a más de `dispersal_distance` (sin vecina: aislada). Grave si **más del 50 % de la AOO** (celdas de 2 km) está en
+subpoblaciones pequeñas y aisladas; se muestra también el % de individuos. Sin alguno de los dos parámetros, «no
+evaluable» y qué falta. Grave cuenta como (a) en B en cualquier categoría.
+
+### Amenazas, impactos y localidades
+- `shared/iucn-threats.json`: Threats Classification Scheme v3.3 (dos niveles, etiquetas en castellano), los botones
+  rápidos del campo y los códigos que degradan el hábitat.
+- **Impactos** (hoja «Impacto» del modo campo, sin red): amenaza, punto + radio o perímetro recorrido a pie,
+  fecha, intensidad, alcance, temporalidad (pasado · en curso · futuro), nota y especies (por defecto, las del
+  catálogo con marcas en el sitio). Se sincronizan como las marcas; su sitio sale con la regla de `applyVisibility()`
+  y el nivel **más restrictivo** de sus especies.
+- **Localidades definidas por amenaza** (`proposeLocations`): cada subpoblación va con el impacto en curso o futuro
+  **más grave** que la toque (intensidad, luego alcance, luego en curso antes que futuro); las que comparten ese impacto
+  forman una localidad. Las no afectadas, una cada una, «sin amenaza: localidad no aplicable». Es una **propuesta**:
+  owner o custodio unen o separan, escriben la justificación y la confirman (`species_locations`, a `access_log`);
+  solo el número confirmado entra en el motor.
+
+### Declive continuo y fluctuaciones
+b(i)–(v), c(i)–(iv) y la amenaza plausible de D2 son **hechos** sí · no · desconocido con calidad, fuente y
+justificación (parámetros de tipo `fact`). BioDex **sugiere** b(iii) cuando hay impactos en curso sobre el hábitat de la
+especie, pero la sugerencia nunca cuenta sola: alguien tiene que fijar el hecho. A, C1 y E quedan «pendientes de series
+temporales» hasta F11h; C2 usa b(v) como disminución continua y c(iv) como fluctuación extrema.
+
+### Ajuste regional (Directrices regionales v4.0, paso 2)
+Cuatro preguntas (hechos `regional_*`): endémica del área → sin ajuste; si no, sin inmigración significativa de
+propágulos (o no se sabe) → sin ajuste; si la hay y se espera que disminuya (o no se sabe) → sin ajuste; si no, ¿es la
+población regional un sumidero? sí → **sube** un escalón; no o no se sabe → **rebaja** un escalón (efecto rescate). La
+justificación sale del camino seguido. La cadena es la de antes del ajuste. Pendiente: cotejar el orden con la figura 2
+de las Directrices regionales (`docs/limitaciones.md`).
+
+### Comparación de fuentes (GBIF)
+«Añadir registros de GBIF» (`?gbif=1`, `Lib/gbif-compare.php`): nombre de EIDOS → backbone de GBIF (misma regla que
+las fotos, `gbifMatchDecide`), ocurrencias con coordenadas y sin problemas geoespaciales dentro del recuadro de las
+marcas del catálogo (+0,25°), caché de 30 días en `gbif_occurrence_cache`. Se recalculan EOO, AOO, subpoblaciones y B
+«solo BioDex» frente a «BioDex + GBIF», con los dos conjuntos en un mapa. **Nunca** se guardan como ocurrencias ni se
+exportan. Una búsqueda de GBIF no tiene DOI (solo las descargas, que piden cuenta): se cita la búsqueda con su URL y fecha.
+
+### Instantáneas
+«Guardar evaluación» crea una evaluación (`species_assessments`, motor 2: `inputs.engine = 2`) con las entradas, el
+resultado, un resumen de los cuantificadores, autor y fecha; sin red también. Al sincronizar, el servidor la
+**recalcula** con el motor en PHP y guarda su resultado (`computedBy: server`). Cada una lleva su versión (v1, v2…) y
+dos se comparan en una tabla. En la exportación: hojas «Evaluación por especie» y «Subpoblaciones» (`docs/dwc.md`).
+
+## Referencias
+- IUCN (2012). *IUCN Red List Categories and Criteria: Version 3.1*. Segunda edición. Gland y Cambridge: IUCN.
+- IUCN Standards and Petitions Committee (2024). *Guidelines for Using the IUCN Red List Categories and Criteria.
+  Version 16* (marzo de 2024). Confirmada en una copia de Artsdatabanken; falta verla en la biblioteca de la UICN.
+- IUCN (2012). *Guidelines for Application of IUCN Red List Criteria at Regional and National Levels: Version 4.0*.
+  Gland y Cambridge: IUCN (RL-2012-002).
+- IUCN Threats Classification Scheme, versión 3.3 (sobre Salafsky et al. 2008, *Conservation Biology* 22: 897–911).

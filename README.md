@@ -4,7 +4,7 @@ PWA de campo para biólogos de la conservación: catálogos de especies creados 
 geolocalizadas que funcionan sin conexión, evaluación orientativa según los criterios de la UICN y exportación en
 Darwin Core y Plinian Core para volcar los datos en bases internacionales como GBIF.
 
-**Versión 1.6.0** · prototipo. Hay un despliegue de prueba en Railway (`docs/railway.md`); el desarrollo se hace en
+**Versión 1.7.0** · prototipo. Hay un despliegue de prueba en Railway (`docs/railway.md`); el desarrollo se hace en
 local con Docker. Lo que aún no hace o no se ha probado: [`docs/limitaciones.md`](docs/limitaciones.md). Guion de la
 demostración: [`docs/demo.md`](docs/demo.md). Convenciones de código, permisos y seguridad de las coordenadas:
 [`docs/convenciones.md`](docs/convenciones.md).
@@ -26,8 +26,13 @@ demostración: [`docs/demo.md`](docs/demo.md). Convenciones de código, permisos
 - **Coordenadas sensibles protegidas.** Cada especie tiene un nivel de sensibilidad; según el rol, el servidor
   entrega las marcas de otros ya generalizadas y la coordenada exacta nunca sale hacia quien no debe.
 - **Equipos con roles** (owner, custodio, editor) e invitaciones por enlace o **código QR** para unirse en el campo.
-- **UICN.** EOO y AOO (celdas de 2 km por defecto, 1 km opcional) calculados en UTM 30N, y un asistente que recorre
-  los criterios A–E y explica cada umbral. El resultado es orientativo.
+- **UICN.** EOO y AOO (celdas de 2 km por defecto, 1 km opcional) calculados en UTM 30N y, desde F11g, los
+  cuantificadores de B, C y D a partir de las marcas: individuos maduros (observados y estimados con parcelas, con su
+  intervalo), subpoblaciones, fragmentación grave y localidades definidas por amenaza. La pestaña Evaluación UICN
+  propone la categoría con su rango plausible y su cadena de criterios, dice qué falta para cada criterio y guarda
+  instantáneas comparables; se puede contrastar con los registros de GBIF. El resultado es orientativo (`docs/iucn.md`).
+- **Impactos en campo** (F11g): pisoteo, residuos, ganado, recolección, obras, incendio, invasoras… con un toque,
+  sin red, mapeados al esquema de amenazas de la UICN.
 - **Exportación** desde el servidor, completa (solo owner y custodio, queda registrada) o «para publicar»
   (generalizada): Darwin Core Archive, fichas en Plinian Core 3.2.2.7 validadas contra su XSD, libro XLSX y CSV estándar
   (RFC 4180) para R, Python o QGIS.
@@ -102,6 +107,7 @@ docker compose exec php php bin/test-f10c.php   # Plinian Core
 docker compose exec php php bin/test-f11b.php   # fotos de respaldo (iNaturalist) y siluetas
 docker compose exec php php bin/test-f11d.php   # fotos de respaldo de GBIF y Commons, copias locales y cascada
 docker compose exec php php bin/test-f11f.php   # parámetros de especie (permisos, access_log y pull)
+docker compose exec php php bin/test-f11g.php   # cuantificadores UICN (casos compartidos), impactos, localidades, exportación
 node shared/iucn-engine.test.js && node shared/geo-metrics.test.js && node frontend/tests/utm.test.mjs
 node frontend/tests/tally.test.mjs && node frontend/tests/qr.test.mjs   # conteo rápido y QR de invitación (F11e)
 node frontend/tests/species-search.test.mjs   # buscador de especies (F11f)
@@ -124,6 +130,7 @@ Playwright carga su librería dos veces y falla con «did not expect test() to b
 Solo un tamaño o una prueba: `npm test -- --project=movil -g "atrás"`.
 Marcar contando desde el buscador, volver a una pestaña con su estado, «atrás» que cierra la hoja, editar un
 parámetro y verlo tras recargar sin red, y la auditoría de objetivos táctiles (ninguno por debajo de 48 px en campo).
+F11g: registrar un impacto sin red, sincronizar y verlo en la evaluación, y los objetivos táctiles de la hoja de impacto.
 La API la simula `mock-api.mjs` con respuestas de la demo grabadas en `fixtures/` (datos ficticios).
 
 En GitHub, `.github/workflows/ci.yml` comprueba en cada push la sintaxis de PHP, el Service Worker, las pruebas de JS

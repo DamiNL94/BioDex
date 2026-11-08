@@ -18,6 +18,11 @@ Pruebas: `bin/test-f11f.php` y `frontend/tests/e2e/f11f.spec.mjs`.
 | `mature_definition` | — | texto (≤ 2000) | qué cuenta como individuo maduro; en clonales, ramet o genet | C, D |
 | `min_viable_subpop` | individuos maduros | entero | fragmentación: subpoblación demasiado pequeña para ser viable (F11g) | B (fragmentación) |
 | `life_form` | — | lista: `perennial` perenne · `annual` anual · `biennial` bianual · `monocarpic` monocárpica · `other` otra | orienta la generación y cómo contar | — |
+| `occupied_habitat_km2` (F11g) | km² | número | maduros estimados = densidad de las parcelas × superficie | C, D (maduros estimados) |
+| `decline_b_i` … `decline_b_v`, `fluct_c_i` … `fluct_c_iv`, `plausible_threat` (F11g) | — | hecho: `yes` · `no` · `unknown` | disminución continua (b), fluctuaciones extremas (c), amenaza plausible de D2 | B, C2, D2 |
+| `regional_endemic`, `regional_immigration`, `regional_immigration_decrease`, `regional_sink` (F11g) | — | hecho | ajuste regional, paso 2 de las Directrices v4.0 | ajuste regional |
+
+Los hechos (F11g) llevan además `justification` (≤ 4000). Se fijan en la pestaña Evaluación UICN, no en Parámetros.
 
 Cada valor guarda `value`, `value_min` y `value_max` (intervalo opcional: los dos o ninguno, y `value` dentro;
 un número admite solo el intervalo), `quality` (vocabulario de las Directrices UICN: `observed` observado ·
