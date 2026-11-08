@@ -18,6 +18,7 @@ import { createImpact, updateImpact, MARK_ROLES, IMPACT_INTENSITIES, IMPACT_TIMI
 import { byIndex } from '../db.js';
 import { requestSync } from '../sync.js';
 import { remoteOrLocal, localCatalogData } from '../offline.js';
+import { distanceM } from '../species-search.js';
 
 const THREATS_URL = '/shared/iucn-threats.json';
 const GPS_TIMEOUT_MS = 30000;
@@ -43,15 +44,8 @@ export function threatLabel(threats, code) {
   return code;
 }
 
-/** Distancia en metros entre dos puntos (haversine). */
-export function metersBetween(a, b) {
-  const R = 6371000;
-  const toRad = (d) => (d * Math.PI) / 180;
-  const dLat = toRad(b.lat - a.lat);
-  const dLon = toRad(b.lng - a.lng);
-  const s = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLon / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(s));
-}
+/** Distancia en metros entre dos puntos {lat, lng} (distanceM de species-search.js). */
+const metersBetween = (a, b) => distanceM(a.lat, a.lng, b.lat, b.lng);
 
 /** ¿Está el punto dentro del polígono [[lat, lon]…]? (rayo; vale a escala de campo). */
 function inPolygon(p, poly) {
@@ -66,7 +60,8 @@ function inPolygon(p, poly) {
 
 /** taxonIDs del catálogo con marcas (presencias) del dispositivo dentro del radio o del polígono. */
 async function speciesInside(catalogId, where) {
-  const marks = (await byIndex('occurrences', 'catalogId', catalogId)).filter((o) => !o.deletedAt && o.occurrenceStatus !== 'absent'
+  // Solo marcas con posición exacta: las generalizadas están en el centro de su celda (de 1 a 10 km), no donde se vieron.
+  const marks = (await byIndex('occurrences', 'catalogId', catalogId)).filter((o) => !o.deletedAt && !o.generalized && o.occurrenceStatus !== 'absent'
     && Number.isFinite(o.decimalLatitude) && Number.isFinite(o.decimalLongitude));
   const ids = new Set();
   for (const o of marks) {

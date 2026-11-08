@@ -248,16 +248,29 @@ check("un hecho solo admite yes/no/unknown → 400", $code === 400, "HTTP {$code
 check("con 2 localidades y b(iii) → EN B1ab(iii)+2ab(iii)", ($a["result"]["category"] ?? null) === "EN"
     && str_starts_with($a["result"]["criteriaString"] ?? "", "EN B1ab(iii)+2ab(iii)"), json_encode([$a["result"]["criteriaString"] ?? null, $a["inputs"]["B"] ?? null]));
 
-section("Instantánea: el servidor recalcula con el motor en PHP");
+[$code] = http("PUT", "{$base}/locations", ["count" => 1] + $locBody, $cu);
+check("«count» que no cuadra con los grupos → 400", $code === 400, "HTTP {$code}");
+$dup = $locBody;
+$dup["groups"][1]["subpops"] = ["S1"];
+[$code] = http("PUT", "{$base}/locations", $dup, $cu);
+check("una subpoblación en dos localidades → 400", $code === 400, "HTTP {$code}");
+
+section("Instantánea: el servidor recalcula cuantificadores y motor");
 $sid = uuidV4();
-$fake = ["category" => "LC", "criteriaString" => null, "quantifiers" => ["nPoints" => 5]];
-[, $r] = $push($e, ["assessments" => [["assessmentID" => $sid, "taxonID" => ARTEMISIA, "inputs" => $a["inputs"], "result" => $fake,
+// El dispositivo manda sus cuantificadores (p. ej. sin red, con menos marcas): el servidor los rehace con las exactas.
+$deviceInputs = $a["inputs"];
+$deviceInputs["B"]["locations"] = 1;
+$deviceInputs["C"]["mature"] = ["best" => 10, "min" => 10, "max" => 10];
+$fake = ["category" => "LC", "criteriaString" => null, "quantifiers" => ["nPoints" => 999]];
+[, $r] = $push($e, ["assessments" => [["assessmentID" => $sid, "taxonID" => ARTEMISIA, "inputs" => $deviceInputs, "result" => $fake,
     "status" => "final", "clientUpdatedAt" => $now()]]]);
 check("instantánea aceptada", ($r["assessmentResults"][0]["status"] ?? null) === "accepted", json_encode($r));
-$row = $pdo->query("SELECT category, result FROM species_assessments WHERE assessmentID = " . $pdo->quote($sid))->fetch();
+$row = $pdo->query("SELECT category, inputs, result FROM species_assessments WHERE assessmentID = " . $pdo->quote($sid))->fetch();
 $res = json_decode($row["result"] ?? "{}", true);
-check("…con la categoría del servidor (EN), no la que mandó el dispositivo", ($row["category"] ?? null) === "EN" && ($res["computedBy"] ?? null) === "server"
-    && ($res["quantifiers"]["nPoints"] ?? null) === 5, json_encode([$row["category"] ?? null, $res["criteriaString"] ?? null]));
+$inp = json_decode($row["inputs"] ?? "{}", true);
+check("…con la categoría y los cuantificadores del servidor, no los del dispositivo", ($row["category"] ?? null) === "EN" && ($res["computedBy"] ?? null) === "server"
+    && ($res["quantifiers"]["nPoints"] ?? null) === 5 && ($inp["B"]["locations"] ?? null) === 2 && ($inp["C"]["mature"]["min"] ?? null) === 50,
+    json_encode([$row["category"] ?? null, $res["criteriaString"] ?? null, $inp["B"]["locations"] ?? null]));
 
 section("Exportación: evaluación por especie, subpoblaciones e impactos");
 require_once __DIR__ . "/../Lib/export.php";
@@ -276,6 +289,13 @@ check("Evaluación por especie: EN B… con 2 localidades confirmadas", ($ev["ro
     json_encode(array_slice($ev["rows"][1] ?? [], 0, 16), JSON_UNESCAPED_UNICODE));
 check("Subpoblaciones: dos filas con su localidad", count($subs["rows"]) === 3 && ($subs["rows"][1][10] ?? null) === "L1", json_encode($subs["rows"], JSON_UNESCAPED_UNICODE));
 $level(4);
+
+section("Localidades desactualizadas");
+// Una marca a ~5 km forma una tercera subpoblación: las 2 localidades confirmadas (S1, S2) ya no cuentan.
+[, $r] = $push($o, ["occurrences" => [$mark(37.1600, -3.3300, 4)]]);
+[, $a2] = http("GET", "{$base}/assessment", null, $o);
+check("con una subpoblación nueva, las localidades confirmadas no entran en el motor", count($a2["subpopulations"]["subpops"] ?? []) === 3
+    && ($a2["locations"]["count"] ?? null) === 2 && array_key_exists("locations", $a2["inputs"]["B"] ?? []) && $a2["inputs"]["B"]["locations"] === null, json_encode($a2["inputs"]["B"] ?? null));
 
 cleanup($pdo);
 echo $failures ? "\n{$failures} fallo(s)\n" : "\nTodo OK\n";

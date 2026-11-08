@@ -28,7 +28,7 @@ check("reset ×2", $c1 === 0 && $c2 === 0 && str_contains($o2, "No había datos 
 check("tras el reset no quedan cuentas ni catálogo", !demoUserIds($pdo) && !demoCatalogIds($pdo, []));
 [$c1, $o1] = run("seed-demo.php");
 [$c2, $o2] = run("seed-demo.php");
-check("seed ×2", $c1 === 0 && $c2 === 0 && str_contains($o1, "60 marcas ficticias") && str_contains($o2, "ya existe (60 marcas)"), $o1 . "\n" . $o2);
+check("seed ×2", $c1 === 0 && $c2 === 0 && str_contains($o1, "60 marcas ficticias") && str_contains($o2, "ya existe (73 marcas)"), $o1 . "\n" . $o2);
 check("el seed imprime las contraseñas", str_contains($o1, DEMO_USERS["editor"]["password"]));
 [$c3, $o3] = run("seed-demo.php", "prod");
 [$c4] = run("reset-demo.php", "prod");
@@ -45,14 +45,14 @@ check("3 miembros verificados con su rol", count($roles) === 3 && !array_filter(
     || !$byEmail[$u["email"]]["v"]), json_encode($roles));
 $sp = $q("SELECT COUNT(*) FROM catalog_species WHERE catalog_id = :cat AND deleted_at IS NULL")->fetchColumn();
 $names = $q("SELECT s.canonical_name FROM catalog_species cs JOIN species s USING (taxonID) WHERE cs.catalog_id = :cat")->fetchAll(PDO::FETCH_COLUMN);
-check("10 especies de EIDOS, con Artemisia granatensis y Atropa baetica", (int) $sp === 10
+check("12 especies de EIDOS (10 + las 2 de F11g), con Artemisia granatensis y Atropa baetica", (int) $sp === 12
     && in_array("Artemisia granatensis", $names, true) && in_array("Atropa baetica", $names, true), implode(", ", $names));
 check("niveles confirmados por la owner", (int) $q("SELECT COUNT(*) FROM species_sensitivity WHERE catalog_id = :cat AND set_by IS NOT NULL")->fetchColumn() === 10);
 $s = $q("SELECT COUNT(*) n, SUM(occurrenceStatus = 'absent') a, SUM(georeferenceProtocol = 'Punto marcado en el mapa') m,
                 SUM(mature_count IS NOT NULL) mat, COUNT(DISTINCT user_id) u, COUNT(DISTINCT DATE(eventDate)) d,
                 MIN(decimalLatitude) lat0, MAX(decimalLatitude) lat1, MIN(decimalLongitude) lon0, MAX(decimalLongitude) lon1
          FROM occurrences WHERE catalog_id = :cat AND deleted_at IS NULL")->fetch(PDO::FETCH_ASSOC);
-check("60 marcas, 5 ausencias, 2 marcadas en el mapa", (int) $s["n"] === 60 && (int) $s["a"] === 5 && (int) $s["m"] === 2, json_encode($s));
+check("73 marcas (60 + 13 de F11g), 5 ausencias, 2 marcadas en el mapa", (int) $s["n"] === 73 && (int) $s["a"] === 5 && (int) $s["m"] === 2, json_encode($s));
 check("de los tres usuarios, en varias fechas, con maduros", (int) $s["u"] === 3 && (int) $s["d"] >= 20 && (int) $s["mat"] >= 30, json_encode($s));
 check("todas en Sierra Nevada", $s["lat0"] > 36.9 && $s["lat1"] < 37.2 && $s["lon0"] > -3.5 && $s["lon1"] < -3.1, json_encode($s));
 check("notas de especie", (int) $q("SELECT COUNT(*) FROM species_notes WHERE catalog_id = :cat")->fetchColumn() >= 3);
@@ -93,7 +93,7 @@ unlink($tmp);
 $rows = explode("\n", rtrim($occ, "\n"));
 $head = explode("\t", $rows[0] ?? "");
 $first = array_combine($head, explode("\t", $rows[1] ?? "") + array_fill(0, count($head), ""));
-check("exportación «para publicar» del editor: 60 filas", $okZip && count($rows) === 61, count($rows) - 1 . " filas");
+check("exportación «para publicar» del editor: 73 filas", $okZip && count($rows) === 74, count($rows) - 1 . " filas");
 check("datasetName dice «datos ficticios»", str_contains($first["datasetName"] ?? "", "(datos ficticios)"), $first["datasetName"] ?? "");
 check("el EML dice «" . DEMO_NOTICE . "»", str_contains($eml, DEMO_NOTICE));
 

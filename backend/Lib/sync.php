@@ -349,15 +349,8 @@ function syncValidateAssessment(mixed $a): array {
         $json[$field] = $v === [] ? "{}" : $enc;
     }
     $result = $a["result"];
-    // F11g: una evaluación del motor 2 (instantánea de la pestaña Evaluación UICN) se recalcula AQUÍ con el port
-    // en PHP (el definitivo): se guardan sus entradas tal cual llegaron y el resultado del servidor.
-    if (($a["inputs"]["engine"] ?? null) === 2) {
-        $server = assessIucn($a["inputs"]);
-        $result = array_merge($result, $server, ["computedBy" => "server"]);
-        $enc = json_encode($result, JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION);
-        if ($enc === false || strlen($enc) > SYNC_ASSESSMENT_JSON_MAX) syncReject("invalid_field", "«result» no puede pasar de " . SYNC_ASSESSMENT_JSON_MAX . " bytes.");
-        $json["result"] = $enc;
-    }
+    // F11g: una instantánea del motor 2 se recalcula entera en el servidor al subirla (Api/sync.php ›
+    // assessmentSnapshot(), con las coordenadas exactas): aquí solo se valida la forma.
     foreach (["category", "baseCategory"] as $k) {
         $cat = $result[$k] ?? null;
         if ($cat !== null && !in_array($cat, ASSESSMENT_CATEGORIES, true)) {

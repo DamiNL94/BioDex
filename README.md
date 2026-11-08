@@ -65,8 +65,8 @@ desarrollo (Mailpit) http://localhost:8025.
 
 ## Cuentas de demostración
 `bin/seed-demo.php` (solo con `APP_ENV=dev`; idempotente) crea tres cuentas verificadas y el catálogo
-**«DEMO — Flora amenazada de Sierra Nevada (datos ficticios)»**: 10 especies reales de EIDOS con su nivel de
-sensibilidad, 60 marcas **inventadas** de los tres (5 ausencias, 2 marcadas en el mapa), notas y la evaluación UICN
+**«DEMO — Flora amenazada de Sierra Nevada (datos ficticios)»**: 12 especies reales de EIDOS (10 con su nivel de
+sensibilidad confirmado y las 2 de F11g), 73 marcas **inventadas** de los tres (5 ausencias, 2 marcadas en el mapa), notas y la evaluación UICN
 de referencia de *Artemisia granatensis* (EN B1ab(iii)+2ab(iii)).
 
 | Rol | Email | Contraseña | Nombre |

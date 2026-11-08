@@ -4,8 +4,8 @@
 // Solo con APP_ENV=dev. Idempotente: si el catálogo de demo ya existe, no toca nada y vuelve a imprimir
 // las cuentas. Para empezar de cero: bin/reset-demo.php.
 //
-// Crea 3 cuentas verificadas (owner, custodio, editor) y el catálogo DEMO_CATALOG_NAME con 10 especies
-// reales de EIDOS de Sierra Nevada y su nivel sugerido, confirmado por la owner. Después, 60 marcas
+// Crea 3 cuentas verificadas (owner, custodio, editor) y el catálogo DEMO_CATALOG_NAME con 10 especies (12 desde F11g)
+// reales de EIDOS de Sierra Nevada y su nivel sugerido, confirmado por la owner. Después, 60 marcas (73 desde F11g)
 // FICTICIAS de los tres (presencias, 5 ausencias, individuos y maduros, 2 marcadas en el mapa), notas de
 // especie y la evaluación UICN de referencia de la Artemisia (EN B1ab(iii)+2ab(iii) con el EOO/AOO que
 // calcula el servidor). Casi todo pasa por la API (nginx), como lo haría la app: así quedan los

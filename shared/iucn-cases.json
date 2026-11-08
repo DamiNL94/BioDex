@@ -1352,6 +1352,27 @@
     "rangeHigh": "CR",
     "crosses": true
    }
+  },
+  {
+   "name": "Maduros solo contados (máximo desconocido): mejor 30 → CR D, el rango llega a no amenazada",
+   "fn": "assess",
+   "inputs": {
+    "D": {
+     "mature": {
+      "best": 30,
+      "min": 30,
+      "max": 30,
+      "openMax": true
+     }
+    }
+   },
+   "expect": {
+    "category": "CR",
+    "criteriaString": "CR D",
+    "rangeLow": null,
+    "rangeHigh": "CR",
+    "crosses": true
+   }
   }
  ],
  "quantifiers": [

@@ -58,6 +58,27 @@ function syncRequireMembership(PDO $pdo, string $catalogId, int $userId, string 
     return $membership;
 }
 
+/**
+ * F11g: una instantánea del motor 2 (pestaña Evaluación UICN) se recalcula entera aquí, con las coordenadas
+ * exactas (assessmentSnapshot): el dispositivo pudo calcularla sin red con menos marcas. Columnas derivadas al día.
+ */
+function syncServerSnapshot(PDO $pdo, string $catalogId, int $userId, array $c): array {
+    $inputs = json_decode($c["inputs"], true);
+    if (($inputs["engine"] ?? null) !== 2) return $c;
+    [$inputs, $result] = assessmentSnapshot($pdo, $catalogId, $c["taxonID"], $userId, $inputs);
+    $enc = fn($v) => json_encode($v, JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION);
+    $c["inputs"] = $enc($inputs);
+    $c["result"] = $enc($result);
+    if (strlen($c["result"]) > SYNC_ASSESSMENT_JSON_MAX) syncReject("invalid_field", "«result» no puede pasar de " . SYNC_ASSESSMENT_JSON_MAX . " bytes.");
+    $c["category"] = $result["category"];
+    $c["regional_adjustment"] = $result["regional"]["applied"] ? $result["regional"]["direction"] : null;
+    if ($c["regional_adjustment"] !== null && $c["justification"] === null) $c["justification"] = $result["regionalV4"]["justification"] ?? null;
+    if ($c["status"] === "final" && $c["category"] === null) {
+        syncReject("invalid_field", "Con los datos del servidor no sale categoría: para guardarla como final, elige NT, LC o DD.");
+    }
+    return $c;
+}
+
 /** Ejecuta un elemento del lote, reintentando ante carreras con otro push (ver SYNC_RETRY_ERRORS). */
 function syncWithRetry(PDO $pdo, callable $fn): array {
     for ($attempt = 1; ; $attempt++) {
@@ -285,6 +306,7 @@ if ($action === "push") {
                 foreach (($ent["taxon"] ?? true) ? [$c["taxonID"]] : $c["_species"] as $t) {
                     if (!isset($taxa[$t])) syncReject("taxon_not_in_catalog", "La especie {$t} no está en el catálogo.");
                 }
+                if ($ent["table"] === "species_assessments") $c = syncServerSnapshot($pdo, $catalogId, $userId, $c);
             } catch (SyncRejection $e) {
                 $results[] = syncRejected($ent, $item, $e);
                 continue;

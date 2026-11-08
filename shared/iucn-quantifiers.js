@@ -439,6 +439,22 @@ export function quantify(records, opts = {}) {
 }
 
 /**
+ * ¿Siguen valiendo las localidades confirmadas? Solo si las subpoblaciones son las mismas que cuando se
+ * confirmaron: misma distancia de separación y cada subpoblación actual asignada exactamente a una localidad.
+ * Si no (marcas nuevas que forman otra subpoblación, otra separación), no entran en el motor y se pide revisarlas.
+ */
+export function locationsCurrent(loc, q) {
+  if (!loc) return false;
+  const sp = (q && q.subpops) || {};
+  const labels = (sp.subpops || []).map((s) => s.label);
+  const sep = toNum(loc.separationKm);
+  if (sep !== null && sp.separationKm !== null && sp.separationKm !== undefined && Math.abs(sep - sp.separationKm) > 1e-9) return false;
+  const assigned = (loc.groups || []).flatMap((g) => g.subpops || []);
+  if (!assigned.length) return true;   // confirmadas sin agrupación (solo el número): no hay con qué comparar
+  return assigned.length === labels.length && labels.every((l) => assigned.includes(l));
+}
+
+/**
  * Entradas del motor (assessIucn) a partir de los cuantificadores, los parámetros (hechos sí/no), el nº de
  * localidades CONFIRMADO (la propuesta no cuenta hasta que alguien la guarda) y las decisiones del usuario
  * (expertCategory NT/LC, possiblyExtinct). A, C1 y E: pendientes de series temporales (F11h).
@@ -448,8 +464,11 @@ export function engineInputs(q, { params = {}, metrics = {}, locations = null, c
   const decline = Object.keys(DECLINE_KEYS).filter((r) => yes(DECLINE_KEYS[r]));
   const fluct = Object.keys(FLUCT_KEYS).filter((r) => yes(FLUCT_KEYS[r]));
   const m = q.mature || {};
-  const matureRange = m.best === null || m.best === undefined ? null : { best: m.best, min: m.min, max: m.max };
-  const c2a = q.subpops && q.subpops.c2a && q.subpops.c2a.complete ? q.subpops.c2a : null;
+  // Sin parcelas el total es solo un MÍNIMO observado: el máximo no se conoce (openMax) y el rango lo refleja.
+  const open = m.method === 'observed';
+  const matureRange = m.best === null || m.best === undefined ? null : { best: m.best, min: m.min, max: m.max, ...(open ? { openMax: true } : {}) };
+  const c2aRaw = q.subpops && q.subpops.c2a && q.subpops.c2a.complete ? q.subpops.c2a : null;
+  const c2a = c2aRaw && open ? { ...c2aRaw, maxPerSubpop: { ...c2aRaw.maxPerSubpop, openMax: true } } : c2aRaw;
   const aoo = metrics.aooKm2 === null || metrics.aooKm2 === undefined ? null
     : { best: metrics.aooKm2, min: metrics.aooRange ? metrics.aooRange.min : null, max: metrics.aooRange ? metrics.aooRange.max : null };
   const regionalKeys = ['regional_endemic', 'regional_immigration', 'regional_immigration_decrease', 'regional_sink'];
@@ -459,7 +478,7 @@ export function engineInputs(q, { params = {}, metrics = {}, locations = null, c
     generationLength: toNum(paramValue(params, 'generation_length')),
     A: { skip: true, pending: 'series' },
     B: { eoo: metrics.eooKm2 === undefined ? null : metrics.eooKm2, aoo, severelyFragmented: q.fragmentation && q.fragmentation.severe === true,
-      locations: locations && Number.isInteger(locations.count) ? locations.count : null, decline, fluctuation: fluct },
+      locations: locations && Number.isInteger(locations.count) && locationsCurrent(locations, q) ? locations.count : null, decline, fluctuation: fluct },
     C: { mature: matureRange, c1DeclinePct: null, c1Years: null, continuingDecline: yes('decline_b_v'),
       maxPerSubpop: c2a ? c2a.maxPerSubpop : null, pctInOneSubpop: c2a ? c2a.pctInLargest : null, extremeFluctuation: yes('fluct_c_iv') },
     D: { mature: matureRange, plausibleThreat: yes('plausible_threat'), aoo: null, locations: null },

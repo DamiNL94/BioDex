@@ -420,7 +420,8 @@ export function criterionSummary(res) {
 // ------------------------------------------------------------------------------------------------
 //   assessIucn(inputs, criteria) → evaluateIucn() con el MEJOR valor de cada dato + {displayCategory,
 //                                  range, dataMinimum, possiblyExtinct, regionalV4}
-// Un dato numérico puede llegar como número o como {best, min, max} (calidad y fuente van aparte). Se
+// Un dato numérico puede llegar como número o como {best, min, max, openMax?} (calidad y fuente van aparte;
+// `openMax`: el máximo no se conoce, y el escenario que lo pide queda sin dato). Se
 // evalúa tres veces: con el mejor valor, con el extremo MENOS amenazante de cada intervalo y con el MÁS
 // amenazante (rango plausible de las Guidelines). La categoría propuesta es la del mejor valor. Además:
 //   · Ningún criterio evaluable (todos sin datos o incompletos) → DD («menos de los datos mínimos»).
@@ -450,6 +451,8 @@ function scenarioValue(v, dir, scenario) {
   const hi = isMissing(v.max) ? best : v.max;
   if (scenario === 'best') return best !== null ? best : (lo !== null ? lo : hi);
   const wantHigh = (scenario === 'low') === (dir === 'lower');   // menos amenaza con «lower» → el máximo
+  // `openMax`: el máximo no se conoce (p. ej. maduros solo contados, sin parcelas): ese extremo queda sin dato.
+  if (wantHigh && v.openMax === true) return null;
   return wantHigh ? hi : lo;
 }
 

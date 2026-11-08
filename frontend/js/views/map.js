@@ -361,7 +361,7 @@ export function mount(el, { go = () => {}, isStudio = () => false } = {}) {
     } catch (e) {
       if (!alive || mine !== subpopsSeq) return;
       subpopsLayer.clear();
-      subpops = { error: e.message };
+      subpops = { error: e.message, taxonID };   // con el taxón: repintar no lo vuelve a pedir
     }
     paintNote();
   }

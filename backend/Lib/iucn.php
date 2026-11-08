@@ -416,6 +416,7 @@ function iucnScenarioValue(mixed $v, string $dir, string $scenario): mixed {
     $hi = iucnMissing($v["max"] ?? null) ? $best : $v["max"];
     if ($scenario === "best") return $best ?? $lo ?? $hi;
     $wantHigh = ($scenario === "low") === ($dir === "lower");
+    if ($wantHigh && ($v["openMax"] ?? null) === true) return null;   // máximo desconocido (ver scenarioValue de JS)
     return $wantHigh ? $hi : $lo;
 }
 
@@ -873,14 +874,32 @@ function iucnQuantify(array $records, array $opts = []): array {
             "suggestions" => iucnSuggestDecline($impacts, $opts["habitatCodes"] ?? []), "separation" => ["km" => $sepKm, "fromDefault" => $fromDefault]];
 }
 
+/** Port de locationsCurrent(): ¿siguen valiendo las localidades confirmadas con las subpoblaciones de ahora? */
+function iucnLocationsCurrent(?array $loc, array $q): bool {
+    if (!$loc) return false;
+    $sp = $q["subpops"] ?? [];
+    $labels = array_column($sp["subpops"] ?? [], "label");
+    $sep = iucnToNum($loc["separationKm"] ?? null);
+    if ($sep !== null && ($sp["separationKm"] ?? null) !== null && abs($sep - $sp["separationKm"]) > 1e-9) return false;
+    $assigned = [];
+    foreach ($loc["groups"] ?? [] as $g) foreach ($g["subpops"] ?? [] as $s) $assigned[] = $s;
+    if (!$assigned) return true;
+    if (count($assigned) !== count($labels)) return false;
+    foreach ($labels as $l) if (!in_array($l, $assigned, true)) return false;
+    return true;
+}
+
 /** Port de engineInputs(). */
 function iucnEngineInputs(array $q, array $params = [], array $metrics = [], ?array $locations = null, array $choices = []): array {
     $yes = fn($k) => iucnParamValue($params, $k) === "yes";
     $decline = array_values(array_filter(["i", "ii", "iii", "iv", "v"], fn($r) => $yes("decline_b_{$r}")));
     $fluct = array_values(array_filter(["i", "ii", "iii", "iv"], fn($r) => $yes("fluct_c_{$r}")));
     $m = $q["mature"] ?? [];
-    $matureRange = ($m["best"] ?? null) === null ? null : ["best" => $m["best"], "min" => $m["min"], "max" => $m["max"]];
+    $open = ($m["method"] ?? null) === "observed";   // solo un mínimo observado: máximo desconocido
+    $matureRange = ($m["best"] ?? null) === null ? null : ["best" => $m["best"], "min" => $m["min"], "max" => $m["max"]] + ($open ? ["openMax" => true] : []);
     $c2a = !empty($q["subpops"]["c2a"]["complete"]) ? $q["subpops"]["c2a"] : null;
+    if ($c2a && $open) $c2a["maxPerSubpop"]["openMax"] = true;
+    if ($locations !== null && !iucnLocationsCurrent($locations, $q)) $locations = null;
     $aoo = ($metrics["aooKm2"] ?? null) === null ? null
         : ["best" => $metrics["aooKm2"], "min" => $metrics["aooRange"]["min"] ?? null, "max" => $metrics["aooRange"]["max"] ?? null];
     $regionalKeys = ["regional_endemic", "regional_immigration", "regional_immigration_decrease", "regional_sink"];

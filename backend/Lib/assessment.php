@@ -49,11 +49,17 @@ function locationsFields(array $b): array {
     $groups = $b["groups"] ?? [];
     if (!is_array($groups) || !array_is_list($groups) || count($groups) > LOCATIONS_GROUPS_MAX) apiError("«groups» debe ser una lista.", 400);
     $clean = [];
+    $seen = [];
     foreach ($groups as $g) {
         if (!is_array($g) || array_is_list($g)) apiError("Cada grupo de «groups» es un objeto.", 400);
         $subs = $g["subpops"] ?? [];
         if (!is_array($subs) || !array_is_list($subs)) apiError("«subpops» de cada grupo es una lista.", 400);
-        foreach ($subs as $s) if (!is_string($s) || !preg_match('/^S\d{1,4}$/', $s)) apiError("Las subpoblaciones se nombran S1, S2…", 400);
+        foreach ($subs as $s) {
+            if (!is_string($s) || !preg_match('/^S\d{1,4}$/', $s)) apiError("Las subpoblaciones se nombran S1, S2…", 400);
+            if (isset($seen[$s])) apiError("La subpoblación {$s} está en dos localidades.", 400);
+            $seen[$s] = true;
+        }
+        if (!$subs) apiError("Cada localidad tiene al menos una subpoblación.", 400);
         $impact = $g["impactID"] ?? null;
         if ($impact !== null && !isUuidV4($impact)) apiError("«impactID» debe ser el UUID de un impacto.", 400);
         $code = $g["threatCode"] ?? null;
@@ -62,6 +68,7 @@ function locationsFields(array $b): array {
         $clean[] = ["label" => $label, "subpops" => array_values($subs), "impactID" => $impact, "threatCode" => $code,
                     "noThreat" => ($g["noThreat"] ?? false) === true];
     }
+    if ($clean && count($clean) !== $count) apiError("«count» ({$count}) no coincide con el número de localidades de «groups» (" . count($clean) . ").", 400);
     $just = trim((string) ($b["justification"] ?? ""));
     if ($just === "") apiError("Falta la justificación de las localidades («justification»).", 400);
     if (mb_strlen($just) > LOCATIONS_JUSTIFICATION_MAX) apiError("«justification» admite " . LOCATIONS_JUSTIFICATION_MAX . " caracteres.", 400);
@@ -129,6 +136,32 @@ function assessmentSubpopsOut(array $subpops, string $access, int $level): array
         }
         return $out;
     }, $subpops);
+}
+
+/**
+ * Instantánea del motor 2 subida por el push → [inputs, result] DEFINITIVOS: los cuantificadores se recalculan aquí
+ * con las coordenadas exactas (lo que haya en el servidor al sincronizar, no lo que vio el dispositivo) y se conservan
+ * solo las decisiones del usuario (NT/LC a juicio experto, posiblemente extinta). El resultado lleva el resumen de los
+ * cuantificadores y `computedBy: server`.
+ */
+function assessmentSnapshot(PDO $pdo, string $catalogId, string $taxonID, int $userId, array $clientInputs): array {
+    $a = speciesAssessment($pdo, $catalogId, $taxonID, $userId, "viewer", 1);   // sin geometría ni view_exact
+    $choices = ["expertCategory" => $clientInputs["expertCategory"] ?? null, "possiblyExtinct" => ($clientInputs["possiblyExtinct"] ?? null) === true];
+    $inputs = array_merge($a["inputs"], ["expertCategory" => in_array($choices["expertCategory"], ["NT", "LC"], true) ? $choices["expertCategory"] : null,
+                                         "possiblyExtinct" => $choices["possiblyExtinct"]]);
+    $m = $a["mature"];
+    $sp = $a["subpopulations"];
+    $summary = [
+        "origin" => "server", "computedAt" => $a["computedAt"], "nPoints" => $a["nPoints"],
+        "metrics" => array_intersect_key($a["metrics"], array_flip(["eooKm2", "aooKm2", "aooRange", "cellSizeKm"])),
+        "mature" => array_intersect_key($m, array_flip(["min", "best", "max", "quality", "method", "density", "areaKm2", "areaSource", "doubleCountPairs"])),
+        "subpopulations" => ["separationKm" => $sp["separationKm"], "c2a" => $sp["c2a"],
+            "list" => array_map(fn($s) => array_intersect_key($s, array_flip(["label", "nRecords", "mature", "nearestKm"])), $sp["subpops"])],
+        "fragmentation" => array_intersect_key($a["fragmentation"], array_flip(["status", "severe", "pctAoo", "pctIndividuals", "missing"])),
+        "locations" => ["count" => is_int($inputs["B"]["locations"] ?? null) ? $inputs["B"]["locations"] : $a["locationsProposal"]["count"],
+                        "confirmed" => is_int($inputs["B"]["locations"] ?? null)],
+    ];
+    return [$inputs, assessIucn($inputs) + ["quantifiers" => $summary, "computedBy" => "server"]];
 }
 
 /** Respuesta de GET …/assessment. */

@@ -94,6 +94,8 @@ export function mountSpeciesIucn(el, { species, catalog, goToParam }) {
 
   // --- Pintado -------------------------------------------------------------------------------------
   const param = (k) => (data.parameters || {})[k] || null;
+  /** Confirmadas, pero el motor no las usa: las subpoblaciones ya no son las que se agruparon (locationsCurrent). */
+  const locStale = () => !!data.locations && !(data.inputs && data.inputs.B && Number.isInteger(data.inputs.B.locations));
   const factValue = (k) => (param(k) ? param(k).value : null);
   const gotoParam = (k) => html`<button type="button" class="link-btn" data-goto-param="${k}">${PARAM_LABELS[k] || k}</button>`;
   const gotoFact = (k, label) => html`<button type="button" class="link-btn" data-goto-fact="${k}">${label}</button>`;
@@ -158,7 +160,7 @@ export function mountSpeciesIucn(el, { species, catalog, goToParam }) {
       <span class="fact-label">${label}</span>
       <span class="badge ${p && p.value === 'yes' ? 'ok' : p ? '' : 'warn'}">${p ? FACT_LABELS[p.value] || p.value : 'Sin fijar'}</span>
       ${p && p.quality ? html`<span class="badge">${QUALITY_LABELS[p.quality]}</span>` : ''}
-      ${suggestion && (!p || p.value !== suggestion.value) ? html`<span class="badge suggest">BioDex sugiere «${FACT_LABELS[suggestion.value]}»: ${suggestion.reason}</span>` : ''}
+      ${suggestion && !p ? html`<span class="badge suggest">BioDex sugiere «${FACT_LABELS[suggestion.value]}»: ${suggestion.reason}</span>` : ''}
       ${p && p.justification ? html`<span class="fact-just hint">${p.justification}</span>` : ''}
       ${p ? html`<span class="muted fact-meta">${p.setBy || '—'}${p.setAt ? html`, ${formatDateTime(p.setAt, 'numeric')}` : ''}</span>` : ''}
       ${editable ? html`<button type="button" class="link-btn" data-fact-edit="${k}">${suggestion && !p ? 'Revisar la sugerencia' : p ? 'Cambiar' : 'Fijar'}<span class="sr-only"> ${label}</span></button>` : ''}
@@ -192,6 +194,7 @@ export function mountSpeciesIucn(el, { species, catalog, goToParam }) {
     const needs = [];
     if (m.eooKm2 === null && m.aooKm2 === null) needs.push(html`Marcas con coordenadas (EOO y AOO salen de ellas).`);
     if (!loc && frag.severe !== true) needs.push(html`${gotoFact('locations', 'Confirmar el nº de localidades')} (la propuesta no cuenta hasta que se confirma).`);
+    if (locStale()) needs.push(html`${gotoFact('locations', 'Revisar las localidades')}: las subpoblaciones han cambiado desde que se confirmaron y no cuentan.`);
     if (frag.status === 'not_evaluable') {
       needs.push(html`Fragmentación: ${frag.missing.filter((k) => PARAM_LABELS[k]).map((k, i) => html`${i ? ', ' : ''}${gotoParam(k)}`)}${frag.missing.includes('subpopulations') ? ' (y subpoblaciones)' : ''}.`);
     }
@@ -202,7 +205,8 @@ export function mountSpeciesIucn(el, { species, catalog, goToParam }) {
       <dl class="crit-data">
         <dt>EOO</dt><dd>${fmtKm2(m.eooKm2)}</dd>
         <dt>AOO</dt><dd>${fmtKm2(m.aooKm2)}${m.aooRange ? html` <span class="muted">(${fmtN(m.aooRange.min)}–${fmtN(m.aooRange.max)} km² según la rejilla)</span>` : ''}</dd>
-        <dt>Localidades</dt><dd>${loc ? html`<strong>${loc.count}</strong> confirmadas${loc.quality ? html` · ${QUALITY_LABELS[loc.quality]}` : ''} <span class="muted">(${loc.setBy || '—'})</span>`
+        <dt>Localidades</dt><dd>${loc ? html`<strong>${loc.count}</strong> confirmadas${loc.quality ? html` · ${QUALITY_LABELS[loc.quality]}` : ''} <span class="muted">(${loc.setBy || '—'})</span>${
+          locStale() ? html` <span class="badge warn">Desactualizadas: no cuentan</span>` : ''}`
           : html`sin confirmar · propuesta: ${prop.count}`}</dd>
         <dt>Fragmentación grave</dt><dd>${frag.status === 'not_evaluable' ? 'No evaluable'
           : html`${frag.severe ? 'Sí' : 'No'} <span class="muted">· ${fmtN(frag.pctAoo)} % de la AOO en subpoblaciones pequeñas y aisladas${frag.pctIndividuals !== null ? html`, ${fmtN(frag.pctIndividuals)} % de los individuos` : ''}</span>`}</dd>
@@ -231,7 +235,9 @@ export function mountSpeciesIucn(el, { species, catalog, goToParam }) {
     return html`<dl class="crit-data">
       <dt>Maduros · mínimo</dt><dd>${fmtN(m.min)} <span class="badge">${QUALITY_LABELS[q.min] || '—'}</span></dd>
       <dt>Maduros · mejor</dt><dd>${fmtN(m.best)} <span class="badge">${QUALITY_LABELS[q.best] || '—'}</span></dd>
-      <dt>Maduros · máximo</dt><dd>${fmtN(m.max)} <span class="badge">${QUALITY_LABELS[q.max] || '—'}</span>${m.areaSource === 'aoo' ? html` <span class="muted">(AOO como cota)</span>` : ''}</dd>
+      <dt>Maduros · máximo</dt><dd>${m.method === 'observed' && m.min !== null ? html`desconocido <span class="muted">(solo hay recuentos: sin parcelas
+        con superficie, el total no se puede acotar)</span>` : html`${fmtN(m.max)} <span class="badge">${QUALITY_LABELS[q.max] || '—'}</span>${
+        m.areaSource === 'aoo' ? html` <span class="muted">(AOO como cota)</span>` : ''}`}</dd>
       ${m.density ? html`<dt>Densidad (${m.density.plots} parcelas)</dt><dd>${fmtN(m.density.mean)} /km² <span class="muted">(IC 95 %: ${fmtN(m.density.low)}–${fmtN(m.density.high)})</span></dd>` : ''}
     </dl>
     ${(m.warnings || []).length ? html`<p class="hint">${m.warnings.join(' ')}</p>` : ''}`;
@@ -274,6 +280,8 @@ export function mountSpeciesIucn(el, { species, catalog, goToParam }) {
     if (editingLocations) return locationsForm();
     return html`<div class="locations" id="loc-${species.taxonID}" tabindex="-1">
       <h6>Localidades (definidas por amenaza)</h6>
+      ${locStale() ? html`<p class="guard-band warn">Las subpoblaciones han cambiado desde que se confirmaron (marcas nuevas u otra distancia de
+        separación): estas localidades no entran en la evaluación hasta revisarlas.</p>` : ''}
       ${loc ? html`<p><strong>${loc.count}</strong> confirmadas: ${loc.justification}</p><ul class="loc-groups">${(loc.groups || []).map(groupText)}</ul>`
         : html`<p class="hint">Propuesta de BioDex (no cuenta hasta que se confirme): las subpoblaciones bajo el mismo impacto más grave
           en curso o futuro forman una localidad; las no afectadas, una cada una.</p>`}
