@@ -200,7 +200,7 @@ check("200 y nombre …_publicar_….zip", $code === 200 && str_contains($hd["co
 $pub = unzipAll($raw);
 $names = array_keys($pub);
 foreach (["dwca/occurrence.txt", "dwca/measurementorfact.txt", "dwca/meta.xml", "dwca/eml.xml", "LEEME.txt",
-          "hojas/csv/observaciones.csv", "hojas/csv/especies.csv", "hojas/csv/evaluaciones_uicn.csv", "hojas/csv/distribucion.csv", "hojas/csv/notas.csv"] as $f) {
+          "hojas/csv/observaciones.csv", "hojas/csv/especies.csv", "hojas/csv/evaluaciones_uicn.csv", "hojas/csv/distribucion.csv", "hojas/csv/notas.csv", "hojas/csv/evaluacion_especie.csv", "hojas/csv/subpoblaciones.csv", "hojas/csv/impactos.csv"] as $f) {
     check("contiene {$f}", isset($pub[$f]));
 }
 $xlsxName = current(array_filter($names, fn($n) => preg_match('#^hojas/BioDex_test_f10a_[0-9a-f]+_\d{4}-\d{2}-\d{2}\.xlsx$#', $n)));
@@ -292,7 +292,7 @@ file_put_contents($tmpX, $xlsxRaw);
 $py = trim((string) shell_exec("python3 -c \"import openpyxl\" 2>&1 && echo si"));
 if ($py === "si") {
     $out = shell_exec("python3 -c \"import openpyxl,sys; wb=openpyxl.load_workbook(sys.argv[1]); print('|'.join(wb.sheetnames)); print(wb['Observaciones'].max_row)\" " . escapeshellarg($tmpX));
-    check("openpyxl abre el XLSX", str_starts_with((string) $out, "Léeme|Observaciones|Especies|Evaluaciones UICN|Distribución|Notas"), (string) $out);
+    check("openpyxl abre el XLSX", str_starts_with((string) $out, "Léeme|Observaciones|Especies|Evaluaciones UICN|Distribución|Notas|Evaluación por especie|Subpoblaciones|Impactos"), (string) $out);
 } else {
     $parts = unzipAll($xlsxRaw);
     $xmls = array_filter($parts, fn($k) => str_ends_with($k, ".xml") || str_ends_with($k, ".rels"), ARRAY_FILTER_USE_KEY);
@@ -300,8 +300,8 @@ if ($py === "si") {
     check("XLSX: " . count($xmls) . " partes XML, todas bien formadas (sin openpyxl)", count($xmls) >= 11 && !$broken, implode(", ", $broken));
     $wb = wellFormed($parts["xl/workbook.xml"] ?? "");
     $sheets = $wb ? array_map(fn($n) => $n->getAttribute("name"), iterator_to_array($wb->getElementsByTagName("sheet"))) : [];
-    check("XLSX: pestañas Léeme · Observaciones · Especies · Evaluaciones UICN · Distribución · Notas",
-        $sheets === ["Léeme", "Observaciones", "Especies", "Evaluaciones UICN", "Distribución", "Notas"], implode(", ", $sheets));
+    check("XLSX: pestañas Léeme · Observaciones · Especies · Evaluaciones UICN · Distribución · Notas · Evaluación por especie · Subpoblaciones · Impactos",
+        $sheets === ["Léeme", "Observaciones", "Especies", "Evaluaciones UICN", "Distribución", "Notas", "Evaluación por especie", "Subpoblaciones", "Impactos"], implode(", ", $sheets));
     $obs = $parts["xl/worksheets/sheet2.xml"] ?? "";
     check("Observaciones: 2 filas de cabecera + 5, congeladas y con autofiltro", substr_count($obs, "<row ") === 7
         && str_contains($obs, 'state="frozen"') && str_contains($obs, "<autoFilter ref=\"A2:"));

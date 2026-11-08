@@ -26,6 +26,7 @@ require_once __DIR__ . "/utm.php";
 require_once __DIR__ . "/dwc.php";
 require_once __DIR__ . "/xlsx.php";
 require_once __DIR__ . "/plinian.php";   // F10c: pliniancore/
+require_once __DIR__ . "/assessment.php"; // F11g: evaluación por especie, subpoblaciones e impactos
 
 const EXPORT_MODES      = ["full", "public"];
 /** Formatos del ZIP (F10c). Sin «formats» en la petición, los de F10a: el ZIP sale igual que antes. */
@@ -241,7 +242,7 @@ function exportPrepare(PDO $pdo, string $catalogId, array $catalog, array $o, st
     $counts["species"] = count($perSpecies);
     $counts["observers"] = count($observers);
     return ["records" => $records, "species" => $species, "perSpecies" => $perSpecies, "observers" => $observers,
-            "owner" => $owner, "counts" => $counts];
+            "owner" => $owner, "counts" => $counts, "role" => $role, "userId" => $userId];
 }
 
 /** Lo que el diálogo necesita para elegir: especies y observadores con marcas, y rango de fechas. Sin coordenadas. */
@@ -391,7 +392,135 @@ function exportSheets(PDO $pdo, string $catalogId, array $catalog, array $o, arr
         exportAssessmentsSheet($pdo, $catalogId, $prep),
         exportDistributionSheet($pdo, $catalogId, $prep, $userId),
         exportNotesSheet($pdo, $catalogId, $prep),
+        ...exportSpeciesAssessmentSheets($pdo, $catalogId, $prep),
+        exportImpactsSheet($pdo, $catalogId, $o, $prep),
     ];
+}
+
+const EXPORT_QUALITY_ES = ["observed" => "observado", "estimated" => "estimado", "inferred" => "inferido", "suspected" => "sospechado",
+                           "projected" => "proyectado"];
+const EXPORT_FACT_ES = ["yes" => "sí", "no" => "no", "unknown" => "desconocido"];
+const EXPORT_FACT_LABELS = [
+    "decline_b_i" => "b(i) EOO", "decline_b_ii" => "b(ii) AOO", "decline_b_iii" => "b(iii) hábitat", "decline_b_iv" => "b(iv) localidades o subpoblaciones",
+    "decline_b_v" => "b(v) maduros", "fluct_c_i" => "c(i) EOO", "fluct_c_ii" => "c(ii) AOO", "fluct_c_iii" => "c(iii) localidades o subpoblaciones",
+    "fluct_c_iv" => "c(iv) maduros", "plausible_threat" => "D2 amenaza plausible", "regional_endemic" => "endémica del área",
+    "regional_immigration" => "inmigración significativa", "regional_immigration_decrease" => "la inmigración disminuirá", "regional_sink" => "sumidero",
+];
+const EXPORT_IMPACT_INTENSITY = ["low" => "Baja", "medium" => "Media", "high" => "Alta"];
+const EXPORT_IMPACT_TIMING = ["past" => "Pasado", "ongoing" => "En curso", "future" => "Futuro"];
+
+/** «12 (8–16)» con su calidad. */
+function exportRangeText(?array $r, ?string $quality = null): ?string {
+    if ($r === null || ($r["best"] ?? null) === null) return null;
+    $f = fn($v) => $v === null ? "—" : rtrim(rtrim(number_format((float) $v, 2, ",", "."), "0"), ",");
+    $s = $f($r["best"]) . (($r["min"] ?? null) !== null && ($r["min"] != $r["best"] || $r["max"] != $r["best"]) ? " ({$f($r["min"])}–{$f($r["max"])})" : "");
+    return $s . ($quality ? " · " . (EXPORT_QUALITY_ES[$quality] ?? $quality) : "");
+}
+
+/**
+ * F11g · «Evaluación por especie» (una fila por especie con marcas: el cálculo definitivo del servidor, el mismo
+ * de la pestaña Evaluación UICN) y «Subpoblaciones» (una fila por subpoblación, con su localidad). Solo cifras:
+ * ninguna geometría. Calcula con todas las presencias del catálogo, no solo las filtradas (como Distribución).
+ */
+function exportSpeciesAssessmentSheets(PDO $pdo, string $catalogId, array $prep): array {
+    $head = ["Especie", "Categoría propuesta", "Rango plausible", "Criterios", "Base", "Ajuste regional (v4.0)", "EOO (km²)", "AOO (km²)",
+        "Maduros (mejor, mín.–máx., calidad)", "Método de los maduros", "Densidad (maduros/km², IC 95 %)", "Subpoblaciones",
+        "C2a(i) máx. por subpoblación", "C2a(ii) % en la mayor", "Fragmentación grave", "Localidades", "Justificación de las localidades",
+        "Hechos (valor · calidad · justificación)", "Parámetros", "Avisos", "Fecha de cálculo"];
+    $rows = [exportHeader($head)];
+    $subRows = [exportHeader(["Especie", "Subpoblación", "Registros", "Maduros mín.", "Maduros mejor", "Maduros máx.", "Vecina más cercana",
+        "Distancia (km)", "Pequeña", "Aislada", "Localidad"])];
+    $stmt = $pdo->prepare("SELECT DISTINCT taxonID FROM occurrences WHERE catalog_id = ? AND deleted_at IS NULL");
+    $stmt->execute([$catalogId]);
+    $marked = array_flip($stmt->fetchAll(PDO::FETCH_COLUMN));
+    foreach ($prep["species"] as $taxonID => $s) {
+        if (!isset($marked[$taxonID])) continue;
+        // Rol «viewer» y nivel 1: sin geometría ni registro de vista exacta; las cifras son las mismas.
+        $a = speciesAssessment($pdo, $catalogId, (string) $taxonID, $prep["userId"], "viewer", 1);
+        $r = $a["result"];
+        $m = $a["mature"];
+        $sp = $a["subpopulations"];
+        $frag = $a["fragmentation"];
+        $loc = $a["locations"];
+        $facts = [];
+        $params = [];
+        foreach ($a["parameters"] as $k => $p) {
+            $q = $p["quality"] ? " · " . (EXPORT_QUALITY_ES[$p["quality"]] ?? $p["quality"]) : "";
+            if (isset(EXPORT_FACT_LABELS[$k])) {
+                $facts[] = EXPORT_FACT_LABELS[$k] . ": " . (EXPORT_FACT_ES[$p["value"]] ?? $p["value"]) . $q . ($p["justification"] ? " · {$p["justification"]}" : "");
+            } else {
+                $params[] = "{$k}: " . parameterDescribe(["param_key" => $k, "value" => $p["value"], "value_min" => $p["valueMin"], "value_max" => $p["valueMax"],
+                    "quality" => $p["quality"], "deleted_at" => null]);
+            }
+        }
+        $c2a = $sp["c2a"] ?? null;
+        $assigned = [];
+        foreach (($loc["groups"] ?? $a["locationsProposal"]["groups"] ?? []) as $g) foreach ($g["subpops"] as $l) $assigned[$l] = $g["label"];
+        $rows[] = [
+            ["v" => $s["canonical_name"], "s" => "strong"], ["v" => $r["displayCategory"] ?? $r["category"], "s" => "strong"],
+            ($r["range"]["low"] ?? "no amenazada") . "–" . ($r["range"]["high"] ?? "no amenazada"), $r["criteriaString"] ?? $r["message"],
+            ["criteria" => "criterios", "dd" => "DD elegido", "expert" => "juicio experto", "insufficient" => "DD: sin datos mínimos", "none" => "no alcanza umbrales"][$r["basis"]] ?? $r["basis"],
+            $r["regional"]["applied"] ? "{$r["regional"]["from"]} → {$r["regional"]["to"]}" . ($r["regionalV4"] ? ": {$r["regionalV4"]["justification"]}" : "") : ($r["regionalV4"]["justification"] ?? null),
+            ["v" => $a["metrics"]["eooKm2"], "s" => "km2"], exportRangeText($a["metrics"]["aooKm2"] === null ? null
+                : ["best" => $a["metrics"]["aooKm2"], "min" => $a["metrics"]["aooRange"]["min"] ?? null, "max" => $a["metrics"]["aooRange"]["max"] ?? null]),
+            exportRangeText($m["best"] === null ? null : ["best" => $m["best"], "min" => $m["min"], "max" => $m["max"]], $m["quality"]["best"] ?? null),
+            ["observed" => "observado (suma deduplicada)", "density" => "densidad × hábitat ocupado", "density-aoo-bound" => "densidad × AOO (cota superior)"][$m["method"]] ?? $m["method"],
+            $m["density"] ? "{$m["density"]["mean"]} ({$m["density"]["low"]}–{$m["density"]["high"]}), {$m["density"]["plots"]} parcelas" : null,
+            count($sp["subpops"]) . ($sp["separationKm"] ? " (enlace simple a {$sp["separationKm"]} km" . ($a["separation"]["fromDefault"] ? ", por defecto del grupo)" : ")") : ""),
+            $c2a ? exportRangeText($c2a["maxPerSubpop"]) : null, $c2a ? exportRangeText($c2a["pctInLargest"]) : null,
+            $frag["status"] === "not_evaluable" ? "No evaluable (falta " . implode(", ", $frag["missing"]) . ")"
+                : ($frag["severe"] ? "Sí" : "No") . " · {$frag["pctAoo"]} % de la AOO",
+            $loc ? "{$loc["count"]} confirmadas" . ($loc["quality"] ? " · " . (EXPORT_QUALITY_ES[$loc["quality"]] ?? $loc["quality"]) : "")
+                : "{$a["locationsProposal"]["count"]} propuestas (sin confirmar)",
+            ["v" => $loc["justification"] ?? null, "s" => "wrap"], ["v" => implode("\n", $facts) ?: null, "s" => "wrap"],
+            ["v" => implode("\n", $params) ?: null, "s" => "wrap"],
+            ["v" => implode(" ", array_unique(array_merge($r["warnings"], $m["warnings"], $sp["warnings"]))) ?: null, "s" => "wrap"],
+            exportLocal(gmdate("Y-m-d H:i:s")),
+        ];
+        $fragBy = [];
+        foreach ($frag["bySubpop"] ?? [] as $f) $fragBy[$f["label"]] = $f;
+        foreach ($sp["subpops"] as $x) {
+            $f = $fragBy[$x["label"]] ?? null;
+            $yn = fn($v) => $v === null ? null : ($v ? "Sí" : "No");
+            $subRows[] = [$s["canonical_name"], $x["label"], ["v" => $x["nRecords"], "s" => "int"], ["v" => $x["mature"]["min"], "s" => "int"],
+                ["v" => $x["mature"]["best"], "s" => "int"], ["v" => $x["mature"]["max"], "s" => "int"], $x["nearest"], ["v" => $x["nearestKm"], "s" => "km2"],
+                $f ? $yn($f["small"]) : null, $f ? $yn($f["isolated"]) : null, $assigned[$x["label"]] ?? null];
+        }
+    }
+    return [
+        ["name" => "Evaluación por especie", "rows" => $rows, "widths" => [30, 10, 16, 30, 16, 40, 11, 18, 26, 22, 28, 22, 18, 18, 24, 20, 50, 60, 50, 50, 17],
+         "freeze" => 1, "autofilter" => [1, count($head)], "csv" => "evaluacion_especie"],
+        ["name" => "Subpoblaciones", "rows" => $subRows, "widths" => [30, 10, 10, 10, 10, 10, 10, 11, 9, 9, 10],
+         "freeze" => 1, "autofilter" => [1, 11], "csv" => "subpoblaciones"],
+    ];
+}
+
+/**
+ * F11g · «Impactos»: una fila por impacto del catálogo (de las especies exportadas o sin especie). Su sitio sigue
+ * la regla de las marcas (impactOut → applyVisibility con el nivel más restrictivo de sus especies): en la
+ * exportación para publicar, generalizado; y en las filas generalizadas no sale la nota (puede decir dónde está).
+ */
+function exportImpactsSheet(PDO $pdo, string $catalogId, array $o, array $prep): array {
+    $head = ["Amenaza (UICN)", "Amenaza", "Fecha (peninsular)", "Intensidad", "Alcance (%)", "Temporalidad", "Especies afectadas",
+        "Latitud", "Longitud", "Radio (m)", "Perímetro (vértices)", "Generalizado", "Nota", "Autor/a", "Última edición"];
+    $rows = [exportHeader($head)];
+    $labels = iucnThreatLabels();
+    $public = $o["mode"] !== "full";
+    foreach (impactRows($pdo, "i.catalog_id = ? AND i.deleted_at IS NULL", [$catalogId], $catalogId, "ORDER BY i.event_date") as [$row, $taxa, $level]) {
+        if ($taxa && !array_intersect($taxa, array_map("strval", array_keys($prep["species"])))) continue;
+        $out = $public ? impactOut($row, $taxa, $level, "public", 0) : impactOut($row, $taxa, $level, $prep["role"], $prep["userId"]);
+        $names = array_map(fn($t) => $prep["species"][$t]["canonical_name"] ?? $t, $taxa);
+        $rows[] = [
+            $out["threatCode"], $labels[$out["threatCode"]] ?? null, exportLocal($row["event_date"]), EXPORT_IMPACT_INTENSITY[$out["intensity"]] ?? $out["intensity"],
+            ["v" => $out["scopePct"], "s" => "int"], EXPORT_IMPACT_TIMING[$out["timing"]] ?? $out["timing"], implode(", ", $names) ?: null,
+            ["v" => $out["decimalLatitude"], "s" => "coord"], ["v" => $out["decimalLongitude"], "s" => "coord"], ["v" => $out["radiusM"], "s" => "int"],
+            $out["polygon"] ? count($out["polygon"]) . " vértices: " . implode(" ", array_map(fn($v) => "{$v[0]},{$v[1]}", $out["polygon"])) : null,
+            $out["generalized"] ? "Sí" : "No", ["v" => $out["generalized"] ? null : $out["note"], "s" => "wrap"], $out["recordedBy"],
+            exportLocal($row["client_updated_at"]),
+        ];
+    }
+    return ["name" => "Impactos", "rows" => $rows, "widths" => [10, 36, 17, 10, 10, 12, 40, 12, 12, 10, 30, 12, 50, 22, 17],
+            "freeze" => 1, "autofilter" => [1, count($head)], "csv" => "impactos"];
 }
 
 /** Observaciones: cabecera en castellano y, debajo, el término DwC en gris. */
@@ -549,6 +678,11 @@ function exportReadme(array $catalog, array $o, array $prep, array $meta): array
         $kv("Evaluaciones UICN", "Evaluaciones BioDex de cada especie (la de referencia del catálogo primero): propuestas orientativas hechas con el asistente, no evaluaciones oficiales. No dependen de los filtros de fecha ni de observador."),
         $kv("Distribución", "EOO y AOO definitivos calculados en el servidor con todas las presencias del catálogo (celda de 2 km), no solo las filtradas. Reflejan los registros, no la distribución completa de la especie."),
         $kv("Notas", "Notas de cuaderno por especie, con autor y fecha."),
+        $kv("Evaluación por especie", "El cálculo de BioDex con todas las presencias del catálogo (como la pestaña Evaluación UICN): categoría propuesta con su rango plausible, cadena de criterios, entradas con su calidad (EOO, AOO, maduros, subpoblaciones, fragmentación, localidades), hechos con su justificación y parámetros. Propuesta orientativa, no una evaluación oficial."),
+        $kv("Subpoblaciones", "Una fila por subpoblación (enlace simple con la distancia de separación de la especie): registros, maduros, vecina más cercana, si es pequeña y aislada, y su localidad. Sin geometría."),
+        $kv("Impactos", "Impactos registrados en campo: amenaza del esquema de la UICN (v3.3), fecha, intensidad, alcance, temporalidad y especies afectadas. " . ($full
+            ? "Con el sitio que ves en el catálogo." : "Con el sitio generalizado según la especie afectada más sensible; en esas filas no sale la nota.")
+            . " No van en el Darwin Core Archive."),
         [],
     ];
     if (in_array("dwc", $o["formats"], true)) {

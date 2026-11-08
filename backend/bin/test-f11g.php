@@ -259,6 +259,24 @@ $res = json_decode($row["result"] ?? "{}", true);
 check("…con la categoría del servidor (EN), no la que mandó el dispositivo", ($row["category"] ?? null) === "EN" && ($res["computedBy"] ?? null) === "server"
     && ($res["quantifiers"]["nPoints"] ?? null) === 5, json_encode([$row["category"] ?? null, $res["criteriaString"] ?? null]));
 
+section("Exportación: evaluación por especie, subpoblaciones e impactos");
+require_once __DIR__ . "/../Lib/export.php";
+$level(2);
+$spRow = $pdo->query("SELECT canonical_name FROM species WHERE taxonID = " . $pdo->quote(ARTEMISIA))->fetch();
+$prep = ["species" => [ARTEMISIA => ["canonical_name" => $spRow["canonical_name"]]], "role" => "owner", "userId" => $ids["o"]];
+$imp = exportImpactsSheet($pdo, $cat, ["mode" => "public"], $prep);
+$row = $imp["rows"][1] ?? [];
+check("Impactos (para publicar): una fila, generalizada y sin nota", count($imp["rows"]) === 2 && ($row[11] ?? null) === "Sí"
+    && array_key_exists("v", $row[12] ?? []) && $row[12]["v"] === null && abs(($row[7]["v"] ?? 0) - 37.05) < 1e-9, json_encode($row, JSON_UNESCAPED_UNICODE));
+$imp = exportImpactsSheet($pdo, $cat, ["mode" => "full"], $prep);
+check("Impactos (completa, owner): exacto y con nota", ($imp["rows"][1][11] ?? null) === "No" && ($imp["rows"][1][12]["v"] ?? null) === "Ovejas en la ladera");
+[$ev, $subs] = exportSpeciesAssessmentSheets($pdo, $cat, $prep);
+check("Evaluación por especie: EN B… con 2 localidades confirmadas", ($ev["rows"][1][1]["v"] ?? null) === "EN"
+    && str_starts_with((string) ($ev["rows"][1][3] ?? ""), "EN B1ab(iii)+2ab(iii)") && str_starts_with((string) ($ev["rows"][1][15] ?? ""), "2 confirmadas"),
+    json_encode(array_slice($ev["rows"][1] ?? [], 0, 16), JSON_UNESCAPED_UNICODE));
+check("Subpoblaciones: dos filas con su localidad", count($subs["rows"]) === 3 && ($subs["rows"][1][10] ?? null) === "L1", json_encode($subs["rows"], JSON_UNESCAPED_UNICODE));
+$level(4);
+
 cleanup($pdo);
 echo $failures ? "\n{$failures} fallo(s)\n" : "\nTodo OK\n";
 exit($failures ? 1 : 0);

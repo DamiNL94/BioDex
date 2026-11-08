@@ -15,6 +15,7 @@ require_once __DIR__ . "/iucn.php";
 require_once __DIR__ . "/metrics.php";
 require_once __DIR__ . "/parameters.php";
 require_once __DIR__ . "/sync.php";
+require_once __DIR__ . "/authz.php";      // catalogCan()
 
 const LOCATIONS_MAX = 1000;
 const LOCATIONS_GROUPS_MAX = 500;
