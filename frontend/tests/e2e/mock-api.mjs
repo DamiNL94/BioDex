@@ -19,6 +19,7 @@ export async function mockApi(context) {
     seq: Math.max(0, ...FX.pull.items.map((i) => i.serverSeq || 0), FX.pull.cursor || 0) + 1000,
     params: new Map(),     // `${taxonID}|${key}` → parámetro (con deleted)
     pushed: [],            // marcas recibidas
+    impacts: [],           // F11g: impactos recibidos (el pull los devuelve con su server_seq)
     calls: [],
   };
   const me = FX.me.user;
@@ -47,8 +48,11 @@ export async function mockApi(context) {
       if (rest === '/members') return json(route, FX.members);
       if (rest === '/invites') return json(route, FX.invites);
       if (rest.startsWith('/audit')) return json(route, FX.audit);
-      const pm = rest.match(/^\/species\/([^/]+)\/parameters(?:\/([a-z_]+))?$/);
+      const pm = rest.match(/^\/species\/([^/]+)\/parameters(?:\/([a-z0-9_]+))?$/);
       if (pm) return parameters(route, decodeURIComponent(pm[1]), pm[2], m, req);
+      // F11g: la evaluación del servidor no se simula: sin respuesta, la app calcula la provisional en el
+      // dispositivo con shared/iucn-quantifiers.js (lo que se prueba es ese camino).
+      if (/^\/species\/[^/]+\/assessment$/.test(rest)) return route.abort('internetdisconnected');
     }
     if (p === '/sync/pull') return pull(route, Number(url.searchParams.get('since') || 0));
     if (p === '/sync/push' && m === 'POST') return push(route, req.postDataJSON());
@@ -81,8 +85,10 @@ export async function mockApi(context) {
   function pull(route, since) {
     const base = since === 0 ? FX.pull : { ...FX.pull, items: [], notes: [], assessments: [] };
     const extra = [...st.params.values()].filter((x) => x.serverSeq > since);
-    const cursor = Math.max(since, FX.pull.cursor || 0, ...extra.map((x) => x.serverSeq), ...st.pushed.map((x) => x.serverSeq));
-    return json(route, { ...base, parameters: extra, cursor, hasMore: false });
+    const impacts = st.impacts.filter((x) => x.serverSeq > since);
+    const cursor = Math.max(since, FX.pull.cursor || 0, ...extra.map((x) => x.serverSeq), ...st.pushed.map((x) => x.serverSeq),
+      ...impacts.map((x) => x.serverSeq));
+    return json(route, { ...base, parameters: extra, impacts, locations: [], cursor, hasMore: false });
   }
 
   function push(route, body) {
@@ -94,7 +100,13 @@ export async function mockApi(context) {
     const ok = (list, id) => (list || []).map((x) => ({ [id]: x[id], status: 'accepted', serverSeq: ++st.seq }));
     return json(route, { results: [...results, ...(body.deletes || []).map((d) => ({ occurrenceID: d.occurrenceID, status: 'accepted', serverSeq: ++st.seq }))],
       noteResults: [...ok(body.notes, 'noteID'), ...ok(body.noteDeletes, 'noteID')],
-      assessmentResults: [...ok(body.assessments, 'assessmentID'), ...ok(body.assessmentDeletes, 'assessmentID')] });
+      assessmentResults: [...ok(body.assessments, 'assessmentID'), ...ok(body.assessmentDeletes, 'assessmentID')],
+      impactResults: (body.impacts || []).map((i) => {
+        const serverSeq = ++st.seq;
+        st.impacts = st.impacts.filter((x) => x.impactID !== i.impactID);
+        st.impacts.push({ ...i, userId: me.id, recordedBy: me.name, serverSeq, deleted: false, generalized: false });
+        return { impactID: i.impactID, status: 'accepted', serverSeq };
+      }) });
   }
 
   return st;

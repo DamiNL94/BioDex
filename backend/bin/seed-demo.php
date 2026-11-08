@@ -236,7 +236,7 @@ $addSpecies(DEMO_VU_D2);
 $f11gMarks = ["owner" => [], "custodian" => [], "editor" => []];
 $k = 0;
 foreach (DEMO_EN_B_CORES as $c => [$lat, $lon]) {
-    foreach ([[0, 0, 60, 100], [0.0012, 0.0009, 45, 100], [-0.0010, 0.0014, 80, 200]] as [$dLat, $dLon, $mature, $area]) {
+    foreach ([[0, 0, 60, 1000], [0.0012, 0.0009, 45, 1000], [-0.0010, 0.0014, 80, 2000]] as [$dLat, $dLon, $mature, $area]) {
         $who = $authors[$k++ % 3];
         $day = sprintf("2026-07-%02dT10:%02d:00+02:00", 8 + $c * 6, 10 + $k);
         $f11gMarks[$who][] = ["occurrenceID" => uuidV4(), "taxonID" => DEMO_EN_B, "eventDate" => $day,
@@ -278,7 +278,7 @@ $put = function (string $taxon, string $key, array $body) use ($cat, &$jar): voi
     expect($code, [200], "fijar {$key} de {$taxon}", $r);
 };
 $put(DEMO_EN_B, "separation_distance", ["value" => 1, "quality" => "estimated", "source" => "Valor por defecto del grupo (planta con flor) en BioDex"]);
-$put(DEMO_EN_B, "occupied_habitat_km2", ["value" => 0.6, "valueMin" => 0.4, "valueMax" => 0.9, "quality" => "estimated", "source" => "Cartografía de hábitat (ficticia)"]);
+$put(DEMO_EN_B, "occupied_habitat_km2", ["value" => 0.05, "valueMin" => 0.03, "valueMax" => 0.08, "quality" => "estimated", "source" => "Cartografía de hábitat (ficticia)"]);
 $put(DEMO_EN_B, "decline_b_iii", ["value" => "yes", "quality" => "inferred",
     "justification" => "Pisoteo, pastoreo y obras en curso en los tres núcleos reducen la calidad del hábitat. " . DEMO_NOTICE]);
 $put(DEMO_VU_D2, "plausible_threat", ["value" => "yes", "quality" => "projected",
@@ -326,4 +326,5 @@ echo "\nCatálogo «" . DEMO_CATALOG_NAME . "» ({$cat})\n";
 echo "  " . count($levels) . " especies: " . implode(", ", array_map(fn($x) => "{$x[1]} (nivel {$x[0]})", $levels)) . "\n";
 echo "  {$total} marcas ficticias ({$absent} ausencias, 2 marcadas en el mapa) · 4 notas · evaluación de referencia "
     . $fixture["result"]["criteriaString"] . " (EOO {$m["eooKm2"]} km², AOO {$m["aooKm2"]} km²)\n";
+echo "  F11g: " . count($impacts) . " impactos · Rothmaleria granatensis {$snapshots[DEMO_EN_B]} · Odontites viscosus subsp. granatensis {$snapshots[DEMO_VU_D2]}\n";
 demoPrintAccounts();

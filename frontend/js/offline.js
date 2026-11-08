@@ -211,17 +211,24 @@ export const isDownloading = (catalogId) => downloads.has(catalogId);
 
 /** Borra un catálogo del dispositivo (expulsado, salido o borrado): fichas, marcas, notas, evaluaciones, meta e imágenes. */
 export async function forgetCatalog(catalogId) {
-  await tx(['catalogs', 'catalogSpecies', 'occurrences', 'notes', 'assessments', 'parameters', 'outbox', 'meta'], 'readwrite', async (t) => {
+  await tx(['catalogs', 'catalogSpecies', 'occurrences', 'notes', 'assessments', 'parameters', 'impacts', 'locations', 'outbox', 'meta'], 'readwrite', async (t) => {
     await t.del('catalogs', catalogId);
     for (const r of await t.byIndex('catalogSpecies', 'catalogId', catalogId)) await t.del('catalogSpecies', [catalogId, r.taxonID]);
     for (const o of await t.byIndex('occurrences', 'catalogId', catalogId)) await t.del('occurrences', o.occurrenceID);
     for (const n of await t.byIndex('notes', 'catalogId', catalogId)) await t.del('notes', n.noteID);
     for (const a of await t.byIndex('assessments', 'catalogId', catalogId)) await t.del('assessments', a.assessmentID);
     for (const p of await t.byIndex('parameters', 'catalogId', catalogId)) await t.del('parameters', [catalogId, p.taxonID, p.key]);
+    // F11g: impactos (llevan sitio) y localidades confirmadas del catálogo.
+    for (const i of await t.byIndex('impacts', 'catalogId', catalogId)) await t.del('impacts', i.impactID);
+    for (const l of await t.getAll('locations')) if (l.catalogId === catalogId) await t.del('locations', [catalogId, l.taxonID]);
     for (const o of await t.getAll('outbox')) if (o.catalogId === catalogId) await t.del('outbox', o.id);
     for (const prefix of CATALOG_META) await t.del('meta', prefix + catalogId);
     // EOO/AOO guardados (F9, js/metrics.js): metrics:<catálogo>:<taxón>:<ámbito>:<celda>
-    for (const row of await t.getAll('meta')) if (String(row.key).startsWith(`metrics:${catalogId}:`)) await t.del('meta', row.key);
+    for (const row of await t.getAll('meta')) {
+      const k = String(row.key);
+      // F11g: evaluación guardada: assessment:<catálogo>:<taxón>
+      if (k.startsWith(`metrics:${catalogId}:`) || k.startsWith(`assessment:${catalogId}:`)) await t.del('meta', row.key);
+    }
   });
   if ('caches' in window) await caches.delete(IMG_CACHE_PREFIX + catalogId).catch(() => {});
   if (state.activeCatalog && state.activeCatalog.id === catalogId) setActiveCatalog(null);

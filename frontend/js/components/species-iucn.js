@@ -277,7 +277,7 @@ export function mountSpeciesIucn(el, { species, catalog, goToParam }) {
       ${loc ? html`<p><strong>${loc.count}</strong> confirmadas: ${loc.justification}</p><ul class="loc-groups">${(loc.groups || []).map(groupText)}</ul>`
         : html`<p class="hint">Propuesta de BioDex (no cuenta hasta que se confirme): las subpoblaciones bajo el mismo impacto más grave
           en curso o futuro forman una localidad; las no afectadas, una cada una.</p>`}
-      ${!loc || (prop.groups || []).length ? html`<p class="eyebrow">Propuesta: ${prop.count}</p><ul class="loc-groups">${(prop.groups || []).map(groupText)}</ul>` : ''}
+      ${!loc || prop.count !== loc.count ? html`<p class="eyebrow">Propuesta de BioDex ahora: ${prop.count}</p><ul class="loc-groups">${(prop.groups || []).map(groupText)}</ul>` : ''}
       ${canEdit() && (data.subpopulations.subpops || []).length ? html`<div class="form-actions">
         <button type="button" class="btn-secondary" data-loc-edit>${loc ? 'Revisar las localidades' : 'Confirmar o ajustar la propuesta'}</button>
         ${loc ? html`<button type="button" class="link-btn danger-link" data-loc-clear>Volver a «sin confirmar»</button>` : ''}</div>`

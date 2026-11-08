@@ -171,7 +171,6 @@ test('auditoría de objetivos táctiles (modo campo)', async ({ page, context },
   test.skip(!isField(testInfo), 'solo en modo campo');
   await start(page, context, '#/mapa');
   await waitDownloaded(page);
-  await context.addInitScript(() => localStorage.setItem('biodex.flags', JSON.stringify({ impact: true })));
 
   /** Elementos interactivos visibles de menos de 48 × 48 px (salvo enlaces dentro de un texto: WCAG 2.5.8). */
   const audit = (where) => page.evaluate((label) => {
