@@ -2,7 +2,8 @@
 // mock-api.mjs — API de BioDex simulada para Playwright (F11f), a partir de respuestas reales de la demo
 // grabadas en fixtures/demo-owner.json (catálogo «DEMO — Flora amenazada de Sierra Nevada», datos
 // ficticios; la usuaria es la propietaria). Guarda en memoria lo que la prueba cambia: marcas subidas
-// (push) y parámetros (PUT/DELETE), con su server_seq, y el pull los devuelve como el servidor.
+// (push) y parámetros (PUT/DELETE), con su server_seq, y el pull los devuelve como el servidor. F11h: también sitios y
+// visitas (push y pull), y el orden en que llegan (`batches`) para comprobar que van antes que sus marcas.
 // Lo que no está simulado responde 404 JSON (nunca 5xx: la app lo tomaría por servidor caído).
 // ================================================================================================
 import fs from 'node:fs';
@@ -20,6 +21,9 @@ export async function mockApi(context) {
     params: new Map(),     // `${taxonID}|${key}` → parámetro (con deleted)
     pushed: [],            // marcas recibidas
     impacts: [],           // F11g: impactos recibidos (el pull los devuelve con su server_seq)
+    sites: [],             // F11h: sitios recibidos
+    visits: [],            // F11h: visitas recibidas (la última versión de cada una)
+    batches: [],           // F11h: por push, {sites, visits, occurrences} (ids) en el orden recibido
     calls: [],
   };
   const me = FX.me.user;
@@ -86,12 +90,27 @@ export async function mockApi(context) {
     const base = since === 0 ? FX.pull : { ...FX.pull, items: [], notes: [], assessments: [] };
     const extra = [...st.params.values()].filter((x) => x.serverSeq > since);
     const impacts = st.impacts.filter((x) => x.serverSeq > since);
+    const sites = st.sites.filter((x) => x.serverSeq > since);
+    const visits = st.visits.filter((x) => x.serverSeq > since);
     const cursor = Math.max(since, FX.pull.cursor || 0, ...extra.map((x) => x.serverSeq), ...st.pushed.map((x) => x.serverSeq),
-      ...impacts.map((x) => x.serverSeq));
-    return json(route, { ...base, parameters: extra, impacts, locations: [], cursor, hasMore: false });
+      ...impacts.map((x) => x.serverSeq), ...sites.map((x) => x.serverSeq), ...visits.map((x) => x.serverSeq));
+    return json(route, { ...base, parameters: extra, impacts, locations: [], sites, visits, cursor, hasMore: false });
   }
 
   function push(route, body) {
+    st.batches.push({ sites: (body.sites || []).map((x) => x.siteID), visits: (body.visits || []).map((x) => x.visitID),
+      occurrences: (body.occurrences || []).map((x) => x.occurrenceID) });
+    const keep = (list, idKey, rec) => [...list.filter((x) => x[idKey] !== rec[idKey]), rec];
+    const siteResults = (body.sites || []).map((x) => {
+      const serverSeq = ++st.seq;
+      st.sites = keep(st.sites, 'siteID', { ...x, userId: me.id, recordedBy: me.name, serverSeq, deleted: false, generalized: false });
+      return { siteID: x.siteID, status: 'accepted', serverSeq };
+    });
+    const visitResults = (body.visits || []).map((x) => {
+      const serverSeq = ++st.seq;
+      st.visits = keep(st.visits, 'visitID', { ...x, userId: me.id, recordedBy: me.name, serverSeq, deleted: false, generalized: false });
+      return { visitID: x.visitID, status: 'accepted', serverSeq };
+    });
     const results = (body.occurrences || []).map((o) => {
       const serverSeq = ++st.seq;
       st.pushed.push({ ...o, serverSeq });
@@ -101,6 +120,7 @@ export async function mockApi(context) {
     return json(route, { results: [...results, ...(body.deletes || []).map((d) => ({ occurrenceID: d.occurrenceID, status: 'accepted', serverSeq: ++st.seq }))],
       noteResults: [...ok(body.notes, 'noteID'), ...ok(body.noteDeletes, 'noteID')],
       assessmentResults: [...ok(body.assessments, 'assessmentID'), ...ok(body.assessmentDeletes, 'assessmentID')],
+      siteResults, visitResults,
       impactResults: (body.impacts || []).map((i) => {
         const serverSeq = ++st.seq;
         st.impacts = st.impacts.filter((x) => x.impactID !== i.impactID);

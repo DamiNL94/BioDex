@@ -1,6 +1,6 @@
-# Limitaciones conocidas (1.7.0)
+# Limitaciones conocidas (1.8.0)
 
-Lista abierta al terminar F10b (2026-09-30) y puesta al día con 1.7.0 (F11g, 2026-11-08). Recoge lo que BioDex **no hace**,
+Lista abierta al terminar F10b (2026-09-30) y puesta al día con 1.8.0 (F11h, 2026-11-11). Recoge lo que BioDex **no hace**,
 lo que hace de forma **orientativa** y lo que **no se ha podido probar** en esta máquina. Cada punto abierto de las
 listas de F3 a F10a está aquí o marcado como resuelto en su lista.
 
@@ -45,7 +45,7 @@ listas de F3 a F10a está aquí o marcado como resuelto en su lista.
   Las localidades no se calculan: las introduce quien evalúa.
 - **Sin red, cifras provisionales**: el móvil solo cuenta las marcas exactas que tiene (las ajenas generalizadas no
   cuentan); el rótulo lo dice, falta validarlo con usuarios.
-- **Parámetros de especie** (F11f, `docs/parametros.md`): F11g ya los usa para B, C y D (A, C1 y E esperan a F11h).
+- **Parámetros de especie** (F11f, `docs/parametros.md`): F11g los usa para B, C y D y F11h para A y C1 (E queda fuera).
   La separación por defecto (1 km) solo se da para grupos sésiles o poco móviles; es una convención de trabajo, no un
   valor publicado para cada especie. Se editan solo con red, como los hechos y las localidades.
 - **Cuantificadores (F11g)**: las subpoblaciones por enlace simple dependen por completo de la distancia de separación;
@@ -61,8 +61,19 @@ listas de F3 a F10a está aquí o marcado como resuelto en su lista.
   hasta 3000 registros; los registros de GBIF no se depuran (duplicados, cultivados, antiguos). Sin DOI (una búsqueda
   no lo tiene).
 - **Impactos fuera del DwC-A** (`docs/dwc.md`): solo van en la hoja «Impactos».
-- **Referencia independiente sin pasar.** No hay Python aquí: `backend/bin/metrics-reference.py` (pyproj + shapely)
-  está escrito pero no ejecutado; los casos se contrastaron con PROJ.
+- **Series temporales (F11h)**: el modelo supone una tasa constante (log-lineal) en toda la serie y que los sitios
+  representan a la población (no corrige la detectabilidad ni el diseño de muestreo); un cambio de tendencia dentro de
+  la ventana no se detecta (hay que mirar el gráfico). Con menos de 3 años con datos, «no evaluable». A3 y A4 proyectan
+  la MISMA tasa; no hay escenarios. E queda fuera de alcance (haría falta un análisis de viabilidad). Los casos con ruido
+  se contrastaron con statsmodels 0.15 (Python en un contenedor, `bin/series-reference.py`).
+- **DwC-A con núcleo Event sin pasar por el validador de GBIF** (se pasa a mano): `meta.xml` valida contra el XSD de DwC y
+  las pruebas comprueban que cada fichero coincide con él. Las medidas van en la extensión eMoF de OBIS (la que admite
+  `occurrenceID` con núcleo Event).
+- **Visitas en el campo, sin probar en un teléfono**: la traza de un transecto se graba solo con la página visible
+  (el navegador para el GPS en segundo plano) y con precisión ≤ 50 m; con la pantalla apagada se pierden tramos.
+- **Referencia independiente sin pasar.** No hay Python en el anfitrión: `backend/bin/metrics-reference.py` (pyproj +
+  shapely) está escrito pero no ejecutado; los casos se contrastaron con PROJ. (Las series de F11h sí se generaron con
+  Python, en el contenedor `python:3.12-slim`; el mismo camino serviría para este script.)
 - Una evaluación de referencia que se edita después sigue siendo la referencia, sin aviso.
 
 ## Pruebas pendientes en dispositivos reales

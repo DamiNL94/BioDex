@@ -28,7 +28,7 @@ check("reset ×2", $c1 === 0 && $c2 === 0 && str_contains($o2, "No había datos 
 check("tras el reset no quedan cuentas ni catálogo", !demoUserIds($pdo) && !demoCatalogIds($pdo, []));
 [$c1, $o1] = run("seed-demo.php");
 [$c2, $o2] = run("seed-demo.php");
-check("seed ×2", $c1 === 0 && $c2 === 0 && str_contains($o1, "60 marcas ficticias") && str_contains($o2, "ya existe (73 marcas)"), $o1 . "\n" . $o2);
+check("seed ×2", $c1 === 0 && $c2 === 0 && str_contains($o1, "60 marcas ficticias") && str_contains($o2, "ya existe (117 marcas)"), $o1 . "\n" . $o2);
 check("el seed imprime las contraseñas", str_contains($o1, DEMO_USERS["editor"]["password"]));
 [$c3, $o3] = run("seed-demo.php", "prod");
 [$c4] = run("reset-demo.php", "prod");
@@ -52,7 +52,7 @@ $s = $q("SELECT COUNT(*) n, SUM(occurrenceStatus = 'absent') a, SUM(georeference
                 SUM(mature_count IS NOT NULL) mat, COUNT(DISTINCT user_id) u, COUNT(DISTINCT DATE(eventDate)) d,
                 MIN(decimalLatitude) lat0, MAX(decimalLatitude) lat1, MIN(decimalLongitude) lon0, MAX(decimalLongitude) lon1
          FROM occurrences WHERE catalog_id = :cat AND deleted_at IS NULL")->fetch(PDO::FETCH_ASSOC);
-check("73 marcas (60 + 13 de F11g), 5 ausencias, 2 marcadas en el mapa", (int) $s["n"] === 73 && (int) $s["a"] === 5 && (int) $s["m"] === 2, json_encode($s));
+check("117 marcas (60 + 13 de F11g + 44 de las visitas de F11h), 5 ausencias, 2 marcadas en el mapa", (int) $s["n"] === 117 && (int) $s["a"] === 5 && (int) $s["m"] === 2, json_encode($s));
 check("de los tres usuarios, en varias fechas, con maduros", (int) $s["u"] === 3 && (int) $s["d"] >= 20 && (int) $s["mat"] >= 30, json_encode($s));
 check("todas en Sierra Nevada", $s["lat0"] > 36.9 && $s["lat1"] < 37.2 && $s["lon0"] > -3.5 && $s["lon1"] < -3.1, json_encode($s));
 check("notas de especie", (int) $q("SELECT COUNT(*) FROM species_notes WHERE catalog_id = :cat")->fetchColumn() >= 3);
@@ -93,7 +93,7 @@ unlink($tmp);
 $rows = explode("\n", rtrim($occ, "\n"));
 $head = explode("\t", $rows[0] ?? "");
 $first = array_combine($head, explode("\t", $rows[1] ?? "") + array_fill(0, count($head), ""));
-check("exportación «para publicar» del editor: 73 filas", $okZip && count($rows) === 74, count($rows) - 1 . " filas");
+check("exportación «para publicar» del editor: 117 filas", $okZip && count($rows) === 118, count($rows) - 1 . " filas");
 check("datasetName dice «datos ficticios»", str_contains($first["datasetName"] ?? "", "(datos ficticios)"), $first["datasetName"] ?? "");
 check("el EML dice «" . DEMO_NOTICE . "»", str_contains($eml, DEMO_NOTICE));
 

@@ -116,7 +116,7 @@ explica el motivo en castellano.
 
 ## Pull
 `GET /api/sync/pull?catalogId=&since=0&limit=500` (1–500). Permiso `view`. Devuelve
-`{items, notes, assessments, parameters, impacts, locations, cursor, hasMore, catalogContentSeq, role, visibilityEpoch}`. Una página son los `limit`
+`{items, notes, assessments, parameters, impacts, locations, sites, visits, cursor, hasMore, catalogContentSeq, role, visibilityEpoch}`. Una página son los `limit`
 primeros `server_seq > since` **de todos los tipos** (el contador es común), repartidos en `items` (marcas), `notes` y
 `assessments` (y `parameters`, F11f), cada lista en orden; `cursor` es el último `server_seq` de la página y vale para todos. **Incluidas las borradas**
 (`{occurrenceID | noteID, taxonID, userId, clientUpdatedAt, serverSeq, deleted: true}`, sin coordenadas, texto ni
@@ -131,7 +131,7 @@ solo trae identidad y `deleted: true`). En el móvil van al almacén `parameters
 del servidor manda siempre.
 
 Móvil de antes de F8a: su cursor pudo pasar por encima de notas que no guardaba. `sync.js` guarda la versión del
-pull aplicada por catálogo (`meta syncv:<id>`: 2 en F8a, 3 en F8b con `assessments`, 4 en F11f con `parameters`, 5 en F11g con `impacts` y `locations`) y, con una menor, vuelve a pedir
+pull aplicada por catálogo (`meta syncv:<id>`: 2 en F8a, 3 en F8b con `assessments`, 4 en F11f con `parameters`, 5 en F11g con `impacts` y `locations`, 6 en F11h con `sites`, `visits` y el `visitID` de las marcas) y, con una menor, vuelve a pedir
 desde 0 una vez.
 
 - Sin rol (expulsado o catálogo borrado) → **403 `{error, code: "not_member"}`**: el móvil borra sus datos de
@@ -198,5 +198,11 @@ cola, respaldo) y `sync.js` (motor).
 - **Evaluaciones UICN (F8b)**: versión 4 con el almacén `assessments` (índices `catalogId`, `taxonID`). Cola
   `assessment` / `assessmentDelete`; el respaldo pasa a `version: 3` con `assessments` (importa también 1 y 2).
   Expulsión o catálogo borrado: salen con el resto. El asistente guarda sin red (`docs/iucn.md`).
+- **Sitios y visitas (F11h)**: versión 7 con los almacenes `sites` (índice `catalogId`) y `visits` (`catalogId`,
+  `siteID`) y el índice `visitID` en `occurrences`. Cola `site` / `siteDelete` y `visit` / `visitDelete`; en cada lote del
+  push van **primero** (`sync.js`, `PUSH_ORDER`). La visita en curso va en `state.visit` (`localStorage biodex.activeVisit`)
+  y la traza de un transecto que se graba, en `meta track:<visitID>` (al cerrar la visita es la línea del sitio). Con otra
+  `visibilityEpoch`, los sitios y las visitas ajenos salen también del dispositivo. El respaldo pasa a `version: 5` con
+  `sites` y `visits`. Código: `js/visits.js`, `js/visit-records.js` (forma en la API) y `views/visit-sheet.js`.
 - **Editar una marca** (F8a, «Mis marcas»): cambia los datos, nunca la posición ni `eventDate`; sube
   `clientUpdatedAt` y el push la acepta por ser la más reciente.

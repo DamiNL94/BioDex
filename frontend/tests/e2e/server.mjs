@@ -2,7 +2,7 @@
 // server.mjs — servidor estático para las pruebas de Playwright (F11f): sirve frontend/ como lo hace nginx
 // (sin CSP ni proxies). La API NO pasa por aquí: la simula cada prueba (mock-api.mjs, page.route).
 //   /                 frontend/
-//   /shared/<x>       los cuatro ficheros de shared/ que publica nginx
+//   /shared/<x>       los ficheros de shared/ que publica nginx
 //   /tiles/, /img/fototeca|inat|respaldo/   404 (sin red de verdad: el mapa y las fotos caen a su respaldo)
 //   /api/             503 (si llega aquí, una ruta sin simular)
 // Uso: node server.mjs [puerto]   (por defecto 4173)
@@ -16,7 +16,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const FRONT = path.resolve(here, '../..');
 const SHARED = path.resolve(here, '../../../shared');
 const SHARED_PUBLIC = new Set(['iucn-engine.js', 'iucn-criteria.json', 'geo-metrics.js', 'species-groups.json',
-  'iucn-quantifiers.js', 'iucn-threats.json']);   // F11g
+  'iucn-quantifiers.js', 'iucn-threats.json', 'iucn-series.js']);   // F11g · F11h: series
 const PORT = Number(process.argv[2] || process.env.PORT || 4173);
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
   '.json': 'application/json; charset=utf-8', '.webmanifest': 'application/manifest+json', '.svg': 'image/svg+xml',

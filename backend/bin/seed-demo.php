@@ -4,6 +4,7 @@
 // Solo con APP_ENV=dev. Idempotente: si el catálogo de demo ya existe, no toca nada y vuelve a imprimir
 // las cuentas. Para empezar de cero: bin/reset-demo.php.
 //
+// F11h: además, 4 sitios con visitas anuales 2014–2026 de la Plantago nivalis (serie con declive: EN por A2).
 // Crea 3 cuentas verificadas (owner, custodio, editor) y el catálogo DEMO_CATALOG_NAME con 10 especies (12 desde F11g)
 // reales de EIDOS de Sierra Nevada y su nivel sugerido, confirmado por la owner. Después, 60 marcas (73 desde F11g)
 // FICTICIAS de los tres (presencias, 5 ausencias, individuos y maduros, 2 marcadas en el mapa), notas de
@@ -305,6 +306,67 @@ if ($snapshots[DEMO_EN_B] !== "EN B1ab(iii)+2ab(iii)" || $snapshots[DEMO_VU_D2] 
     fail("las especies de F11g no dan lo esperado: " . json_encode($snapshots, JSON_UNESCAPED_UNICODE));
 }
 
+// ------------------------------------------------------------------------------------------------
+// 5c. F11h · Visitas y series temporales: 4 sitios FICTICIOS de la Plantago nivalis con visitas anuales de 2014 a 2026
+// (sin ninguna en 2019 y algún hueco por sitio) y un declive de r ≈ −0,088/año (≈ 58 % en 10 años): con la generación
+// de 3 años la ventana de A es de 10 años y la tarjeta A sale completa: EN A2ab. Ruido fijo (nada aleatorio).
+const DEMO_SERIES = "7171";   // Plantago nivalis (nivel 3: los sitios se ven generalizados para quien no es de confianza)
+const DEMO_SITES = [
+    // [nombre, tipo, centro, radio o null, polígono [[lat, lon]…] o null, maduros en 2014, quién, años sin visita]
+    ["Borreguil de la Caldera", "plot", [37.0560, -3.3000], null,
+        [[37.0563, -3.3005], [37.0563, -3.2995], [37.0557, -3.2995], [37.0557, -3.3005]], 62, "custodian", []],
+    ["Laguna de las Yeguas", "point", [37.0750, -3.3700], 30, null, 41, "custodian", [2021]],
+    ["Vacares, pradera alta", "point", [37.0640, -3.3420], 25, null, 28, "editor", [2015, 2023]],
+    ["Río Seco", "plot", [37.0590, -3.3150], 40, null, 85, "editor", [2016]],
+];
+const DEMO_SERIES_NOISE = [1.00, 1.08, 0.93, 1.05, 0.97, 1.10, 0.90, 1.04, 0.96, 1.07, 0.94, 1.02, 0.99];
+const DEMO_SERIES_R = -0.088;
+$seriesVisits = 0;
+foreach (DEMO_SITES as $i => [$name, $type, $c, $radius, $poly, $base, $who, $gaps]) {
+    $siteID = uuidV4();
+    $site = ["siteID" => $siteID, "name" => "{$name} (ficticio)", "siteType" => $type, "protocol" => "target_census",
+             "species" => [DEMO_SERIES], "clientUpdatedAt" => "2014-04-01T08:00:00.000Z"];
+    if ($poly) $site["footprintWKT"] = "POLYGON((" . implode(", ", array_map(fn($p) => "{$p[1]} {$p[0]}", [...$poly, $poly[0]])) . "))";
+    else $site += ["radiusM" => $radius, "decimalLatitude" => $c[0], "decimalLongitude" => $c[1]];
+    $visits = [];
+    $occ = [];
+    foreach (range(2014, 2026) as $k => $year) {
+        if ($year === 2019 || in_array($year, $gaps, true)) continue;   // 2019: nadie subió; y los huecos de cada sitio
+        $visitID = uuidV4();
+        $day = sprintf("%04d-06-%02dT%02d:00:00Z", $year, 10 + $i * 3, 8 + $i);
+        $end = sprintf("%04d-06-%02dT%02d:45:00Z", $year, 10 + $i * 3, 9 + $i);
+        $visits[] = ["visitID" => $visitID, "siteID" => $siteID, "protocol" => "target_census", "status" => "closed", "eventStart" => $day,
+                     "eventEnd" => $end, "effortMinutes" => 105, "observers" => DEMO_USERS[$who]["name"], "species" => [DEMO_SERIES],
+                     "conditions" => DEMO_NOTICE, "clientUpdatedAt" => $end];
+        $mature = (int) round($base * exp(DEMO_SERIES_R * ($year - 2014)) * DEMO_SERIES_NOISE[($k + $i * 4) % count(DEMO_SERIES_NOISE)]);
+        $mark = ["occurrenceID" => uuidV4(), "taxonID" => DEMO_SERIES, "visitID" => $visitID, "eventDate" => $day,
+                 "decimalLatitude" => $c[0] + 0.0001 * ($k % 3 - 1), "decimalLongitude" => $c[1] + 0.0001 * ($k % 2),
+                 "coordinateUncertaintyInMeters" => 8, "clientUpdatedAt" => $end, "occurrenceRemarks" => DEMO_NOTICE];
+        $occ[] = $mature > 0
+            ? $mark + ["individualCount" => $mature + (int) round($mature / 3), "mature_count" => $mature, "lifeStage" => "flowering"]
+            : $mark + ["occurrenceStatus" => "absent", "individualCount" => 0];
+    }
+    [$code, $r] = http("POST", "/api/sync/push", ["catalogId" => $cat, "deviceId" => $device[$who], "sites" => [$site], "visits" => $visits,
+        "occurrences" => $occ], $jar[$who]);
+    expect($code, [200], "subir el sitio {$name} y sus visitas", $r);
+    foreach (["siteResults", "visitResults", "results"] as $k) {
+        if (array_filter($r[$k], fn($x) => $x["status"] !== "accepted")) fail("{$k} rechazados en {$name}: " . json_encode($r[$k], JSON_UNESCAPED_UNICODE));
+    }
+    $seriesVisits += count($visits);
+}
+// Duración de la generación (ventana de A) y los hechos de A: causas comprendidas pero ni reversibles ni cesadas → A2;
+// bases (a) observación directa (los recuentos) y (b) índice de abundancia.
+$put(DEMO_SERIES, "generation_length", ["value" => 3, "quality" => "estimated", "source" => "Perenne de vida corta (ficticio para la demo)"]);
+foreach (["a_reversible" => "no", "a_understood" => "yes", "a_ceased" => "no", "a_basis_a" => "yes", "a_basis_b" => "yes"] as $key => $v) {
+    $put(DEMO_SERIES, $key, ["value" => $v, "quality" => "inferred", "justification" => "Pisoteo y desecación de los borreguiles. " . DEMO_NOTICE]);
+}
+[$code, $a] = http("GET", "/api/catalogs/{$cat}/species/" . DEMO_SERIES . "/assessment", null, $jar["custodian"]);
+expect($code, [200], "evaluación de la serie", $a);
+$seriesA = $a["result"]["byCriterion"]["A"];
+if (($a["series"]["status"] ?? null) !== "ok" || ($seriesA["category"] ?? null) !== "EN") {
+    fail("la serie de la demo no da EN por A2: " . json_encode([$a["series"]["status"] ?? null, $a["series"]["reduction"] ?? null, $seriesA["notation"] ?? null], JSON_UNESCAPED_UNICODE));
+}
+
 // 6. La demo exporta Plinian Core (F10c): el servidor valida el XML contra el XSD y, si no valida, no da ZIP.
 foreach (["public"] as $mode) {   // la completa dejaría una fila export_full en el Registro de la demo
     $ch = curl_init("{$BASE}/api/catalogs/{$cat}/export");
@@ -327,4 +389,7 @@ echo "  " . count($levels) . " especies: " . implode(", ", array_map(fn($x) => "
 echo "  {$total} marcas ficticias ({$absent} ausencias, 2 marcadas en el mapa) · 4 notas · evaluación de referencia "
     . $fixture["result"]["criteriaString"] . " (EOO {$m["eooKm2"]} km², AOO {$m["aooKm2"]} km²)\n";
 echo "  F11g: " . count($impacts) . " impactos · Rothmaleria granatensis {$snapshots[DEMO_EN_B]} · Odontites viscosus subsp. granatensis {$snapshots[DEMO_VU_D2]}\n";
+echo "  F11h: " . count(DEMO_SITES) . " sitios y {$seriesVisits} visitas (2014–2026, sin visitas en 2019) de la Plantago nivalis · reducción "
+    . "{$a["series"]["reduction"]["best"]} % en {$a["series"]["window"]["years"]} años (IC {$a["series"]["reduction"]["min"]}–{$a["series"]["reduction"]["max"]} %) · A: "
+    . "{$seriesA["category"]} {$seriesA["notation"]}\n";
 demoPrintAccounts();

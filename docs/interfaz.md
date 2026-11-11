@@ -1,4 +1,4 @@
-# Interfaz: modo campo y modo estudio (F11c, F11f)
+# Interfaz: modo campo y modo estudio (F11c, F11f, F11h)
 
 BioDex tiene dos disposiciones según el ancho (`app.js`, `body.is-field` < 900 px ≤ `body.is-studio`):
 
@@ -85,9 +85,9 @@ Fin; la elegida se recuerda al pasar de ficha con ↑/↓):
 | Pestaña | Qué tiene |
 |---|---|
 | Resumen | Foto, nombres, categorías UICN oficiales, estado legal, nivel de sensibilidad, notas, clasificación y descripción |
-| Registros | Minimapa de las marcas (IGN Base; propias cuadradas, del equipo redondas), la lista con su resumen y EOO/AOO |
+| Registros | F11h: serie temporal de las visitas a sitios (maduros por año por sitio y el índice total, huecos donde no hubo visita, tasa con IC, reducción en la ventana de A y tabla); minimapa de las marcas (IGN Base; propias cuadradas, del equipo redondas), la lista con su resumen y EOO/AOO |
 | Parámetros | Características de la especie en el catálogo (`docs/parametros.md`) |
-| Evaluación UICN | F11g: categoría propuesta, rango plausible y cadena; una tarjeta por criterio (A–E) con sus datos, el umbral que cumple y qué falta (con enlace al parámetro o al hecho); hechos, localidades, ajuste regional, comparación con GBIF y evaluaciones guardadas (`docs/iucn.md`) |
+| Evaluación UICN | F11h: tarjeta A con la serie (tasa, reducción, parte proyectada) y sus hechos (A1/A2, A3/A4, bases), C1 desde la tasa y E «fuera de alcance». F11g: categoría propuesta, rango plausible y cadena; una tarjeta por criterio (A–E) con sus datos, el umbral que cumple y qué falta (con enlace al parámetro o al hecho); hechos, localidades, ajuste regional, comparación con GBIF y evaluaciones guardadas (`docs/iucn.md`) |
 
 Fuera del catálogo activo (abierta desde el buscador de EIDOS) solo hay Resumen. En estudio es una página a
 pantalla completa con «← Volver».
@@ -99,6 +99,25 @@ recolección, obras o pistas, incendio, especies invasoras) y «Otro» con el á
 (GPS o punto del mapa + radio, o perímetro recorrido a pie añadiendo vértices), intensidad, temporalidad, alcance,
 fecha, especies afectadas (por defecto las que tienen marcas en el sitio) y nota. Funciona sin red.
 En el mapa de estudio, el botón «Subpoblaciones» dibuja las de la especie elegida en Filtros y sus impactos.
+
+## Visitas (F11h)
+Botón grande **«Empezar visita»** en el Mapa (encima de «Impacto» y «Marcar»; se esconde con una visita en curso),
+`views/visit-sheet.js`:
+- **Sitio**: los del catálogo por cercanía («estás dentro» si lo estás; el más cercano se preselecciona), uno **nuevo
+  aquí** (punto + radio, tipo punto de conteo o parcela), **«Grabar transecto»** (la traza GPS se graba mientras dura la
+  visita y al cerrarla es la línea del sitio) o **sin sitio** (oportunista: no entra en las series).
+- **Protocolo** (censo completo de especies objetivo · conteo en parcela · transecto con banda · búsqueda por tiempo) y
+  **especies objetivo**: los dos se recuerdan del sitio. Observadores (tú por defecto) y condiciones.
+- Durante la visita, una **barra fija** bajo los avisos, en todas las pestañas (`components/visit-bar.js`): sitio, tiempo
+  y especies objetivo contadas o pendientes, «Cerrar visita» y, al grabar un transecto, los puntos de la traza. Cada
+  marca nueva lleva la visita y el buscador pone primero las especies objetivo («Objetivo de la visita»).
+- **Cerrar**: resumen de lo contado; las especies objetivo sin contar se proponen como **ausentes (0)** y se puede quitar
+  alguna («una ausencia dice que la buscaste y no estaba»); esfuerzo en minutos (inicio–fin, editable). Sin marcas, se
+  puede descartar. Todo sin red.
+- Estudio: **Catálogo › Sitios** (`views/catalog-sites.js`; en campo, Gestionar catálogo › Sitios de muestreo): lista y
+  mapa de los sitios y crear o dibujar uno desde casa: punto + radio, polígono (parcela) o línea (transecto con banda),
+  con la superficie calculada o la que se conozca. Los sitios de especies sensibles llegan generalizados a quien no es
+  de confianza (sin geometría).
 
 ## Funciones ocultas tras un flag
 `js/flags.js`, por dispositivo (`localStorage biodex.flags`). Ahora mismo no hay ninguna: `impact` se activó para

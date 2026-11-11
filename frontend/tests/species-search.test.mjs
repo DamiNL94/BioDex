@@ -118,4 +118,11 @@ assert.deepEqual(ids(withText), ['7', '1'], 'Saxifraga (reciente) antes que Ping
 const abbrFirst = searchSpecies(SP, { query: 'saxnev', recent: new Map(), near });
 assert.deepEqual(ids(abbrFirst), ['7']);
 
+// F11h: con una visita en curso, sus especies objetivo van antes que nada (también antes que las recientes)
+const visit = searchSpecies(SP, { recent, near, targets: new Set(['1', '3']) });
+assert.deepEqual(ids(visit).slice(0, 2), ['3', '1'], 'objetivo primero (alfabético entre ellas: Aquila, Pinguicula)');
+assert.deepEqual(visit.slice(0, 3).map((r) => r.tier), ['target', 'target', 'recent']);
+assert.deepEqual(ids(searchSpecies(SP, { query: 'nevadensis', recent, near, targets: new Set(['1']) })), ['1', '7'],
+  'con texto y la misma coincidencia, la objetivo antes que la reciente');
+
 console.log('species-search: OK');
