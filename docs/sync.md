@@ -17,6 +17,24 @@ Se declaran en `SYNC_ENTITIES` (`Api/sync.php`); añadir uno es añadir una entr
 | parámetros de especie (F11f) | `species_parameters` | (`taxonID`, `key`) | — (se fijan con `PUT …/parameters/{key}`, `docs/parametros.md`) | — | `parameters` | no |
 | impactos (F11g) | `impacts` (+ `impact_species`) | `impactID` | `impacts` · `impactDeletes` | `impactResults` | `impacts` | sí: `applyVisibility()` con el nivel más restrictivo de sus especies (generalizado: sin polígono y el radio ampliado a la celda) |
 | localidades confirmadas (F11g) | `species_locations` | (`taxonID`) | — (`PUT …/locations`) | — | `locations` | no |
+| sitios (F11h) | `sites` (+ `site_species`) | `siteID` | `sites` · `siteDeletes` | `siteResults` | `sites` | sí: nivel más restrictivo de las especies del sitio y de sus visitas (generalizado: sin `footprintWKT` y el radio ampliado a la celda) |
+| visitas (F11h) | `visits` (+ `visit_species`) | `visitID` | `visits` · `visitDeletes` | `visitResults` | `visits` | sí: el de su sitio y sus especies (generalizada: sin `conditions`) |
+
+### Sitios y visitas (F11h, `Lib/visits.php`)
+- **Sitio**: `siteID`, `name` (≤ 120), `siteType` plot·transect·point, `radiusM` (1–100 000) **o** `footprintWKT`
+  (`POLYGON((lon lat, …))` o `LINESTRING(lon lat, …)` en WGS84, ≤ 5000 vértices), `decimalLatitude`/`decimalLongitude`
+  (con radio; con geometría los calcula el servidor), `bandM` (ancho total de la banda de un transecto), `areaM2` +
+  `areaGiven` (superficie dada; si no, la calcula el servidor en UTM 30N: círculo, polígono o longitud × banda),
+  `protocol`, `species` (objetivo que se recuerdan), `clientUpdatedAt`.
+- **Visita**: `visitID`, `siteID` (null = oportunista), `protocol` target_census·plot_count·transect·timed_search,
+  `bandM`, `effortMinutes`, `observers` (≤ 500), `eventStart`, `eventEnd` (obligatorio si `status` = closed),
+  `conditions` (≤ 2000), `status` open·closed, posición al empezar (opcional), `species` (objetivo), `clientUpdatedAt`.
+- **Marca**: `visitID` opcional (UUID). Si la visita ya está en el servidor debe ser del mismo catálogo
+  (`catalog_mismatch`); si aún no ha llegado, se acepta (no hay FK). El móvil sube primero sitios y visitas.
+- **Visibilidad**: la posición de un sitio delata la de sus especies, así que sale con el nivel más restrictivo de las
+  especies objetivo del sitio, las de sus visitas y las registradas en ellas (sin especies: 4). Una visita, con el de su
+  sitio y el suyo. Si una marca o una visita nueva **baja** ese nivel, el servidor da `server_seq` nuevo al sitio y a
+  sus visitas (`visitsRelevel`) y el pull sustituye la versión exacta que ya tenía quien no es de confianza.
 
 Las notas y las evaluaciones no llevan coordenadas y no pasan por `applyVisibility()`, pero **solo las recibe quien
 tiene permiso `view`** en el catálogo (el pull lo exige; un no miembro recibe 403 `not_member` y nada más). Subirlas

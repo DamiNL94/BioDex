@@ -6,11 +6,13 @@
 //   POST /api/sync/push   {catalogId, deviceId, occurrences:[…], deletes:[{occurrenceID, clientUpdatedAt}],
 //                          notes:[…], noteDeletes:[{noteID, clientUpdatedAt}],
 //                          assessments:[…], assessmentDeletes:[{assessmentID, clientUpdatedAt}],
-//                          impacts:[…], impactDeletes:[{impactID, clientUpdatedAt}] (F11g)}
-//                         permiso mark → {results:[…], noteResults:[…], assessmentResults:[…], impactResults:[…]}
+//                          impacts:[…], impactDeletes:[{impactID, clientUpdatedAt}] (F11g),
+//                          sites:[…], siteDeletes, visits:[…], visitDeletes (F11h)}
+//                         permiso mark → {results:[…], noteResults:[…], assessmentResults:[…], impactResults:[…],
+//                                         siteResults:[…], visitResults:[…]}
 //   GET  /api/sync/pull?catalogId=&since=&limit=500
-//                         permiso view → {items, notes, assessments, parameters (F11f), impacts y locations (F11g), cursor, hasMore, catalogContentSeq, role,
-//                                         visibilityEpoch}
+//                         permiso view → {items, notes, assessments, parameters (F11f), impacts y locations (F11g),
+//                                         sites y visits (F11h), cursor, hasMore, catalogContentSeq, role, visibilityEpoch}
 // Cada tipo de entidad (SYNC_ENTITIES) sigue las mismas reglas y comparte el contador server_seq.
 // Sin rol en el catálogo (expulsado o catálogo borrado): 403 {error, code: "not_member"}; el móvil
 // borra entonces sus datos de ese catálogo. Si visibilityEpoch no es la que tiene guardada, borra las
@@ -27,6 +29,7 @@ require_once __DIR__ . "/../Lib/audit.php";
 require_once __DIR__ . "/../Lib/sync.php";
 require_once __DIR__ . "/../Lib/parameters.php";   // parámetros de especie en el pull (F11f)
 require_once __DIR__ . "/../Lib/assessment.php";   // localidades confirmadas en el pull (F11g)
+require_once __DIR__ . "/../Lib/visits.php";       // sitios y visitas (F11h)
 
 const UUID_RE = '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/';
 // Reintentos de un elemento ante clave duplicada (dos pushes a la vez de la misma marca nueva),
@@ -101,6 +104,13 @@ function syncWithRetry(PDO $pdo, callable $fn): array {
  *                         borra o la pasa a borrador, deja de serlo (y queda en access_log)
  */
 const SYNC_ENTITIES = [
+    // F11h: sitios y visitas van PRIMERO en cada lote: así una marca de visita llega cuando su visita ya existe.
+    "site"       => ["table" => "sites", "id" => "siteID", "list" => "sites", "deletes" => "siteDeletes",
+                     "results" => "siteResults", "pull" => "sites", "validate" => "syncValidateSite", "noun" => "El sitio",
+                     "taxon" => false, "children" => "site_species"],
+    "visit"      => ["table" => "visits", "id" => "visitID", "list" => "visits", "deletes" => "visitDeletes",
+                     "results" => "visitResults", "pull" => "visits", "validate" => "syncValidateVisit", "noun" => "La visita",
+                     "taxon" => false, "children" => "visit_species"],
     "occurrence" => ["table" => "occurrences", "id" => "occurrenceID", "list" => "occurrences", "deletes" => "deletes",
                      "results" => "results", "pull" => "items", "validate" => "syncValidateOccurrence", "noun" => "La marca"],
     "note"       => ["table" => "species_notes", "id" => "noteID", "list" => "notes", "deletes" => "noteDeletes",
@@ -136,6 +146,17 @@ function syncCurrent(PDO $pdo, array $ent, string $id, string $role, int $userId
         $stmt->execute([$id]);
         return assessmentOut($stmt->fetch());
     }
+    if ($ent["table"] === "sites" || $ent["table"] === "visits") {
+        $stmt = $pdo->prepare("SELECT catalog_id FROM `{$ent["table"]}` WHERE `{$ent["id"]}` = ?");
+        $stmt->execute([$id]);
+        $catalogId = (string) $stmt->fetchColumn();
+        if ($ent["table"] === "sites") {
+            [[$row, $species, $level]] = siteRows($pdo, "s.siteID = ?", [$id], $catalogId);
+            return siteOut($row, $species, $level, $role, $userId);
+        }
+        [[$row, $species, $level]] = visitRows($pdo, "v.visitID = ?", [$id], $catalogId);
+        return visitOut($row, $species, $level, $role, $userId);
+    }
     if ($ent["table"] === "impacts") {
         $catalogId = $pdo->query("SELECT catalog_id FROM impacts WHERE impactID = " . $pdo->quote($id))->fetchColumn();
         [[$row, $species, $level]] = impactRows($pdo, "i.impactID = ?", [$id], (string) $catalogId);
@@ -155,7 +176,8 @@ function syncCurrent(PDO $pdo, array $ent, string $id, string $role, int $userId
 
 /** Clave de la versión del servidor en un «stale»: `occurrence`, `note` o `assessment`. */
 function syncStaleKey(array $ent): string {
-    return ["species_notes" => "note", "species_assessments" => "assessment", "impacts" => "impact"][$ent["table"]] ?? "occurrence";
+    return ["species_notes" => "note", "species_assessments" => "assessment", "impacts" => "impact", "sites" => "site",
+            "visits" => "visit"][$ent["table"]] ?? "occurrence";
 }
 
 /**
@@ -192,6 +214,33 @@ function syncWriteChildren(PDO $pdo, array $ent, string $id, ?array $children): 
     foreach ($children as $t) $ins->execute([$id, $t]);
 }
 
+/**
+ * F11h: sitio o visita cuya visibilidad puede cambiar con esta escritura → [siteId, visitId, nivel antes], o null.
+ * Una marca de visita, una visita o las especies objetivo de un sitio pueden BAJAR su nivel (visitsRelevel).
+ */
+function syncRelevelScope(PDO $pdo, array $ent, string $catalogId, array $c): ?array {
+    if ($ent["table"] === "occurrences") {
+        [$site, $visit] = visitScopeOf($pdo, $c["visit_id"] ?? null);
+        if ($visit === null) return null;
+    } elseif ($ent["table"] === "visits") {
+        [$site, $visit] = [$c["site_id"], $c["visitID"]];
+    } elseif ($ent["table"] === "sites") {
+        [$site, $visit] = [$c["siteID"], null];
+    } else {
+        return null;
+    }
+    return [$site, $visit, visitsScopeLevel($pdo, $catalogId, $site, $visit)];
+}
+
+/** Si $id existe en $table y es de otro catálogo, rechaza con catalog_mismatch. */
+function syncSameCatalog(PDO $pdo, string $table, string $idCol, ?string $id, string $catalogId, string $what): void {
+    if ($id === null) return;
+    $stmt = $pdo->prepare("SELECT catalog_id FROM `{$table}` WHERE `{$idCol}` = ?");
+    $stmt->execute([$id]);
+    $cat = $stmt->fetchColumn();
+    if ($cat !== false && $cat !== $catalogId) syncReject("catalog_mismatch", "{$what} pertenece a otro catálogo.");
+}
+
 function syncPushItem(PDO $pdo, array $ent, string $catalogId, int $userId, ?string $deviceId, string $role, array $c): array {
     $idField = $ent["id"];
     $table = $ent["table"];
@@ -200,6 +249,7 @@ function syncPushItem(PDO $pdo, array $ent, string $catalogId, int $userId, ?str
     unset($c["_species"]);
     $pdo->beginTransaction();
     $existing = syncLockRow($pdo, $ent, $id);
+    $scope = syncRelevelScope($pdo, $ent, $catalogId, $c + [$idField => $id]);
 
     if ($existing === null) {
         $c += ["catalog_id" => $catalogId, "user_id" => $userId, "device_id" => $deviceId, "server_seq" => syncNextSeq($pdo)];
@@ -207,6 +257,7 @@ function syncPushItem(PDO $pdo, array $ent, string $catalogId, int $userId, ?str
         $pdo->prepare("INSERT INTO `{$table}` (`" . implode("`, `", $cols) . "`) VALUES (" . rtrim(str_repeat("?, ", count($cols)), ", ") . ")")
             ->execute(array_values($c));
         syncWriteChildren($pdo, $ent, $id, $children);
+        if ($scope) visitsRelevel($pdo, $catalogId, ...$scope);
         $pdo->commit();
         return [$idField => $id, "status" => "accepted", "serverSeq" => $c["server_seq"]];
     }
@@ -232,6 +283,7 @@ function syncPushItem(PDO $pdo, array $ent, string $catalogId, int $userId, ?str
     $pdo->prepare("UPDATE `{$table}` SET {$sets}, deleted_at = NULL WHERE `{$idField}` = ?")
         ->execute([...array_values($c), $id]);
     syncWriteChildren($pdo, $ent, $id, $children);
+    if ($scope) visitsRelevel($pdo, $catalogId, ...$scope);
     $pdo->commit();
     return [$idField => $id, "status" => "accepted", "serverSeq" => $c["server_seq"]];
 }
@@ -307,6 +359,9 @@ if ($action === "push") {
                     if (!isset($taxa[$t])) syncReject("taxon_not_in_catalog", "La especie {$t} no está en el catálogo.");
                 }
                 if ($ent["table"] === "species_assessments") $c = syncServerSnapshot($pdo, $catalogId, $userId, $c);
+                // F11h: la visita de una marca y el sitio de una visita, si ya están en el servidor, son de este catálogo.
+                syncSameCatalog($pdo, "visits", "visitID", $c["visit_id"] ?? null, $catalogId, "La visita de la marca");
+                if ($ent["table"] === "visits") syncSameCatalog($pdo, "sites", "siteID", $c["site_id"], $catalogId, "El sitio de la visita");
             } catch (SyncRejection $e) {
                 $results[] = syncRejected($ent, $item, $e);
                 continue;
@@ -387,6 +442,14 @@ foreach (impactRows($pdo, "i.catalog_id = ? AND i.server_seq > ?", [$catalogId, 
     $rows[] = ["impact", $x[0], $x];
 }
 
+// Sitios y visitas (F11h): llevan sitio; siteOut()/visitOut() lo generalizan con el nivel más restrictivo de sus especies.
+foreach (siteRows($pdo, "s.catalog_id = ? AND s.server_seq > ?", [$catalogId, $since], $catalogId, "ORDER BY s.server_seq LIMIT " . ($limit + 1)) as $x) {
+    $rows[] = ["site", $x[0], $x];
+}
+foreach (visitRows($pdo, "v.catalog_id = ? AND v.server_seq > ?", [$catalogId, $since], $catalogId, "ORDER BY v.server_seq LIMIT " . ($limit + 1)) as $x) {
+    $rows[] = ["visit", $x[0], $x];
+}
+
 usort($rows, fn($a, $b) => (int) $a[1]["server_seq"] <=> (int) $b[1]["server_seq"]);
 $hasMore = count($rows) > $limit;
 $rows = array_slice($rows, 0, $limit);
@@ -397,8 +460,12 @@ $assessments = [];
 $parameters = [];
 $impacts = [];
 $locations = [];
+$sites = [];
+$visits = [];
 $exactForeign = 0;
 foreach ($rows as [$kind, $r, $extra]) {
+    if ($kind === "site") { $sites[] = siteOut($r, $extra[1], $extra[2], $role, $userId); continue; }
+    if ($kind === "visit") { $visits[] = visitOut($r, $extra[1], $extra[2], $role, $userId); continue; }
     if ($kind === "locations") { $locations[] = locationsOut($r); continue; }
     if ($kind === "impact") { $impacts[] = impactOut($r, $extra[1], $extra[2], $role, $userId); continue; }
     if ($kind === "note") { $notes[] = noteOut($r); continue; }
@@ -423,6 +490,8 @@ respond([
     "parameters"        => $parameters,
     "impacts"           => $impacts,
     "locations"         => $locations,
+    "sites"             => $sites,
+    "visits"            => $visits,
     "cursor"            => $rows ? (int) end($rows)[1]["server_seq"] : $since,
     "hasMore"           => $hasMore,
     "catalogContentSeq" => (int) $stmt->fetchColumn(),

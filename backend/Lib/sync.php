@@ -167,6 +167,9 @@ function syncValidateOccurrence(mixed $o): array {
     // F11g: superficie contada (m²): la marca es una parcela y su densidad sirve para estimar maduros.
     $area = syncPositiveNumber($o, "sampleSizeValue", SYNC_SAMPLE_AREA_MAX);
     if ($area !== null && $status === "absent") syncReject("invalid_absence", "Una ausencia no lleva superficie contada («sampleSizeValue»).");
+    // F11h: visita durante la que se hizo (null = marca oportunista). Que exista y sea del catálogo lo mira Api/sync.php.
+    $visit = $o["visitID"] ?? null;
+    if ($visit !== null && !isUuidV4($visit)) syncReject("invalid_uuid", "«visitID» debe ser el UUID v4 de una visita o null.");
 
     return [
         "occurrenceID"                  => $o["occurrenceID"],
@@ -185,6 +188,7 @@ function syncValidateOccurrence(mixed $o): array {
         "occurrenceRemarks"             => syncText($o, "occurrenceRemarks", SYNC_REMARKS_MAX),
         "mature_count"                  => $mature,
         "sampleSizeValue"               => $area,
+        "visit_id"                      => $visit,
         "client_updated_at"             => syncClientUpdatedAt($o["clientUpdatedAt"] ?? null),
     ];
 }
@@ -447,6 +451,7 @@ function occurrenceOut(array $row, int $level, string $role, int $viewerId): arr
         "occurrenceRemarks"             => $v["occurrenceRemarks"],
         "mature_count"                  => $int($v["mature_count"]),
         "sampleSizeValue"               => $num($v["sampleSizeValue"] ?? null),
+        "visitID"                       => $row["visit_id"] ?? null,
         "generalized"                   => $generalized,
     ] + ($generalized ? [
         "dataGeneralizations" => $v["dataGeneralizations"],
