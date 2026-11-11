@@ -10,6 +10,7 @@
 // ================================================================================================
 
 require_once __DIR__ . "/utm.php";
+require_once __DIR__ . "/series.php";   // F11h: series temporales (A y C1)
 
 const IUCN_CRITERIA_JSON = __DIR__ . "/../../shared/iucn-criteria.json";
 const IUCN_THREATS_JSON  = __DIR__ . "/../../shared/iucn-threats.json";
@@ -67,6 +68,15 @@ function iucnNum(mixed $v, float $max = INF, bool $integer = false): array {
     return ["value" => floor($n) == $n && $n < 1e15 ? (int) $n : $n];
 }
 
+/** Como signedNum() de JS (la tasa anual r puede ser negativa). */
+function iucnSignedNum(mixed $v): array {
+    if (iucnMissing($v)) return ["missing" => true];
+    if (is_bool($v) || is_array($v)) return ["invalid" => true];
+    if (is_string($v)) { $v = str_replace(",", ".", trim($v)); if (!is_numeric($v)) return ["invalid" => true]; }
+    $n = (float) $v;
+    return is_finite($n) ? ["value" => $n] : ["invalid" => true];
+}
+
 /** Como fmt() de JS: entero tal cual; si no, dos decimales como mucho y coma decimal. */
 function iucnFmt(int|float $n): string {
     if (is_int($n) || floor($n) == $n) return (string) (int) $n;
@@ -108,6 +118,30 @@ function iucnSkipped(array $cats, string $why = "Sin datos para este criterio.")
 }
 
 function iucnEvalA(?array $inp, array &$ctx): array {
+    $cats = $ctx["cats"];
+    if (!$inp || !empty($inp["skip"])) return !empty($inp["reason"]) ? iucnSkipped($cats, $inp["reason"]) : iucnSkipped($cats);
+    if (!is_array($inp["items"] ?? null)) return iucnEvalAItem($inp, $ctx);
+    // F11h: varios subcriterios (pasado, proyección, ventana mixta) con la misma serie (ver evalA de JS).
+    $parts = array_map(fn($it) => iucnEvalAItem($it, $ctx), $inp["items"]);
+    if (!$parts) return iucnSkipped($cats);
+    $res = ["status" => "evaluated", "levels" => iucnEmptyLevels($cats), "notes" => [], "items" => array_map(fn($p, $it) => [
+        "subcriterion" => $it["subcriterion"] ?? null, "status" => $p["status"], "category" => $p["category"], "notation" => $p["notation"],
+        "periodYears" => $p["periodYears"] ?? null], $parts, $inp["items"])];
+    foreach ($parts as $p) foreach ($p["notes"] as $n) if (!in_array($n, $res["notes"], true)) $res["notes"][] = $n;
+    $res["periodYears"] = max(array_map(fn($p) => $p["periodYears"] ?? 0, $parts));
+    if (!array_filter($parts, fn($p) => $p["status"] !== "incomplete" && $p["status"] !== "skipped")) $res["status"] = "incomplete";
+    foreach ($cats as $c) {
+        foreach ($parts as $p) array_push($res["levels"][$c]["reasons"], ...$p["levels"][$c]["reasons"]);
+        $met = array_values(array_filter($parts, fn($p) => $p["levels"][$c]["met"]));
+        if (!$met) continue;
+        $res["levels"][$c]["met"] = true;
+        $res["levels"][$c]["notation"] = implode("+", array_map(fn($p, $i) => $i === 0 ? $p["levels"][$c]["notation"]
+            : preg_replace('/^A/', "", $p["levels"][$c]["notation"]), $met, array_keys($met)));
+    }
+    return iucnFinish($res, $cats);
+}
+
+function iucnEvalAItem(?array $inp, array &$ctx): array {
     $cats = $ctx["cats"];
     $A = $ctx["criteria"]["criteria"]["A"];
     $gen = $ctx["gen"];
@@ -216,6 +250,8 @@ function iucnEvalC(?array $inp, array &$ctx): array {
     if (isset($mature["invalid"])) { $ctx["warnings"][] = "C: los individuos maduros deben ser un entero ≥ 0."; $res["status"] = "incomplete"; return iucnFinish($res, $cats); }
     $c1Pct = iucnNum($inp["c1DeclinePct"] ?? null, 100);
     $c1Years = iucnNum($inp["c1Years"] ?? null);
+    $rate = iucnSignedNum($inp["c1AnnualRate"] ?? null);
+    if (isset($rate["invalid"])) $ctx["warnings"][] = "C1: la tasa anual debe ser un número.";
     if (isset($c1Pct["invalid"])) $ctx["warnings"][] = "C1: la disminución debe ser un porcentaje entre 0 y 100.";
     if (isset($c1Years["invalid"])) $ctx["warnings"][] = "C1: el plazo debe ser un número de años ≥ 0.";
     if (isset($c1Pct["value"]) && !isset($c1Years["value"]) && !isset($c1Years["invalid"])) $res["notes"][] = "C1: falta el plazo (años) de la disminución.";
@@ -231,7 +267,16 @@ function iucnEvalC(?array $inp, array &$ctx): array {
         $small = $mature["value"] < $t;
         $lv["reasons"][] = "Maduros {$mature["value"]} " . ($small ? "<" : "≥") . " {$t} " . ($small ? "✓" : "✗");
         $c1 = false;
-        if (isset($c1Pct["value"]) && isset($c1Years["value"])) {
+        if (isset($rate["value"])) {
+            // F11h: con la tasa de la serie, la disminución en la ventana de esta categoría: 1 − e^(r·W).
+            $th = $C["C1"]["thresholds"][$c];
+            $w = iucnWindowYears($th, $gen);
+            $pct = max(0.0, iucnRound(100 * (1 - exp($rate["value"] * $w)), 2));
+            $c1 = $pct >= $th["pct"];
+            $r4 = iucnRound($rate["value"], 4);
+            $r4 = abs($r4) < 1e-12 ? "0" : str_replace(".", ",", rtrim(rtrim(sprintf("%.4F", $r4), "0"), "."));
+            $lv["reasons"][] = "C1: tasa {$r4}/año → " . iucnFmt($pct) . " % en " . iucnFmt($w) . " años; exige ≥ {$th["pct"]} % " . ($c1 ? "✓" : "✗");
+        } elseif (isset($c1Pct["value"]) && isset($c1Years["value"])) {
             $th = $C["C1"]["thresholds"][$c];
             $w = iucnWindowYears($th, $gen);
             $c1 = $c1Pct["value"] >= $th["pct"] && $c1Years["value"] <= $w;
@@ -265,7 +310,7 @@ function iucnEvalC(?array $inp, array &$ctx): array {
         }
         unset($lv);
     }
-    if (!$decline && !isset($c1Pct["value"]) && !$res["notes"]) $res["notes"][] = "C exige C1 o C2 (con disminución continua).";
+    if (!$decline && !isset($c1Pct["value"]) && !isset($rate["value"]) && !$res["notes"]) $res["notes"][] = "C exige C1 o C2 (con disminución continua).";
     return iucnFinish($res, $cats);
 }
 
@@ -403,7 +448,7 @@ function evaluateIucn(array $inp, ?array $criteria = null): array {
 const IUCN_UNCERTAIN_FIELDS = [
     "A" => ["reductionPct" => "higher"],
     "B" => ["eoo" => "lower", "aoo" => "lower", "locations" => "lower"],
-    "C" => ["mature" => "lower", "maxPerSubpop" => "lower", "pctInOneSubpop" => "higher", "c1DeclinePct" => "higher"],
+    "C" => ["mature" => "lower", "maxPerSubpop" => "lower", "pctInOneSubpop" => "higher", "c1DeclinePct" => "higher", "c1AnnualRate" => "lower"],
     "D" => ["mature" => "lower", "aoo" => "lower", "locations" => "lower"],
     "E" => ["probabilityPct" => "higher"],
 ];
@@ -425,6 +470,12 @@ function iucnScenarioInputs(array $inputs, string $scenario): array {
         if (!is_array($inputs[$k] ?? null)) continue;
         foreach ($fields as $f => $dir) {
             if (array_key_exists($f, $inputs[$k])) $inputs[$k][$f] = iucnScenarioValue($inputs[$k][$f], $dir, $scenario);
+        }
+        // F11h: A con varios subcriterios, cada uno con su reducción (con intervalo).
+        if ($k === "A" && is_array($inputs["A"]["items"] ?? null)) {
+            foreach ($inputs["A"]["items"] as $i => $it) {
+                if (array_key_exists("reductionPct", $it)) $inputs["A"]["items"][$i]["reductionPct"] = iucnScenarioValue($it["reductionPct"], "higher", $scenario);
+            }
         }
     }
     return $inputs;
@@ -889,8 +940,9 @@ function iucnLocationsCurrent(?array $loc, array $q): bool {
     return true;
 }
 
-/** Port de engineInputs(). */
-function iucnEngineInputs(array $q, array $params = [], array $metrics = [], ?array $locations = null, array $choices = []): array {
+/** Port de engineInputs(). F11h: $series = seriesAnalyze() (A y C1). */
+function iucnEngineInputs(array $q, array $params = [], array $metrics = [], ?array $locations = null, array $choices = [], ?array $series = null): array {
+    $fromSeries = seriesEngineInputs($series, $params);
     $yes = fn($k) => iucnParamValue($params, $k) === "yes";
     $decline = array_values(array_filter(["i", "ii", "iii", "iv", "v"], fn($r) => $yes("decline_b_{$r}")));
     $fluct = array_values(array_filter(["i", "ii", "iii", "iv"], fn($r) => $yes("fluct_c_{$r}")));
@@ -908,14 +960,16 @@ function iucnEngineInputs(array $q, array $params = [], array $metrics = [], ?ar
     return [
         "engine" => 2,
         "generationLength" => iucnToNum(iucnParamValue($params, "generation_length")),
-        "A" => ["skip" => true, "pending" => "series"],
+        "A" => $fromSeries["A"],
         "B" => ["eoo" => $metrics["eooKm2"] ?? null, "aoo" => $aoo, "severelyFragmented" => ($q["fragmentation"]["severe"] ?? null) === true,
                 "locations" => $locations !== null && is_int($locations["count"] ?? null) ? $locations["count"] : null,
                 "decline" => $decline, "fluctuation" => $fluct],
-        "C" => ["mature" => $matureRange, "c1DeclinePct" => null, "c1Years" => null, "continuingDecline" => $yes("decline_b_v"),
+        "C" => ["mature" => $matureRange, "c1DeclinePct" => null, "c1Years" => null, "c1AnnualRate" => $fromSeries["c1AnnualRate"],
+                "continuingDecline" => $yes("decline_b_v"),
                 "maxPerSubpop" => $c2a["maxPerSubpop"] ?? null, "pctInOneSubpop" => $c2a["pctInLargest"] ?? null, "extremeFluctuation" => $yes("fluct_c_iv")],
         "D" => ["mature" => $matureRange, "plausibleThreat" => $yes("plausible_threat"), "aoo" => null, "locations" => null],
-        "E" => ["skip" => true, "pending" => "series"],
+        "E" => ["skip" => true, "pending" => "out_of_scope",
+                "reason" => "Fuera del alcance de BioDex: haría falta un análisis de viabilidad poblacional con series largas."],
         "expertCategory" => in_array($expert, ["NT", "LC"], true) ? $expert : null,
         "possiblyExtinct" => ($choices["possiblyExtinct"] ?? null) === true,
         "regionalV4" => $hasRegional ? ["endemic" => iucnParamValue($params, "regional_endemic"), "immigration" => iucnParamValue($params, "regional_immigration"),

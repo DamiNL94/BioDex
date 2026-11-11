@@ -17,7 +17,9 @@
 // navegador). Fechas en UTC: «día de campaña» = fecha UTC de eventDate.
 // ================================================================================================
 
-export const DEDUP_CELL_M = 50;               // celda de deduplicación de maduros
+import { seriesEngineInputs } from './iucn-series.js';
+
+export const DEDUP_CELL_M = 50;              // celda de deduplicación de maduros
 export const LAST_YEAR_MS = 365 * 86400000;   // ventana: el último año de datos
 export const AOO_CELL_M = 2000;               // celdas de la AOO (UICN: 2 × 2 km)
 export const BOOTSTRAP_REPS = 1000;
@@ -457,9 +459,11 @@ export function locationsCurrent(loc, q) {
 /**
  * Entradas del motor (assessIucn) a partir de los cuantificadores, los parámetros (hechos sí/no), el nº de
  * localidades CONFIRMADO (la propuesta no cuenta hasta que alguien la guarda) y las decisiones del usuario
- * (expertCategory NT/LC, possiblyExtinct). A, C1 y E: pendientes de series temporales (F11h).
+ * (expertCategory NT/LC, possiblyExtinct). F11h: A y C1 salen de la serie temporal (`series`, analyzeSeries() de
+ * iucn-series.js) y de los hechos de A (seriesEngineInputs); E queda fuera de alcance.
  */
-export function engineInputs(q, { params = {}, metrics = {}, locations = null, choices = {} } = {}) {
+export function engineInputs(q, { params = {}, metrics = {}, locations = null, choices = {}, series = null } = {}) {
+  const fromSeries = seriesEngineInputs(series, params);
   const yes = (k) => paramValue(params, k) === 'yes';
   const decline = Object.keys(DECLINE_KEYS).filter((r) => yes(DECLINE_KEYS[r]));
   const fluct = Object.keys(FLUCT_KEYS).filter((r) => yes(FLUCT_KEYS[r]));
@@ -476,13 +480,13 @@ export function engineInputs(q, { params = {}, metrics = {}, locations = null, c
   return {
     engine: 2,
     generationLength: toNum(paramValue(params, 'generation_length')),
-    A: { skip: true, pending: 'series' },
+    A: fromSeries.A,
     B: { eoo: metrics.eooKm2 === undefined ? null : metrics.eooKm2, aoo, severelyFragmented: q.fragmentation && q.fragmentation.severe === true,
       locations: locations && Number.isInteger(locations.count) && locationsCurrent(locations, q) ? locations.count : null, decline, fluctuation: fluct },
-    C: { mature: matureRange, c1DeclinePct: null, c1Years: null, continuingDecline: yes('decline_b_v'),
+    C: { mature: matureRange, c1DeclinePct: null, c1Years: null, c1AnnualRate: fromSeries.c1AnnualRate, continuingDecline: yes('decline_b_v'),
       maxPerSubpop: c2a ? c2a.maxPerSubpop : null, pctInOneSubpop: c2a ? c2a.pctInLargest : null, extremeFluctuation: yes('fluct_c_iv') },
     D: { mature: matureRange, plausibleThreat: yes('plausible_threat'), aoo: null, locations: null },
-    E: { skip: true, pending: 'series' },
+    E: { skip: true, pending: 'out_of_scope', reason: 'Fuera del alcance de BioDex: haría falta un análisis de viabilidad poblacional con series largas.' },
     expertCategory: choices.expertCategory === 'NT' || choices.expertCategory === 'LC' ? choices.expertCategory : null,
     possiblyExtinct: choices.possiblyExtinct === true,
     regionalV4: hasRegional ? { endemic: paramValue(params, 'regional_endemic'), immigration: paramValue(params, 'regional_immigration'),

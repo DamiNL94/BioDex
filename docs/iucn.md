@@ -1,4 +1,4 @@
-# Evaluación UICN (F8b, F11g)
+# Evaluación UICN (F8b, F11g, F11h)
 
 Motor: `shared/iucn-engine.js` (`evaluateIucn(inputs, criteria)`, JS puro). Umbrales: `shared/iucn-criteria.json`, única
 fuente; en el código no hay ninguno. nginx sirve **solo** esos dos ficheros en `/shared/` (sin copia en `frontend/`: la
@@ -47,8 +47,12 @@ Criterios de la Lista Roja de la UICN.» No sustituye a las evaluaciones oficial
 ## Limitaciones
 - No sustituye a las Directrices de uso: no comprueba definiciones (localidad, subpoblación, fragmentación severa,
   fluctuación extrema), ni incertidumbre (rangos, mejor estimación), ni la calidad de los datos.
-- Un solo valor por dato: sin intervalos ni actitud ante el riesgo; A admite un solo subcriterio por evaluación.
+- Un solo valor por dato en el asistente de F8b (desde F11g la pestaña Evaluación UICN admite intervalos, y desde F11h
+  A admite varios subcriterios a la vez con `A.items`).
 - C1 y E comparan el plazo introducido con la ventana de cada categoría; sin duración de generación solo cuentan años.
+  Con series (F11h), C1 usa la tasa anual y la ventana de cada categoría.
+- La serie supone una tasa constante (log-lineal): no detecta un cambio de tendencia dentro de la ventana; mírese el
+  gráfico. El índice depende de que los sitios representen a la población.
 - El servidor guarda `inputs` y `result` tal como salen del dispositivo, sin recalcular (el motor es JS); valida la
   forma, los vocabularios y la coherencia mínima (final con categoría, ajuste con justificación).
 - La AOO debe medirse en celdas de 2×2 km para compararla con B2 (`criteria.B.metrics`).
@@ -147,8 +151,45 @@ evaluable» y qué falta. Grave cuenta como (a) en B en cualquier categoría.
 ### Declive continuo y fluctuaciones
 b(i)–(v), c(i)–(iv) y la amenaza plausible de D2 son **hechos** sí · no · desconocido con calidad, fuente y
 justificación (parámetros de tipo `fact`). BioDex **sugiere** b(iii) cuando hay impactos en curso sobre el hábitat de la
-especie, pero la sugerencia nunca cuenta sola: alguien tiene que fijar el hecho. A, C1 y E quedan «pendientes de series
-temporales» hasta F11h; C2 usa b(v) como disminución continua y c(iv) como fluctuación extrema.
+especie, pero la sugerencia nunca cuenta sola: alguien tiene que fijar el hecho. C2 usa b(v) como disminución continua y
+c(iv) como fluctuación extrema. Desde F11h la serie temporal sugiere también b(v) y c(iv) (abajo).
+
+## Series temporales: criterios A y C1 (F11h)
+Código: `shared/iucn-series.js` (dispositivo: gráfico y provisional) y `backend/Lib/series.php` (definitivo, el mismo
+cálculo). Casos: `shared/iucn-cases.json › series`, generados con `backend/bin/series-reference.py` (statsmodels 0.15 para
+los casos con ruido; los de dos sitios sin ruido tienen solución analítica: r exacta, EE = 1/√Σ μ (t − t̄ₛ)²). Los
+pasan `node shared/iucn-engine.test.js` y `bin/test-f11h.php`.
+
+**Datos.** Solo visitas a un **sitio** (`docs/sync.md`): una marca suelta no mide reducción. Por visita, los maduros de
+la especie (suma de `mature_count` de sus presencias; una ausencia, 0; si una presencia no tiene maduros, la visita no
+cuenta). Con varias visitas a un sitio en un año, el **máximo**. Solo sitios con dos o más años y algún recuento > 0.
+Año = el de `eventStart` en UTC.
+
+**Modelo.** GLM de Poisson log-lineal con efecto sitio, ajustado por IRLS (como TRIM):
+- índice anual: log μ = αₛ + γ_año; índice = Σₛ exp(αₛ + γ_año) (maduros esperados en el conjunto de sitios). Un año sin
+  visitas es un **hueco** (sin índice); un año con todo a cero, índice 0;
+- tendencia: log μ = αₛ + r·(año − media); cambio anual = eʳ − 1;
+- cuasi-Poisson: φ = χ² de Pearson / (n − p), **con φ ≥ 1** (no se estrecha el IC por infradispersión);
+  EE(r) = √(φ·[(XᵀWX)⁻¹]ᵣᵣ); IC 95 % = r ± 1,96·EE.
+
+**Reducción (A).** Ventana T = máx(10 años, 3 generaciones), tope 100 (`generation_length`; sin ella, 10). Reducción =
+1 − e^(r·T) con su IC (una subida cuenta como 0 %). Con menos de **3 años** con datos: «no evaluable». Si la serie
+cubre menos que T, la parte no observada se marca **proyectada** y se dice qué fracción de la ventana está observada.
+Subcriterios, por hechos (sí · no · desconocido con calidad y justificación, como los de B):
+- `a_reversible`, `a_understood`, `a_ceased`: los tres «sí» → **A1**; si no, **A2** (pasado);
+- `a_future` = sí (se espera que continúe) → además **A3** (proyección de la misma tasa; no admite (a)) y **A4** (ventana
+  que abarca pasado y futuro). Con una tasa constante la reducción en cualquier ventana de T años es la misma, así que
+  A3 y A4 dan la misma cifra que A2: cambian el umbral (A1) y la base admitida (A3);
+- `a_basis_a` … `a_basis_e`: bases (a)–(e). Sin ninguna, A queda «datos incompletos».
+El motor evalúa los subcriterios a la vez (`A.items`) y la notación los junta: «EN A2b+3b+4b».
+
+**C1.** La tasa r con su IC entra como `C.c1AnnualRate`; para cada categoría el motor calcula la disminución en SU
+ventana (3 años o 1 generación, 5 o 2, 10 o 3, tope 100): 1 − e^(r·W) ≥ 25/20/10 %, junto con los maduros de F11g.
+
+**Sugerencias** (nunca se aplican solas): b(v) declive continuo cuando el IC de r queda entero por debajo de 0; c(iv)
+fluctuación extrema cuando el índice anual varía más de ×10 (máx./mín.) dentro de la ventana o llega a 0.
+
+**E** queda fuera de alcance: la tarjeta lo dice (haría falta un análisis de viabilidad poblacional con series largas).
 
 ### Ajuste regional (Directrices regionales v4.0, paso 2)
 Cuatro preguntas (hechos `regional_*`): endémica del área → sin ajuste; si no, sin inmigración significativa de

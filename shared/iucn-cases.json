@@ -1373,6 +1373,154 @@
     "rangeHigh": "CR",
     "crosses": true
    }
+  },
+  {
+   "name": "F11h · A con serie: A2b+3b+4b, reducción 55 % (IC 45–63 %) → EN, rango VU–EN",
+   "fn": "assess",
+   "inputs": {
+    "generationLength": 2,
+    "A": {
+     "items": [
+      {
+       "subcriterion": "A2",
+       "reductionPct": {
+        "best": 55.07,
+        "min": 45.47,
+        "max": 62.97
+       },
+       "basis": [
+        "b"
+       ]
+      },
+      {
+       "subcriterion": "A3",
+       "reductionPct": {
+        "best": 55.07,
+        "min": 45.47,
+        "max": 62.97
+       },
+       "basis": [
+        "b"
+       ]
+      },
+      {
+       "subcriterion": "A4",
+       "reductionPct": {
+        "best": 55.07,
+        "min": 45.47,
+        "max": 62.97
+       },
+       "basis": [
+        "b"
+       ]
+      }
+     ]
+    }
+   },
+   "expect": {
+    "category": "EN",
+    "criteriaString": "EN A2b+3b+4b",
+    "rangeLow": "VU",
+    "rangeHigh": "EN",
+    "crosses": true
+   }
+  },
+  {
+   "name": "F11h · A1 (causas reversibles, entendidas y cesadas): 55 % solo llega a VU (umbral de A1: 50 %)",
+   "fn": "evaluate",
+   "inputs": {
+    "A": {
+     "items": [
+      {
+       "subcriterion": "A1",
+       "reductionPct": 55.07,
+       "basis": [
+        "a",
+        "b"
+       ]
+      }
+     ]
+    }
+   },
+   "expect": {
+    "category": "VU",
+    "criteriaString": "VU A1ab"
+   }
+  },
+  {
+   "name": "F11h · A3 sin bases válidas queda incompleto, pero A2a cumple: EN A2a",
+   "fn": "evaluate",
+   "inputs": {
+    "A": {
+     "items": [
+      {
+       "subcriterion": "A2",
+       "reductionPct": 60,
+       "basis": [
+        "a"
+       ]
+      },
+      {
+       "subcriterion": "A3",
+       "reductionPct": 60,
+       "basis": []
+      }
+     ]
+    }
+   },
+   "expect": {
+    "category": "EN",
+    "criteriaString": "EN A2a"
+   }
+  },
+  {
+   "name": "F11h · C1 por tasa: r = −0,08/año, 300 maduros, generación 2 → EN C1 (32,97 % en 5 años)",
+   "fn": "evaluate",
+   "inputs": {
+    "generationLength": 2,
+    "C": {
+     "mature": 300,
+     "c1AnnualRate": -0.08
+    }
+   },
+   "expect": {
+    "category": "EN",
+    "criteriaString": "EN C1"
+   }
+  },
+  {
+   "name": "F11h · C1 con tasa positiva: no hay disminución",
+   "fn": "evaluate",
+   "inputs": {
+    "C": {
+     "mature": 300,
+     "c1AnnualRate": 0.03
+    }
+   },
+   "expect": {
+    "category": null
+   }
+  },
+  {
+   "name": "F11h · C1 con intervalo de la tasa (−0,12 a −0,02): rango VU–EN",
+   "fn": "assess",
+   "inputs": {
+    "generationLength": 2,
+    "C": {
+     "mature": 300,
+     "c1AnnualRate": {
+      "best": -0.08,
+      "min": -0.12,
+      "max": -0.02
+     }
+    }
+   },
+   "expect": {
+    "category": "EN",
+    "criteriaString": "EN C1",
+    "rangeLow": "VU",
+    "rangeHigh": "EN"
+   }
   }
  ],
  "quantifiers": [
@@ -1980,6 +2128,1363 @@
       "S3"
      ]
     ]
+   }
+  }
+ ],
+ "series": [
+  {
+   "name": "Dos sitios sin ruido, r = −0,08, 2014–2024, generación 2 años: r exacta y EE analítico",
+   "method": "analytic",
+   "generationLength": 2,
+   "obs": [
+    {
+     "site": "A",
+     "year": 2014,
+     "mature": 100.0
+    },
+    {
+     "site": "A",
+     "year": 2015,
+     "mature": 92.31163463866358
+    },
+    {
+     "site": "A",
+     "year": 2016,
+     "mature": 85.21437889662113
+    },
+    {
+     "site": "A",
+     "year": 2017,
+     "mature": 78.66278610665535
+    },
+    {
+     "site": "A",
+     "year": 2018,
+     "mature": 72.6149037073691
+    },
+    {
+     "site": "A",
+     "year": 2019,
+     "mature": 67.03200460356393
+    },
+    {
+     "site": "A",
+     "year": 2020,
+     "mature": 61.878339180614084
+    },
+    {
+     "site": "A",
+     "year": 2021,
+     "mature": 57.120906384881486
+    },
+    {
+     "site": "A",
+     "year": 2022,
+     "mature": 52.729242404304856
+    },
+    {
+     "site": "A",
+     "year": 2023,
+     "mature": 48.67522559599717
+    },
+    {
+     "site": "A",
+     "year": 2024,
+     "mature": 44.932896411722155
+    },
+    {
+     "site": "B",
+     "year": 2014,
+     "mature": 40.0
+    },
+    {
+     "site": "B",
+     "year": 2015,
+     "mature": 36.92465385546543
+    },
+    {
+     "site": "B",
+     "year": 2016,
+     "mature": 34.085751558648454
+    },
+    {
+     "site": "B",
+     "year": 2017,
+     "mature": 31.465114442662138
+    },
+    {
+     "site": "B",
+     "year": 2018,
+     "mature": 29.04596148294764
+    },
+    {
+     "site": "B",
+     "year": 2019,
+     "mature": 26.812801841425575
+    },
+    {
+     "site": "B",
+     "year": 2020,
+     "mature": 24.751335672245634
+    },
+    {
+     "site": "B",
+     "year": 2021,
+     "mature": 22.848362553952594
+    },
+    {
+     "site": "B",
+     "year": 2022,
+     "mature": 21.091696961721944
+    },
+    {
+     "site": "B",
+     "year": 2023,
+     "mature": 19.470090238398868
+    },
+    {
+     "site": "B",
+     "year": 2024,
+     "mature": 17.973158564688863
+    }
+   ],
+   "expect": {
+    "status": "ok",
+    "r": -0.08,
+    "se": 0.009876,
+    "lo": -0.099356,
+    "hi": -0.060644,
+    "phi": 1.0,
+    "reduction": {
+     "best": 55.07,
+     "min": 45.47,
+     "max": 62.97
+    },
+    "window": {
+     "years": 10.0,
+     "from": 2014.0,
+     "to": 2024,
+     "observedYears": 10,
+     "observedPct": 100.0,
+     "projected": false
+    },
+    "index": {
+     "2014": 140.0,
+     "2015": 129.2363,
+     "2016": 119.3001,
+     "2017": 110.1279,
+     "2018": 101.6609,
+     "2019": 93.8448,
+     "2020": 86.6297,
+     "2021": 79.9693,
+     "2022": 73.8209,
+     "2023": 68.1453,
+     "2024": 62.9061
+    },
+    "extreme": false,
+    "declineSuggested": true,
+    "nSites": 2,
+    "nYears": 11
+   }
+  },
+  {
+   "name": "Dos sitios sin ruido, subida r = +0,05: reducción 0 y sin sugerencia de declive",
+   "method": "analytic",
+   "generationLength": null,
+   "obs": [
+    {
+     "site": "A",
+     "year": 2014,
+     "mature": 30.0
+    },
+    {
+     "site": "A",
+     "year": 2015,
+     "mature": 31.538132891280725
+    },
+    {
+     "site": "A",
+     "year": 2016,
+     "mature": 33.15512754226943
+    },
+    {
+     "site": "A",
+     "year": 2017,
+     "mature": 34.85502728184849
+    },
+    {
+     "site": "A",
+     "year": 2018,
+     "mature": 36.642082744805094
+    },
+    {
+     "site": "A",
+     "year": 2019,
+     "mature": 38.520762500632244
+    },
+    {
+     "site": "A",
+     "year": 2020,
+     "mature": 40.4957642272801
+    },
+    {
+     "site": "A",
+     "year": 2021,
+     "mature": 42.57202645779772
+    },
+    {
+     "site": "A",
+     "year": 2022,
+     "mature": 44.75474092923811
+    },
+    {
+     "site": "A",
+     "year": 2023,
+     "mature": 47.04936556470507
+    },
+    {
+     "site": "A",
+     "year": 2024,
+     "mature": 49.461638121003844
+    },
+    {
+     "site": "B",
+     "year": 2014,
+     "mature": 10.0
+    },
+    {
+     "site": "B",
+     "year": 2015,
+     "mature": 10.512710963760242
+    },
+    {
+     "site": "B",
+     "year": 2016,
+     "mature": 11.051709180756477
+    },
+    {
+     "site": "B",
+     "year": 2017,
+     "mature": 11.61834242728283
+    },
+    {
+     "site": "B",
+     "year": 2018,
+     "mature": 12.214027581601698
+    },
+    {
+     "site": "B",
+     "year": 2019,
+     "mature": 12.840254166877415
+    },
+    {
+     "site": "B",
+     "year": 2020,
+     "mature": 13.498588075760033
+    },
+    {
+     "site": "B",
+     "year": 2021,
+     "mature": 14.190675485932573
+    },
+    {
+     "site": "B",
+     "year": 2022,
+     "mature": 14.918246976412703
+    },
+    {
+     "site": "B",
+     "year": 2023,
+     "mature": 15.683121854901689
+    },
+    {
+     "site": "B",
+     "year": 2024,
+     "mature": 16.487212707001284
+    }
+   ],
+   "expect": {
+    "status": "ok",
+    "r": 0.05,
+    "se": 0.013322,
+    "lo": 0.023889,
+    "hi": 0.076111,
+    "phi": 1.0,
+    "reduction": {
+     "best": 0.0,
+     "min": 0.0,
+     "max": 0.0
+    },
+    "window": {
+     "years": 10.0,
+     "from": 2014.0,
+     "to": 2024,
+     "observedYears": 10,
+     "observedPct": 100.0,
+     "projected": false
+    },
+    "index": {
+     "2014": 40.0,
+     "2015": 42.0508,
+     "2016": 44.2068,
+     "2017": 46.4734,
+     "2018": 48.8561,
+     "2019": 51.361,
+     "2020": 53.9944,
+     "2021": 56.7627,
+     "2022": 59.673,
+     "2023": 62.7325,
+     "2024": 65.9489
+    },
+    "extreme": false,
+    "declineSuggested": false,
+    "nSites": 2,
+    "nYears": 11
+   }
+  },
+  {
+   "name": "Dos sitios sin ruido, 2018–2024 y generación 5 años: ventana de 15, 40 % observado (resto proyectado)",
+   "method": "analytic",
+   "generationLength": 5,
+   "obs": [
+    {
+     "site": "A",
+     "year": 2018,
+     "mature": 100.0
+    },
+    {
+     "site": "A",
+     "year": 2019,
+     "mature": 90.48374180359595
+    },
+    {
+     "site": "A",
+     "year": 2020,
+     "mature": 81.87307530779819
+    },
+    {
+     "site": "A",
+     "year": 2021,
+     "mature": 74.08182206817179
+    },
+    {
+     "site": "A",
+     "year": 2022,
+     "mature": 67.03200460356393
+    },
+    {
+     "site": "A",
+     "year": 2023,
+     "mature": 60.653065971263345
+    },
+    {
+     "site": "A",
+     "year": 2024,
+     "mature": 54.88116360940264
+    },
+    {
+     "site": "B",
+     "year": 2018,
+     "mature": 60.0
+    },
+    {
+     "site": "B",
+     "year": 2019,
+     "mature": 54.29024508215757
+    },
+    {
+     "site": "B",
+     "year": 2020,
+     "mature": 49.123845184678906
+    },
+    {
+     "site": "B",
+     "year": 2021,
+     "mature": 44.449093240903075
+    },
+    {
+     "site": "B",
+     "year": 2022,
+     "mature": 40.21920276213836
+    },
+    {
+     "site": "B",
+     "year": 2023,
+     "mature": 36.391839582758
+    },
+    {
+     "site": "B",
+     "year": 2024,
+     "mature": 32.928698165641585
+    }
+   ],
+   "expect": {
+    "status": "ok",
+    "r": -0.1,
+    "se": 0.017401,
+    "lo": -0.134105,
+    "hi": -0.065895,
+    "phi": 1.0,
+    "reduction": {
+     "best": 77.69,
+     "min": 62.78,
+     "max": 86.62
+    },
+    "window": {
+     "years": 15,
+     "from": 2009,
+     "to": 2024,
+     "observedYears": 6,
+     "observedPct": 40.0,
+     "projected": true
+    },
+    "index": {
+     "2018": 160.0,
+     "2019": 144.774,
+     "2020": 130.9969,
+     "2021": 118.5309,
+     "2022": 107.2512,
+     "2023": 97.0449,
+     "2024": 87.8099
+    },
+    "extreme": false,
+    "declineSuggested": true,
+    "nSites": 2,
+    "nYears": 7
+   }
+  },
+  {
+   "name": "Varias visitas a un sitio en un año: cuenta el máximo",
+   "method": "analytic",
+   "generationLength": 2,
+   "obs": [
+    {
+     "site": "A",
+     "year": 2014,
+     "mature": 100.0
+    },
+    {
+     "site": "A",
+     "year": 2015,
+     "mature": 92.31163463866358
+    },
+    {
+     "site": "A",
+     "year": 2016,
+     "mature": 85.21437889662113
+    },
+    {
+     "site": "A",
+     "year": 2017,
+     "mature": 78.66278610665535
+    },
+    {
+     "site": "A",
+     "year": 2018,
+     "mature": 72.6149037073691
+    },
+    {
+     "site": "A",
+     "year": 2019,
+     "mature": 67.03200460356393
+    },
+    {
+     "site": "A",
+     "year": 2020,
+     "mature": 61.878339180614084
+    },
+    {
+     "site": "A",
+     "year": 2021,
+     "mature": 57.120906384881486
+    },
+    {
+     "site": "A",
+     "year": 2022,
+     "mature": 52.729242404304856
+    },
+    {
+     "site": "A",
+     "year": 2023,
+     "mature": 48.67522559599717
+    },
+    {
+     "site": "A",
+     "year": 2024,
+     "mature": 44.932896411722155
+    },
+    {
+     "site": "B",
+     "year": 2014,
+     "mature": 40.0
+    },
+    {
+     "site": "B",
+     "year": 2015,
+     "mature": 36.92465385546543
+    },
+    {
+     "site": "B",
+     "year": 2016,
+     "mature": 34.085751558648454
+    },
+    {
+     "site": "B",
+     "year": 2017,
+     "mature": 31.465114442662138
+    },
+    {
+     "site": "B",
+     "year": 2018,
+     "mature": 29.04596148294764
+    },
+    {
+     "site": "B",
+     "year": 2019,
+     "mature": 26.812801841425575
+    },
+    {
+     "site": "B",
+     "year": 2020,
+     "mature": 24.751335672245634
+    },
+    {
+     "site": "B",
+     "year": 2021,
+     "mature": 22.848362553952594
+    },
+    {
+     "site": "B",
+     "year": 2022,
+     "mature": 21.091696961721944
+    },
+    {
+     "site": "B",
+     "year": 2023,
+     "mature": 19.470090238398868
+    },
+    {
+     "site": "B",
+     "year": 2024,
+     "mature": 17.973158564688863
+    },
+    {
+     "site": "A",
+     "year": 2016,
+     "mature": 10
+    },
+    {
+     "site": "B",
+     "year": 2020,
+     "mature": 0
+    }
+   ],
+   "expect": {
+    "status": "ok",
+    "r": -0.08,
+    "se": 0.009876,
+    "lo": -0.099356,
+    "hi": -0.060644,
+    "phi": 1.0,
+    "reduction": {
+     "best": 55.07,
+     "min": 45.47,
+     "max": 62.97
+    },
+    "window": {
+     "years": 10.0,
+     "from": 2014.0,
+     "to": 2024,
+     "observedYears": 10,
+     "observedPct": 100.0,
+     "projected": false
+    },
+    "index": {
+     "2014": 140.0,
+     "2015": 129.2363,
+     "2016": 119.3001,
+     "2017": 110.1279,
+     "2018": 101.6609,
+     "2019": 93.8448,
+     "2020": 86.6297,
+     "2021": 79.9693,
+     "2022": 73.8209,
+     "2023": 68.1453,
+     "2024": 62.9061
+    },
+    "extreme": false,
+    "declineSuggested": true,
+    "nSites": 2,
+    "nYears": 11
+   }
+  },
+  {
+   "name": "Sitio con un solo año y sitio siempre a cero: fuera del modelo",
+   "method": "analytic",
+   "generationLength": 2,
+   "obs": [
+    {
+     "site": "A",
+     "year": 2014,
+     "mature": 100.0
+    },
+    {
+     "site": "A",
+     "year": 2015,
+     "mature": 92.31163463866358
+    },
+    {
+     "site": "A",
+     "year": 2016,
+     "mature": 85.21437889662113
+    },
+    {
+     "site": "A",
+     "year": 2017,
+     "mature": 78.66278610665535
+    },
+    {
+     "site": "A",
+     "year": 2018,
+     "mature": 72.6149037073691
+    },
+    {
+     "site": "A",
+     "year": 2019,
+     "mature": 67.03200460356393
+    },
+    {
+     "site": "A",
+     "year": 2020,
+     "mature": 61.878339180614084
+    },
+    {
+     "site": "A",
+     "year": 2021,
+     "mature": 57.120906384881486
+    },
+    {
+     "site": "A",
+     "year": 2022,
+     "mature": 52.729242404304856
+    },
+    {
+     "site": "A",
+     "year": 2023,
+     "mature": 48.67522559599717
+    },
+    {
+     "site": "A",
+     "year": 2024,
+     "mature": 44.932896411722155
+    },
+    {
+     "site": "B",
+     "year": 2014,
+     "mature": 40.0
+    },
+    {
+     "site": "B",
+     "year": 2015,
+     "mature": 36.92465385546543
+    },
+    {
+     "site": "B",
+     "year": 2016,
+     "mature": 34.085751558648454
+    },
+    {
+     "site": "B",
+     "year": 2017,
+     "mature": 31.465114442662138
+    },
+    {
+     "site": "B",
+     "year": 2018,
+     "mature": 29.04596148294764
+    },
+    {
+     "site": "B",
+     "year": 2019,
+     "mature": 26.812801841425575
+    },
+    {
+     "site": "B",
+     "year": 2020,
+     "mature": 24.751335672245634
+    },
+    {
+     "site": "B",
+     "year": 2021,
+     "mature": 22.848362553952594
+    },
+    {
+     "site": "B",
+     "year": 2022,
+     "mature": 21.091696961721944
+    },
+    {
+     "site": "B",
+     "year": 2023,
+     "mature": 19.470090238398868
+    },
+    {
+     "site": "B",
+     "year": 2024,
+     "mature": 17.973158564688863
+    },
+    {
+     "site": "C",
+     "year": 2020,
+     "mature": 300
+    },
+    {
+     "site": "Z",
+     "year": 2015,
+     "mature": 0
+    },
+    {
+     "site": "Z",
+     "year": 2018,
+     "mature": 0
+    },
+    {
+     "site": "Z",
+     "year": 2021,
+     "mature": 0
+    }
+   ],
+   "expect": {
+    "status": "ok",
+    "r": -0.08,
+    "se": 0.009876,
+    "lo": -0.099356,
+    "hi": -0.060644,
+    "phi": 1.0,
+    "reduction": {
+     "best": 55.07,
+     "min": 45.47,
+     "max": 62.97
+    },
+    "window": {
+     "years": 10.0,
+     "from": 2014.0,
+     "to": 2024,
+     "observedYears": 10,
+     "observedPct": 100.0,
+     "projected": false
+    },
+    "index": {
+     "2014": 140.0,
+     "2015": 129.2363,
+     "2016": 119.3001,
+     "2017": 110.1279,
+     "2018": 101.6609,
+     "2019": 93.8448,
+     "2020": 86.6297,
+     "2021": 79.9693,
+     "2022": 73.8209,
+     "2023": 68.1453,
+     "2024": 62.9061
+    },
+    "extreme": false,
+    "declineSuggested": true,
+    "nSites": 2,
+    "nYears": 11
+   }
+  },
+  {
+   "name": "Cuatro sitios con ruido y años sin visita (2019, 2023), 2014–2026, generación 3 años (GLM de statsmodels)",
+   "method": "fitted",
+   "generationLength": 3,
+   "obs": [
+    {
+     "site": "S1",
+     "year": 2014,
+     "mature": 52
+    },
+    {
+     "site": "S1",
+     "year": 2015,
+     "mature": 50
+    },
+    {
+     "site": "S1",
+     "year": 2016,
+     "mature": 41
+    },
+    {
+     "site": "S1",
+     "year": 2017,
+     "mature": 44
+    },
+    {
+     "site": "S1",
+     "year": 2018,
+     "mature": 37
+    },
+    {
+     "site": "S1",
+     "year": 2020,
+     "mature": 30
+    },
+    {
+     "site": "S1",
+     "year": 2021,
+     "mature": 27
+    },
+    {
+     "site": "S1",
+     "year": 2022,
+     "mature": 26
+    },
+    {
+     "site": "S1",
+     "year": 2024,
+     "mature": 21
+    },
+    {
+     "site": "S1",
+     "year": 2025,
+     "mature": 18
+    },
+    {
+     "site": "S1",
+     "year": 2026,
+     "mature": 17
+    },
+    {
+     "site": "S2",
+     "year": 2014,
+     "mature": 31
+    },
+    {
+     "site": "S2",
+     "year": 2015,
+     "mature": 26
+    },
+    {
+     "site": "S2",
+     "year": 2016,
+     "mature": 29
+    },
+    {
+     "site": "S2",
+     "year": 2017,
+     "mature": 22
+    },
+    {
+     "site": "S2",
+     "year": 2018,
+     "mature": 23
+    },
+    {
+     "site": "S2",
+     "year": 2020,
+     "mature": 17
+    },
+    {
+     "site": "S2",
+     "year": 2021,
+     "mature": 18
+    },
+    {
+     "site": "S2",
+     "year": 2022,
+     "mature": 14
+    },
+    {
+     "site": "S2",
+     "year": 2024,
+     "mature": 11
+    },
+    {
+     "site": "S2",
+     "year": 2025,
+     "mature": 12
+    },
+    {
+     "site": "S2",
+     "year": 2026,
+     "mature": 9
+    },
+    {
+     "site": "S3",
+     "year": 2014,
+     "mature": 18
+    },
+    {
+     "site": "S3",
+     "year": 2015,
+     "mature": 17
+    },
+    {
+     "site": "S3",
+     "year": 2016,
+     "mature": 15
+    },
+    {
+     "site": "S3",
+     "year": 2017,
+     "mature": 16
+    },
+    {
+     "site": "S3",
+     "year": 2018,
+     "mature": 12
+    },
+    {
+     "site": "S3",
+     "year": 2020,
+     "mature": 11
+    },
+    {
+     "site": "S3",
+     "year": 2021,
+     "mature": 9
+    },
+    {
+     "site": "S3",
+     "year": 2022,
+     "mature": 10
+    },
+    {
+     "site": "S3",
+     "year": 2024,
+     "mature": 7
+    },
+    {
+     "site": "S3",
+     "year": 2025,
+     "mature": 6
+    },
+    {
+     "site": "S3",
+     "year": 2026,
+     "mature": 6
+    },
+    {
+     "site": "S4",
+     "year": 2014,
+     "mature": 75
+    },
+    {
+     "site": "S4",
+     "year": 2015,
+     "mature": 71
+    },
+    {
+     "site": "S4",
+     "year": 2016,
+     "mature": 62
+    },
+    {
+     "site": "S4",
+     "year": 2017,
+     "mature": 64
+    },
+    {
+     "site": "S4",
+     "year": 2018,
+     "mature": 55
+    },
+    {
+     "site": "S4",
+     "year": 2020,
+     "mature": 47
+    },
+    {
+     "site": "S4",
+     "year": 2021,
+     "mature": 40
+    },
+    {
+     "site": "S4",
+     "year": 2022,
+     "mature": 41
+    },
+    {
+     "site": "S4",
+     "year": 2024,
+     "mature": 31
+    },
+    {
+     "site": "S4",
+     "year": 2025,
+     "mature": 30
+    },
+    {
+     "site": "S4",
+     "year": 2026,
+     "mature": 26
+    }
+   ],
+   "expect": {
+    "status": "ok",
+    "r": -0.091443,
+    "se": 0.007619,
+    "lo": -0.106377,
+    "hi": -0.07651,
+    "phi": 1.0,
+    "reduction": {
+     "best": 59.93,
+     "min": 53.47,
+     "max": 65.48
+    },
+    "window": {
+     "years": 10.0,
+     "from": 2016.0,
+     "to": 2026,
+     "observedYears": 10.0,
+     "observedPct": 100.0,
+     "projected": false
+    },
+    "index": {
+     "2014": 176.0,
+     "2015": 164.0,
+     "2016": 147.0,
+     "2017": 146.0,
+     "2018": 127.0,
+     "2020": 105.0,
+     "2021": 94.0,
+     "2022": 91.0,
+     "2024": 70.0,
+     "2025": 66.0,
+     "2026": 58.0
+    },
+    "extreme": false,
+    "declineSuggested": true,
+    "nSites": 4,
+    "nYears": 11,
+    "phiRaw": 0.1029
+   }
+  },
+  {
+   "name": "Sobredispersión: φ > 1 ensancha el IC (statsmodels, cuasi-Poisson)",
+   "method": "fitted",
+   "generationLength": 4,
+   "obs": [
+    {
+     "site": "P1",
+     "year": 2015,
+     "mature": 40
+    },
+    {
+     "site": "P1",
+     "year": 2016,
+     "mature": 12
+    },
+    {
+     "site": "P1",
+     "year": 2017,
+     "mature": 55
+    },
+    {
+     "site": "P1",
+     "year": 2018,
+     "mature": 20
+    },
+    {
+     "site": "P1",
+     "year": 2019,
+     "mature": 61
+    },
+    {
+     "site": "P1",
+     "year": 2020,
+     "mature": 15
+    },
+    {
+     "site": "P1",
+     "year": 2021,
+     "mature": 48
+    },
+    {
+     "site": "P1",
+     "year": 2022,
+     "mature": 22
+    },
+    {
+     "site": "P2",
+     "year": 2015,
+     "mature": 22
+    },
+    {
+     "site": "P2",
+     "year": 2016,
+     "mature": 35
+    },
+    {
+     "site": "P2",
+     "year": 2017,
+     "mature": 9
+    },
+    {
+     "site": "P2",
+     "year": 2018,
+     "mature": 41
+    },
+    {
+     "site": "P2",
+     "year": 2019,
+     "mature": 14
+    },
+    {
+     "site": "P2",
+     "year": 2020,
+     "mature": 37
+    },
+    {
+     "site": "P2",
+     "year": 2021,
+     "mature": 11
+    },
+    {
+     "site": "P2",
+     "year": 2022,
+     "mature": 30
+    },
+    {
+     "site": "P3",
+     "year": 2015,
+     "mature": 60
+    },
+    {
+     "site": "P3",
+     "year": 2016,
+     "mature": 18
+    },
+    {
+     "site": "P3",
+     "year": 2017,
+     "mature": 70
+    },
+    {
+     "site": "P3",
+     "year": 2018,
+     "mature": 25
+    },
+    {
+     "site": "P3",
+     "year": 2019,
+     "mature": 80
+    },
+    {
+     "site": "P3",
+     "year": 2020,
+     "mature": 21
+    },
+    {
+     "site": "P3",
+     "year": 2021,
+     "mature": 66
+    },
+    {
+     "site": "P3",
+     "year": 2022,
+     "mature": 19
+    }
+   ],
+   "expect": {
+    "status": "ok",
+    "r": -0.019606,
+    "se": 0.051204,
+    "lo": -0.119964,
+    "hi": 0.080752,
+    "phi": 11.4242,
+    "reduction": {
+     "best": 20.96,
+     "min": 0.0,
+     "max": 76.3
+    },
+    "window": {
+     "years": 12,
+     "from": 2010,
+     "to": 2022,
+     "observedYears": 7,
+     "observedPct": 58.3,
+     "projected": true
+    },
+    "index": {
+     "2015": 122.0,
+     "2016": 65.0,
+     "2017": 134.0,
+     "2018": 86.0,
+     "2019": 155.0,
+     "2020": 73.0,
+     "2021": 125.0,
+     "2022": 71.0
+    },
+    "extreme": false,
+    "declineSuggested": false,
+    "nSites": 3,
+    "nYears": 8,
+    "phiRaw": 11.4242
+   }
+  },
+  {
+   "name": "Fluctuación extrema: el índice anual varía más de ×10 (statsmodels)",
+   "method": "fitted",
+   "generationLength": null,
+   "obs": [
+    {
+     "site": "F1",
+     "year": 2019,
+     "mature": 80
+    },
+    {
+     "site": "F1",
+     "year": 2020,
+     "mature": 6
+    },
+    {
+     "site": "F1",
+     "year": 2021,
+     "mature": 90
+    },
+    {
+     "site": "F1",
+     "year": 2022,
+     "mature": 5
+    },
+    {
+     "site": "F1",
+     "year": 2023,
+     "mature": 85
+    },
+    {
+     "site": "F1",
+     "year": 2024,
+     "mature": 7
+    },
+    {
+     "site": "F2",
+     "year": 2019,
+     "mature": 40
+    },
+    {
+     "site": "F2",
+     "year": 2020,
+     "mature": 3
+    },
+    {
+     "site": "F2",
+     "year": 2021,
+     "mature": 45
+    },
+    {
+     "site": "F2",
+     "year": 2022,
+     "mature": 2
+    },
+    {
+     "site": "F2",
+     "year": 2023,
+     "mature": 50
+    },
+    {
+     "site": "F2",
+     "year": 2024,
+     "mature": 4
+    }
+   ],
+   "expect": {
+    "status": "ok",
+    "r": -0.122391,
+    "se": 0.172902,
+    "lo": -0.461273,
+    "hi": 0.216492,
+    "phi": 35.3736,
+    "reduction": {
+     "best": 70.59,
+     "min": 0.0,
+     "max": 99.01
+    },
+    "window": {
+     "years": 10.0,
+     "from": 2014.0,
+     "to": 2024,
+     "observedYears": 5,
+     "observedPct": 50.0,
+     "projected": true
+    },
+    "index": {
+     "2019": 120.0,
+     "2020": 9.0,
+     "2021": 135.0,
+     "2022": 7.0,
+     "2023": 135.0,
+     "2024": 11.0
+    },
+    "extreme": true,
+    "declineSuggested": false,
+    "nSites": 2,
+    "nYears": 6,
+    "phiRaw": 35.3736
+   }
+  },
+  {
+   "name": "Dos años con datos: no evaluable",
+   "method": "rule",
+   "generationLength": null,
+   "obs": [
+    {
+     "site": "A",
+     "year": 2024,
+     "mature": 18.393972058572118
+    },
+    {
+     "site": "A",
+     "year": 2025,
+     "mature": 16.643554184903977
+    },
+    {
+     "site": "B",
+     "year": 2024,
+     "mature": 7.357588823428847
+    },
+    {
+     "site": "B",
+     "year": 2025,
+     "mature": 6.657421673961591
+    }
+   ],
+   "expect": {
+    "status": "not_evaluable"
+   }
+  },
+  {
+   "name": "Ningún sitio con dos años: no evaluable",
+   "method": "rule",
+   "generationLength": null,
+   "obs": [
+    {
+     "site": "A",
+     "year": 2020,
+     "mature": 5
+    },
+    {
+     "site": "B",
+     "year": 2021,
+     "mature": 7
+    },
+    {
+     "site": "C",
+     "year": 2022,
+     "mature": 3
+    }
+   ],
+   "expect": {
+    "status": "not_evaluable"
+   }
+  },
+  {
+   "name": "Sin datos",
+   "method": "rule",
+   "generationLength": null,
+   "obs": [],
+   "expect": {
+    "status": "no_data"
    }
   }
  ]

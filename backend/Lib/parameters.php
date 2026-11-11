@@ -50,6 +50,17 @@ const SPECIES_PARAMETERS = [
     "fluct_c_iii"   => ["type" => "fact", "unit" => null, "criteria" => ["B c(iii)"]],
     "fluct_c_iv"    => ["type" => "fact", "unit" => null, "criteria" => ["B c(iv)", "C2b"]],
     "plausible_threat" => ["type" => "fact", "unit" => null, "criteria" => ["D2"]],
+    // F11h: criterio A con series temporales. Las tres primeras eligen A1 (las tres «sí») o A2; a_future añade A3 y A4;
+    // a_basis_* son las bases (a)–(e) en las que se apoya la reducción (A3 no admite (a)).
+    "a_reversible"  => ["type" => "fact", "unit" => null, "criteria" => ["A1 / A2"]],
+    "a_understood"  => ["type" => "fact", "unit" => null, "criteria" => ["A1 / A2"]],
+    "a_ceased"      => ["type" => "fact", "unit" => null, "criteria" => ["A1 / A2"]],
+    "a_future"      => ["type" => "fact", "unit" => null, "criteria" => ["A3", "A4"]],
+    "a_basis_a"     => ["type" => "fact", "unit" => null, "criteria" => ["A (a)"]],
+    "a_basis_b"     => ["type" => "fact", "unit" => null, "criteria" => ["A (b)"]],
+    "a_basis_c"     => ["type" => "fact", "unit" => null, "criteria" => ["A (c)"]],
+    "a_basis_d"     => ["type" => "fact", "unit" => null, "criteria" => ["A (d)"]],
+    "a_basis_e"     => ["type" => "fact", "unit" => null, "criteria" => ["A (e)"]],
     // F11g: ajuste regional (Directrices regionales v4.0, paso 2).
     "regional_endemic"              => ["type" => "fact", "unit" => null, "criteria" => ["Ajuste regional"]],
     "regional_immigration"          => ["type" => "fact", "unit" => null, "criteria" => ["Ajuste regional"]],

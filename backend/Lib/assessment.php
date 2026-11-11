@@ -122,6 +122,34 @@ function assessmentRecords(PDO $pdo, string $catalogId, string $taxonID): array 
 }
 
 /**
+ * F11h: serie temporal de la especie (Lib/series.php) con las visitas a SITIOS del catálogo en las que se contó: maduros
+ * por visita (las ausencias, 0), máximo por sitio y año, índice anual, tasa r con IC y reducción en la ventana de A.
+ * Sin coordenadas: sitios por nombre, para cualquier miembro.
+ */
+function assessmentSeries(PDO $pdo, string $catalogId, string $taxonID, array $params): array {
+    $stmt = $pdo->prepare("SELECT v.visitID, v.site_id AS siteID, v.event_start AS eventStart, s.name
+                             FROM visits v JOIN sites s ON s.siteID = v.site_id AND s.deleted_at IS NULL
+                            WHERE v.catalog_id = ? AND v.deleted_at IS NULL
+                              AND v.visitID IN (SELECT visit_id FROM occurrences WHERE catalog_id = ? AND taxonID = ? AND deleted_at IS NULL)");
+    $stmt->execute([$catalogId, $catalogId, $taxonID]);
+    $visits = $stmt->fetchAll();
+    $names = array_column($visits, "name", "siteID");
+    $stmt = $pdo->prepare("SELECT visit_id AS visitID, taxonID, occurrenceStatus, mature_count FROM occurrences
+                            WHERE catalog_id = ? AND taxonID = ? AND visit_id IS NOT NULL AND deleted_at IS NULL");
+    $stmt->execute([$catalogId, $taxonID]);
+    $occ = array_map(fn($r) => ["mature_count" => $r["mature_count"] === null ? null : (int) $r["mature_count"], "taxonID" => (string) $r["taxonID"]] + $r,
+        $stmt->fetchAll());
+    $from = seriesFromVisits($visits, $occ, $taxonID, $names);
+    $series = seriesAnalyze($from["obs"], iucnParamValue($params, "generation_length"), iucnCriteria());
+    return $series + ["skippedVisits" => $from["skipped"]];
+}
+
+/** Lo esencial de la serie para guardarlo con una instantánea (sin los recuentos por sitio). */
+function assessmentSeriesSummary(array $s): array {
+    return array_intersect_key($s, array_flip(["status", "reason", "nSites", "nYears", "firstYear", "lastYear", "trend", "window", "reduction", "fluctuation", "windowYears"]));
+}
+
+/**
  * Subpoblaciones para la salida según la confianza: sin puntos nunca; casco y celdas solo con acceso «full»;
  * «generalized»: el centro de cada una generalizado a la celda del nivel; «none»: solo cifras.
  */
@@ -160,6 +188,7 @@ function assessmentSnapshot(PDO $pdo, string $catalogId, string $taxonID, int $u
         "fragmentation" => array_intersect_key($a["fragmentation"], array_flip(["status", "severe", "pctAoo", "pctIndividuals", "missing"])),
         "locations" => ["count" => is_int($inputs["B"]["locations"] ?? null) ? $inputs["B"]["locations"] : $a["locationsProposal"]["count"],
                         "confirmed" => is_int($inputs["B"]["locations"] ?? null)],
+        "series" => assessmentSeriesSummary($a["series"]),
     ];
     return [$inputs, assessIucn($inputs) + ["quantifiers" => $summary, "computedBy" => "server"]];
 }
@@ -178,7 +207,8 @@ function speciesAssessment(PDO $pdo, string $catalogId, string $taxonID, int $us
     $impacts = assessmentImpacts($pdo, $catalogId, $taxonID);
     $q = iucnQuantify(assessmentRecords($pdo, $catalogId, $taxonID), ["params" => $params, "defaults" => $defaults, "impacts" => $impacts,
         "metrics" => $metrics, "habitatCodes" => iucnThreats()["habitat_codes"]]);
-    $inputs = iucnEngineInputs($q, $params, $metrics, $locations);
+    $series = assessmentSeries($pdo, $catalogId, $taxonID, $params);
+    $inputs = iucnEngineInputs($q, $params, $metrics, $locations, [], $series);
     $result = assessIucn($inputs);
 
     $access = metricsGeometryAccess($role, $level, "team");
@@ -202,7 +232,8 @@ function speciesAssessment(PDO $pdo, string $catalogId, string $taxonID, int $us
         "fragmentation" => $q["fragmentation"],
         "locationsProposal" => $q["locations"],
         "locations"     => $locations,
-        "suggestions"   => $q["suggestions"],
+        "suggestions"   => array_merge($q["suggestions"], $series["suggestions"] ?? []),
+        "series"        => $series,
         "separation"    => $q["separation"],
         "parameters"    => $params,
         "defaults"      => $defaults,

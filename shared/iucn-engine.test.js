@@ -7,6 +7,7 @@
 import { readFileSync } from 'node:fs';
 import { evaluateIucn, assessIucn, NO_THREAT_MESSAGE } from './iucn-engine.js';
 import { prepareRecords, matureEstimate, subpopulations, fragmentation, proposeLocations, minstd } from './iucn-quantifiers.js';
+import { analyzeSeries, seriesFromVisits } from './iucn-series.js';
 
 const criteria = JSON.parse(readFileSync(new URL('./iucn-criteria.json', import.meta.url), 'utf8'));
 
@@ -73,6 +74,39 @@ for (const c of CASES.quantifiers) {
     if (!same(got[k], v)) bad.push(`${k} ${JSON.stringify(got[k])}`);
   }
   check(c.name, !bad.length, bad.join('; '));
+}
+
+// --- F11h · Series temporales (casos de bin/series-reference.py: statsmodels o solución analítica) ---------
+const near = (a, b, tol) => (a === null || b === null ? a === b : Math.abs(a - b) <= tol * Math.max(1, Math.abs(b)));
+for (const c of CASES.series || []) {
+  const s = analyzeSeries(c.obs, { generationLength: c.generationLength, criteria });
+  const e = c.expect;
+  const bad = [];
+  if (s.status !== e.status) bad.push(`estado ${s.status}`);
+  if (e.status === 'ok' && s.status === 'ok') {
+    for (const k of ['r', 'se', 'lo', 'hi', 'phi']) if (!near(s.trend[k], e[k], 2e-6)) bad.push(`${k} ${s.trend[k]} ≠ ${e[k]}`);
+    for (const k of ['best', 'min', 'max']) if (!near(s.reduction[k], e.reduction[k], 0.011)) bad.push(`reducción ${k} ${s.reduction[k]}`);
+    for (const k of Object.keys(e.window)) if (s.window[k] !== e.window[k]) bad.push(`ventana ${k} ${s.window[k]}`);
+    for (const [y, v] of Object.entries(e.index)) {
+      const got = s.years.find((x) => x.year === Number(y));
+      if (!got || !near(got.index, v, 1e-6)) bad.push(`índice ${y} ${got ? got.index : '—'} ≠ ${v}`);
+    }
+    if (s.fluctuation.extreme !== e.extreme) bad.push(`fluctuación ${s.fluctuation.extreme}`);
+    if (s.suggestions.some((x) => x.key === 'decline_b_v') !== e.declineSuggested) bad.push('sugerencia de declive');
+    if (s.nSites !== e.nSites || s.nYears !== e.nYears) bad.push(`sitios ${s.nSites} años ${s.nYears}`);
+  }
+  check(`Serie: ${c.name}`, !bad.length, bad.join('; '));
+}
+{
+  // De visitas y marcas a observaciones: suma de maduros por visita, ausencia = 0, presencia sin maduros = no cuenta.
+  const visits = [{ visitID: 'v1', siteID: 's1', eventStart: '2020-05-01T08:00:00Z' }, { visitID: 'v2', siteID: 's1', eventStart: '2021-05-01T08:00:00Z' },
+    { visitID: 'v3', siteID: null, eventStart: '2021-05-02T08:00:00Z' }, { visitID: 'v4', siteID: 's1', eventStart: '2022-05-01T08:00:00Z' }];
+  const occ = [{ visitID: 'v1', taxonID: 't', occurrenceStatus: 'present', mature_count: 3 }, { visitID: 'v1', taxonID: 't', occurrenceStatus: 'present', mature_count: 2 },
+    { visitID: 'v2', taxonID: 't', occurrenceStatus: 'absent' }, { visitID: 'v3', taxonID: 't', occurrenceStatus: 'present', mature_count: 9 },
+    { visitID: 'v4', taxonID: 't', occurrenceStatus: 'present', mature_count: null }, { visitID: 'v1', taxonID: 'otra', occurrenceStatus: 'present', mature_count: 7 }];
+  const { obs, skipped } = seriesFromVisits({ visits, occurrences: occ, taxonID: 't' });
+  check('Series: maduros por visita (suma, ausencia 0, sin sitio fuera, sin maduros no cuenta)',
+    same(obs.map((o) => [o.visitID, o.year, o.mature]), [['v1', 2020, 5], ['v2', 2021, 0]]) && skipped === 1, JSON.stringify(obs));
 }
 
 // Bootstrap: misma semilla → mismo intervalo (la cifra exacta está en el caso y la comprueba también PHP).

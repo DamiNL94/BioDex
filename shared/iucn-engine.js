@@ -19,8 +19,11 @@
 // inputs (todo opcional; null, undefined o '' = sin dato):
 //   generationLength      años por generación (A, C1, E)
 //   A  {skip, reductionPct, subcriterion: A1|A2|A3|A4, basis: ['a'..'e']}
+//      o (F11h, series temporales) {items: [{subcriterion, reductionPct, basis}, …]}: varios subcriterios a la vez
+//      (A2 + A3 + A4…); cumple una categoría si la cumple alguno y la notación los junta («A2b+3b+4b»).
 //   B  {skip, eoo, aoo (km²), severelyFragmented, locations, decline: ['i'..'v'], fluctuation: ['i'..'iv']}
-//   C  {skip, mature, c1DeclinePct, c1Years, continuingDecline, maxPerSubpop, pctInOneSubpop, extremeFluctuation}
+//   C  {skip, mature, c1DeclinePct, c1Years, continuingDecline, maxPerSubpop, pctInOneSubpop, extremeFluctuation,
+//       c1AnnualRate (F11h: tasa anual r de la serie; la disminución de C1 se calcula en la ventana de CADA categoría)}
 //   D  {skip, mature, plausibleThreat, aoo, locations}   (D2: aoo y localidades de B si aquí faltan)
 //   E  {skip, probabilityPct, horizonYears}
 //   dataDeficient, expertCategory: NT|LC, regional {direction: down|up, justification}
@@ -34,6 +37,13 @@ function num(v, { max = Infinity, integer = false } = {}) {
   const n = typeof v === 'number' ? v : Number(String(v).replace(',', '.'));
   if (!Number.isFinite(n) || n < 0 || n > max || (integer && !Number.isInteger(n))) return { invalid: true };
   return { value: n };
+}
+
+/** Número con signo (la tasa anual r puede ser negativa): {value} · {missing} · {invalid}. */
+function signedNum(v) {
+  if (isMissing(v)) return { missing: true };
+  const n = typeof v === 'number' ? v : Number(String(v).replace(',', '.'));
+  return Number.isFinite(n) ? { value: n } : { invalid: true };
 }
 
 const fmt = (n) => (Number.isInteger(n) ? String(n) : String(Math.round(n * 100) / 100).replace('.', ','));
@@ -76,6 +86,28 @@ function skipped(cats, why = 'Sin datos para este criterio.') {
 
 // --- A · Reducción del tamaño poblacional ---------------------------------------------------------
 function evalA(inp, ctx) {
+  const { cats } = ctx;
+  if (!inp || inp.skip) return skipped(cats, inp && inp.reason ? inp.reason : undefined);
+  if (!Array.isArray(inp.items)) return evalAItem(inp, ctx);
+  // F11h: varios subcriterios (pasado, proyección, ventana mixta) con la misma serie.
+  const parts = inp.items.map((it) => evalAItem(it, ctx));
+  if (!parts.length) return skipped(cats);
+  const res = { status: 'evaluated', levels: emptyLevels(cats), notes: [], items: parts.map((p, i) => ({
+    subcriterion: inp.items[i].subcriterion, status: p.status, category: p.category, notation: p.notation, periodYears: p.periodYears })) };
+  for (const p of parts) for (const n of p.notes) if (!res.notes.includes(n)) res.notes.push(n);
+  res.periodYears = Math.max(...parts.map((p) => p.periodYears || 0));
+  if (parts.every((p) => p.status === 'incomplete' || p.status === 'skipped')) res.status = 'incomplete';
+  for (const c of cats) {
+    const met = parts.filter((p) => p.levels[c].met);
+    for (const p of parts) res.levels[c].reasons.push(...p.levels[c].reasons);
+    if (!met.length) continue;
+    res.levels[c].met = true;
+    res.levels[c].notation = met.map((p, i) => (i === 0 ? p.levels[c].notation : p.levels[c].notation.replace(/^A/, ''))).join('+');
+  }
+  return finish(res, cats);
+}
+
+function evalAItem(inp, ctx) {
   const { cats, criteria: crit, warnings, gen } = ctx;
   const A = crit.criteria.A;
   if (!inp || inp.skip) return skipped(cats);
@@ -194,6 +226,8 @@ function evalC(inp, ctx) {
 
   const c1Pct = num(inp.c1DeclinePct, { max: 100 });
   const c1Years = num(inp.c1Years);
+  const rate = signedNum(inp.c1AnnualRate);
+  if (rate.invalid) warnings.push('C1: la tasa anual debe ser un número.');
   if (c1Pct.invalid) warnings.push('C1: la disminución debe ser un porcentaje entre 0 y 100.');
   if (c1Years.invalid) warnings.push('C1: el plazo debe ser un número de años ≥ 0.');
   if (c1Pct.value !== undefined && c1Years.value === undefined && !c1Years.invalid) res.notes.push('C1: falta el plazo (años) de la disminución.');
@@ -212,7 +246,15 @@ function evalC(inp, ctx) {
 
     // C1: disminución continua de al menos pct % en su plazo (años o generaciones, el mayor).
     let c1 = false;
-    if (c1Pct.value !== undefined && c1Years.value !== undefined) {
+    if (rate.value !== undefined) {
+      // F11h: con la tasa de la serie, la disminución en la ventana de esta categoría: 1 − e^(r·W).
+      const th = C.C1.thresholds[c];
+      const w = windowYears(th, gen);
+      const pct = Math.max(0, Math.round(100 * (1 - Math.exp(rate.value * w)) * 100) / 100);
+      c1 = pct >= th.pct;
+      const r4 = String(Math.round(rate.value * 10000) / 10000).replace('.', ',');
+      lv.reasons.push(`C1: tasa ${r4}/año → ${fmt(pct)} % en ${fmt(w)} años; exige ≥ ${th.pct} % ${c1 ? '✓' : '✗'}`);
+    } else if (c1Pct.value !== undefined && c1Years.value !== undefined) {
       const th = C.C1.thresholds[c];
       const w = windowYears(th, gen);
       c1 = c1Pct.value >= th.pct && c1Years.value <= w;
@@ -247,7 +289,7 @@ function evalC(inp, ctx) {
       lv.notation = `C${parts.join('+')}`;
     }
   }
-  if (!decline && c1Pct.value === undefined && !res.notes.length) res.notes.push('C exige C1 o C2 (con disminución continua).');
+  if (!decline && c1Pct.value === undefined && rate.value === undefined && !res.notes.length) res.notes.push('C exige C1 o C2 (con disminución continua).');
   return finish(res, cats);
 }
 
@@ -435,7 +477,7 @@ export function criterionSummary(res) {
 export const UNCERTAIN_FIELDS = {
   A: { reductionPct: 'higher' },
   B: { eoo: 'lower', aoo: 'lower', locations: 'lower' },
-  C: { mature: 'lower', maxPerSubpop: 'lower', pctInOneSubpop: 'higher', c1DeclinePct: 'higher' },
+  C: { mature: 'lower', maxPerSubpop: 'lower', pctInOneSubpop: 'higher', c1DeclinePct: 'higher', c1AnnualRate: 'lower' },
   D: { mature: 'lower', aoo: 'lower', locations: 'lower' },
   E: { probabilityPct: 'higher' },
 };
@@ -463,6 +505,10 @@ export function scenarioInputs(inputs, scenario) {
     if (!out[k] || typeof out[k] !== 'object') continue;
     const step = { ...out[k] };
     for (const [f, dir] of Object.entries(fields)) if (f in step) step[f] = scenarioValue(step[f], dir, scenario);
+    // F11h: A con varios subcriterios, cada uno con su reducción (con intervalo).
+    if (k === 'A' && Array.isArray(step.items)) {
+      step.items = step.items.map((it) => ('reductionPct' in it ? { ...it, reductionPct: scenarioValue(it.reductionPct, 'higher', scenario) } : it));
+    }
     out[k] = step;
   }
   return out;
