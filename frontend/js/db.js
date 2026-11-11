@@ -9,42 +9,42 @@
 //   occurrences     occurrenceID → marca DwC + status (pending · synced · rejected), reason, authorId,
 //                   generalized, serverSeq, clientUpdatedAt, deletedAt, catalogId
 //   outbox          id autoincremental → {kind: species · occurrence · delete · note · noteDelete ·
-//                   assessment · assessmentDelete · impact · impactDelete (F11g), ref,
+//                   assessment · assessmentDelete · impact · impactDelete, ref,
 //                   catalogId, attempts, lastError, rejected?}
 //   meta            key → value (cursor:<catalogId>, syncv:<catalogId>, deviceId, lastSync, persistAsked…)
-//   zones           id → zona de mapa para usar sin conexión (F7, js/map/zones.js): {id, name, bounds,
+//   zones           id → zona de mapa para usar sin conexión (js/map/zones.js): {id, name, bounds,
 //                   layers: [{key, minZoom, maxZoom}], tileCount, doneCount, failedCount, bytes, status,
 //                   createdAt, completedAt}. Las teselas van a Cache Storage `biodex-tiles-<id>`.
-//   notes           noteID → nota de cuaderno de una especie (F8a): {noteID, catalogId, taxonID, text,
+//   notes           noteID → nota de cuaderno de una especie: {noteID, catalogId, taxonID, text,
 //                   authorId, recordedBy, clientUpdatedAt, status, reason, serverSeq, deletedAt}
-//   assessments     assessmentID → evaluación UICN de una especie en un catálogo (F8b): {assessmentID, catalogId,
+//   assessments     assessmentID → evaluación UICN de una especie en un catálogo: {assessmentID, catalogId,
 //                   taxonID, inputs, result, category, regionalAdjustment, justification, assessmentStatus
 //                   (draft · final; en la API se llama `status`), isReference, referenceSetBy, referenceSetAt,
 //                   authorId, recordedBy, clientUpdatedAt, status (de sincronización, como las marcas), reason,
 //                   serverSeq, deletedAt}
-//   parameters      [catalogId, taxonID, key] → parámetro de una especie en un catálogo (F11f): {catalogId, taxonID,
+//   parameters      [catalogId, taxonID, key] → parámetro de una especie en un catálogo: {catalogId, taxonID,
 //                   key, value, valueMin, valueMax, quality, source, justification, setBy, setById, setAt, serverSeq}.
 //                   Solo bajan por el pull (se editan con red, owner y custodio): nunca van a la cola.
-//   impacts         impactID → impacto registrado en campo (F11g): {impactID, catalogId, threatCode, quickKey,
+//   impacts         impactID → impacto registrado en campo: {impactID, catalogId, threatCode, quickKey,
 //                   decimalLatitude, decimalLongitude, radiusM, polygon, eventDate, intensity, scopePct, timing, note,
 //                   species: [taxonID], authorId, recordedBy, generalized, clientUpdatedAt, status, reason, serverSeq,
 //                   deletedAt}. Cola `impact` / `impactDelete`, como las marcas.
-//   locations       [catalogId, taxonID] → nº de localidades confirmado (F11g): {count, groups, justification, quality,
+//   locations       [catalogId, taxonID] → nº de localidades confirmado: {count, groups, justification, quality,
 //                   source, separationKm, setBy, setAt, serverSeq}. Solo bajan por el pull (se editan con red).
-//   sites           siteID → sitio de muestreo (F11h, js/visits.js): {siteID, catalogId, name, siteType, decimalLatitude,
+//   sites           siteID → sitio de muestreo (js/visits.js): {siteID, catalogId, name, siteType, decimalLatitude,
 //                   decimalLongitude, radiusM | footprintWKT, bandM, areaM2, areaGiven, lengthM, protocol, species,
 //                   authorId, recordedBy, generalized, clientUpdatedAt, status, reason, serverSeq, deletedAt}.
 //                   Cola `site` / `siteDelete`.
-//   visits          visitID → visita (F11h): {visitID, catalogId, siteID, protocol, bandM, effortMinutes, observers,
+//   visits          visitID → visita: {visitID, catalogId, siteID, protocol, bandM, effortMinutes, observers,
 //                   eventStart, eventEnd, conditions, visitStatus (open · closed; en la API, `status`), species,
 //                   decimalLatitude, decimalLongitude, authorId, recordedBy, generalized, clientUpdatedAt, status, reason,
 //                   serverSeq, deletedAt}. Cola `visit` / `visitDelete`. La traza de un transecto en grabación va en
 //                   meta `track:<visitID>` (no se sube: al cerrar se convierte en la línea del sitio).
-//   occurrences (F11h) gana el índice `visitID` (marcas de una visita).
+//   occurrences gana el índice `visitID` (marcas de una visita).
 // ================================================================================================
 
-const DB_VERSION = 7;   // 2 (F7): zones · 3 (F8a): notes · 4 (F8b): assessments · 5 (F11f): parameters · 6 (F11g): impacts, locations
-                        // 7 (F11h): sites, visits y occurrences.visitID
+const DB_VERSION = 7;   // 2: zones · 3: notes · 4: assessments · 5: parameters · 6: impacts, locations
+                        // 7: sites, visits y occurrences.visitID
 let current = null;       // {name, db}
 
 const req = (r) => new Promise((resolve, reject) => {

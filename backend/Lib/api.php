@@ -2,7 +2,7 @@
 // ================================================================================================
 // api.php — arranque y respuestas comunes de los endpoints de backend/Api/ (adaptado de NaturDex).
 // ------------------------------------------------------------------------------------------------
-// Sin CORS: frontend y API se sirven desde el mismo origen (nginx). La sesión se añade en F2.
+// Sin CORS: frontend y API se sirven desde el mismo origen (nginx).
 //
 // respond() detecta el fallo de json_encode (p. ej. un byte inválido en un texto libre), que si no
 // se imprimiría como cuerpo VACÍO con un 200, y responde un 500 con el motivo real.

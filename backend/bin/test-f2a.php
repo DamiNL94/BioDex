@@ -157,7 +157,7 @@ function sample(string $slug): array {
     return [$d["conservation"]["value"] ?? [], $d["legal"]["value"] ?? []];
 }
 foreach ([
-    // Atropa baetica: el prompt de F2a espera 3 por UICN EN, pero EIDOS la da también como
+    // Atropa baetica: por UICN EN sería nivel 3, pero EIDOS la da también como
     // «CEEA: En peligro de extinción» (RD 139/2011, nacional) y shared/sensitivity.json dice que eso es
     // nivel 2 y que gana el más restrictivo. Mandan las reglas del JSON.
     ["artemisia-granatensis", 2, "CR"],

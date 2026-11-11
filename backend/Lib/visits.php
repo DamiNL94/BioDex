@@ -1,6 +1,6 @@
 <?php
 // ================================================================================================
-// visits.php — sitios de muestreo y visitas (F11h, migración 016; docs/sync.md, docs/db.md).
+// visits.php — sitios de muestreo y visitas (migración 016; docs/sync.md, docs/db.md).
 // ------------------------------------------------------------------------------------------------
 // Un SITIO es un lugar que se muestrea una y otra vez (parcela, transecto o punto de conteo): punto + radio, polígono
 // o línea (WKT en WGS84). Una VISITA es un muestreo (Event de Darwin Core): sitio, protocolo, esfuerzo, observadores,

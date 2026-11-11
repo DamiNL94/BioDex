@@ -3,8 +3,8 @@
 // ------------------------------------------------------------------------------------------------
 // Descargar un catálogo = GET /catalogs/{id}/offline (fichas y niveles) + pull completo de sus marcas
 // (sync.js) + imágenes en Cache Storage `biodex-img-<catalogId>` (la primera foto de cada especie,
-// que es también su miniatura: de la Fototeca o, F11b, la de iNaturalist aceptada). Sin red, Catálogos, Especies y la ficha leen de aquí.
-// F6: también se guardan miembros, invitaciones y registro (cachedRemote) para verlos sin red.
+// que es también su miniatura: de la Fototeca o la de respaldo aceptada). Sin red, Catálogos, Especies y la ficha leen de aquí.
+// También se guardan miembros, invitaciones y registro (cachedRemote) para verlos sin red.
 //
 // Las lecturas locales devuelven la MISMA forma que la API (GET /catalogs/{id}, /tree, /species/{id})
 // para que las vistas no tengan dos caminos de pintado: el resumen y el árbol se calculan aquí.
@@ -112,7 +112,7 @@ export async function savePackage(pkg) {
   });
 }
 
-/** URLs de imagen que se guardan por especie: la primera foto (es también la miniatura). Fototeca, iNaturalist (F11b) o copia local de GBIF/Commons (F11d). */
+/** URLs de imagen que se guardan por especie: la primera foto (es también la miniatura). Fototeca, iNaturalist o copia local de GBIF/Commons. */
 function imageUrls(species) {
   const urls = new Set();
   for (const sp of species) {
@@ -147,7 +147,7 @@ async function cacheImages(catalogId, species, onProgress) {
 const downloads = new Map();   // catalogId → promesa en curso (no dos descargas del mismo)
 
 // Claves de meta que son de un catálogo (se borran con él): cursor y época del pull, y las últimas
-// respuestas de Equipo, Invitaciones, Registro y Niveles (F6) para verlas sin red.
+// respuestas de Equipo, Invitaciones, Registro y Niveles para verlas sin red.
 const CATALOG_META = ['cursor:', 'syncv:', 'epoch:', 'team:', 'invites:', 'audit:', 'levels:'];
 
 /**
@@ -219,18 +219,18 @@ export async function forgetCatalog(catalogId) {
     for (const n of await t.byIndex('notes', 'catalogId', catalogId)) await t.del('notes', n.noteID);
     for (const a of await t.byIndex('assessments', 'catalogId', catalogId)) await t.del('assessments', a.assessmentID);
     for (const p of await t.byIndex('parameters', 'catalogId', catalogId)) await t.del('parameters', [catalogId, p.taxonID, p.key]);
-    // F11g: impactos (llevan sitio) y localidades confirmadas del catálogo.
+    // Impactos (llevan sitio) y localidades confirmadas del catálogo.
     for (const i of await t.byIndex('impacts', 'catalogId', catalogId)) await t.del('impacts', i.impactID);
     for (const l of await t.getAll('locations')) if (l.catalogId === catalogId) await t.del('locations', [catalogId, l.taxonID]);
-    // F11h: sitios y visitas (y la traza de un transecto a medias).
+    // Sitios y visitas (y la traza de un transecto a medias).
     for (const x of await t.byIndex('sites', 'catalogId', catalogId)) await t.del('sites', x.siteID);
     for (const x of await t.byIndex('visits', 'catalogId', catalogId)) { await t.del('visits', x.visitID); await t.del('meta', 'track:' + x.visitID); }
     for (const o of await t.getAll('outbox')) if (o.catalogId === catalogId) await t.del('outbox', o.id);
     for (const prefix of CATALOG_META) await t.del('meta', prefix + catalogId);
-    // EOO/AOO guardados (F9, js/metrics.js): metrics:<catálogo>:<taxón>:<ámbito>:<celda>
+    // EOO/AOO guardados (js/metrics.js): metrics:<catálogo>:<taxón>:<ámbito>:<celda>
     for (const row of await t.getAll('meta')) {
       const k = String(row.key);
-      // F11g: evaluación guardada: assessment:<catálogo>:<taxón>
+      // Evaluación guardada: assessment:<catálogo>:<taxón>
       if (k.startsWith(`metrics:${catalogId}:`) || k.startsWith(`assessment:${catalogId}:`)) await t.del('meta', row.key);
     }
   });

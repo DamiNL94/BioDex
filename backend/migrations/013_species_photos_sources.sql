@@ -1,4 +1,4 @@
--- F11d · Más fuentes de fotos de respaldo: GBIF y Wikimedia Commons después de iNaturalist (docs/fotos-respaldo.md).
+-- Más fuentes de fotos de respaldo: GBIF y Wikimedia Commons después de iNaturalist (docs/fotos-respaldo.md).
 -- Orden: Fototeca (EIDOS) > iNaturalist > GBIF > Wikimedia Commons > silueta del grupo. Una búsqueda en cascada
 -- por especie: la primera fuente que da ok o review la cierra.
 -- iNat sigue por su proxy (/img/inat/). De GBIF y Commons se guarda en MySQL UNA copia de la miniatura elegida
@@ -16,12 +16,12 @@ ALTER TABLE species_photos
     -- Fuentes cuya foto se rechazó en la revisión: la cascada se las salta.
     ADD COLUMN rejected_sources SET('inaturalist','gbif','commons') NOT NULL DEFAULT '' AFTER status;
 
--- Las rechazadas de F11b (siempre de iNat) vuelven a la cola, saltándose iNat.
+-- Las rechazadas con el esquema anterior (siempre de iNat) vuelven a la cola, saltándose iNat.
 UPDATE species_photos
    SET status = 'pending', rejected_sources = 'inaturalist', checked_at = NULL
  WHERE status = 'rejected';
 
--- Las «none» de F11b también: el primer despliegue busca ya en GBIF y Commons, sin esperar a --recheck-none-days.
+-- Las «none» anteriores también: el primer despliegue busca ya en GBIF y Commons, sin esperar a --recheck-none-days.
 UPDATE species_photos SET status = 'pending', checked_at = NULL WHERE status = 'none';
 
 -- Sin foto, sin datos de foto (las que vuelven a la cola llevaban los de iNat).

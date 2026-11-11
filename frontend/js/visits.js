@@ -1,5 +1,5 @@
 // ================================================================================================
-// visits.js — sitios de muestreo y visitas en el dispositivo (F11h), también sin red.
+// visits.js — sitios de muestreo y visitas en el dispositivo, también sin red.
 // ------------------------------------------------------------------------------------------------
 // Un SITIO se muestrea una y otra vez (parcela, transecto o punto de conteo); una VISITA es un muestreo con sitio,
 // protocolo, esfuerzo, observadores y especies objetivo. Mismas reglas que las marcas (marks.js): almacén + una entrada

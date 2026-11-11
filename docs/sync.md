@@ -4,7 +4,7 @@ Código: `backend/Api/sync.php` (rutas) y `backend/Lib/sync.php` (validación, `
 `docker compose exec php php bin/test-f5.php`, `bin/test-f8a.php` (marcas completas y notas) y `bin/test-f8b.php`
 (evaluaciones UICN y referencia).
 
-## Tipos de entidad (F8a, F8b)
+## Tipos de entidad
 Push y pull llevan varios tipos, todos con las **mismas reglas**: id UUID v4 del cliente, `clientUpdatedAt` decide,
 solo el autor edita o borra, `server_seq` del contador común tomado en la misma transacción y tombstones.
 Se declaran en `SYNC_ENTITIES` (`Api/sync.php`); añadir uno es añadir una entrada (F8b añadió `assessments`).
@@ -13,14 +13,14 @@ Se declaran en `SYNC_ENTITIES` (`Api/sync.php`); añadir uno es añadir una entr
 |---|---|---|---|---|---|---|
 | marcas | `occurrences` | `occurrenceID` | `occurrences` · `deletes` | `results` | `items` | sí: `applyVisibility()` |
 | notas de especie | `species_notes` | `noteID` | `notes` · `noteDeletes` | `noteResults` | `notes` | no |
-| evaluaciones UICN (F8b) | `species_assessments` | `assessmentID` | `assessments` · `assessmentDeletes` | `assessmentResults` | `assessments` | no |
-| parámetros de especie (F11f) | `species_parameters` | (`taxonID`, `key`) | — (se fijan con `PUT …/parameters/{key}`, `docs/parametros.md`) | — | `parameters` | no |
-| impactos (F11g) | `impacts` (+ `impact_species`) | `impactID` | `impacts` · `impactDeletes` | `impactResults` | `impacts` | sí: `applyVisibility()` con el nivel más restrictivo de sus especies (generalizado: sin polígono y el radio ampliado a la celda) |
-| localidades confirmadas (F11g) | `species_locations` | (`taxonID`) | — (`PUT …/locations`) | — | `locations` | no |
-| sitios (F11h) | `sites` (+ `site_species`) | `siteID` | `sites` · `siteDeletes` | `siteResults` | `sites` | sí: nivel más restrictivo de las especies del sitio y de sus visitas (generalizado: sin `footprintWKT` y el radio ampliado a la celda) |
-| visitas (F11h) | `visits` (+ `visit_species`) | `visitID` | `visits` · `visitDeletes` | `visitResults` | `visits` | sí: el de su sitio y sus especies (generalizada: sin `conditions`) |
+| evaluaciones UICN | `species_assessments` | `assessmentID` | `assessments` · `assessmentDeletes` | `assessmentResults` | `assessments` | no |
+| parámetros de especie | `species_parameters` | (`taxonID`, `key`) | — (se fijan con `PUT …/parameters/{key}`, `docs/parametros.md`) | — | `parameters` | no |
+| impactos | `impacts` (+ `impact_species`) | `impactID` | `impacts` · `impactDeletes` | `impactResults` | `impacts` | sí: `applyVisibility()` con el nivel más restrictivo de sus especies (generalizado: sin polígono y el radio ampliado a la celda) |
+| localidades confirmadas | `species_locations` | (`taxonID`) | — (`PUT …/locations`) | — | `locations` | no |
+| sitios | `sites` (+ `site_species`) | `siteID` | `sites` · `siteDeletes` | `siteResults` | `sites` | sí: nivel más restrictivo de las especies del sitio y de sus visitas (generalizado: sin `footprintWKT` y el radio ampliado a la celda) |
+| visitas | `visits` (+ `visit_species`) | `visitID` | `visits` · `visitDeletes` | `visitResults` | `visits` | sí: el de su sitio y sus especies (generalizada: sin `conditions`) |
 
-### Sitios y visitas (F11h, `Lib/visits.php`)
+### Sitios y visitas (`Lib/visits.php`)
 - **Sitio**: `siteID`, `name` (≤ 120), `siteType` plot·transect·point, `radiusM` (1–100 000) **o** `footprintWKT`
   (`POLYGON((lon lat, …))` o `LINESTRING(lon lat, …)` en WGS84, ≤ 5000 vértices), `decimalLatitude`/`decimalLongitude`
   (con radio; con geometría los calcula el servidor), `bandM` (ancho total de la banda de un transecto), `areaM2` +
@@ -69,7 +69,7 @@ noteDeletes:[{noteID, clientUpdatedAt}]}` (todas las listas opcionales; ≤ 200 
 
 Marca: `occurrenceID` (UUID v4 en minúsculas), `taxonID`, `eventDate` (ISO 8601 **con zona**; se guarda en
 UTC), `decimalLatitude`, `decimalLongitude`, `coordinateUncertaintyInMeters` (entero ≥ 0), `clientUpdatedAt`
-(ISO 8601 con zona; se guarda en UTC con milisegundos) y, opcionales (F8a, nombres DwC exactos):
+(ISO 8601 con zona; se guarda en UTC con milisegundos) y, opcionales (nombres DwC exactos):
 
 | Término | Valores |
 |---|---|
@@ -81,11 +81,11 @@ UTC), `decimalLatitude`, `decimalLongitude`, `coordinateUncertaintyInMeters` (en
 | `georeferenceProtocol` | `GPS del dispositivo` (por defecto) · `Punto marcado en el mapa` (exige precisión ≥ 1 m) |
 
 Una **ausencia** lleva `individualCount` 0 o nulo y ningún `mature_count`. Los campos desconocidos se ignoran
-(también el antiguo `iucn_assessment`: la evaluación UICN es de la especie, F8b).
+(también el antiguo `iucn_assessment`: la evaluación UICN es de la especie).
 
 Nota: `noteID` (UUID v4), `taxonID` (del catálogo), `text` (1–4000 caracteres, no vacío), `clientUpdatedAt`.
 
-Evaluación (F8b): `assessmentID` (UUID v4), `taxonID`, `inputs` y `result` (objetos de `shared/iucn-engine.js`, ≤ 32 KB
+Evaluación: `assessmentID` (UUID v4), `taxonID`, `inputs` y `result` (objetos de `shared/iucn-engine.js`, ≤ 32 KB
 cada uno; el servidor no recalcula), `status` `draft` · `final` (una final exige `result.category`),
 `regionalAdjustment` `down` · `up` (exige `justification`), `justification` (≤ 4000), `clientUpdatedAt`. En el
 dispositivo borrador/final va en `assessmentStatus`, porque `status` es allí el estado de sincronización.
@@ -123,14 +123,14 @@ explica el motivo en castellano.
 `GET /api/sync/pull?catalogId=&since=0&limit=500` (1–500). Permiso `view`. Devuelve
 `{items, notes, assessments, parameters, impacts, locations, sites, visits, cursor, hasMore, catalogContentSeq, role, visibilityEpoch}`. Una página son los `limit`
 primeros `server_seq > since` **de todos los tipos** (el contador es común), repartidos en `items` (marcas), `notes` y
-`assessments` (y `parameters`, F11f), cada lista en orden; `cursor` es el último `server_seq` de la página y vale para todos. **Incluidas las borradas**
+`assessments` (y `parameters`), cada lista en orden; `cursor` es el último `server_seq` de la página y vale para todos. **Incluidas las borradas**
 (`{occurrenceID | noteID, taxonID, userId, clientUpdatedAt, serverSeq, deleted: true}`, sin coordenadas, texto ni
 datos). Una marca lleva los términos DwC (los de F8a incluidos), `recordedBy` (nombre del autor), `userId`,
 `generalized` y, si es `true`, `dataGeneralizations` e `informationWithheld`; nivel 1 generalizado: sin
 coordenadas (`null`). Una nota: `text`, `recordedBy`, `userId`, `clientUpdatedAt`. Guardar `cursor` y seguir
 mientras `hasMore`.
 
-Parámetros (F11f): no tienen push ni autor; los fijan owner y custodio por la API y bajan por el pull como las demás
+Parámetros: no tienen push ni autor; los fijan owner y custodio por la API y bajan por el pull como las demás
 entidades (`{taxonID, key, value, valueMin, valueMax, quality, source, setById, setBy, setAt, serverSeq, deleted}`; un borrado
 solo trae identidad y `deleted: true`). En el móvil van al almacén `parameters` (clave `[catalogId, taxonID, key]`) y lo
 del servidor manda siempre.
@@ -142,9 +142,9 @@ desde 0 una vez.
 - Sin rol (expulsado o catálogo borrado) → **403 `{error, code: "not_member"}`**: el móvil borra sus datos de
   ese catálogo.
 - Owner/custodian que reciben coordenadas exactas ajenas de especies de nivel < 4: **una** fila `view_exact`
-  en `access_log` por petición, con el número de registros en `target`.
+  en `access_log` por día, con el mayor número de registros recibidos ese día en `target` (`logViewExact()`, `Lib/audit.php`).
 
-## Revocar confianza también en el móvil (F6)
+## Revocar confianza también en el móvil
 El pull solo manda lo que cambió desde el cursor: si a alguien le quitan el custodio, las coordenadas exactas que
 ya bajó se quedarían en su dispositivo. Para eso está `catalog_members.visibility_epoch` (`Lib/teams.php`):
 
@@ -171,7 +171,7 @@ sube al añadir o quitar especies, cambiar niveles o editar el catálogo.
 Imágenes: siempre `/img/fototeca/...` (proxy de nginx a la Fototeca del MITECO, con caché de 30 días): mismo
 origen, se pueden guardar sin respuestas opacas. Solo esa forma de ruta y sin parámetros; lo demás → 400.
 
-## En el dispositivo (F5b)
+## En el dispositivo
 Código: `frontend/js/db.js` (IndexedDB), `offline.js` (descarga y lecturas locales), `marks.js` (marcas,
 cola, respaldo) y `sync.js` (motor).
 
@@ -193,21 +193,21 @@ cola, respaldo) y `sync.js` (motor).
   exportarlas o descartarlas.
 - **Respaldo**: JSON `{format: "biodex-backup", version: 1, userId, catalogs, species, occurrences}`; solo lo
   importa la misma cuenta y es idempotente por `occurrenceID`.
-- **EOO/AOO (F9)**: el último resultado del servidor por especie, ámbito y celda va a `meta`
+- **EOO/AOO**: el último resultado del servidor por especie, ámbito y celda va a `meta`
   (`metrics:<catálogo>:<taxón>:<ámbito>:<celda>`, `js/metrics.js`) para verlo sin red con su fecha; sale con el catálogo.
-- **Zonas del mapa (F7)**: la base sube a la versión 2 con el almacén `zones`; sus teselas van a las cachés
+- **Zonas del mapa**: la base sube a la versión 2 con el almacén `zones`; sus teselas van a las cachés
   `biodex-tiles-<zoneId>`, que cerrar sesión también borra. Detalle en `docs/mapa.md`.
-- **Notas (F8a)**: versión 3 con el almacén `notes` (índices `catalogId`, `taxonID`). Cola `note` / `noteDelete`,
+- **Notas**: versión 3 con el almacén `notes` (índices `catalogId`, `taxonID`). Cola `note` / `noteDelete`,
   una entrada por nota como las marcas; el respaldo pasa a `version: 2` con `notes` (importa también los de la 1).
   Expulsión o catálogo borrado: sus notas salen del dispositivo con el resto.
-- **Evaluaciones UICN (F8b)**: versión 4 con el almacén `assessments` (índices `catalogId`, `taxonID`). Cola
+- **Evaluaciones UICN**: versión 4 con el almacén `assessments` (índices `catalogId`, `taxonID`). Cola
   `assessment` / `assessmentDelete`; el respaldo pasa a `version: 3` con `assessments` (importa también 1 y 2).
   Expulsión o catálogo borrado: salen con el resto. El asistente guarda sin red (`docs/iucn.md`).
-- **Sitios y visitas (F11h)**: versión 7 con los almacenes `sites` (índice `catalogId`) y `visits` (`catalogId`,
+- **Sitios y visitas**: versión 7 con los almacenes `sites` (índice `catalogId`) y `visits` (`catalogId`,
   `siteID`) y el índice `visitID` en `occurrences`. Cola `site` / `siteDelete` y `visit` / `visitDelete`; en cada lote del
   push van **primero** (`sync.js`, `PUSH_ORDER`). La visita en curso va en `state.visit` (`localStorage biodex.activeVisit`)
   y la traza de un transecto que se graba, en `meta track:<visitID>` (al cerrar la visita es la línea del sitio). Con otra
   `visibilityEpoch`, los sitios y las visitas ajenos salen también del dispositivo. El respaldo pasa a `version: 5` con
   `sites` y `visits`. Código: `js/visits.js`, `js/visit-records.js` (forma en la API) y `views/visit-sheet.js`.
-- **Editar una marca** (F8a, «Mis marcas»): cambia los datos, nunca la posición ni `eventDate`; sube
+- **Editar una marca** («Mis marcas»): cambia los datos, nunca la posición ni `eventDate`; sube
   `clientUpdatedAt` y el push la acepta por ser la más reciente.

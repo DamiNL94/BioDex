@@ -1,4 +1,4 @@
-# Mapa (F7)
+# Mapa
 
 Código: `frontend/js/views/map.js` (vista), `js/map/layers.js` (capas y cuentas de teselas),
 `js/map/marks-layer.js` (marcas), `js/map/zones.js` (descarga de zonas), `js/map/zone-ui.js` (editor y
@@ -62,18 +62,18 @@ urbanas la estimación se queda corta: la de la Alhambra (z13–16, base + PNOA)
   sin dependencias; siempre en el huso 30 (como EPSG:25830, también fuera de él). Pruebas:
   `node frontend/tests/utm.test.mjs`, 10 puntos de control contra PROJ (`cs2cs EPSG:4258 EPSG:25830`) con
   error < 1 cm, más ida y vuelta < 1 mm.
-- **«Marcar aquí»**: abre la hoja de marca (`views/mark-sheet.js`, F8a) con la última posición del GPS; la
+- **«Marcar aquí»**: abre la hoja de marca (`views/mark-sheet.js`) con la última posición del GPS; la
   hoja sigue la suya mientras está abierta y guarda la del momento de pulsar «Guardar». Con precisión peor
   que 50 m pide confirmación. Selector de las especies del catálogo activo (del servidor o, sin red, del
   dispositivo), con la del filtro de especie ya elegida.
-- **Marcar en un punto del mapa** (F8a, individuo visto a distancia): mantener pulsado en el mapa (clic
+- **Marcar en un punto del mapa** (individuo visto a distancia): mantener pulsado en el mapa (clic
   derecho en escritorio; Leaflet lo recibe como `contextmenu`) → marcador provisional y la misma hoja, con
   `georeferenceProtocol: Punto marcado en el mapa`, **precisión estimada obligatoria** (m) y
   `georeferenceRemarks`. Editando una zona, la pulsación larga no marca.
-- Marcadores (F8a): el punto marcado a mano lleva **borde discontinuo** (24 px, 3 px); una ausencia, marcador
+- Marcadores: el punto marcado a mano lleva **borde discontinuo** (24 px, 3 px); una ausencia, marcador
   hueco con aspa. Los dos salen en la leyenda y en el globo.
 
-## Capa «EOO / AOO» (F9)
+## Capa «EOO / AOO»
 Botón **«EOO / AOO»** de la barra: con una especie elegida en Filtros (si no la hay, abre Filtros), pinta lo que manda
 `GET …/species/{taxonID}/metrics?scope=team&cell=2` (`map/metrics-layer.js`, sin interacción y por debajo de las
 marcas): **polígono convexo mínimo** (EOO, latón discontinuo) y **celdas de 2 km** (AOO, azul; celdas UTM dibujadas con

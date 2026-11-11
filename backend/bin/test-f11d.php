@@ -368,10 +368,29 @@ check("rechazar la última fuente que quedaba → none", $code === 200 && ($r["s
     && $pdo->query("SELECT CONCAT(status, '|', rejected_sources) FROM species_photos WHERE taxonID = '990011103'")->fetchColumn() === "none|inaturalist,gbif,commons");
 
 // ------------------------------------------------------------------------------------------------
+section("Recomprobar una foto ok (--recheck-ok-days)");
+$okRow = fn() => $pdo->query("SELECT status, photo_ref, checked_at FROM species_photos WHERE taxonID = '990011101'")->fetch();
+$gbifOk = ["status" => "ok", "source" => "gbif", "photo_ref" => "4923840410/3f91f30492308e7e374c14b74e467fee"];
+$pdo->exec("UPDATE species_photos SET checked_at = NOW() - INTERVAL 40 DAY WHERE taxonID = '990011101'");
+check("la misma foto: no cambia, solo renueva checked_at", photoRecheckOk($pdo, "990011101", $gbifOk) === false
+    && $okRow()["status"] === "ok" && strtotime($okRow()["checked_at"]) > time() - 3600, json_encode($okRow()));
+check("una por sinónimo (review) no pisa la aceptada", photoRecheckOk($pdo, "990011101", ["status" => "review"] + $gbifOk) === false
+    && $okRow()["status"] === "ok");
+check("un error de red (pending) no toca nada", photoRecheckOk($pdo, "990011101", ["status" => "pending", "source" => "gbif", "error" => "timeout"]) === false
+    && $okRow()["status"] === "ok");
+check("ninguna fuente la da ya (retirada): pasa a none y se borra la copia", photoRecheckOk($pdo, "990011101", ["status" => "none", "source" => null]) === true
+    && $okRow()["status"] === "none" && $okRow()["photo_ref"] === null
+    && (int) $pdo->query("SELECT COUNT(*) FROM species_photo_files WHERE taxonID = '990011101'")->fetchColumn() === 0, json_encode($okRow()));
+check("y una que no está en ok no se toca", photoRecheckOk($pdo, "990011101", $gbifOk) === false && $okRow()["status"] === "none");
+
+// ------------------------------------------------------------------------------------------------
 section("Script");
 $out = [];
 exec("php " . escapeshellarg(__DIR__ . "/fetch-species-photos.php") . " --source=flickr 2>&1", $out, $rc1);
 check("--source no válida → código 2", $rc1 === 2, implode("\n", $out));
+$out = [];
+exec("php " . escapeshellarg(__DIR__ . "/fetch-species-photos.php") . " --recheck-ok-days=-1 2>&1", $out, $rc1);
+check("--recheck-ok-days negativo → código 2", $rc1 === 2, implode("\n", $out));
 $pdo->exec("UPDATE species_photos SET checked_at = NOW() WHERE status = 'pending' AND taxonID LIKE '99001110_'");   // que la pasada no las coja
 $out = [];
 exec("php " . escapeshellarg(__DIR__ . "/fetch-species-photos.php") . " --dry-run --limit=1 --source=commons 2>&1", $out, $rc2);

@@ -1,4 +1,4 @@
-# Plinian Core vendorizado (F10c)
+# Plinian Core vendorizado
 
 Esquema con el que `Lib/plinian.php` valida (`DOMDocument::schemaValidate`) cada `pliniancore/*.xml` de la exportación.
 Todo en local: la validación no sale a la red.

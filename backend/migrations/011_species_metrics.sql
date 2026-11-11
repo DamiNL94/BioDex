@@ -1,4 +1,4 @@
--- F9 · EOO y AOO calculados en el servidor (el definitivo) con las coordenadas exactas.
+-- EOO y AOO calculados en el servidor (el definitivo) con las coordenadas exactas.
 -- species_metrics ya existía (004) sin usarse: se guarda por catálogo, especie, ámbito (me/team), usuario (en
 -- «me») y TAMAÑO DE CELDA (2 o 1 km: siempre se guarda el usado), con lo necesario para decidir si recalcular.
 

@@ -1,8 +1,8 @@
 // ================================================================================================
-// mock-api.mjs — API de BioDex simulada para Playwright (F11f), a partir de respuestas reales de la demo
+// mock-api.mjs — API de BioDex simulada para Playwright, a partir de respuestas reales de la demo
 // grabadas en fixtures/demo-owner.json (catálogo «DEMO — Flora amenazada de Sierra Nevada», datos
 // ficticios; la usuaria es la propietaria). Guarda en memoria lo que la prueba cambia: marcas subidas
-// (push) y parámetros (PUT/DELETE), con su server_seq, y el pull los devuelve como el servidor. F11h: también sitios y
+// (push) y parámetros (PUT/DELETE), con su server_seq, y el pull los devuelve como el servidor. También sitios y
 // visitas (push y pull), y el orden en que llegan (`batches`) para comprobar que van antes que sus marcas.
 // Lo que no está simulado responde 404 JSON (nunca 5xx: la app lo tomaría por servidor caído).
 // ================================================================================================
@@ -20,10 +20,10 @@ export async function mockApi(context) {
     seq: Math.max(0, ...FX.pull.items.map((i) => i.serverSeq || 0), FX.pull.cursor || 0) + 1000,
     params: new Map(),     // `${taxonID}|${key}` → parámetro (con deleted)
     pushed: [],            // marcas recibidas
-    impacts: [],           // F11g: impactos recibidos (el pull los devuelve con su server_seq)
-    sites: [],             // F11h: sitios recibidos
-    visits: [],            // F11h: visitas recibidas (la última versión de cada una)
-    batches: [],           // F11h: por push, {sites, visits, occurrences} (ids) en el orden recibido
+    impacts: [],           // Impactos recibidos (el pull los devuelve con su server_seq)
+    sites: [],             // Sitios recibidos
+    visits: [],            // Visitas recibidas (la última versión de cada una)
+    batches: [],           // Por push, {sites, visits, occurrences} (ids) en el orden recibido
     calls: [],
   };
   const me = FX.me.user;
@@ -54,7 +54,7 @@ export async function mockApi(context) {
       if (rest.startsWith('/audit')) return json(route, FX.audit);
       const pm = rest.match(/^\/species\/([^/]+)\/parameters(?:\/([a-z0-9_]+))?$/);
       if (pm) return parameters(route, decodeURIComponent(pm[1]), pm[2], m, req);
-      // F11g: la evaluación del servidor no se simula: sin respuesta, la app calcula la provisional en el
+      // La evaluación del servidor no se simula: sin respuesta, la app calcula la provisional en el
       // dispositivo con shared/iucn-quantifiers.js (lo que se prueba es ese camino).
       if (/^\/species\/[^/]+\/assessment$/.test(rest)) return route.abort('internetdisconnected');
     }

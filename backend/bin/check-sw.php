@@ -4,7 +4,7 @@
 // deja la app rota sin cobertura y nadie se entera hasta estar en el monte).
 //   · Cada entrada de SHELL_ASSETS existe y no está repetida.
 //   · Todo .js/.css de frontend/ (salvo el propio sw.js) está en SHELL_ASSETS.
-//   · El motor y los umbrales UICN de shared/ (F8b) también (rutas shared/…, servidas por nginx).
+//   · El motor y los umbrales UICN de shared/ también (rutas shared/…, servidas por nginx).
 // Uso: docker compose exec php php bin/check-sw.php   (o `php backend/bin/check-sw.php` en el anfitrión)
 // ================================================================================================
 
@@ -37,7 +37,7 @@ echo "sw.js VERSION " . ($v[1] ?? "?") . " · " . count($assets) . " ficheros en
 foreach (array_count_values($assets) as $a => $n) {
     if ($n > 1) $fail("repetido en SHELL_ASSETS: {$a}");
 }
-// shared/ (F8b): el motor UICN y sus umbrales, servidos por nginx en /shared/ desde la carpeta shared/.
+// shared/: el motor UICN y sus umbrales, servidos por nginx en /shared/ desde la carpeta shared/.
 $shared = dirname($front) . "/shared";
 foreach ($assets as $a) {
     $file = str_starts_with($a, "shared/") ? "{$shared}/" . substr($a, 7) : "{$front}/{$a}";

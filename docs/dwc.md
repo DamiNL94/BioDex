@@ -1,6 +1,6 @@
 # Mapeo Darwin Core
 
-Exportación (F10a): `backend/Lib/export.php` (datos y seguridad), `Lib/dwc.php` (términos, URIs, meta.xml, eml.xml) y
+Exportación: `backend/Lib/export.php` (datos y seguridad), `Lib/dwc.php` (términos, URIs, meta.xml, eml.xml) y
 `Lib/xlsx.php` (hojas). Rutas: `docs/api.md` › Exportación. Pruebas: `docker compose exec php php bin/test-f10a.php` y,
 desde F11h, `bin/test-f11h.php` (núcleo Event, coherencia de meta.xml y ninguna coordenada exacta sensible al publicar).
 Ficheros de texto: UTF-8 sin BOM, tabuladores, `\n`, sin comillas; tabuladores y saltos dentro de un campo → un espacio.
@@ -22,7 +22,7 @@ de su visita; una marca suelta (oportunista), de un evento propio `biodex:evt:<o
   marca de una visita sale con el más restrictivo entre su especie y su visita: una marca exacta de una especie común no
   delata el sitio de una sensible contada en la misma visita (la misma regla vale en `/api/sync/pull`).
 
-## event.txt (núcleo Event, F11h)
+## event.txt (núcleo Event)
 | Término | Visita | Sitio (evento padre) | Marca oportunista |
 |---|---|---|---|
 | `eventID` (`<id>`) | `visitID` | `biodex:site:<siteID>` | `biodex:evt:<occurrenceID>` |
@@ -50,7 +50,7 @@ visita (especies objetivo sin contar al cerrarla) llevan `occurrenceStatus = abs
 | `eventDate` | UTC con zona, `2026-06-15T08:00:00Z` |
 | `recordedBy` · `recordedByID` | nombre del autor · `https://orcid.org/<ORCID>` si lo tiene |
 | `individualCount` | columna; **ausencias: 0** |
-| `sex` · `lifeStage` | vocabularios de GBIF tal cual (F8a) |
+| `sex` · `lifeStage` | vocabularios de GBIF tal cual |
 | `occurrenceRemarks` · `habitat` | columnas (remarks retenido si la fila se generaliza) |
 | `decimalLatitude` · `decimalLongitude` | exactas o generalizadas según el modo; nivel 1 en «publicar»: vacías |
 | `geodeticDatum` | `EPSG:4326` (vacío si no hay coordenadas) |
@@ -82,7 +82,7 @@ La evaluación UICN no va: es de la especie, no de una observación (va en la ho
 no hay fichero ni `<extension>` en meta.xml.
 
 ## meta.xml y eml.xml
-- meta.xml (F11h): `<core rowType="…/Event">` con `event.txt` e `<id index="0"/>`; extensiones Occurrence
+- meta.xml: `<core rowType="…/Event">` con `event.txt` e `<id index="0"/>`; extensiones Occurrence
   (`occurrence.txt`) y eMoF (`measurementorfact.txt`), cada una con `<coreid index="0"/>` y su `<field index="0">`
   `eventID`. `fieldsTerminatedBy="\t"`, `fieldsEnclosedBy=""`, `ignoreHeaderLines="1"`; los `<field>` salen de la misma
   lista que la cabecera (no pueden discrepar). Validado contra `tdwg_dwc_text.xsd` en la prueba; la prueba de F11h
@@ -98,18 +98,18 @@ Evaluación por especie, Subpoblaciones e Impactos y, desde F11h, Visitas y Seri
 mismos datos en `hojas/csv/` como CSV estándar para R, Python o QGIS (RFC 4180: UTF-8 sin BOM, `,`, punto decimal, fechas `AAAA-MM-DD hh:mm` en hora peninsular; hasta 1.5.1 eran `;` y coma decimal para Excel en español, y LibreOffice o Google Sheets los partían mal). Observaciones:
 cabecera en castellano con el término DwC debajo en gris, coordenadas con 6 decimales y UTM 30N (EPSG:25830), filas
 congeladas y autofiltro. Distribución: EOO/AOO definitivos del servidor (equipo, celda de 2 km), solo cifras.
-Evaluación por especie y Subpoblaciones (F11g): el cálculo de la pestaña Evaluación UICN con todas las presencias,
-solo cifras (sin geometría). Impactos (F11g): el sitio sigue la regla de las marcas (generalizado para publicar, sin la
+Evaluación por especie y Subpoblaciones: el cálculo de la pestaña Evaluación UICN con todas las presencias,
+solo cifras (sin geometría). Impactos: el sitio sigue la regla de las marcas (generalizado para publicar, sin la
 nota en esas filas).
 
-**Ni la evaluación ni los impactos van en el Darwin Core Archive** (F11g). La evaluación es de la especie, no de una
+**Ni la evaluación ni los impactos van en el Darwin Core Archive**. La evaluación es de la especie, no de una
 observación (decisión de F10a). Los impactos tampoco, por ahora: no hay una extensión DwC estándar para amenazas
 observadas en campo (podrían ir como eventos con MeasurementOrFact o en la extensión de distribución con
 `threatStatus`, pero ninguna encaja sin forzar el vocabulario); quedan en la hoja «Impactos» hasta decidirlo.
 
-Visitas (F11h): una fila por visita de las marcas exportadas (sitio, protocolo, inicio, fin, esfuerzo, observadores,
+Visitas: una fila por visita de las marcas exportadas (sitio, protocolo, inicio, fin, esfuerzo, observadores,
 especies objetivo, marcas y ausencias), con la posición y la geometría de su evento: en la de publicar, si se generaliza,
-sin nombre del sitio, sin geometría y sin condiciones. Series (F11h): por especie con visitas a sitios, una fila por año
+sin nombre del sitio, sin geometría y sin condiciones. Series: por especie con visitas a sitios, una fila por año
 (visitado o no, total observado e índice del modelo) y, en la primera, tasa anual con IC, reducción en la ventana de A y
 lo observado (`docs/iucn.md`). Solo cifras.
 

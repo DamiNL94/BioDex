@@ -1,6 +1,6 @@
 <?php
 // ================================================================================================
-// commons.php — foto de respaldo de Wikimedia Commons, vía la imagen (P18) del taxón en Wikidata (F11d).
+// commons.php — foto de respaldo de Wikimedia Commons, vía la imagen (P18) del taxón en Wikidata.
 // ------------------------------------------------------------------------------------------------
 // Última fuente antes de la silueta. Solo coincidencia exacta (aquí no hay review):
 //   · commonsTaxonDecide() (pura): UN solo elemento de Wikidata con P225 (nombre del taxón) igual al de

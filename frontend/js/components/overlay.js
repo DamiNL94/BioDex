@@ -5,8 +5,8 @@
 //   'side'    panel lateral en escritorio, hoja a pantalla completa en el móvil (ficha de especie)
 //   'full'    pantalla completa en todos los tamaños (constructor de catálogos)
 //   'dialog'  diálogo centrado (confirmaciones, alta de especie)
-//   'sheet'   hoja que sube desde abajo en el móvil; menú anclado en escritorio (F11c: cambiar de catálogo)
-// F11c, volver atrás: cada panel lleva «←» a la izquierda y «×» a la derecha; CSS enseña uno u otro.
+//   'sheet'   hoja que sube desde abajo en el móvil; menú anclado en escritorio (cambiar de catálogo)
+// Volver atrás: cada panel lleva «←» a la izquierda y «×» a la derecha; CSS enseña uno u otro.
 //   móvil, 'side' y 'full'      → «←» (patrón nativo)        escritorio, 'side' → «×»
 //   escritorio, 'full'          → «← Volver» con texto      'dialog' y 'sheet' → «×»
 //   panel encima de otro panel  → «←», con aria-label «Volver a «<título del de abajo>»»

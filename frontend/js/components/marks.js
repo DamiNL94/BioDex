@@ -1,6 +1,6 @@
 // ================================================================================================
 // components/marks.js — las marcas de una especie en la ficha: resumen, «Mis marcas» y «Marcas del
-// equipo» (F5, F6; F8a: datos completos, editar y resumen).
+// equipo» (datos completos, editar y resumen).
 // ------------------------------------------------------------------------------------------------
 // «Marcar aquí» abre la hoja de marca (views/mark-sheet.js); nunca se guarda una marca sin posición.
 // «Mis marcas»: fecha, presente/ausente, individuos, maduros, estado vital, sexo, hábitat, precisión,
@@ -28,7 +28,7 @@ const fmtCoord = (o) => (o.decimalLatitude === null || o.decimalLatitude === und
   : `${Number(o.decimalLatitude).toFixed(5)}, ${Number(o.decimalLongitude).toFixed(5)}`);
 const isAbsent = (o) => o.occurrenceStatus === 'absent';
 
-/** Compatibilidad: «Marcar aquí» desde la lista de especies (F5). */
+/** Compatibilidad: «Marcar aquí» desde la lista de especies. */
 export function openMarkHere(species, catalog, { onSaved } = {}) {
   return openMarkSheet({ catalog, species, onSaved });
 }

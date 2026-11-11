@@ -1,4 +1,4 @@
--- F2a · Auditoría: vistas exactas, exportaciones completas, cambios de nivel y de rol, logins fallidos.
+-- Auditoría: vistas exactas, exportaciones completas, cambios de nivel y de rol, logins fallidos.
 -- Sin borrado en cascada: el rastro sobrevive a usuarios y catálogos (FK a NULL).
 
 CREATE TABLE IF NOT EXISTS access_log (

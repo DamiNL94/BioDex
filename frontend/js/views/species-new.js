@@ -4,7 +4,7 @@
 // Se abre desde «Sin resultados» del buscador (con el texto precargado) y desde el constructor.
 // 201 → clasificación obtenida y SU FUENTE (género en EIDOS o GBIF) con aviso de guarda.
 // 409 → «Ya existe» con enlace a su ficha: nunca se crean duplicados.
-// Sin servidor y dentro de un catálogo (F5): se guarda en el dispositivo con taxonID biodex:<uuid> y
+// Sin servidor y dentro de un catálogo: se guarda en el dispositivo con taxonID biodex:<uuid> y
 // sync.js la da de alta al volver la red (si el nombre ya existe, sus marcas pasan a la existente).
 // ================================================================================================
 

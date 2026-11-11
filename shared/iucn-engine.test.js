@@ -76,7 +76,7 @@ for (const c of CASES.quantifiers) {
   check(c.name, !bad.length, bad.join('; '));
 }
 
-// --- F11h · Series temporales (casos de bin/series-reference.py: statsmodels o solución analítica) ---------
+// --- Series temporales (casos de bin/series-reference.py: statsmodels o solución analítica) ---------
 const near = (a, b, tol) => (a === null || b === null ? a === b : Math.abs(a - b) <= tol * Math.max(1, Math.abs(b)));
 for (const c of CASES.series || []) {
   const s = analyzeSeries(c.obs, { generationLength: c.generationLength, criteria });

@@ -1,5 +1,5 @@
 // ================================================================================================
-// components/species-notes.js — notas de cuaderno de una especie en el catálogo activo (F8a).
+// components/species-notes.js — notas de cuaderno de una especie en el catálogo activo.
 // ------------------------------------------------------------------------------------------------
 // Lista cronológica con autor y fecha; cada uno añade, edita y borra las suyas (sin red también: van
 // a IndexedDB y a la cola, y sync.js las sube). Las del equipo llegan con el pull. Añadir exige un rol

@@ -1,5 +1,5 @@
 // ================================================================================================
-// site-geom.js — geometría de los sitios de muestreo (F11h): WKT, superficie, longitud y centro. Sin DOM ni imports:
+// site-geom.js — geometría de los sitios de muestreo: WKT, superficie, longitud y centro. Sin DOM ni imports:
 // lo prueba node (frontend/tests/site-geom.test.mjs). La proyección (UTM 30N, js/geo/utm.js) se INYECTA.
 // Mismas cifras que el servidor (backend/Lib/visits.php › siteGeometryMetrics), que es quien manda: lo de aquí es
 // para enseñarlo mientras se dibuja y sin red.
@@ -7,6 +7,17 @@
 // ================================================================================================
 
 const num = (v) => Number(v.toFixed(6)).toString();
+
+/** ¿Está el punto {lat, lng} dentro del polígono [[lat, lon]…]? (rayo; vale a escala de campo). */
+export function inPolygon(p, poly) {
+  let c = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [ai, bi] = poly[i];
+    const [aj, bj] = poly[j];
+    if ((ai > p.lat) !== (aj > p.lat) && p.lng < ((bj - bi) * (p.lat - ai)) / (aj - ai) + bi) c = !c;
+  }
+  return c;
+}
 
 /** [[lat, lon]…] → POLYGON((lon lat, …, primero)). */
 export function polygonWkt(latlngs) {

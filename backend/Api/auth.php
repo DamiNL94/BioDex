@@ -11,7 +11,7 @@
 //
 // Sesión: Lib/session.php (cookie de sesión + token "seguir conectado" de 90 días).
 // Límite: 5 intentos fallidos por email o por IP en 15 min → 429; cada fallo va a access_log.
-// Una cuenta sin verificar puede entrar; lo que exija verificación lo comprueba cada fase (F6: custodio).
+// Una cuenta sin verificar puede entrar; lo que exija verificación lo comprueba cada fase (custodio).
 // ================================================================================================
 
 require_once __DIR__ . "/../Lib/session.php";

@@ -23,53 +23,6 @@ const ARTEMISIA = "9918";
 $pdo = db();
 runMigrations($pdo);
 
-/** Como http() de test-lib, pero devuelve el cuerpo sin decodificar (el ZIP). */
-function httpRaw(string $method, string $path, ?array $body, array $jar): array {
-    global $BASE;
-    $headers = [];
-    $ch = curl_init($BASE . $path);
-    $h = ["Content-Type: application/json"];
-    if ($jar) $h[] = "Cookie: " . implode("; ", array_map(fn($k, $v) => "{$k}={$v}", array_keys($jar), $jar));
-    curl_setopt_array($ch, [CURLOPT_CUSTOMREQUEST => $method, CURLOPT_RETURNTRANSFER => true, CURLOPT_HTTPHEADER => $h,
-        CURLOPT_TIMEOUT => 120, CURLOPT_POSTFIELDS => json_encode($body ?? new stdClass()),
-        CURLOPT_HEADERFUNCTION => function ($ch, $line) use (&$headers) {
-            if (preg_match("/^([\w-]+):\s*(.*)$/", trim($line), $m)) $headers[strtolower($m[1])] = $m[2];
-            return strlen($line);
-        }]);
-    $raw = (string) curl_exec($ch);
-    $code = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
-    curl_close($ch);
-    return [$code, $raw, $headers];
-}
-
-/** ZIP en memoria → [ruta interna → contenido]. */
-function unzipAll(string $raw): array {
-    $tmp = tempnam(sys_get_temp_dir(), "t10");
-    file_put_contents($tmp, $raw);
-    $zip = new ZipArchive();
-    $out = [];
-    if ($zip->open($tmp) === true) {
-        for ($i = 0; $i < $zip->numFiles; $i++) $out[$zip->getNameIndex($i)] = $zip->getFromIndex($i);
-        $zip->close();
-    }
-    unlink($tmp);
-    return $out;
-}
-
-/** occurrence.txt → [cabecera, filas como término → valor, líneas con nº de columnas distinto]. */
-function parseTsv(string $txt): array {
-    $lines = explode("\n", rtrim($txt, "\n"));
-    $head = explode("\t", array_shift($lines));
-    $rows = [];
-    $bad = 0;
-    foreach ($lines as $l) {
-        $cols = explode("\t", $l);
-        if (count($cols) !== count($head)) { $bad++; continue; }
-        $rows[] = array_combine($head, $cols);
-    }
-    return [$head, $rows, $bad];
-}
-
 function wellFormed(string $xml): ?DOMDocument {
     $d = new DOMDocument();
     return @$d->loadXML($xml) ? $d : null;
@@ -208,7 +161,7 @@ check("contiene hojas/BioDex_<catálogo>_<fecha>.xlsx", (bool) $xlsxName, implod
 
 $occTxt = $pub["dwca/occurrence.txt"] ?? "";
 [$head, $rows, $bad] = parseTsv($occTxt);
-// F11h: núcleo Event: occurrence.txt es una extensión y su primera columna (eventID) es el coreid.
+// Núcleo Event: occurrence.txt es una extensión y su primera columna (eventID) es el coreid.
 check("cabecera: eventID + los términos de F10a, en orden", $head === ["eventID", ...array_keys(DWC_OCCURRENCE_TERMS)]);
 check("UTF-8 sin BOM y saltos \\n", mb_check_encoding($occTxt, "UTF-8") && !str_starts_with($occTxt, "\xEF\xBB\xBF") && !str_contains($occTxt, "\r"));
 check("sin tabuladores internos: todas las filas con " . count($head) . " columnas", $bad === 0, "{$bad} filas mal");
@@ -276,7 +229,7 @@ if ($meta) {
 check("measurementorfact.txt: 2 filas de maduros enlazadas por eventID y occurrenceID", count($mrows) === 2 && $mbad === 0 && $mh[0] === "eventID"
     && !array_diff(array_column($mrows, "occurrenceID"), $ids10) && $mrows[0]["measurementType"] === "número de individuos maduros"
     && $mrows[0]["eventID"] === $byId[$mrows[0]["occurrenceID"]]["eventID"]);
-// F11h: sin visitas, cada marca es un evento oportunista con su misma posición publicable.
+// Sin visitas, cada marca es un evento oportunista con su misma posición publicable.
 [$eh, $erows, $ebad] = parseTsv($pub["dwca/event.txt"] ?? "");
 $evById = array_column($erows, null, "eventID");
 check("event.txt: un evento oportunista por marca (biodex:evt:<occurrenceID>), con la posición de la marca", $ebad === 0

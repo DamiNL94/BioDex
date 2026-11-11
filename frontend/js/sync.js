@@ -6,14 +6,14 @@
 // Orden de cada pasada:
 //   1. especies creadas sin red (POST /species con su taxonID; 409 → se reasignan sus marcas) y su
 //      alta en el catálogo;
-//   2. push de marcas, notas de especie (F8a), evaluaciones UICN (F8b), impactos (F11g), sitios y visitas (F11h,
+//   2. push de marcas, notas de especie, evaluaciones UICN, impactos, sitios y visitas (
 //      primero en cada lote) y sus borrados en lotes de 200, por catálogo;
 //   3. pull de cada catálogo descargado hasta `hasMore: false` (marcas en `items`, notas en `notes`,
 //      evaluaciones en `assessments`, un solo cursor); si `catalogContentSeq` cambió, se vuelve a bajar el paquete.
 // Red caída a mitad → reintento con espera creciente (30 s, 1, 2, 5 min). 401 → la cola se conserva
 // (la app pide entrar de nuevo). Pull 403 not_member → el catálogo se borra del dispositivo; si tenía
 // marcas propias sin subir, antes se ofrecen para exportar (Ajustes). Pull con otra `visibilityEpoch`
-// (F6) → se borran las marcas ajenas de ese catálogo y se vuelven a bajar desde 0.
+// → se borran las marcas ajenas de ese catálogo y se vuelven a bajar desde 0.
 // ================================================================================================
 
 import { apiGetJson, apiPostJson } from './api.js';
@@ -25,11 +25,11 @@ import { downloadCatalog, forgetCatalog, isDownloading } from './offline.js';
 import { sitePayload, visitPayload, siteFromServer, visitFromServer } from './visit-records.js';
 
 const PERIOD_MS = 5 * 60 * 1000;
-// Versión del protocolo de pull que tiene aplicada cada catálogo (meta `syncv:<id>`). 2 (F8a): el pull
+// Versión del protocolo de pull que tiene aplicada cada catálogo (meta `syncv:<id>`). 2: el pull
 // trae también `notes`. Un cursor de antes pudo saltarse notas (se lo comía una versión anterior de la
-// app que no las guardaba): con una versión menor se vuelve a pedir desde 0. 3 (F8b): + `assessments`.
-// 4 (F11f): + `parameters` (parámetros de especie).
-const PULL_VERSION = 6;   // 5 (F11g): + `impacts` y `locations` · 6 (F11h): + `sites` y `visits` (y visitID en las marcas)
+// app que no las guardaba): con una versión menor se vuelve a pedir desde 0. 3: + `assessments`.
+// 4: + `parameters` (parámetros de especie).
+const PULL_VERSION = 6;   // 5: + `impacts` y `locations` · 6: + `sites` y `visits` (y visitID en las marcas)
 const BACKOFF_S = [30, 60, 120, 300];
 const PUSH_BATCH = 200;
 const PULL_LIMIT = 500;
@@ -131,12 +131,12 @@ const ENTITIES = {
   occurrences: { id: 'occurrenceID', results: 'results', stale: 'occurrence', deleteKind: 'delete' },
   notes: { id: 'noteID', results: 'noteResults', stale: 'note', deleteKind: 'noteDelete' },
   assessments: { id: 'assessmentID', results: 'assessmentResults', stale: 'assessment', deleteKind: 'assessmentDelete' },
-  impacts: { id: 'impactID', results: 'impactResults', stale: 'impact', deleteKind: 'impactDelete' },   // F11g
-  sites: { id: 'siteID', results: 'siteResults', stale: 'site', deleteKind: 'siteDelete' },              // F11h
-  visits: { id: 'visitID', results: 'visitResults', stale: 'visit', deleteKind: 'visitDelete' },        // F11h
+  impacts: { id: 'impactID', results: 'impactResults', stale: 'impact', deleteKind: 'impactDelete' },
+  sites: { id: 'siteID', results: 'siteResults', stale: 'site', deleteKind: 'siteDelete' },
+  visits: { id: 'visitID', results: 'visitResults', stale: 'visit', deleteKind: 'visitDelete' },
 };
 
-// F11h: sitios y visitas primero, para que una marca de visita no llegue al servidor antes que su visita.
+// Sitios y visitas primero, para que una marca de visita no llegue al servidor antes que su visita.
 const PUSH_ORDER = { site: 0, siteDelete: 0, visit: 1, visitDelete: 1 };
 const pushRank = (e) => PUSH_ORDER[e.kind] ?? 2;
 
@@ -230,12 +230,12 @@ function fromServer(store, it, catalogId) {
 async function applyPulled(catalogId, res) {
   const { cursor, role } = res;
   await tx([...RECORD_STORES, 'parameters', 'locations', 'outbox', 'meta', 'catalogs'], 'readwrite', async (t) => {
-    // F11f: parámetros de especie. No tienen cola (se editan con red): lo del servidor manda siempre.
+    // Parámetros de especie. No tienen cola (se editan con red): lo del servidor manda siempre.
     for (const p of res.parameters || []) {
       if (p.deleted) await t.del('parameters', [catalogId, p.taxonID, p.key]);
       else await t.put('parameters', { ...p, catalogId });
     }
-    // F11g: localidades confirmadas (sin cola, como los parámetros).
+    // Localidades confirmadas (sin cola, como los parámetros).
     for (const l of res.locations || []) {
       if (l.deleted) await t.del('locations', [catalogId, l.taxonID]);
       else await t.put('locations', { ...l, catalogId });
@@ -257,7 +257,7 @@ async function applyPulled(catalogId, res) {
 }
 
 /**
- * Cambió lo que este usuario puede ver de las marcas ajenas (F6: le quitaron o dieron custodio, o el
+ * Cambió lo que este usuario puede ver de las marcas ajenas (le quitaron o dieron custodio, o el
  * owner cambió el nivel de una especie): se borran del dispositivo TODAS las marcas ajenas del catálogo
  * y el cursor vuelve a 0, para que ninguna coordenada exacta que ya no le toca se quede aquí. Las propias
  * no se tocan (tampoco las de la cola).
@@ -268,11 +268,11 @@ async function resetForeignMarks(catalogId, epoch) {
     for (const o of await t.byIndex('occurrences', 'catalogId', catalogId)) {
       if (o.authorId !== me) await t.del('occurrences', o.occurrenceID);
     }
-    // F11g: los impactos ajenos también llevan sitio (generalizado según el nivel de sus especies).
+    // Los impactos ajenos también llevan sitio (generalizado según el nivel de sus especies).
     for (const i of await t.byIndex('impacts', 'catalogId', catalogId)) {
       if (i.authorId !== me) await t.del('impacts', i.impactID);
     }
-    // F11h: y los sitios y visitas ajenos (su posición se generaliza con el nivel de sus especies).
+    // Y los sitios y visitas ajenos (su posición se generaliza con el nivel de sus especies).
     for (const x of await t.byIndex('sites', 'catalogId', catalogId)) if (x.authorId !== me) await t.del('sites', x.siteID);
     for (const x of await t.byIndex('visits', 'catalogId', catalogId)) if (x.authorId !== me) await t.del('visits', x.visitID);
     await t.put('meta', { key: 'cursor:' + catalogId, value: 0 });
@@ -293,7 +293,7 @@ export async function pullAll(catalogId) {
       if (e.status === 403 && e.data && e.data.code === 'not_member') { await handleNotMember(catalogId); return null; }
       throw stopFor(e) || e;
     }
-    // Otra época de visibilidad (o ninguna guardada, p. ej. datos de antes de F6): fuera las marcas
+    // Otra época de visibilidad (o ninguna guardada, p. ej. datos de una versión anterior): fuera las marcas
     // ajenas y otra vez desde 0. Si esta página ya venía desde 0, vale tal cual con la época nueva.
     if (res.visibilityEpoch !== undefined && res.visibilityEpoch !== await getMeta('epoch:' + catalogId, null)) {
       await resetForeignMarks(catalogId, res.visibilityEpoch);

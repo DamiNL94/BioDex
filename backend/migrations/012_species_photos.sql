@@ -1,4 +1,4 @@
--- F11b · Fotos de respaldo para las especies de EIDOS sin foto de la Fototeca (docs/fotos-respaldo.md).
+-- Fotos de respaldo para las especies de EIDOS sin foto de la Fototeca (docs/fotos-respaldo.md).
 -- Una fila por especie, global (la comparten todos los catálogos). Solo especies de EIDOS sin foto de la
 -- Fototeca; las de usuario (biodex:) no se buscan y van directas a la silueta de su grupo.
 -- La busca bin/fetch-species-photos.php (1 petición/s a iNaturalist); al dar de alta una especie en un

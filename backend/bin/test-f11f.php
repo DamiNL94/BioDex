@@ -166,7 +166,7 @@ check("volver a fijarlo revive la fila", $code === 200 && ($r["parameter"]["valu
 [$code] = $pull($x);
 check("un no miembro no recibe nada del pull → 403", $code === 403, "HTTP {$code}");
 
-// Registro del catálogo (F6): la acción nueva con el nombre de la especie.
+// Registro del catálogo: la acción nueva con el nombre de la especie.
 [$code, $r] = http("GET", "/api/catalogs/{$cat}/audit", null, $o);
 $entry = null;
 foreach ($r["items"] ?? [] as $it) if ($it["action"] === "set_parameter") { $entry = $it; break; }

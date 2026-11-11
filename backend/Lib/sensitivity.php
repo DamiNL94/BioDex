@@ -157,7 +157,7 @@ function applyVisibility(array $occ, int $level, string $role, int $viewerId): a
 }
 
 /**
- * Copia para PUBLICAR (F10a, exportación «para publicar»): como la vería alguien que no es el autor ni
+ * Copia para PUBLICAR (exportación «para publicar»): como la vería alguien que no es el autor ni
  * tiene acceso a exactas, sea quien sea quien exporta. Pasa por applyVisibility() para que la regla de
  * generalización siga siendo una sola.
  */

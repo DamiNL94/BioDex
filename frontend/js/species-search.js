@@ -1,5 +1,5 @@
 // ================================================================================================
-// species-search.js — buscar y ordenar las especies de un catálogo (F11f): la hoja de marcar y la
+// species-search.js — buscar y ordenar las especies de un catálogo: la hoja de marcar y la
 // pestaña Especies del modo campo. Funciones puras, sin DOM ni imports: lo prueba node
 // (frontend/tests/species-search.test.mjs) y funciona igual con las especies de IndexedDB, sin red.
 // ------------------------------------------------------------------------------------------------
@@ -146,7 +146,7 @@ export function searchSpecies(species, { query = '', group = '', recent = new Ma
     if (group && groupId(sp) !== group) continue;
     const score = matchScore(query, sp);
     if (score === null) continue;
-    // F11h: las especies objetivo de la visita en curso, antes que nada.
+    // Las especies objetivo de la visita en curso, antes que nada.
     const tier = targets && targets.has(sp.taxonID) ? 'target' : recentRank.has(sp.taxonID) ? 'recent' : near.has(sp.taxonID) ? 'near' : 'all';
     out.push({ sp, tier, score, distance: near.get(sp.taxonID) });
   }

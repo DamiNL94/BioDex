@@ -1,5 +1,5 @@
 // ================================================================================================
-// catalog-switcher.js — «Cambiar de catálogo» desde la cabecera (F11c), en cualquier sección.
+// catalog-switcher.js — «Cambiar de catálogo» desde la cabecera, en cualquier sección.
 // ------------------------------------------------------------------------------------------------
 // Campo: hoja que sube desde abajo. Estudio: menú anclado bajo el selector de la barra lateral.
 // Es un panel (overlay.js, variante 'sheet') y por tanto un nivel de BioDexNav: «atrás», Escape y la

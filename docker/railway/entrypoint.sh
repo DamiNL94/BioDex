@@ -1,6 +1,6 @@
 #!/bin/sh
-# Arranque en Railway (F11): migraciones → php-fpm → nginx en $PORT → (opcional) datos de demo.
-# F11b: fotos de respaldo de iNaturalist en segundo plano (tras el seed, si lo hay): no retrasan nginx
+# Arranque en Railway: migraciones → php-fpm → nginx en $PORT → (opcional) datos de demo.
+# Fotos de respaldo de iNaturalist en segundo plano (tras el seed, si lo hay): no retrasan nginx
 # ni el healthcheck.
 set -e
 
@@ -18,7 +18,7 @@ done
 
 php-fpm -D
 
-# Fotos de respaldo (F11b): 1 petición/s a iNaturalist, una línea de resumen al acabar.
+# Fotos de respaldo: 1 petición/s a iNaturalist, una línea de resumen al acabar.
 fetch_photos() {
     (cd /var/www/backend && php bin/fetch-species-photos.php) \
         || echo "BioDex: la búsqueda de fotos de iNaturalist falló (la app sigue funcionando)" >&2

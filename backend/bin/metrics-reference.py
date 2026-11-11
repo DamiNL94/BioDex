@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # ================================================================================================
-# Referencia independiente de EOO/AOO para shared/metrics-cases.json (F9), con pyproj + shapely.
+# Referencia independiente de EOO/AOO para shared/metrics-cases.json, con pyproj + shapely.
 #   pip install pyproj shapely
 #   python backend/bin/metrics-reference.py
 # Imprime, para cada conjunto de `records` del JSON y celda de 2 y 1 km: EOO sin igualar (casco
 # convexo de shapely), celdas ocupadas y AOO, y el mínimo y máximo desplazando la rejilla medio tamaño.
 # Compara a mano con `expect` de los casos «Sierra Nevada» (tolerancia 0,01 km²).
-# F9 (30/09/2026): en la máquina de desarrollo no había Python; la referencia del JSON sale de PROJ
+# 30/09/2026: en la máquina de desarrollo no había Python; la referencia del JSON sale de PROJ
 # (cs2cs, imagen osgeo/proj) + envoltura de Jarvis. Pendiente pasar este script.
 # ================================================================================================
 import json

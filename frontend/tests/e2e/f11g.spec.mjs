@@ -1,5 +1,5 @@
 // ================================================================================================
-// f11g.spec.mjs — impactos y evaluación UICN (F11g), en móvil (campo) y escritorio (estudio):
+// f11g.spec.mjs — impactos y evaluación UICN, en móvil (campo) y escritorio (estudio):
 //   · registrar un impacto SIN RED desde el botón «Impacto», volver a tener red, sincronizar (llega al «servidor»
 //     y vuelve por el pull) y verlo en la pestaña Evaluación UICN: BioDex sugiere b(iii) por el pisoteo en curso.
 //   · objetivos táctiles de la hoja de impacto (modo campo).

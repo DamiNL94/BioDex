@@ -1,4 +1,4 @@
--- F2b · Especies: ids estables de la clasificación (para el árbol del catálogo), año de la UICN principal,
+-- Especies: ids estables de la clasificación (para el árbol del catálogo), año de la UICN principal,
 -- taxonRemarks (especies de usuario) y frescura del estado legal por separado de la ficha completa
 -- (el filtro `legal` del buscador lo trae sin pedir la ficha entera).
 -- Un solo ALTER: MySQL lo aplica entero o no lo aplica.

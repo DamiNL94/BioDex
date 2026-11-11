@@ -1,6 +1,6 @@
 <?php
 // ================================================================================================
-// utm.php — lat/lon ETRS89 → UTM (GRS80), port de frontend/js/geo/utm.js (toUtm) para F9.
+// utm.php — lat/lon ETRS89 → UTM (GRS80), port de frontend/js/geo/utm.js (toUtm) para EOO/AOO.
 // ------------------------------------------------------------------------------------------------
 // Mercator Transversa con las series de Krüger hasta n⁶ (Karney 2011). Huso 30 por defecto =
 // EPSG:25830 (fuera del huso se sigue proyectando en el 30, como los SIG con ese EPSG). Mismas

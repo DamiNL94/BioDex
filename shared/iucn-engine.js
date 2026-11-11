@@ -19,11 +19,11 @@
 // inputs (todo opcional; null, undefined o '' = sin dato):
 //   generationLength      años por generación (A, C1, E)
 //   A  {skip, reductionPct, subcriterion: A1|A2|A3|A4, basis: ['a'..'e']}
-//      o (F11h, series temporales) {items: [{subcriterion, reductionPct, basis}, …]}: varios subcriterios a la vez
+//      o (series temporales) {items: [{subcriterion, reductionPct, basis}, …]}: varios subcriterios a la vez
 //      (A2 + A3 + A4…); cumple una categoría si la cumple alguno y la notación los junta («A2b+3b+4b»).
 //   B  {skip, eoo, aoo (km²), severelyFragmented, locations, decline: ['i'..'v'], fluctuation: ['i'..'iv']}
 //   C  {skip, mature, c1DeclinePct, c1Years, continuingDecline, maxPerSubpop, pctInOneSubpop, extremeFluctuation,
-//       c1AnnualRate (F11h: tasa anual r de la serie; la disminución de C1 se calcula en la ventana de CADA categoría)}
+//       c1AnnualRate (tasa anual r de la serie; la disminución de C1 se calcula en la ventana de CADA categoría)}
 //   D  {skip, mature, plausibleThreat, aoo, locations}   (D2: aoo y localidades de B si aquí faltan)
 //   E  {skip, probabilityPct, horizonYears}
 //   dataDeficient, expertCategory: NT|LC, regional {direction: down|up, justification}
@@ -89,7 +89,7 @@ function evalA(inp, ctx) {
   const { cats } = ctx;
   if (!inp || inp.skip) return skipped(cats, inp && inp.reason ? inp.reason : undefined);
   if (!Array.isArray(inp.items)) return evalAItem(inp, ctx);
-  // F11h: varios subcriterios (pasado, proyección, ventana mixta) con la misma serie.
+  // Varios subcriterios (pasado, proyección, ventana mixta) con la misma serie.
   const parts = inp.items.map((it) => evalAItem(it, ctx));
   if (!parts.length) return skipped(cats);
   const res = { status: 'evaluated', levels: emptyLevels(cats), notes: [], items: parts.map((p, i) => ({
@@ -247,7 +247,7 @@ function evalC(inp, ctx) {
     // C1: disminución continua de al menos pct % en su plazo (años o generaciones, el mayor).
     let c1 = false;
     if (rate.value !== undefined) {
-      // F11h: con la tasa de la serie, la disminución en la ventana de esta categoría: 1 − e^(r·W).
+      // Con la tasa de la serie, la disminución en la ventana de esta categoría: 1 − e^(r·W).
       const th = C.C1.thresholds[c];
       const w = windowYears(th, gen);
       const pct = Math.max(0, Math.round(100 * (1 - Math.exp(rate.value * w)) * 100) / 100);
@@ -458,7 +458,7 @@ export function criterionSummary(res) {
 }
 
 // ================================================================================================
-// F11g · Evaluación con incertidumbre (docs/iucn.md › «Cuantificadores e incertidumbre»).
+// Evaluación con incertidumbre (docs/iucn.md › «Cuantificadores e incertidumbre»).
 // ------------------------------------------------------------------------------------------------
 //   assessIucn(inputs, criteria) → evaluateIucn() con el MEJOR valor de cada dato + {displayCategory,
 //                                  range, dataMinimum, possiblyExtinct, regionalV4}
@@ -505,7 +505,7 @@ export function scenarioInputs(inputs, scenario) {
     if (!out[k] || typeof out[k] !== 'object') continue;
     const step = { ...out[k] };
     for (const [f, dir] of Object.entries(fields)) if (f in step) step[f] = scenarioValue(step[f], dir, scenario);
-    // F11h: A con varios subcriterios, cada uno con su reducción (con intervalo).
+    // A con varios subcriterios, cada uno con su reducción (con intervalo).
     if (k === 'A' && Array.isArray(step.items)) {
       step.items = step.items.map((it) => ('reductionPct' in it ? { ...it, reductionPct: scenarioValue(it.reductionPct, 'higher', scenario) } : it));
     }

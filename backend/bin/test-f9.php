@@ -133,7 +133,11 @@ check("Otra petición sin marcas nuevas: cacheada, misma fecha", $again["cached"
 
 // ------------------------------------------------------------------------------------------------
 section("Editor en especie de nivel 2: solo cifras + celdas de 0,1°");
-check("La segunda vista de la owner también se registra", $logs() === 2);
+check("La segunda vista de la owner el mismo día no añade fila (una por día)", $logs() === 1);
+[$c, $audit] = http("GET", "/api/catalogs/{$cat}/audit", null, $o);
+$detail = array_column(array_filter($audit["items"] ?? [], fn($x) => $x["action"] === "view_exact"), "detail");
+check("…y el registro la cuenta legible, con el nombre de la especie", $c === 200
+    && in_array("EOO/AOO de Artemisia granatensis: 4 coordenadas exactas ajenas", $detail, true), json_encode($detail, JSON_UNESCAPED_UNICODE));
 $logsBefore = $logs();
 [$c, $me] = $metrics($e);
 check("E: mismas cifras que la owner", $c === 200 && $me["eooKm2"] === $mo["eooKm2"] && $me["aooKm2"] === $mo["aooKm2"] && $me["nRecords"] === 12);

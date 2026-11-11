@@ -5,7 +5,7 @@
 // La tarjeta es un <article>; lo pulsable dentro son botones y enlaces de verdad (teclado y lector de
 // pantalla): el nombre es el botón que abre la ficha, y el clic en el resto de la tarjeta hace lo mismo.
 // Los eventos van delegados en el contenedor (bindSpeciesCards), así una lista repintada no pierde nada.
-// F11b/F11d: miniatura = Fototeca > foto de respaldo aceptada (iNaturalist, GBIF o Commons) > silueta del
+// Miniatura = Fototeca > foto de respaldo aceptada (iNaturalist, GBIF o Commons) > silueta del
 // grupo. La API decide (thumbnail, photoCredit y silhouette); aquí solo se pinta. Nunca una imagen rota: si
 // no carga, silueta.
 // ================================================================================================
@@ -26,7 +26,7 @@ export function iucnBadge(a, { primary = false } = {}) {
 const SILHOUETTES = '/img/silhouettes.svg';
 const GENERIC_SILHOUETTE = { id: 'generic', label: 'organismo' };
 
-/** Silueta del grupo (F11b) a partir de `silhouette {id, label}` de la API. */
+/** Silueta del grupo a partir de `silhouette {id, label}` de la API. */
 export function silhouette(s, extraClass = '') {
   const sil = s && s.id ? s : GENERIC_SILHOUETTE;
   return html`<span class="sil-box ${extraClass}"><svg class="silhouette" role="img" aria-label="Sin foto · silueta de ${sil.label}"
@@ -44,7 +44,7 @@ export function swapToSilhouette(img, box, extraClass = '') {
   render(box, silhouette({ id: img.dataset.silId, label: img.dataset.silLabel }, extraClass));
 }
 
-/** Nombre de la fuente de una foto de respaldo (F11d): largo para la ficha, corto para la tarjeta. */
+/** Nombre de la fuente de una foto de respaldo: largo para la ficha, corto para la tarjeta. */
 export const PHOTO_SOURCES = {
   inaturalist: { name: 'iNaturalist', short: 'iNaturalist' },
   gbif: { name: 'GBIF', short: 'GBIF' },

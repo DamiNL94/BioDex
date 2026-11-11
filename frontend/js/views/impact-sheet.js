@@ -1,5 +1,5 @@
 // ================================================================================================
-// views/impact-sheet.js — hoja de impacto del modo campo (F11g): botón «Impacto» junto a «Marcar».
+// views/impact-sheet.js — hoja de impacto del modo campo: botón «Impacto» junto a «Marcar».
 // ------------------------------------------------------------------------------------------------
 // Pensada para una mano, como la hoja de marca: botones grandes con los impactos más habituales (pisoteo,
 // residuos, ganado o sobrepastoreo, recolección, obras o pistas, incendio, especies invasoras) y «Otro» →
@@ -18,6 +18,7 @@ import { createImpact, updateImpact, MARK_ROLES, IMPACT_INTENSITIES, IMPACT_TIMI
 import { byIndex } from '../db.js';
 import { requestSync } from '../sync.js';
 import { remoteOrLocal, localCatalogData } from '../offline.js';
+import { inPolygon } from '../site-geom.js';
 import { distanceM } from '../species-search.js';
 
 const THREATS_URL = '/shared/iucn-threats.json';
@@ -46,17 +47,6 @@ export function threatLabel(threats, code) {
 
 /** Distancia en metros entre dos puntos {lat, lng} (distanceM de species-search.js). */
 const metersBetween = (a, b) => distanceM(a.lat, a.lng, b.lat, b.lng);
-
-/** ¿Está el punto dentro del polígono [[lat, lon]…]? (rayo; vale a escala de campo). */
-function inPolygon(p, poly) {
-  let c = false;
-  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-    const [ai, bi] = poly[i];
-    const [aj, bj] = poly[j];
-    if ((ai > p.lat) !== (aj > p.lat) && p.lng < ((bj - bi) * (p.lat - ai)) / (aj - ai) + bi) c = !c;
-  }
-  return c;
-}
 
 /** taxonIDs del catálogo con marcas (presencias) del dispositivo dentro del radio o del polígono. */
 async function speciesInside(catalogId, where) {

@@ -1,5 +1,5 @@
 // ================================================================================================
-// f11h.spec.mjs — visita completa en el móvil (F11h), SIN RED: empezar una visita en un sitio nuevo con tres especies
+// f11h.spec.mjs — visita completa en el móvil, SIN RED: empezar una visita en un sitio nuevo con tres especies
 // objetivo, contar dos desde «Marcar aquí» (el buscador pone primero las objetivo), cerrarla con la tercera como
 // AUSENTE, comprobar lo guardado en IndexedDB y en la cola, volver a tener red y sincronizar: sitio, visita (cerrada) y
 // marcas llegan al «servidor» (mock-api.mjs) con su visitID, el sitio y la visita antes que sus marcas, y vuelven por

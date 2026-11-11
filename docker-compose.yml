@@ -16,7 +16,7 @@ services:
       - ./docker/nginx/entrypoint.sh:/etc/nginx/biodex/entrypoint.sh:ro
       - ./docker/nginx/certs:/etc/nginx/certs:ro
       - ./frontend:/var/www/frontend:ro
-      # Motor y umbrales UICN (F8b) y EOO/AOO (F9) compartidos con Node: solo se sirven iucn-engine.js,
+      # Motor y umbrales UICN y EOO/AOO compartidos con Node: solo se sirven iucn-engine.js,
       # iucn-criteria.json y geo-metrics.js de /shared/ (biodex-app.conf)
       - ./shared:/var/www/shared:ro
     depends_on:
@@ -27,13 +27,13 @@ services:
     env_file: .env
     volumes:
       - ./backend:/var/www/backend
-      # Scripts de backend/bin que escriben muestras en docs/ (F1: eidos-spike.php)
+      # Scripts de backend/bin que escriben muestras en docs/ (eidos-spike.php)
       - ./docs:/var/www/docs
       # Reglas compartidas con el frontend (sensibilidad, UICN, DwC): solo lectura
       - ./shared:/var/www/shared:ro
       # Solo lectura, para bin/check-sw.php (SHELL_ASSETS de sw.js contra el disco)
       - ./frontend:/var/www/frontend:ro
-      # Versión de la app (F10a: va en el EML y en la hoja Léeme de la exportación)
+      # Versión de la app (va en el EML y en la hoja Léeme de la exportación)
       - ./VERSION:/var/www/VERSION:ro
     depends_on:
       - mysql

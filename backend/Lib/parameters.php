@@ -1,6 +1,6 @@
 <?php
 // ================================================================================================
-// parameters.php — parámetros de una especie en un catálogo (F11f, migración 014, docs/parametros.md).
+// parameters.php — parámetros de una especie en un catálogo (migración 014, docs/parametros.md).
 // ------------------------------------------------------------------------------------------------
 // Características que necesitan los criterios UICN y que BioDex no puede deducir de las marcas: duración
 // de la generación, distancias de separación y de dispersión, qué es un individuo maduro, tamaño mínimo
@@ -18,8 +18,8 @@ require_once __DIR__ . "/sync.php";      // syncNextSeq(), syncIsoUtc()
 
 /**
  * Definición de cada parámetro. type: number (value numérico) · text · choice (uno de `choices`).
- * criteria: lo que bloquea si falta (se pinta en la ficha y en la pestaña Evaluación UICN, F11g).
- * fact (F11g): «sí · no · desconocido» (PARAMETER_FACT_CHOICES), con calidad, fuente y justificación.
+ * criteria: lo que bloquea si falta (se pinta en la ficha y en la pestaña Evaluación UICN).
+ * fact: «sí · no · desconocido» (PARAMETER_FACT_CHOICES), con calidad, fuente y justificación.
  */
 const SPECIES_PARAMETERS = [
     "generation_length"   => ["type" => "number", "unit" => "años", "min" => 0.1, "max" => 500,
@@ -35,10 +35,10 @@ const SPECIES_PARAMETERS = [
     "life_form"           => ["type" => "choice", "unit" => null,
                               "choices" => ["perennial", "annual", "biennial", "monocarpic", "other"],
                               "criteria" => []],
-    // F11g: superficie de hábitat ocupado (maduros estimados = densidad × superficie; sin ella, la AOO como cota).
+    // Superficie de hábitat ocupado (maduros estimados = densidad × superficie; sin ella, la AOO como cota).
     "occupied_habitat_km2" => ["type" => "number", "unit" => "km²", "min" => 0.000001, "max" => 10000000,
                                "criteria" => ["C, D (maduros estimados)"]],
-    // F11g: hechos de B y C. BioDex puede SUGERIR uno (b(iii) con impactos en curso), pero solo cuenta
+    // Hechos de B y C. BioDex puede SUGERIR uno (b(iii) con impactos en curso), pero solo cuenta
     // cuando alguien lo fija aquí.
     "decline_b_i"   => ["type" => "fact", "unit" => null, "criteria" => ["B b(i)"]],
     "decline_b_ii"  => ["type" => "fact", "unit" => null, "criteria" => ["B b(ii)"]],
@@ -50,7 +50,7 @@ const SPECIES_PARAMETERS = [
     "fluct_c_iii"   => ["type" => "fact", "unit" => null, "criteria" => ["B c(iii)"]],
     "fluct_c_iv"    => ["type" => "fact", "unit" => null, "criteria" => ["B c(iv)", "C2b"]],
     "plausible_threat" => ["type" => "fact", "unit" => null, "criteria" => ["D2"]],
-    // F11h: criterio A con series temporales. Las tres primeras eligen A1 (las tres «sí») o A2; a_future añade A3 y A4;
+    // Criterio A con series temporales. Las tres primeras eligen A1 (las tres «sí») o A2; a_future añade A3 y A4;
     // a_basis_* son las bases (a)–(e) en las que se apoya la reducción (A3 no admite (a)).
     "a_reversible"  => ["type" => "fact", "unit" => null, "criteria" => ["A1 / A2"]],
     "a_understood"  => ["type" => "fact", "unit" => null, "criteria" => ["A1 / A2"]],
@@ -61,7 +61,7 @@ const SPECIES_PARAMETERS = [
     "a_basis_c"     => ["type" => "fact", "unit" => null, "criteria" => ["A (c)"]],
     "a_basis_d"     => ["type" => "fact", "unit" => null, "criteria" => ["A (d)"]],
     "a_basis_e"     => ["type" => "fact", "unit" => null, "criteria" => ["A (e)"]],
-    // F11g: ajuste regional (Directrices regionales v4.0, paso 2).
+    // Ajuste regional (Directrices regionales v4.0, paso 2).
     "regional_endemic"              => ["type" => "fact", "unit" => null, "criteria" => ["Ajuste regional"]],
     "regional_immigration"          => ["type" => "fact", "unit" => null, "criteria" => ["Ajuste regional"]],
     "regional_immigration_decrease" => ["type" => "fact", "unit" => null, "criteria" => ["Ajuste regional"]],

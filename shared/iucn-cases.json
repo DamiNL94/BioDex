@@ -1,5 +1,5 @@
 {
- "description": "Casos compartidos del motor UICN (shared/iucn-engine.js · backend/Lib/iucn.php) y de los cuantificadores de F11g (shared/iucn-quantifiers.js). Los ejecutan node shared/iucn-engine.test.js y bin/test-f11g.php: mismos resultados en JS y PHP.",
+ "description": "Casos compartidos del motor UICN (shared/iucn-engine.js · backend/Lib/iucn.php) y de los cuantificadores B, C y D (shared/iucn-quantifiers.js). Los ejecutan node shared/iucn-engine.test.js y bin/test-f11g.php: mismos resultados en JS y PHP.",
  "engine": [
   {
    "name": "Artemisia: EOO 80, AOO 12, 3 localidades, b(iii) → EN, no CR",
@@ -1375,7 +1375,8 @@
    }
   },
   {
-   "name": "F11h · A con serie: A2b+3b+4b, reducción 55 % (IC 45–63 %) → EN, rango VU–EN",
+   "name": "A con serie: A2b+3b+4b, reducción 55 % (IC 45–63 %) → EN, rango VU–EN",
+   "group": "series",
    "fn": "assess",
    "inputs": {
     "generationLength": 2,
@@ -1426,7 +1427,8 @@
    }
   },
   {
-   "name": "F11h · A1 (causas reversibles, entendidas y cesadas): 55 % solo llega a VU (umbral de A1: 50 %)",
+   "name": "A1 (causas reversibles, entendidas y cesadas): 55 % solo llega a VU (umbral de A1: 50 %)",
+   "group": "series",
    "fn": "evaluate",
    "inputs": {
     "A": {
@@ -1448,7 +1450,8 @@
    }
   },
   {
-   "name": "F11h · A3 sin bases válidas queda incompleto, pero A2a cumple: EN A2a",
+   "name": "A3 sin bases válidas queda incompleto, pero A2a cumple: EN A2a",
+   "group": "series",
    "fn": "evaluate",
    "inputs": {
     "A": {
@@ -1474,7 +1477,8 @@
    }
   },
   {
-   "name": "F11h · C1 por tasa: r = −0,08/año, 300 maduros, generación 2 → EN C1 (32,97 % en 5 años)",
+   "name": "C1 por tasa: r = −0,08/año, 300 maduros, generación 2 → EN C1 (32,97 % en 5 años)",
+   "group": "series",
    "fn": "evaluate",
    "inputs": {
     "generationLength": 2,
@@ -1489,7 +1493,8 @@
    }
   },
   {
-   "name": "F11h · C1 con tasa positiva: no hay disminución",
+   "name": "C1 con tasa positiva: no hay disminución",
+   "group": "series",
    "fn": "evaluate",
    "inputs": {
     "C": {
@@ -1502,7 +1507,8 @@
    }
   },
   {
-   "name": "F11h · C1 con intervalo de la tasa (−0,12 a −0,02): rango VU–EN",
+   "name": "C1 con intervalo de la tasa (−0,12 a −0,02): rango VU–EN",
+   "group": "series",
    "fn": "assess",
    "inputs": {
     "generationLength": 2,

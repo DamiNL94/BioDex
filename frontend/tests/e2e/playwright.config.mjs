@@ -1,4 +1,4 @@
-// Pruebas de interfaz de F11f (README › Comprobaciones):
+// Pruebas de interfaz (README › Comprobaciones):
 //   cd frontend/tests/e2e · npm ci · npx playwright install chromium · npm test (run.mjs: ruta real en Windows)
 // Dos tamaños: móvil 390×844 (modo campo, táctil) y escritorio 1280×800 (modo estudio). La API va simulada
 // (mock-api.mjs); el frontend lo sirve server.mjs. Con el Service Worker activo: «sin red» es sin red de verdad.

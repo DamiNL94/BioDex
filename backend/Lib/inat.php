@@ -1,6 +1,6 @@
 <?php
 // ================================================================================================
-// inat.php — foto de respaldo de iNaturalist para especies de EIDOS sin foto de la Fototeca (F11b).
+// inat.php — foto de respaldo de iNaturalist para especies de EIDOS sin foto de la Fototeca.
 // ------------------------------------------------------------------------------------------------
 // Dos piezas separadas:
 //   · inatSearch(): cliente de GET /v1/taxa. Solo desde el backend (como EIDOS), 1 petición/s como

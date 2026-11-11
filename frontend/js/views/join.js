@@ -1,5 +1,5 @@
 // ================================================================================================
-// join.js — unirse a un catálogo con una invitación (F6): ruta #/unirse/<código> y «Tengo un código».
+// join.js — unirse a un catálogo con una invitación: ruta #/unirse/<código> y «Tengo un código».
 // ------------------------------------------------------------------------------------------------
 // Antes de aceptar se enseña qué es: nombre del catálogo, propietario y rol (POST /invites/preview).
 // El código viaja siempre en el cuerpo, nunca en una URL de la API. Sin sesión, app.js guarda el

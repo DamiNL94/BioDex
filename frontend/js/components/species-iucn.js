@@ -1,10 +1,10 @@
 // ================================================================================================
-// components/species-iucn.js — pestaña «Evaluación UICN» de la página de especie (F11g; sustituye al asistente).
+// components/species-iucn.js — pestaña «Evaluación UICN» de la página de especie (sustituye al asistente).
 // ------------------------------------------------------------------------------------------------
 // Arriba: categoría propuesta (con «posiblemente extinta» solo si el usuario lo decide), rango plausible, cadena de
 // criterios y fecha y origen del cálculo (servidor = definitivo; dispositivo = provisional, js/assessment.js).
 // Debajo, una tarjeta por criterio (A–E): sus datos con su calidad, qué umbral cumple y qué falta para poder
-// evaluarlo, con enlace directo al parámetro (pestaña Parámetros), al hecho o a las localidades. F11h: A y C1 salen de
+// evaluarlo, con enlace directo al parámetro (pestaña Parámetros), al hecho o a las localidades. A y C1 salen de
 // la serie temporal de las visitas a sitios (shared/iucn-series.js): tasa con IC, reducción en la ventana (lo observado
 // y lo proyectado) y los hechos que eligen A1/A2 y añaden A3/A4; E queda fuera de alcance (lo dice su tarjeta).
 // Hechos de B y C (b(i)–(v), c(i)–(iv)), amenaza plausible (D2) y preguntas del ajuste regional: sí · no ·
@@ -42,7 +42,7 @@ export const FACTS = {
   fluct: [['fluct_c_i', '(i) EOO'], ['fluct_c_ii', '(ii) AOO'], ['fluct_c_iii', '(iii) Nº de localidades o subpoblaciones'],
     ['fluct_c_iv', '(iv) Nº de individuos maduros']],
   d2: [['plausible_threat', 'Amenaza futura plausible que podría llevarla a CR o EX en muy poco tiempo']],
-  // F11h: criterio A con series temporales.
+  // Criterio A con series temporales.
   aCauses: [['a_reversible', '¿Las causas de la reducción son reversibles?'], ['a_understood', '¿Se comprenden las causas?'],
     ['a_ceased', '¿Han cesado las causas?']],
   aFuture: [['a_future', '¿Se espera que la reducción continúe en el futuro? (añade A3, proyección, y A4, ventana pasado + futuro)']],
@@ -270,7 +270,7 @@ export function mountSpeciesIucn(el, { species, catalog, goToParam }) {
       </dl>`, needs);
   }
 
-  // --- A · Reducción (F11h: series temporales) -------------------------------------------------------
+  // --- A · Reducción (series temporales) -------------------------------------------------------
   const seriesOk = () => !!(data.series && data.series.status === 'ok');
   const seriesReason = () => (data.series ? data.series.reason : 'sin visitas a sitios.') || '';
   const fmtPct = (n) => (n === null || n === undefined ? '—' : `${n > 0 ? '+' : ''}${fmtN(n)} %`);

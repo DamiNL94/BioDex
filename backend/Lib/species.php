@@ -8,7 +8,7 @@
 //             (detail_fetched_at). Caduca a los SPECIES_DETAIL_MAX_AGE_DAYS días.
 // El estado legal también se puede traer solo (legal_fetched_at) para el filtro `legal` del buscador.
 // Las especies de usuario (source='user', taxonID biodex:<uuid>) nunca se piden a EIDOS.
-// F11b/F11d: miniatura = foto de la Fototeca > foto de respaldo aceptada (species_photos, status ok: de
+// Miniatura = foto de la Fototeca > foto de respaldo aceptada (species_photos, status ok: de
 // iNaturalist, GBIF o Wikimedia Commons) > silueta del grupo (shared/species-groups.json). Las filas que
 // acaban en speciesSummaryOut() traen las columnas de SPECIES_PHOTO_COLUMNS; sin ellas, no hay respaldo.
 // ================================================================================================
@@ -36,8 +36,8 @@ const SPECIES_LEGAL_FILTERS = [
 // el móvil puede guardarlas sin respuestas «opacas». Misma forma de ruta que admite nginx.
 const SPECIES_FOTOTECA_ORIGIN = '#^https?://www\.miteco\.gob\.es/content/dam/fototeca/([A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*\.(?:jpe?g|png|webp|gif))$#i';
 const SPECIES_FOTOTECA_PROXY = "/img/fototeca/";
-// Foto de respaldo aceptada: la de iNaturalist (F11b) por el proxy /img/inat/<id>/<tamaño>.<ext> de nginx;
-// las de GBIF y Commons (F11d), copia local en /img/respaldo/<taxonID>/<hash>.<ext> (public/respaldo.php).
+// Foto de respaldo aceptada: la de iNaturalist por el proxy /img/inat/<id>/<tamaño>.<ext> de nginx;
+// las de GBIF y Commons, copia local en /img/respaldo/<taxonID>/<hash>.<ext> (public/respaldo.php).
 // Aquí nunca se leen los bytes de la copia: solo su hash y su tipo.
 const SPECIES_INAT_PROXY = "/img/inat/";
 const SPECIES_PHOTO_COLUMNS = "ph.source AS ph_source, ph.photo_id AS inat_photo_id, ph.photo_ext AS inat_photo_ext,
@@ -72,7 +72,7 @@ function speciesFind(PDO $pdo, string $taxonID): ?array {
     return $stmt->fetch() ?: null;
 }
 
-// --- Fotos de respaldo y siluetas (F11b) ---------------------------------------------------------
+// --- Fotos de respaldo y siluetas ---------------------------------------------------------
 
 /**
  * Pone en cola (status pending) la búsqueda de foto de respaldo de una especie de EIDOS sin foto de la

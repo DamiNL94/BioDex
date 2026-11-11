@@ -1,11 +1,11 @@
-// Vista Ajustes: perfil (F6: nombre y ORCID), sincronización (F5), datos del dispositivo, tema, versión
+// Vista Ajustes: perfil (nombre y ORCID), sincronización, datos del dispositivo, tema, versión
 // y cierre de sesión.
 // Sincronización: pendientes, última pasada, «Sincronizar ahora», marcas rechazadas (reintentar o
 // descartar a mano) y catálogos de los que te han sacado con marcas sin subir (exportar o descartar).
-// Dispositivo: espacio usado (storage.estimate), catálogos descargados, zonas del mapa (F7: tamaño,
+// Dispositivo: espacio usado (storage.estimate), catálogos descargados, zonas del mapa (tamaño,
 // reanudar y borrar) y respaldo (exportar/importar).
-// Exportar datos (F10a): de cada catálogo (catalog-export.js); necesita conexión.
-// F11c: secciones agrupadas por uso: Campo (sincronización y dispositivo) · Datos y cuenta · Aplicación.
+// Exportar datos: de cada catálogo (catalog-export.js); necesita conexión.
+// Secciones agrupadas por uso: Campo (sincronización y dispositivo) · Datos y cuenta · Aplicación.
 
 import { state, subscribe, setTheme, setUser, APP_VERSION, CONNECTION_LABELS } from '../state.js';
 import { html, render, $, plural, normalizeOrcid } from '../util.js';

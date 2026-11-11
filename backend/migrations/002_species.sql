@@ -1,4 +1,4 @@
--- F2a · Especies: caché de EIDOS (source='eidos') y especies creadas por usuarios (source='user').
+-- Especies: caché de EIDOS (source='eidos') y especies creadas por usuarios (source='user').
 -- Columnas según «Mapeo EIDOS → tabla species» (docs/eidos.md), con nombres Darwin Core.
 -- La colación ai_ci hace la búsqueda insensible a acentos (el ilike de EIDOS no lo es).
 -- `order` es palabra reservada: siempre entre comillas invertidas.

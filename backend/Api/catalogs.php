@@ -14,19 +14,19 @@
 //   DELETE /api/catalogs/{id}/species/{taxonID}            remove_species (owner), borrado lógico
 //   PUT    /api/catalogs/{id}/species/{taxonID}/sensitivity  set_level {level, reason} → access_log
 //   PUT    /api/catalogs/{id}/species/{taxonID}/reference-assessment  set_reference (owner) {assessmentID|null}
-//          → evaluación UICN de referencia de la especie en el catálogo (F8b), a access_log
-//   GET    /api/catalogs/{id}/species/{taxonID}/metrics?scope=team|me&cell=2|1  view: EOO/AOO (F9)
-//   GET    /api/catalogs/{id}/species/{taxonID}/parameters        view: parámetros de la especie (F11f)
+//          → evaluación UICN de referencia de la especie en el catálogo, a access_log
+//   GET    /api/catalogs/{id}/species/{taxonID}/metrics?scope=team|me&cell=2|1  view: EOO/AOO
+//   GET    /api/catalogs/{id}/species/{taxonID}/parameters        view: parámetros de la especie
 //   PUT    /api/catalogs/{id}/species/{taxonID}/parameters/{key}  set_parameter (owner, custodian) → access_log
 //   DELETE /api/catalogs/{id}/species/{taxonID}/parameters/{key}  set_parameter: lo deja sin valor
-//   GET    /api/catalogs/{id}/species/{taxonID}/assessment[?gbif=1] view: cuantificadores y motor UICN definitivos (F11g)
-//   PUT    /api/catalogs/{id}/species/{taxonID}/locations  set_parameter: nº de localidades confirmado → access_log (F11g)
+//   GET    /api/catalogs/{id}/species/{taxonID}/assessment[?gbif=1] view: cuantificadores y motor UICN definitivos
+//   PUT    /api/catalogs/{id}/species/{taxonID}/locations  set_parameter: nº de localidades confirmado → access_log
 //   DELETE /api/catalogs/{id}/species/{taxonID}/locations  set_parameter: vuelve a «sin confirmar»
-// Miembros, invitaciones, salir, transferir y registro (F6): Api/teams.php, incluido desde aquí.
-// Exportación (F10a): POST /api/catalogs/{id}/export[/preview] → Api/exports.php, incluido desde aquí.
+// Miembros, invitaciones, salir, transferir y registro: Api/teams.php, incluido desde aquí.
+// Exportación: POST /api/catalogs/{id}/export[/preview] → Api/exports.php, incluido desde aquí.
 // content_seq sube con cada cambio de lo que lleva el paquete offline (especies, niveles, nombre):
 // el pull de /api/sync lo devuelve y el móvil vuelve a descargar el paquete si no coincide.
-// F11b: dar de alta una especie de EIDOS sin foto de la Fototeca la pone en cola (species_photos pending)
+// Dar de alta una especie de EIDOS sin foto de la Fototeca la pone en cola (species_photos pending)
 // para bin/fetch-species-photos.php; GET /api/catalogs/{id} lleva a owner y custodio `photoReviews`.
 // ================================================================================================
 
@@ -34,12 +34,12 @@ require_once __DIR__ . "/../Lib/session.php";
 require_once __DIR__ . "/../Lib/authz.php";
 require_once __DIR__ . "/../Lib/audit.php";
 require_once __DIR__ . "/../Lib/species.php";
-require_once __DIR__ . "/../Lib/photos.php";    // fuentes de fotos de respaldo (F11d)
+require_once __DIR__ . "/../Lib/photos.php";    // fuentes de fotos de respaldo
 require_once __DIR__ . "/../Lib/teams.php";
-require_once __DIR__ . "/../Lib/sync.php";      // syncNextSeq(), assessmentOut() (F8b)
-require_once __DIR__ . "/../Lib/metrics.php";   // speciesMetrics() (F9)
-require_once __DIR__ . "/../Lib/parameters.php"; // parámetros de especie (F11f)
-require_once __DIR__ . "/../Lib/assessment.php"; // evaluación UICN calculada en el servidor y localidades (F11g)
+require_once __DIR__ . "/../Lib/sync.php";      // syncNextSeq(), assessmentOut()
+require_once __DIR__ . "/../Lib/metrics.php";   // speciesMetrics()
+require_once __DIR__ . "/../Lib/parameters.php"; // parámetros de especie
+require_once __DIR__ . "/../Lib/assessment.php"; // evaluación UICN calculada en el servidor y localidades
 
 const CATALOG_NAME_MAX = 120;
 // Especies por alta de catálogo: cada una sin ficha en caché son ~7 peticiones a EIDOS (~1,5 s).
@@ -56,7 +56,7 @@ if (preg_match('#^/api/catalogs/([0-9a-f-]{36})/(members|invites|leave|transfer|
     require __DIR__ . "/teams.php";
     exit;
 }
-// Exportación DwC-A + hojas (F10a): Api/exports.php.
+// Exportación DwC-A + hojas: Api/exports.php.
 if (preg_match('#^/api/catalogs/([0-9a-f-]{36})/export(?:/(preview))?/?$#', $path, $em)) {
     $exportRoute = [$em[1], $em[2] ?? null];
     require __DIR__ . "/exports.php";
@@ -71,10 +71,10 @@ $taxonID   = isset($m[3]) ? rawurldecode($m[3]) : null;
 $sensPath  = isset($m[4]);
 $refPath   = ($m[4] ?? null) === "reference-assessment";
 $metricsPath = ($m[4] ?? null) === "metrics";
-$paramsPath  = ($m[4] ?? null) === "parameters";   // F11f
+$paramsPath  = ($m[4] ?? null) === "parameters";
 $paramKey    = $m[5] ?? null;
-$assessPath  = ($m[4] ?? null) === "assessment";   // F11g
-$locPath     = ($m[4] ?? null) === "locations";    // F11g
+$assessPath  = ($m[4] ?? null) === "assessment";
+$locPath     = ($m[4] ?? null) === "locations";
 if (!$paramsPath && $paramKey !== null) apiError("Recurso no encontrado.", 404);
 
 // ------------------------------------------------------------------------------------------------
@@ -185,13 +185,13 @@ function catalogAddSpecies(PDO $pdo, string $catalogId, array $species, int $use
         ->execute([$catalogId, $taxonID, $level, $level, mb_substr($reason, 0, 255)]);
     $changed = $existing === false || $existing["deleted_at"] !== null;
     if ($changed) catalogBumpContent($pdo, $catalogId);
-    speciesQueuePhoto($pdo, $species);   // F11b: foto de respaldo, la busca bin/fetch-species-photos.php
+    speciesQueuePhoto($pdo, $species);   // Foto de respaldo, la busca bin/fetch-species-photos.php
     return $changed;
 }
 
 /**
  * Fotos de respaldo propuestas por sinónimo (status review; de iNaturalist o GBIF) de las especies del catálogo,
- * para que owner o custodio las acepten o rechacen (POST /api/species/{taxonID}/photo-review). F11b, F11d.
+ * para que owner o custodio las acepten o rechacen (POST /api/species/{taxonID}/photo-review).
  * La de GBIF se ve desde /img/respaldo/, que con status review solo la sirve a owner o custodio.
  */
 function catalogPhotoReviews(PDO $pdo, string $catalogId): array {
@@ -415,13 +415,13 @@ if (!$sensPath) {
     respond(["ok" => true]);
 }
 
-// --- /api/catalogs/{id}/species/{taxonID}/reference-assessment (F8b) ---------------------------
+// --- /api/catalogs/{id}/species/{taxonID}/reference-assessment ---------------------------
 // Solo el owner. {assessmentID} marca como «Evaluación de referencia del catálogo» una evaluación FINAL
 // de esa especie en este catálogo (de cualquier autor); {assessmentID: null} la quita. Una por especie
 // (reference_key única). Las filas que cambian toman server_seq nuevo: el pull lleva la referencia a
 // todos los móviles. El contenido de la evaluación no se toca (sigue siendo de su autor).
 
-// --- /api/catalogs/{id}/species/{taxonID}/metrics (F9) --------------------------------------------
+// --- /api/catalogs/{id}/species/{taxonID}/metrics --------------------------------------------
 // EOO y AOO definitivos, con las coordenadas exactas. Cifras para cualquier miembro; la geometría,
 // según la confianza (metricsGeometryAccess() en Lib/metrics.php, docs/iucn.md).
 
@@ -437,7 +437,7 @@ if ($metricsPath) {
     respond(speciesMetrics($pdo, $catalogId, $taxonID, $userId, $role, $level, $scope, $cell));
 }
 
-// --- /api/catalogs/{id}/species/{taxonID}/assessment y /locations (F11g) ------------------------------
+// --- /api/catalogs/{id}/species/{taxonID}/assessment y /locations ------------------------------
 // GET assessment (view): cálculo definitivo con las exactas (Lib/assessment.php); la geometría según confianza.
 // PUT/DELETE locations (set_parameter: owner y custodio): nº de localidades confirmado con su agrupación y
 // justificación. server_seq nuevo (el pull lo lleva al móvil, el borrado como tombstone) y access_log.
@@ -491,7 +491,7 @@ if ($locPath) {
     respond(["taxonID" => $taxonID, "locations" => $new["deleted_at"] === null ? locationsOut($new) : null, "changed" => true]);
 }
 
-// --- /api/catalogs/{id}/species/{taxonID}/parameters[/{key}] (F11f) -------------------------------
+// --- /api/catalogs/{id}/species/{taxonID}/parameters[/{key}] -------------------------------
 // GET (view): los parámetros con valor, los valores por defecto del grupo y si el usuario puede editar.
 // PUT/DELETE {key} (set_parameter: owner y custodio): fija o deja sin valor uno. Cada cambio toma server_seq
 // nuevo (el pull lo lleva a todos los móviles; el borrado, como tombstone) y va a access_log con el antes
@@ -590,7 +590,10 @@ if ($refPath) {
         $pdo->prepare("UPDATE species_assessments SET is_reference = 0, reference_set_by = NULL, reference_set_at = NULL, server_seq = ?
                         WHERE assessmentID = ?")->execute([syncNextSeq($pdo), $old["assessmentID"]]);
     }
-    if ($new !== null && ($old === null || $old["assessmentID"] !== $new["assessmentID"])) {
+    // Volver a marcar la misma tras editarla su autor la CONFIRMA: fecha de referencia nueva (el aviso desaparece).
+    $reconfirm = $new !== null && $old !== null && $old["assessmentID"] === $new["assessmentID"]
+        && $old["reference_set_at"] !== null && substr($old["client_updated_at"], 0, 19) > $old["reference_set_at"];
+    if ($new !== null && ($old === null || $old["assessmentID"] !== $new["assessmentID"] || $reconfirm)) {
         $pdo->prepare("UPDATE species_assessments SET is_reference = 1, reference_set_by = ?, reference_set_at = NOW(), server_seq = ?
                         WHERE assessmentID = ?")->execute([$userId, syncNextSeq($pdo), $new["assessmentID"]]);
     }
@@ -599,8 +602,10 @@ if ($refPath) {
         $s = json_decode($a["result"], true)["criteriaString"] ?? null;
         return ($s ?: ($a["category"] ?? "sin categoría")) . " [{$a["assessmentID"]}]";
     };
-    $changed = ($old["assessmentID"] ?? null) !== ($new["assessmentID"] ?? null);
-    if ($changed) {
+    $changed = ($old["assessmentID"] ?? null) !== ($new["assessmentID"] ?? null) || $reconfirm;
+    if ($reconfirm) {
+        logAccess($pdo, $userId, "set_reference", $catalogId, "{$taxonID}: {$describe($new)} confirmada tras editarla");
+    } elseif ($changed) {
         $who = $new !== null ? " de user:{$new["user_id"]}" : "";
         logAccess($pdo, $userId, "set_reference", $catalogId, "{$taxonID}: {$describe($new)}{$who} (antes: {$describe($old)})");
     }

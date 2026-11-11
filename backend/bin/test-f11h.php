@@ -60,7 +60,7 @@ check("Series: maduros por visita (suma, ausencia 0, sin sitio fuera, sin maduro
 
 section("Motor con A por serie y C1 por tasa (PHP)");
 foreach ($cases["engine"] as $c) {
-    if (!str_starts_with($c["name"], "F11h")) continue;
+    if (($c["group"] ?? null) !== "series") continue;
     $r = $c["fn"] === "assess" ? assessIucn($c["inputs"]) : evaluateIucn($c["inputs"]);
     $e = $c["expect"];
     $bad = [];
@@ -93,45 +93,6 @@ if (in_array("--cases", $argv, true)) {
 // ------------------------------------------------------------------------------------------------
 const SENSITIVE = "9918";   // Artemisia granatensis: nivel 2 en la prueba
 const COMMON = "9392";      // Viola crassiuscula: nivel 4
-
-function httpRaw(string $method, string $path, ?array $body, array $jar): array {
-    global $BASE;
-    $ch = curl_init($BASE . $path);
-    $h = ["Content-Type: application/json"];
-    if ($jar) $h[] = "Cookie: " . implode("; ", array_map(fn($k, $v) => "{$k}={$v}", array_keys($jar), $jar));
-    curl_setopt_array($ch, [CURLOPT_CUSTOMREQUEST => $method, CURLOPT_RETURNTRANSFER => true, CURLOPT_HTTPHEADER => $h, CURLOPT_TIMEOUT => 120,
-        CURLOPT_POSTFIELDS => json_encode($body ?? new stdClass())]);
-    $raw = (string) curl_exec($ch);
-    $code = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
-    curl_close($ch);
-    return [$code, $raw];
-}
-
-function unzipAll(string $raw): array {
-    $tmp = tempnam(sys_get_temp_dir(), "t11h");
-    file_put_contents($tmp, $raw);
-    $zip = new ZipArchive();
-    $out = [];
-    if ($zip->open($tmp) === true) {
-        for ($i = 0; $i < $zip->numFiles; $i++) $out[$zip->getNameIndex($i)] = $zip->getFromIndex($i);
-        $zip->close();
-    }
-    unlink($tmp);
-    return $out;
-}
-
-function parseTsv(string $txt): array {
-    $lines = explode("\n", rtrim($txt, "\n"));
-    $head = explode("\t", array_shift($lines));
-    $rows = [];
-    $bad = 0;
-    foreach ($lines as $l) {
-        $cols = explode("\t", $l);
-        if (count($cols) !== count($head)) { $bad++; continue; }
-        $rows[] = array_combine($head, $cols);
-    }
-    return [$head, $rows, $bad];
-}
 
 function cleanup(PDO $pdo): void {
     $in = "SELECT id FROM catalogs WHERE name LIKE 'test-f11h %'";

@@ -1,5 +1,5 @@
 // ================================================================================================
-// Vista Mapa (F7): capas del IGN por /tiles/, posición GPS, marcas del catálogo activo y zonas para
+// Vista Mapa: capas del IGN por /tiles/, posición GPS, marcas del catálogo activo y zonas para
 // usar sin conexión.
 // ------------------------------------------------------------------------------------------------
 // · Capas: IGN Base · PNOA (ortofoto) · MTN (map/layers.js). Vista inicial: provincia de Granada;
@@ -8,14 +8,14 @@
 //   con círculo de precisión, «Centrar en mí» y modo seguir (se suelta al arrastrar el mapa). Pie con
 //   lat/lon, UTM 30N ETRS89 (geo/utm.js) y ±precisión.
 // · «Marcar aquí»: la hoja de marca (views/mark-sheet.js) con la ÚLTIMA posición del GPS; peor de 50 m →
-//   confirmación. Mantener pulsado (o clic derecho): marca en ese punto del mapa (F8a), con la precisión
+//   confirmación. Mantener pulsado (o clic derecho): marca en ese punto del mapa, con la precisión
 //   estimada por el usuario; el marcador lo distingue con borde discontinuo.
 // · Marcas: IndexedDB (map/marks-layer.js), filtros y «Ver como lista». Se repintan al terminar cada
 //   sincronización.
 // · Zonas: map/zone-ui.js (editor y lista) sobre map/zones.js (descarga).
-// · «EOO / AOO» (F9): con una especie elegida en Filtros, su polígono convexo y sus celdas (o las celdas
+// · «EOO / AOO»: con una especie elegida en Filtros, su polígono convexo y sus celdas (o las celdas
 //   generalizadas, según la confianza), con cifras y origen (servidor o provisional). map/metrics-layer.js.
-// · F11c — campo (móvil): el mapa ocupa toda la altura entre las dos barras; encima, una sola fila con
+// · Campo (móvil): el mapa ocupa toda la altura entre las dos barras; encima, una sola fila con
 //   Filtros · Lista · Zonas y el botón de capas (menú pequeño). EOO/AOO pasa a Filtros › Análisis.
 //   Leyenda plegada tras el botón «i» y posición en una pastilla («±8 m») que se despliega al tocarla.
 //   Filtros es una hoja inferior (nivel de BioDexNav). «Ver en el mapa» desde la lista deja
@@ -56,8 +56,8 @@ const LOW_ACCURACY_M = 50;
 // Filtros: sobreviven a cambiar de pestaña (no a recargar).
 let filters = { taxonID: '', observer: '', who: 'all', from: '', to: '' };
 let filtersCatalog = null;
-let showMetrics = false;   // capa «EOO / AOO» (F9), también sobrevive a cambiar de pestaña
-let showSubpops = false;   // capa «Subpoblaciones» (F11g, estudio), ídem
+let showMetrics = false;   // capa «EOO / AOO», también sobrevive a cambiar de pestaña
+let showSubpops = false;   // capa «Subpoblaciones» (estudio), ídem
 
 const ICON = {
   locate: html`<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></svg>`,
@@ -144,7 +144,7 @@ export function mount(el, { go = () => {}, isStudio = () => false } = {}) {
 
   // Alto del mapa: lo que queda de pantalla (en el móvil, sin la barra inferior). Se fija ANTES de
   // crear el mapa: Leaflet encuadra Granada con el tamaño que tenga el contenedor en ese momento.
-  // F11c: leyenda y posición flotan sobre el mapa; debajo solo queda la barra de pestañas del móvil.
+  // Leyenda y posición flotan sobre el mapa; debajo solo queda la barra de pestañas del móvil.
   function sizeWrap() {
     const tabs = document.querySelector('.tabs');
     const bottom = tabs && getComputedStyle(tabs).position === 'fixed' ? tabs.offsetHeight : 0;
@@ -298,7 +298,7 @@ export function mount(el, { go = () => {}, isStudio = () => false } = {}) {
     onOpenSpecies: (taxonID) => openSpeciesDetail(taxonID),
   });
 
-  // --- EOO / AOO de la especie elegida (F9) -----------------------------------------------------
+  // --- EOO / AOO de la especie elegida -----------------------------------------------------
   const metricsLayer = createMetricsLayer(map);
   let metrics = null;        // {res, drawn, taxonID} | {error} | {loading}
   let metricsSeq = 0;
@@ -342,7 +342,7 @@ export function mount(el, { go = () => {}, isStudio = () => false } = {}) {
     paintFilters();
   });
 
-  // --- Subpoblaciones e impactos de la especie elegida (F11g, estudio) ----------------------------
+  // --- Subpoblaciones e impactos de la especie elegida (estudio) ----------------------------
   const subpopsLayer = createSubpopsLayer(map);
   let subpops = null;       // {taxonID, drawn, source, data} | {error} | {loading}
   let subpopsSeq = 0;
@@ -664,7 +664,7 @@ export function mount(el, { go = () => {}, isStudio = () => false } = {}) {
   $('[data-mark]', el).addEventListener('click', () => {
     openMarkSheet({ catalog: state.activeCatalog, initialPos: pos, taxonHint: filters.taxonID, onSaved: loadMarks });
   });
-  // F11h: «Empezar visita» (botón grande, encima de Impacto y Marcar); con una visita en curso se esconde (la barra
+  // «Empezar visita» (botón grande, encima de Impacto y Marcar); con una visita en curso se esconde (la barra
   // fija de arriba la cierra).
   $('[data-visit]', el).addEventListener('click', () => {
     openStartVisit({ catalog: state.activeCatalog, initialPos: pos, onStarted: () => { paintVisitFab(); loadSites(); } });
@@ -675,7 +675,7 @@ export function mount(el, { go = () => {}, isStudio = () => false } = {}) {
   }
   paintVisitFab();
 
-  // F11h: sitios de muestreo del catálogo (círculo, polígono o línea; los generalizados, con su radio ampliado).
+  // Sitios de muestreo del catálogo (círculo, polígono o línea; los generalizados, con su radio ampliado).
   const siteOutlines = Lf.featureGroup().addTo(map);
   async function loadSites() {
     const cat = state.activeCatalog;
@@ -696,7 +696,7 @@ export function mount(el, { go = () => {}, isStudio = () => false } = {}) {
   }
   loadSites();
 
-  // F11g: «Impacto», junto a «Marcar»: la hoja de impacto con la última posición del GPS.
+  // «Impacto», junto a «Marcar»: la hoja de impacto con la última posición del GPS.
   $('[data-impact]', el).addEventListener('click', () => {
     openImpactSheet({ catalog: state.activeCatalog, initialPos: pos, onSaved: loadMarks });
   });

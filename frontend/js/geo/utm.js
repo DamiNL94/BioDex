@@ -1,7 +1,7 @@
 // ================================================================================================
 // geo/utm.js — UTM sobre ETRS89 (elipsoide GRS80) sin dependencias. Por defecto huso 30 N, que es
 // EPSG:25830: el de toda la España peninsular (fuera del huso se sigue proyectando en el 30, como
-// hacen los SIG con ese EPSG). F9 lo reutiliza para EOO/AOO.
+// hacen los SIG con ese EPSG). También se usa para EOO/AOO.
 // ------------------------------------------------------------------------------------------------
 // Mercator Transversa con las series de Krüger hasta n⁶ (Karney 2011, «Transverse Mercator with an
 // accuracy of a few nanometers»): error por debajo del milímetro a miles de km del meridiano central.

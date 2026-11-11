@@ -1,9 +1,9 @@
 // ================================================================================================
 // Vista Catálogos: lista de GET /api/catalogs, elección del catálogo activo y sus datos.
 // ------------------------------------------------------------------------------------------------
-// F11c — dos disposiciones (app.js decide el modo; al cruzar los 900 px la vista se vuelve a montar):
+// Dos disposiciones (app.js decide el modo; al cruzar los 900 px la vista se vuelve a montar):
 //   ESTUDIO (escritorio/tablet): maestro-detalle a lo ancho. A la izquierda la lista; a la derecha el
-//     catálogo elegido como espacio de trabajo con pestañas: Resumen · Equipo · Sitios (F11h) · Sensibilidad (owner) ·
+//     catálogo elegido como espacio de trabajo con pestañas: Resumen · Equipo · Sitios · Sensibilidad (owner) ·
 //     Registro (owner) · Exportar. Sensibilidad, Registro y Exportar se pintan DENTRO de la pestaña
 //     (mountLevels/mountAudit/mountExport), no en un panel encima.
 //   CAMPO (móvil): «¿Listo para el campo?». Arriba el catálogo activo y su preparación (llevarlo al
@@ -12,10 +12,10 @@
 //     pero en segundo plano. Cada gestión abre su panel a pantalla completa.
 // Resumen: recuentos por categoría UICN y grupo y árbol taxonómico plegable (GET /{id}/tree); tocar
 // una familia filtra Especies y deja «← Volver a <catálogo>».
-// F5: «Llevar al campo» (antes «Descargar para usar sin conexión»): tamaño estimado antes, progreso
+// «Llevar al campo» (antes «Descargar para usar sin conexión»): tamaño estimado antes, progreso
 // durante, fecha al terminar. Sin servidor, la lista y los datos salen del dispositivo (IndexedDB) y lo
-// que necesita red se oculta. F6: equipo e invitaciones (catalog-team.js); «Tengo un código» (join.js).
-// F10a: «Exportar datos» (antes «Descargar datos», catalog-export.js).
+// que necesita red se oculta. Equipo e invitaciones (catalog-team.js); «Tengo un código» (join.js).
+// «Exportar datos» (antes «Descargar datos», catalog-export.js).
 // ================================================================================================
 
 import { apiGetJson, apiPatchJson, apiDeleteJson } from '../api.js';
@@ -329,7 +329,7 @@ export function mount(el, { go, isStudio }) {
     } else if (lastTab === 'audit') {
       tabCleanup = mountAudit(panel, catalog);
     } else if (lastTab === 'sites') {
-      tabCleanup = mountSites(panel, catalog);   // F11h
+      tabCleanup = mountSites(panel, catalog);
     } else if (lastTab === 'export') {
       tabCleanup = mountExport(panel, catalog);
     }

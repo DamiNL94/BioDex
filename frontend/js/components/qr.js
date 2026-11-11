@@ -1,5 +1,5 @@
 // ================================================================================================
-// components/qr.js — código QR de una invitación (F11e), para unir gente al equipo ya en el campo.
+// components/qr.js — código QR de una invitación, para unir gente al equipo ya en el campo.
 // ------------------------------------------------------------------------------------------------
 // El QR lleva el enlace #/unirse/<código> entero: quien lo escanea con la cámara del móvil abre BioDex,
 // entra o crea su cuenta (app.js guarda el código mientras tanto, ver views/join.js) y se une.

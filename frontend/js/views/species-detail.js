@@ -6,13 +6,13 @@
 // Andalucía) y el NIVEL DE SENSIBILIDAD dentro del catálogo activo: todos lo ven; solo el owner lo
 // cambia. Bajar respecto al sugerido exige motivo: lo valida el servidor (422) y aquí se muestra.
 // Sin servidor, la ficha y el nivel salen del catálogo descargado (IndexedDB) y las fotos, de Cache
-// Storage (las sirve el SW). Debajo del nivel, las marcas de la especie en el catálogo activo (F5) con
-// su resumen, y las notas de cuaderno de la especie (F8a). Tras las evaluaciones UICN oficiales de EIDOS,
-// aparte y rotulada «Evaluación BioDex», la del asistente del equipo (F8b; no las sustituye). Tras las
-// marcas, «Distribución»: EOO y AOO de la especie en el catálogo (F9).
-// F11g: la pestaña «Evaluación UICN» es components/species-iucn.js (cuantificadores, criterios A–E con lo que
-// falta, hechos, localidades, GBIF e instantáneas); sustituye al asistente de F8b.
-// F11b/F11d: sin fotos de la Fototeca, la foto de respaldo aceptada de iNaturalist, GBIF o Wikimedia Commons
+// Storage (las sirve el SW). Debajo del nivel, las marcas de la especie en el catálogo activo con
+// su resumen, y las notas de cuaderno de la especie. Tras las evaluaciones UICN oficiales de EIDOS,
+// aparte y rotulada «Evaluación BioDex», la del asistente del equipo (no las sustituye). Tras las
+// marcas, «Distribución»: EOO y AOO de la especie en el catálogo.
+// La pestaña «Evaluación UICN» es components/species-iucn.js (cuantificadores, criterios A–E con lo que
+// falta, hechos, localidades, GBIF e instantáneas); sustituye al asistente anterior.
+// Sin fotos de la Fototeca, la foto de respaldo aceptada de iNaturalist, GBIF o Wikimedia Commons
 // (con su crédito y enlace) o la silueta del grupo. Una foto de respaldo que no carga se cambia por la
 // silueta, nunca una imagen rota.
 // ================================================================================================
@@ -122,7 +122,7 @@ function photoBlock(sp) {
   return silhouetteBlock(sp);
 }
 
-// F11f: pestañas de la página de especie. La elegida se recuerda al pasar de ficha (↑/↓) y al volver.
+// Pestañas de la página de especie. La elegida se recuerda al pasar de ficha (↑/↓) y al volver.
 const DETAIL_TABS = [['summary', 'Resumen'], ['records', 'Registros'], ['params', 'Parámetros'], ['iucn', 'Evaluación UICN']];
 let lastDetailTab = 'summary';
 
@@ -134,7 +134,7 @@ function fmtDate(s) {
 
 /**
  * Abre la ficha. `onChanged()` se llama si se cambia el nivel (para refrescar la lista de Especies).
- * F11c: `step(dir)` (dir = -1 | 1) devuelve el taxonID de la especie anterior/siguiente de la lista que la
+ * `step(dir)` (dir = -1 | 1) devuelve el taxonID de la especie anterior/siguiente de la lista que la
  * abrió, o null. Con él, la cabecera lleva «Anterior/Siguiente» y ↑/↓ pasan de ficha sin apilar niveles.
  */
 export function openSpeciesDetail(taxonID, { onChanged, step, onOpen } = {}) {
@@ -145,9 +145,9 @@ export function openSpeciesDetail(taxonID, { onChanged, step, onOpen } = {}) {
   let distribution = null;
   let minimap = null;
   let params = null;
-  let series = null;   // F11h: serie temporal (pestaña Registros)
+  let series = null;   // Serie temporal (pestaña Registros)
   let fromDevice = false;   // sin servidor: el nivel no se puede cambiar
-  // F11f: en estudio, página propia (pantalla completa con «← Volver»); en campo ya lo era.
+  // En estudio, página propia (pantalla completa con «← Volver»); en campo ya lo era.
   const ov = openOverlay({ key: 'ficha-especie', title: 'Ficha de especie', variant: isStudio() ? 'full' : 'side', className: 'species-detail',
     onClose: () => { alive = false; for (const m of [marks, notes, assessments, distribution, minimap, params, series]) if (m) m.destroy(); } });
   render(ov.body, html`<p class="muted">Cargando ficha…</p>`);
@@ -205,7 +205,7 @@ export function openSpeciesDetail(taxonID, { onChanged, step, onOpen } = {}) {
     const cls = sp.classification || {};
     const ranks = [['Reino', cls.kingdom], ['Filo', cls.phylum], ['Clase', cls.class], ['Orden', cls.order], ['Familia', cls.family]];
     const legal = sp.legalStatus;
-    // F11f: página de la especie en el catálogo, con pestañas Resumen · Registros · Parámetros · Evaluación UICN.
+    // Página de la especie en el catálogo, con pestañas Resumen · Registros · Parámetros · Evaluación UICN.
     // Fuera del catálogo activo (abierta desde el buscador de EIDOS) solo hay Resumen, sin pestañas.
     const tabs = inCatalog ? DETAIL_TABS : [];
     if (!tabs.some(([k]) => k === lastDetailTab)) lastDetailTab = 'summary';
@@ -338,11 +338,11 @@ export function openSpeciesDetail(taxonID, { onChanged, step, onOpen } = {}) {
         if (key === 'records') {
           if (!minimap) minimap = mountMinimap($('.minimap-box', ov.body), { species: sp, catalog });
           else minimap.resize();
-          // F11h: serie temporal de las visitas a sitios.
+          // Serie temporal de las visitas a sitios.
           if (!series) series = mountSpeciesSeries($('.series-box', ov.body), { species: sp, catalog });
         }
         if (key === 'params' && !params) params = mountParameters($('.params-box', ov.body), { species: sp, catalog });
-        // F11g: la evaluación se calcula al abrir su pestaña (pide al servidor o calcula en el dispositivo).
+        // La evaluación se calcula al abrir su pestaña (pide al servidor o calcula en el dispositivo).
         if (key === 'iucn' && !assessments) {
           assessments = mountSpeciesIucn($('.assess-box', ov.body), { species: sp, catalog,
             goToParam: (k) => { showTab('params', { focus: true }); if (params) params.focusKey(k); } });

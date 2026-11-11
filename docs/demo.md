@@ -23,7 +23,7 @@ hay que rehacerlas antes del ensayo.
 Cierre (si sobra tiempo): limitaciones en `docs/limitaciones.md` (prototipo local, evaluación orientativa, pruebas en
 móvil real pendientes).
 
-### Cuantificadores UICN (F11g, 2–3 minutos más si hay tiempo; sin capturas aún)
+### Cuantificadores UICN (2–3 minutos más si hay tiempo; sin capturas aún)
 El seed añade dos especies con datos ficticios: *Rothmaleria granatensis* (tres núcleos con parcelas y recuentos,
 tres impactos en curso de pisoteo, pastoreo y obras, b(iii) fijado y **3 localidades confirmadas** → **EN
 B1ab(iii)+2ab(iii)**) y *Odontites viscosus* subsp. *granatensis* (una sola mancha junto a la pista, amenaza
@@ -33,7 +33,7 @@ plausible por el ensanche previsto → **VU D2**).
   subpoblaciones y localidades por amenaza. Mapa › Filtros › *Rothmaleria* › «Subpoblaciones». «Añadir registros de
   GBIF» para el póster (déficit wallaceano: «solo BioDex» frente a «BioDex + GBIF»; necesita red y GBIF puede tardar).
 
-### Visitas y series temporales (F11h, 2–3 minutos más; sin capturas aún)
+### Visitas y series temporales (2–3 minutos más; sin capturas aún)
 El seed añade 4 sitios **ficticios** de *Plantago nivalis* (dos parcelas y dos puntos de conteo) con visitas anuales de
 2014 a 2026 (ninguna en 2019 y algún hueco por sitio) y un declive de ≈ 58 % en 10 años (IC 52–64 %); con la generación
 de 3 años y los hechos de A fijados (causas comprendidas, ni reversibles ni cesadas; bases (a) y (b)) sale **EN A2ab**.
@@ -59,7 +59,7 @@ La víspera, con red:
 - [ ] `docker compose up -d` y http://localhost:8090/api/health → `{"ok":true,"db":true}`.
 - [ ] `docker compose exec php php bin/reset-demo.php` y `bin/seed-demo.php` (imprime las cuentas); luego
       `bin/fetch-species-photos.php`: en el paso 2, *Atropa baetica* (sin foto en EIDOS) sale con la de iNaturalist y su
-      crédito, y *Laserpitium longiradium* con la silueta (F11b; F11d: tampoco hay foto en GBIF ni en Commons).
+      crédito, y *Laserpitium longiradium* con la silueta (tampoco hay foto en GBIF ni en Commons).
 - [ ] Todas las pruebas en verde (`README.md` › «Comprobaciones»).
 - [ ] Escritorio: entrar como `owner@biodex.demo`, catálogo DEMO activo.
 - [ ] Móvil: app instalada, entrar como `editor@biodex.demo`, catálogo DEMO activo. **No** descargarlo aún (se hace en

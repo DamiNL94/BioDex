@@ -1,5 +1,5 @@
 // ================================================================================================
-// f11f.spec.mjs — interfaz cómoda y página de especie (F11f), en móvil (campo) y escritorio (estudio):
+// f11f.spec.mjs — interfaz cómoda y página de especie, en móvil (campo) y escritorio (estudio):
 //   · marcar contando desde el buscador          · cambiar de pestaña y volver con el estado intacto
 //   · «atrás» cierra primero la hoja             · editar un parámetro y verlo tras recargar sin red
 //   · auditoría de objetivos táctiles en campo: ningún elemento interactivo de menos de 48 px

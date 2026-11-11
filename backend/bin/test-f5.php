@@ -54,10 +54,6 @@ function byId(?array $body, string $key = "results"): array {
     return array_column($body[$key] ?? [], null, "occurrenceID");
 }
 
-function syncSeq(PDO $pdo): int {
-    return (int) $pdo->query("SELECT value FROM sync_seq WHERE id = 1")->fetchColumn();
-}
-
 /** Pull completo por páginas: [items en orden, páginas, última respuesta]. */
 function pullAll(string $catalogId, array &$jar, int $limit = 500): array {
     $items = [];

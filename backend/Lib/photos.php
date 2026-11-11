@@ -1,6 +1,6 @@
 <?php
 // ================================================================================================
-// photos.php — la cascada de fotos de respaldo (F11d): iNaturalist > GBIF > Wikimedia Commons.
+// photos.php — la cascada de fotos de respaldo: iNaturalist > GBIF > Wikimedia Commons.
 // ------------------------------------------------------------------------------------------------
 // Una búsqueda por especie. La primera fuente que da ok o review la cierra; none pasa a la siguiente;
 // las fuentes rechazadas en la revisión (species_photos.rejected_sources) se saltan. Un error de red en
@@ -120,6 +120,26 @@ function photoSaveDecision(PDO $pdo, string $taxonID, array $d): bool {
     }
     $pdo->commit();
     return $written;
+}
+
+/**
+ * Recomprobación de una foto ya aceptada (status ok) con la decisión nueva de la cascada. La misma foto, o una
+ * propuesta por sinónimo (review: no pisa una aceptada a mano), solo renuevan checked_at. Otra foto ok, o ninguna
+ * (el autor la retiró o cambió la licencia), sustituyen a la actual. → true si la foto de la especie ha cambiado.
+ */
+function photoRecheckOk(PDO $pdo, string $taxonID, array $d): bool {
+    $stmt = $pdo->prepare("SELECT source, photo_id, photo_ref FROM species_photos WHERE taxonID = ? AND status = 'ok'");
+    $stmt->execute([$taxonID]);
+    $cur = $stmt->fetch();
+    if (!$cur || $d["status"] === "pending") return false;
+    $same = $d["status"] === "ok" && $d["source"] === $cur["source"]
+        && (string) ($d["photo_id"] ?? "") === (string) ($cur["photo_id"] ?? "") && (string) ($d["photo_ref"] ?? "") === (string) ($cur["photo_ref"] ?? "");
+    if ($same || $d["status"] === "review") {
+        $pdo->prepare("UPDATE species_photos SET checked_at = NOW() WHERE taxonID = ? AND status = 'ok'")->execute([$taxonID]);
+        return false;
+    }
+    $pdo->prepare("UPDATE species_photos SET status = 'pending' WHERE taxonID = ? AND status = 'ok'")->execute([$taxonID]);
+    return photoSaveDecision($pdo, $taxonID, $d);
 }
 
 /** Línea del script para una especie: qué fuente decidió y por qué se descartaron las anteriores. */

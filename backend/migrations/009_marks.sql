@@ -1,4 +1,4 @@
--- F8a · Marcas completas (términos DwC nuevos y vocabularios cerrados) y notas de cuaderno por especie.
+-- Marcas completas (términos DwC nuevos y vocabularios cerrados) y notas de cuaderno por especie.
 
 -- lifeStage pasa a vocabulario controlado. Un valor libre de antes no se pierde: va a occurrenceRemarks.
 UPDATE occurrences
@@ -19,7 +19,7 @@ ALTER TABLE occurrences
 
 UPDATE occurrences SET georeferenceProtocol = 'GPS del dispositivo' WHERE georeferenceProtocol IS NULL;
 
--- La evaluación UICN es de la especie en el catálogo, no de una marca (F8b: species_assessments).
+-- La evaluación UICN es de la especie en el catálogo, no de una marca (species_assessments).
 -- Nunca se rellenó desde la app; se quita para que nadie la vuelva a usar.
 ALTER TABLE occurrences DROP COLUMN iucn_assessment;
 

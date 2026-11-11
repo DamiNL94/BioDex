@@ -1,4 +1,4 @@
-// Hoja de marcar (F11f): contraste AAA (7:1) de cada texto visible en claro y oscuro, nombre accesible de cada
+// Hoja de marcar: contraste AAA (7:1) de cada texto visible en claro y oscuro, nombre accesible de cada
 // control y foco atrapado en la hoja. Solo en móvil (modo campo).
 import { test, expect } from '@playwright/test';
 import { mockApi, FX, CATALOG_ID } from './mock-api.mjs';

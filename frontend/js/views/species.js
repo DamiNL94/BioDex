@@ -2,13 +2,13 @@
 // Vista Especies: especies del catálogo activo (GET /api/catalogs/{id}) con filtro LOCAL por texto,
 // grupo, categoría, nivel y familia (esta llega desde el árbol de «Datos del catálogo»), y orden por
 // nombre, categoría (de CR a LC) o grupo. Tocar una fila abre la ficha.
-// Cada fila lleva el filete lateral del color de su categoría UICN principal y «Marcar aquí» (F5).
+// Cada fila lleva el filete lateral del color de su categoría UICN principal y «Marcar aquí».
 // Sin servidor, las especies salen del catálogo descargado (IndexedDB).
-// F11c: en el móvil (campo) solo se ve el buscador; Grupo, Categoría, Nivel y Orden van en una hoja que
+// En el móvil (campo) solo se ve el buscador; Grupo, Categoría, Nivel y Orden van en una hoja que
 // sube desde abajo («Filtros (n)», nivel de BioDexNav) y los filtros activos quedan como fichas que se
 // quitan con un toque. En escritorio (estudio) los filtros van en línea y la ficha abierta pasa a la
 // especie anterior/siguiente con ↑/↓.
-// F11b/F11d: owner y custodio tienen el filtro «Fotos por revisar»: fotos de respaldo (iNaturalist o GBIF)
+// Owner y custodio tienen el filtro «Fotos por revisar»: fotos de respaldo (iNaturalist o GBIF)
 // propuestas porque su fuente usa otro nombre (sinónimo). Aceptar la muestra; rechazar no vuelve a proponer
 // esa fuente y la búsqueda sigue con la siguiente.
 // ================================================================================================
@@ -43,7 +43,7 @@ export function iucnEntries(byCategory) {
 
 // Filtro por familia pedido desde el árbol del catálogo; lo recoge el próximo montaje de la vista.
 let pendingFamily;
-// F11f: estado del buscador del modo campo (texto y grupo) y última posición; sobreviven a cambiar de pestaña.
+// Estado del buscador del modo campo (texto y grupo) y última posición; sobreviven a cambiar de pestaña.
 const fieldKeep = {};
 let studioText = '';   // texto del filtro en estudio: también vuelve como se dejó
 let lastPos = null;
@@ -140,7 +140,7 @@ export function mount(el, { go }) {
     const canAdd = ADD_ROLES.includes(catalog.role);
     const reviews = data.photoReviews;   // solo llega a owner y custodio, y con servidor
     if (!reviews || (!reviews.length && !f.photos)) f.photos = false;
-    const field = !isStudio();   // F11f: en campo, el buscador de components/species-picker.js
+    const field = !isStudio();   // En campo, el buscador de components/species-picker.js
     if (field) f.group = '';     // en campo el grupo va en los chips del buscador
     const opt = (value, label, current) => html`<option value="${value}" ${current === value ? html`selected` : ''}>${label}</option>`;
     paint(html`
@@ -180,7 +180,7 @@ export function mount(el, { go }) {
         </section>`}
       ${field && species.length > 0 && canMark(catalog) ? fabStack({ label: 'Marcar' }) : ''}`);
 
-    // F11f: botón flotante «Marcar» (campo): la hoja con el buscador de especies.
+    // Botón flotante «Marcar» (campo): la hoja con el buscador de especies.
     const fab = $('.fab-stack [data-mark]', el);
     if (fab) fab.addEventListener('click', () => openMarkSheet({ catalog, onSaved: () => picker && picker.refresh() }));
     const impactFab = $('.fab-stack [data-impact]', el);
@@ -260,7 +260,7 @@ export function mount(el, { go }) {
     paintRows();
   }
 
-  /** Lista de fotos por revisar (F11b), en lugar de la tabla mientras el filtro está activo. */
+  /** Lista de fotos por revisar, en lugar de la tabla mientras el filtro está activo. */
   function paintReviews() {
     const box = $('#photoReviews', el);
     const list = data.photoReviews || [];
@@ -353,7 +353,7 @@ export function mount(el, { go }) {
         ><span class="lbl-studio">Marcar aquí</span><span class="lbl-field">Marcar</span><span class="sr-only"> ${sciNameText(s)}</span></button>` : ''}</li>`)}` : html`<li class="empty"><p class="muted">Ninguna especie cumple los filtros.</p></li>`);
   }
 
-  // F11f — campo: buscador único (texto, abreviatura, chips de grupo; recientes y «cerca» arriba) sobre lo
+  // Campo: buscador único (texto, abreviatura, chips de grupo; recientes y «cerca» arriba) sobre lo
   // que dejan Categoría, Nivel y Familia. El texto y el grupo viven en `fieldKeep` (módulo): la pestaña
   // vuelve como se dejó.
   let picker = null;

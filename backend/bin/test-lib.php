@@ -51,3 +51,59 @@ function http(string $method, string $path, ?array $body, array &$jar): array {
     curl_close($ch);
     return [$code, json_decode((string) $raw, true), $headersOut];
 }
+
+/** Como http(), pero devuelve el cuerpo sin decodificar (un ZIP): [código, cuerpo, cabeceras en minúsculas]. */
+function httpRaw(string $method, string $path, ?array $body, array $jar): array {
+    global $BASE;
+    $headers = [];
+    $ch = curl_init($BASE . $path);
+    $h = ["Content-Type: application/json"];
+    if ($jar) $h[] = "Cookie: " . implode("; ", array_map(fn($k, $v) => "{$k}={$v}", array_keys($jar), $jar));
+    curl_setopt_array($ch, [CURLOPT_CUSTOMREQUEST => $method, CURLOPT_RETURNTRANSFER => true, CURLOPT_HTTPHEADER => $h,
+        CURLOPT_TIMEOUT => 120, CURLOPT_POSTFIELDS => json_encode($body ?? new stdClass()),
+        CURLOPT_HEADERFUNCTION => function ($ch, $line) use (&$headers) {
+            if (preg_match("/^([\w-]+):\s*(.*)$/", trim($line), $m)) $headers[strtolower($m[1])] = $m[2];
+            return strlen($line);
+        }]);
+    $raw = (string) curl_exec($ch);
+    $code = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+    curl_close($ch);
+    return [$code, $raw, $headers];
+}
+
+/** ZIP en memoria → [ruta interna → contenido]. Con $expandXlsx, los .xlsx también desempaquetados («x.xlsx!parte»). */
+function unzipAll(string $raw, bool $expandXlsx = false): array {
+    $tmp = tempnam(sys_get_temp_dir(), "biodex-test");
+    file_put_contents($tmp, $raw);
+    $zip = new ZipArchive();
+    $out = [];
+    if ($zip->open($tmp) === true) {
+        for ($i = 0; $i < $zip->numFiles; $i++) {
+            $name = $zip->getNameIndex($i);
+            $out[$name] = $zip->getFromIndex($i);
+            if ($expandXlsx && str_ends_with($name, ".xlsx")) foreach (unzipAll($out[$name]) as $p => $c) $out["{$name}!{$p}"] = $c;
+        }
+        $zip->close();
+    }
+    unlink($tmp);
+    return $out;
+}
+
+/** Texto separado por tabuladores → [cabecera, filas como columna → valor, líneas con nº de columnas distinto]. */
+function parseTsv(string $txt): array {
+    $lines = explode("\n", rtrim($txt, "\n"));
+    $head = explode("\t", array_shift($lines));
+    $rows = [];
+    $bad = 0;
+    foreach ($lines as $l) {
+        $cols = explode("\t", $l);
+        if (count($cols) !== count($head)) { $bad++; continue; }
+        $rows[] = array_combine($head, $cols);
+    }
+    return [$head, $rows, $bad];
+}
+
+/** Valor actual del contador común de sincronización. */
+function syncSeq(PDO $pdo): int {
+    return (int) $pdo->query("SELECT value FROM sync_seq WHERE id = 1")->fetchColumn();
+}

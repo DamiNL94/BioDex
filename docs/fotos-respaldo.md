@@ -1,16 +1,16 @@
-# Fotos de respaldo: iNaturalist, GBIF, Wikimedia Commons y siluetas (F11b, F11d)
+# Fotos de respaldo: iNaturalist, GBIF, Wikimedia Commons y siluetas
 
 EIDOS no trae foto de muchas especies (de las 171 en caché el 2026-10-01, 141 sin ninguna de la Fototeca). Antes la
 tarjeta y la ficha enseñaban un hueco. Ahora la miniatura sigue este orden:
 
 1. **Foto de EIDOS** (Fototeca del MITECO, `/img/fototeca/…`). Prioridad y crédito sin cambios.
-2. **Foto por defecto de iNaturalist aceptada** (`/img/inat/…`, proxy de nginx). F11b.
-3. **Foto de una observación de GBIF aceptada** (copia local, `/img/respaldo/…`). F11d.
-4. **Imagen (P18) del taxón en Wikidata, de Wikimedia Commons** (copia local, `/img/respaldo/…`). F11d.
+2. **Foto por defecto de iNaturalist aceptada** (`/img/inat/…`, proxy de nginx).
+3. **Foto de una observación de GBIF aceptada** (copia local, `/img/respaldo/…`).
+4. **Imagen (P18) del taxón en Wikidata, de Wikimedia Commons** (copia local, `/img/respaldo/…`).
 5. **Silueta del grupo** (`frontend/img/silhouettes.svg`).
 
 Las fuentes 2–4 se consultan **en cascada** y solo hay una foto de respaldo por especie (`species_photos.status = 'ok'`).
-(F12a pondrá delante la portada del catálogo.) Regla de oro: **mejor sin foto que con la de otra especie.**
+Regla de oro: **mejor sin foto que con la de otra especie.**
 Son fotos **ilustrativas**, no evidencia: no entran en ninguna exportación (DwC-A, Plinian Core, hojas).
 
 ## Datos (`species_photos`, migraciones 012 y 013; `species_photo_files`, 013)
@@ -41,7 +41,7 @@ Una lista por fuente; cualquier otra licencia → la fuente da `none` y se pasa 
 | Wikimedia Commons | `cc0`, dominio público (`pd`), `cc-by`, `cc-by-sa` | `COMMONS_LICENSES` (`Lib/commons.php`) |
 
 - **ND** (sin obras derivadas) no se admite en ninguna: no deja recortar.
-- **CC BY-SA solo en GBIF y Commons** (decidido por Damián, F11d). La «SA» obliga a licenciar igual las **obras
+- **CC BY-SA solo en GBIF y Commons** (decidido por Damián). La «SA» obliga a licenciar igual las **obras
   derivadas**; BioDex muestra la foto **sin modificar** (los bytes tal cual llegaron, sin reescalar ni recomprimir),
   con autor, licencia y enlace, y **nunca** la mete en una exportación. Recortarla al mostrarla con CSS
   (`object-fit`) no es una obra derivada. En iNat sigue fuera (F11b no la admitía y su foto por defecto rara vez es SA).
@@ -167,8 +167,8 @@ elegida y la guarda en MySQL (`species_photo_files`):
 - porque Wikimedia solo sirve miniaturas a anchos fijos y sus URL no son una API pública (no se pueden filtrar con
   una regex de nginx como `/img/inat/`), y la caché de imágenes de GBIF puede tardar o fallar si la foto no estaba
   cacheada. Con la copia, la demo tampoco depende de que respondan en ese momento;
-- en MySQL y no en disco porque el disco del contenedor de Railway se borra en cada despliegue (el volumen es cosa de
-  F12a). Son ~30–100 KB por especie.
+- en MySQL y no en disco porque el disco del contenedor de Railway se borra en cada despliegue (no hay volumen
+  persistente). Son ~30–100 KB por especie.
 
 **Descarga** (`photoDownload()`, `photoValidateBytes()`): tipo comprobado **por contenido** (`finfo`), no por la
 cabecera; máximo 1,5 MB (se corta la descarga al pasar); `getimagesize` válido y del mismo tipo; lados entre 100 y
@@ -196,13 +196,16 @@ siguiente (GBIF) o la fuente da `none` (Commons).
 - `backend/bin/fetch-species-photos.php` procesa la cola:
 
   ```
-  docker compose exec php php bin/fetch-species-photos.php [--limit=N] [--recheck-none-days=30] [--source=inaturalist|gbif|commons] [--dry-run]
+  docker compose exec php php bin/fetch-species-photos.php [--limit=N] [--recheck-none-days=30] [--recheck-ok-days=N] [--source=inaturalist|gbif|commons] [--dry-run]
   ```
 
   - Antes de consultar pone en cola las especies de EIDOS de algún catálogo vigente sin fila (las de catálogos creados
-    antes de F11b).
+    antes de existir la cola).
   - `--recheck-none-days=30` (por defecto): vuelve a mirar las `none` consultadas hace más de 30 días, porque las
     fuentes suben fotos nuevas. `0` = no volver a mirarlas. Las fuentes rechazadas no se vuelven a mirar nunca.
+  - `--recheck-ok-days=N` (por defecto 0, no): vuelve a mirar las `ok` comprobadas hace más de N días. La misma foto, o
+    una por sinónimo (`review`, que no pisa una aceptada a mano), solo renuevan `checked_at`; si el autor la retiró o
+    cambió la licencia, la cascada pone otra foto o ninguna (`none`, sin copia) y sube `content_seq`.
   - `--source=gbif` (o `inaturalist`, `commons`): prueba una sola fuente. Guarda lo que encuentre (`ok`/`review`), pero
     un `none` no se escribe: las otras fuentes no se han consultado.
   - `--dry-run`: consulta y decide, pero no escribe.
@@ -238,7 +241,7 @@ siguiente (GBIF) o la fuente da `none` (Commons).
   pinta. `role="img"` y `aria-label="Sin foto · silueta de <grupo>"`.
 - **Nunca una imagen rota**: si la foto no carga (sin red y sin copia, una fuente o MITECO caídos), la tarjeta y la
   ficha la cambian por la silueta (`swapToSilhouette()` en `components/species-card.js`). Si fallan **todas** las
-  fotos de la galería de la Fototeca, también la silueta (F11d; antes la cabecera se quedaba vacía).
+  fotos de la galería de la Fototeca, también la silueta (antes la cabecera se quedaba vacía).
 - Sin red: el sprite va en la precarga de la app (`SHELL_ASSETS`) y las fotos de respaldo se guardan con el catálogo
   descargado, como las de la Fototeca (`offline.js`, `sw.js`).
 
@@ -248,7 +251,7 @@ siguiente (GBIF) o la fuente da `none` (Commons).
   `/img/respaldo/`, que en `review` solo se la sirve a ellos.
 - En Especies, el filtro **«Fotos por revisar (n)»** cambia la tabla por esa lista con **Aceptar** (→ `ok`, se muestra
   a todos) y **Rechazar**.
-- **Rechazar ya no cierra la especie** (F11d): la fuente pasa a `rejected_sources` (su foto no se vuelve a proponer),
+- **Rechazar ya no cierra la especie**: la fuente pasa a `rejected_sources` (su foto no se vuelve a proponer),
   se borran los datos de la foto y su copia local, y la especie vuelve a `pending`; la siguiente pasada del script
   sigue con las fuentes siguientes, saltándose las rechazadas. `none` solo cuando no queda ninguna.
 - `POST /api/species/{taxonID}/photo-review {catalogId, decision: accept|reject}`: rol owner o custodio en ese catálogo

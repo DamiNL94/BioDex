@@ -1,6 +1,6 @@
 <?php
 // ================================================================================================
-// metrics.php — EOO y AOO de la UICN (F9): el cálculo DEFINITIVO, con las coordenadas exactas.
+// metrics.php — EOO y AOO de la UICN: el cálculo DEFINITIVO, con las coordenadas exactas.
 // ------------------------------------------------------------------------------------------------
 // Port de shared/geo-metrics.js, función a función y con las mismas reglas (docs/iucn.md › «EOO y
 // AOO en BioDex»): casco convexo por la cadena monótona de Andrew, área por la fórmula del lazo,
@@ -12,7 +12,7 @@ require_once __DIR__ . "/utm.php";
 require_once __DIR__ . "/sensitivity.php";   // canSeeExact(), sensitivityConfig()
 require_once __DIR__ . "/audit.php";         // logAccess()
 require_once __DIR__ . "/sync.php";          // syncIsoUtc()
-require_once __DIR__ . "/visits.php";        // F11h: speciesVisitLevel()
+require_once __DIR__ . "/visits.php";        // speciesVisitLevel()
 
 const METRICS_DEFAULT_CELL_KM = 2;
 const METRICS_CELL_OPTIONS_KM = [2, 1];
@@ -200,7 +200,7 @@ function speciesMetrics(PDO $pdo, string $catalogId, string $taxonID, int $userI
     ["m" => $m, "rows" => $rows, "computedAt" => $computedAt, "cached" => $cached, "maxSeq" => $maxSeq]
         = metricsStored($pdo, $catalogId, $taxonID, $userId, $scope, $cellKm);
 
-    // F11h: marcas de visitas a sitios de especies más sensibles: la geometría sale con ese nivel (Lib/visits.php).
+    // Marcas de visitas a sitios de especies más sensibles: la geometría sale con ese nivel (Lib/visits.php).
     $level = min($level, speciesVisitLevel($pdo, $catalogId, $taxonID));
     $access = metricsGeometryAccess($role, $level, $scope);
     $geometry = ["access" => $access];
@@ -210,7 +210,7 @@ function speciesMetrics(PDO $pdo, string $catalogId, string $taxonID, int $userI
         // Casco y celdas de registros exactos ajenos de una especie sensible: como view_exact del pull.
         $foreign = count(array_filter($rows, fn($r) => (int) $r["user_id"] !== $userId));
         if ($level < 4 && $foreign > 0 && $scope === "team" && canSeeExact($role, false) && $m["nRecords"] > 0) {
-            logAccess($pdo, $userId, "view_exact", $catalogId, "EOO/AOO {$taxonID}: {$foreign}");
+            logViewExact($pdo, $userId, $catalogId, "EOO/AOO {$taxonID}", $foreign);
         }
     } elseif ($access === "generalized") {
         $grid = (float) sensitivityConfig()["levels"][(string) $level]["gridDeg"];
@@ -242,7 +242,7 @@ function speciesMetrics(PDO $pdo, string $catalogId, string $taxonID, int $userI
  * Cálculo con las exactas, guardado en species_metrics (solo se renueva si hay marcas nuevas, editadas o
  * borradas) → {m (computeMetrics), rows (las exactas: NO salen del servidor), computedAt, cached, maxSeq}.
  * Solo cifras y registros: qué geometría puede salir lo decide quien llama (speciesMetrics; la
- * exportación F10a no saca ninguna).
+ * exportación no saca ninguna).
  */
 function metricsStored(PDO $pdo, string $catalogId, string $taxonID, int $userId, string $scope, int $cellKm): array {
     $stmt = $pdo->prepare("SELECT COALESCE(MAX(server_seq), 0) FROM occurrences WHERE catalog_id = ? AND taxonID = ?");

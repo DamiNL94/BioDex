@@ -8,7 +8,7 @@
 //   sensitivity.php); la celda sale de ese centro y del paso de rejilla. Nivel 1 (retenida): el
 //   servidor no manda coordenadas y no se dibuja nada.
 // · Pendientes de sincronizar: distintivo ámbar.
-// · F8a: punto marcado a mano en el mapa → borde DISCONTINUO; ausencia → marcador hueco con aspa.
+// · Punto marcado a mano en el mapa → borde DISCONTINUO; ausencia → marcador hueco con aspa.
 // Todo el HTML de marcadores y globos pasa por html`` (los nombres y notas vienen de usuarios).
 // ================================================================================================
 
@@ -150,7 +150,7 @@ export function createMarksLayer(map, { ctx, onOpenSpecies }) {
           title: label, keyboard: true, riseOnHover: true,
           icon: Lf.divIcon({ className: 'mk-wrap',
             html: html`<span class="${markerClass(o, colors)}"></span><span class="sr-only">${label}</span>`.str,
-            iconSize: [48, 48], iconAnchor: [24, 24], popupAnchor: [0, -14] }),   // 48 px de toque (F11f), 18 px de punto
+            iconSize: [48, 48], iconAnchor: [24, 24], popupAnchor: [0, -14] }),   // 48 px de toque, 18 px de punto
         });
         points.push(layer);
       }

@@ -1,6 +1,6 @@
 <?php
 // ================================================================================================
-// xlsx.php — escritor XLSX mínimo (F10a): ZIP (extensión zip de PHP) + XML de OOXML, sin dependencias.
+// xlsx.php — escritor XLSX mínimo: ZIP (extensión zip de PHP) + XML de OOXML, sin dependencias.
 // ------------------------------------------------------------------------------------------------
 // Lo justo para las hojas legibles de la exportación: varias pestañas, textos en línea (inlineStr, sin
 // sharedStrings), números, fechas como fecha de Excel, unos pocos estilos fijos, anchos de columna,

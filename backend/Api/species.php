@@ -7,7 +7,7 @@
 //   GET  /api/species/{taxonID}   ficha completa (la trae de EIDOS si falta o tiene > 30 días)
 //   POST /api/species             {scientificName, scientificNameAuthorship, taxonRank, vernacularName?, taxonID?}
 //                                 taxonID = biodex:<uuid v4> propuesto por el móvil (especie creada sin conexión)
-//   POST /api/species/{taxonID}/photo-review   {catalogId, decision: accept|reject} (F11b, F11d) owner/custodian del
+//   POST /api/species/{taxonID}/photo-review   {catalogId, decision: accept|reject} owner/custodian del
 //                                 catálogo: la foto de respaldo propuesta por sinónimo → ok, o se rechaza su fuente
 //                                 (rejected_sources) y la especie vuelve a pending; a access_log
 //
@@ -19,7 +19,7 @@
 
 require_once __DIR__ . "/../Lib/session.php";
 require_once __DIR__ . "/../Lib/species.php";
-require_once __DIR__ . "/../Lib/photos.php";    // fuentes de fotos de respaldo (F11d)
+require_once __DIR__ . "/../Lib/photos.php";    // fuentes de fotos de respaldo
 require_once __DIR__ . "/../Lib/authz.php";
 require_once __DIR__ . "/../Lib/audit.php";
 
@@ -183,7 +183,7 @@ function handleFilters(): never {
     if (!is_array($filters)) apiError("Faltan los filtros: ejecuta bin/build-filters.php.", 500);
     $levels = [];
     foreach (sensitivityConfig()["levels"] as $n => $l) {
-        // gridDeg: el mapa (F7) dibuja una marca generalizada como la celda de ese paso, nunca como punto.
+        // gridDeg: el mapa dibuja una marca generalizada como la celda de ese paso, nunca como punto.
         $levels[] = ["level" => (int) $n, "name" => $l["name"], "approxKm" => $l["approxKm"] ?? null,
                      "gridDeg" => $l["gridDeg"] ?? null,
                      "display" => $l["display"] ?? null, "displayText" => $l["displayText"] ?? null];
@@ -290,7 +290,7 @@ function handleCreate(PDO $pdo, int $userId): never {
 }
 
 /**
- * Revisión de la foto de respaldo propuesta por sinónimo (F11b; F11d: de iNaturalist o GBIF). Owner o custodio
+ * Revisión de la foto de respaldo propuesta por sinónimo (de iNaturalist o GBIF). Owner o custodio
  * de un catálogo que tenga la especie; la decisión es global (species_photos la comparten todos los
  * catálogos). Aceptar → ok (se muestra). Rechazar → la fuente pasa a rejected_sources (no se vuelve a
  * proponer su foto), se borra la copia local y la especie vuelve a pending para que la cascada siga con las

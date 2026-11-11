@@ -1,5 +1,5 @@
 // ================================================================================================
-// components/species-distribution.js — bloque «Distribución» de la ficha (F9): EOO y AOO de la especie
+// components/species-distribution.js — bloque «Distribución» de la ficha: EOO y AOO de la especie
 // en el catálogo activo, con nº de registros y excluidos, conmutadores equipo/propias y 2 km/1 km, y el
 // ORIGEN del dato: servidor (con fecha) o provisional del dispositivo (sin red). Cálculo: js/metrics.js.
 // ================================================================================================

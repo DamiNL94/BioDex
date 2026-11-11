@@ -465,7 +465,7 @@ function eidosSearch(string $q, array $filters = [], int $limit = 20, int $offse
         }
     }
 
-    // Tarjeta (F4): foto prioritaria y descripción, otras dos peticiones por lotes (~0,2 s cada una).
+    // Tarjeta: foto prioritaria y descripción, otras dos peticiones por lotes (~0,2 s cada una).
     $photos = [];
     foreach (eidosRows("v_imagenes", [
         "id_taxon" => "in.({$pageIds})", "select" => "id_taxon,id_foto,es_prioridad,descripcion,ruta_foto",

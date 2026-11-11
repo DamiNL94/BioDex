@@ -1,8 +1,7 @@
 # Limitaciones conocidas (1.8.0)
 
-Lista abierta al terminar F10b (2026-09-30) y puesta al día con 1.8.0 (F11h, 2026-11-11). Recoge lo que BioDex **no hace**,
-lo que hace de forma **orientativa** y lo que **no se ha podido probar** en esta máquina. Cada punto abierto de las
-listas de F3 a F10a está aquí o marcado como resuelto en su lista.
+Puesta al día con la versión 1.8.0 (2026-11-11). Recoge lo que BioDex **no hace**, lo que hace de forma
+**orientativa** y lo que **no se ha podido probar** en esta máquina.
 
 ## Alcance del prototipo
 - **Despliegue solo de prueba.** El desarrollo corre en Docker en local (`localhost:8090`); además hay un despliegue
@@ -18,15 +17,14 @@ listas de F3 a F10a está aquí o marcado como resuelto en su lista.
 - **Fotos de la Fototeca del MITECO**: EIDOS no trae autor ni licencia. Se citan «Fototeca MITECO · vía EIDOS»,
   pero las condiciones de reutilización están **sin resolver** (`docs/eidos.md`). No publicar capturas con fotos
   fuera de la demo sin aclararlo.
-- **Fotos de respaldo de iNaturalist, GBIF y Wikimedia Commons** (F11b, F11d, `docs/fotos-respaldo.md`): son
+- **Fotos de respaldo de iNaturalist, GBIF y Wikimedia Commons** (`docs/fotos-respaldo.md`): son
   **ilustrativas**, no evidencia (no entran en ninguna exportación). Las tres fuentes cubren poco algunas especies
   (endemismos, invertebrados, hongos): muchas se quedan con la silueta del grupo. Solo se aceptan coincidencias exactas
   o sinónimos revisados a mano, así que puede faltar foto aunque alguna fuente tenga una. En iNat es la «por defecto»
   del taxón; en GBIF, la primera observación con foto que cumple las reglas; en Commons, la imagen (P18) de Wikidata.
-- **Las copias de GBIF y Commons van en MySQL** (F11d): si un autor retira su foto de Commons o GBIF, la nuestra sigue
-  hasta la siguiente comprobación. Hoy el script no vuelve a mirar las `ok`: para comprobar una, se borra su fila de
-  `species_photos` y se pasa el script. Con Wikidata en retraso de réplica (`maxlag`) o GBIF lento, esas especies se
-  quedan pendientes hasta otra pasada.
+- **Las copias de GBIF y Commons van en MySQL**: si un autor retira su foto de Commons o GBIF, la nuestra sigue
+  hasta que se pasa el script con `--recheck-ok-days` (por defecto no se recomprueban; `docs/fotos-respaldo.md`).
+  Con Wikidata en retraso de réplica (`maxlag`) o GBIF lento, esas especies se quedan pendientes hasta otra pasada.
 - **EIDOS**: todas sus especies, sin filtro provincial; la caché caduca a 30 días. Si EIDOS no responde, solo se puede
   buscar en lo ya guardado.
 - **Exportación**: el ZIP no ha pasado el validador de GBIF (sin red a GBIF desde aquí) ni se ha abierto el XLSX en
@@ -45,10 +43,10 @@ listas de F3 a F10a está aquí o marcado como resuelto en su lista.
   Las localidades no se calculan: las introduce quien evalúa.
 - **Sin red, cifras provisionales**: el móvil solo cuenta las marcas exactas que tiene (las ajenas generalizadas no
   cuentan); el rótulo lo dice, falta validarlo con usuarios.
-- **Parámetros de especie** (F11f, `docs/parametros.md`): F11g los usa para B, C y D y F11h para A y C1 (E queda fuera).
+- **Parámetros de especie** (`docs/parametros.md`): F11g los usa para B, C y D y F11h para A y C1 (E queda fuera).
   La separación por defecto (1 km) solo se da para grupos sésiles o poco móviles; es una convención de trabajo, no un
   valor publicado para cada especie. Se editan solo con red, como los hechos y las localidades.
-- **Cuantificadores (F11g)**: las subpoblaciones por enlace simple dependen por completo de la distancia de separación;
+- **Cuantificadores**: las subpoblaciones por enlace simple dependen por completo de la distancia de separación;
   la densidad × superficie supone parcelas representativas (sin diseño de muestreo ni detectabilidad); el reparto de
   la estimación por subpoblación es por celdas de AOO, no por hábitat. La fragmentación y las localidades son
   propuestas: las decide quien evalúa. El orden de las preguntas del ajuste regional está escrito a partir de las
@@ -61,7 +59,7 @@ listas de F3 a F10a está aquí o marcado como resuelto en su lista.
   hasta 3000 registros; los registros de GBIF no se depuran (duplicados, cultivados, antiguos). Sin DOI (una búsqueda
   no lo tiene).
 - **Impactos fuera del DwC-A** (`docs/dwc.md`): solo van en la hoja «Impactos».
-- **Series temporales (F11h)**: el modelo supone una tasa constante (log-lineal) en toda la serie y que los sitios
+- **Series temporales**: el modelo supone una tasa constante (log-lineal) en toda la serie y que los sitios
   representan a la población (no corrige la detectabilidad ni el diseño de muestreo); un cambio de tendencia dentro de
   la ventana no se detecta (hay que mirar el gráfico). Con menos de 3 años con datos, «no evaluable». A3 y A4 proyectan
   la MISMA tasa; no hay escenarios. E queda fuera de alcance (haría falta un análisis de viabilidad). Los casos con ruido
@@ -74,12 +72,13 @@ listas de F3 a F10a está aquí o marcado como resuelto en su lista.
 - **Referencia independiente sin pasar.** No hay Python en el anfitrión: `backend/bin/metrics-reference.py` (pyproj +
   shapely) está escrito pero no ejecutado; los casos se contrastaron con PROJ. (Las series de F11h sí se generaron con
   Python, en el contenedor `python:3.12-slim`; el mismo camino serviría para este script.)
-- Una evaluación de referencia que se edita después sigue siendo la referencia, sin aviso.
+- Una evaluación de referencia que se edita después sigue siendo la referencia: la ficha lo avisa y la owner la confirma
+  («Confirmar referencia»); hasta entonces cuenta como referencia igual.
 
 ## Pruebas pendientes en dispositivos reales
 Todo lo de abajo se ha probado en Edge headless por CDP (emulación de móvil, red cortada, GPS simulado y nginx
 parado de verdad), no en un teléfono:
-- Instalar en la pantalla de inicio de un móvil, modo avión y abrir desde el icono (F3 · 3, F3b a–e con el wifi real).
+- Instalar en la pantalla de inicio de un móvil, modo avión y abrir desde el icono (F3b a–e con el wifi real).
 - GPS real: permiso denegado, sin señal (30 s), precisión, «Seguir» caminando y batería.
 - Mantener pulsado en el mapa en Android y en iOS (Safari puede necesitar un temporizador propio).
 - «Atrás» del sistema en Android; copiar el enlace de invitación (`navigator.clipboard`).
@@ -87,7 +86,7 @@ parado de verdad), no en un teléfono:
 - Descargas largas de zonas con el móvil bloqueado (el navegador puede congelar la pestaña; se reanuda).
 - Actualizar de v7 a v8 con datos (IndexedDB 3 → 4) y evaluar sin red de verdad.
 - Lector de pantalla (NVDA, TalkBack).
-- Conteo (F11e) en el campo: toques seguidos con prisa, «Deshacer» y cifra escrita; el QR de invitación leído con la
+- Conteo en el campo: toques seguidos con prisa, «Deshacer» y cifra escrita; el QR de invitación leído con la
   cámara de otro móvil (comprobado solo que el SVG generado se decodifica).
 - F11f en el campo: la letra de 17 px y los objetivos de 48/56 px con guantes y al sol, el buscador con el teclado
   de Android (abreviaturas) y «cerca» con un GPS real. Lo automático (Playwright en Chromium, 390×844 y 1280×800, con
@@ -102,9 +101,9 @@ parado de verdad), no en un teléfono:
 - «Cerca» en la pestaña Especies solo aparece si el permiso de ubicación ya estaba concedido (no se pide al abrir la
   pestaña); en la hoja de marcar llega con el GPS de la propia hoja.
 - En la sección de inicio el «atrás» del sistema pide una segunda pulsación para salir; en las demás vuelve primero a
-  la de inicio (F11f). Quien esperase volver a la pestaña anterior (no a la de inicio) lo notará.
+  la de inicio. Quien esperase volver a la pestaña anterior (no a la de inicio) lo notará.
 - Notas y marcas editadas a la vez en dos dispositivos: gana la última escritura.
-- `view_exact` se registra en cada petición de la owner o del custodio que recibe exactas ajenas (ficha, mapa, cada
-  sincronización): el registro crece deprisa. Pendiente decidir si una fila por día y especie.
+- `view_exact` se registra una vez al día por usuario, catálogo y objeto (pull, EOO/AOO o subpoblaciones de una
+  especie), con el mayor número de registros exactos ajenos recibidos ese día; no guarda la hora de cada vista.
 - Rendimiento con cientos de marcas por especie (cálculo en el servidor y provisional en un móvil modesto) sin medir.
 - Rechazadas en la sincronización: cubiertas por `test-f5.php`, pero no se ha visto una real en Ajustes.

@@ -1,6 +1,6 @@
 # Mapeo Plinian Core
 
-Exportación (F10c): fichas de **especie** del catálogo exportado en Plinian Core 3.2.2.7 (TDWG), en `pliniancore/` del ZIP.
+Exportación: fichas de **especie** del catálogo exportado en Plinian Core 3.2.2.7 (TDWG), en `pliniancore/` del ZIP.
 Sin observaciones individuales: esas van en el Darwin Core Archive (`docs/dwc.md`). Esquema vendorizado y sus cambios:
 `backend/Lib/plinian/README.md`. Cada XML se valida contra él antes de entregar el ZIP; si no valida, la exportación falla.
 

@@ -1,9 +1,9 @@
 // ================================================================================================
-// iucn-series.js — series temporales de recuentos por sitio para los criterios A y C1 de la UICN (F11h). JS puro.
+// iucn-series.js — series temporales de recuentos por sitio para los criterios A y C1 de la UICN. JS puro.
 // ------------------------------------------------------------------------------------------------
 // Lo usa el dispositivo (gráfico de la ficha y cálculo provisional) y lo repite en PHP backend/Lib/series.php (el
 // definitivo). Mismos casos: shared/iucn-cases.json › series (node shared/iucn-engine.test.js · bin/test-f11h.php),
-// generados con bin/series-reference.py. Métodos: docs/iucn.md › «Series temporales (F11h)».
+// generados con bin/series-reference.py. Métodos: docs/iucn.md › «Series temporales».
 //
 //   seriesFromVisits({visits, occurrences, taxonID})  → observaciones {site, siteName, year, visitID, mature}: una por
 //                                                      visita CON SITIO en la que se contó la especie (maduros sumados;

@@ -1,4 +1,4 @@
-# Interfaz: modo campo y modo estudio (F11c, F11f, F11h)
+# Interfaz: modo campo y modo estudio
 
 BioDex tiene dos disposiciones según el ancho (`app.js`, `body.is-field` < 900 px ≤ `body.is-studio`):
 
@@ -11,7 +11,7 @@ BioDex tiene dos disposiciones según el ancho (`app.js`, `body.is-field` < 900 
 F11f nace de la salida de campo a Sierra Nevada (15–16 oct): botones pequeños, costaba encontrar la especie al
 marcar y moverse entre pestañas era incómodo.
 
-## Tamaños (F11f)
+## Tamaños
 Tokens en `css/biodex.css` (bloque A):
 
 | Token | Campo | Estudio | Para qué |
@@ -42,7 +42,7 @@ escalan con ella). En estudio se conservan los tamaños de antes (`body.is-studi
   casillas, radios y selectores de fichero; se exceptúan los enlaces dentro de una frase (excepción «en línea» de
   WCAG 2.5.8: atribuciones del mapa y créditos de foto).
 
-## Encontrar la especie (F11f)
+## Encontrar la especie
 Un solo buscador (`components/species-picker.js` sobre `js/species-search.js`, sin DOM y probado con node) en la
 hoja de marcar y en la pestaña Especies del modo campo:
 
@@ -65,7 +65,7 @@ hoja de marcar y en la pestaña Especies del modo campo:
 - En la pestaña Especies (campo), «Filtros» queda para Categoría y Nivel; el grupo va en los chips y el orden
   es el de arriba. En estudio sigue la tabla con sus filtros.
 
-## Navegación (F11f)
+## Navegación
 - **Botón flotante «Marcar»** (`components/fab.js`) en Mapa y Especies, abajo a la derecha por encima de la
   barra de pestañas (a la altura del pulgar). En Especies abre la hoja con el buscador; en Mapa, con la última
   posición del GPS como siempre. En estudio, el del Mapa sigue flotando sobre el mapa.
@@ -78,7 +78,7 @@ hoja de marcar y en la pestaña Especies del modo campo:
   atrás otra vez para salir». Ir de una pestaña a otra no apila niveles. Escape cierra hojas, pero no cambia de
   sección. Todo con el historial (`#/seccion` y entradas de `nav.js`), sin tocar la CSP.
 
-## Página de especie (F11f)
+## Página de especie
 La ficha pasa a ser la página de la especie **en el catálogo**, con pestañas (patrón ARIA, flechas, Inicio y
 Fin; la elegida se recuerda al pasar de ficha con ↑/↓):
 
@@ -92,7 +92,7 @@ Fin; la elegida se recuerda al pasar de ficha con ↑/↓):
 Fuera del catálogo activo (abierta desde el buscador de EIDOS) solo hay Resumen. En estudio es una página a
 pantalla completa con «← Volver».
 
-## Impacto (F11g)
+## Impacto
 El botón flotante «Impacto», encima de «Marcar» (Mapa y Especies en campo; Mapa en estudio), abre
 `views/impact-sheet.js`: botones grandes con los impactos habituales (pisoteo, residuos, ganado o sobrepastoreo,
 recolección, obras o pistas, incendio, especies invasoras) y «Otro» con el árbol completo de la UICN; después el sitio
@@ -100,7 +100,7 @@ recolección, obras o pistas, incendio, especies invasoras) y «Otro» con el á
 fecha, especies afectadas (por defecto las que tienen marcas en el sitio) y nota. Funciona sin red.
 En el mapa de estudio, el botón «Subpoblaciones» dibuja las de la especie elegida en Filtros y sus impactos.
 
-## Visitas (F11h)
+## Visitas
 Botón grande **«Empezar visita»** en el Mapa (encima de «Impacto» y «Marcar»; se esconde con una visita en curso),
 `views/visit-sheet.js`:
 - **Sitio**: los del catálogo por cercanía («estás dentro» si lo estás; el más cercano se preselecciona), uno **nuevo

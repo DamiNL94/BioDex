@@ -6,30 +6,30 @@
  * precachear deja la app rota sin cobertura, y network-first no lo salva porque justo entonces no hay
  * red de la que tirar.)
  *
- * Estrategia (F3b): CACHE-FIRST con revalidación en segundo plano (stale-while-revalidate). Es una app
+ * Estrategia: CACHE-FIRST con revalidación en segundo plano (stale-while-revalidate). Es una app
  * de campo: tiene que abrir al instante aunque la red esté caída o colgada. Lo que no está en caché va
  * a la red con corte de NET_TIMEOUT_MS. Las versiones nuevas llegan subiendo VERSION; la app avisa
  * «Hay una versión nueva · Recargar» cuando el SW nuevo toma el control.
  * (Antes era network-first sin límite: con el servidor colgado la navegación no llegaba nunca a la caché.)
  *
  * /api/ NUNCA pasa por aquí: los datos de trabajo (catálogos, especies, marcas) viven en IndexedDB
- * (F5), con su propia fecha y su propia regla de sincronización. Una respuesta de la API cacheada aquí
+ *, con su propia fecha y su propia regla de sincronización. Una respuesta de la API cacheada aquí
  * sería una segunda copia, sin edad conocida, que el navegador serviría como si fuese fresca.
  *
- * Fotos de especies (/img/fototeca/, F5; /img/inat/, F11b; /img/respaldo/, F11d): CACHE-FIRST en las cachés `biodex-img-<catalogId>`
+ * Fotos de especies (/img/fototeca/; /img/inat/; /img/respaldo/): CACHE-FIRST en las cachés `biodex-img-<catalogId>`
  * que llena la app al descargar un catálogo; lo que no esté ahí va a la red y NO se guarda en la del armazón.
- * El sprite de siluetas (img/silhouettes.svg, F11b) va en SHELL_ASSETS: sin red, la silueta sale igual.
+ * El sprite de siluetas (img/silhouettes.svg) va en SHELL_ASSETS: sin red, la silueta sale igual.
  *
- * Motor y umbrales UICN (/shared/, F8b) y EOO/AOO (F9): van en SHELL_ASSETS como el resto del armazón.
+ * Motor y umbrales UICN (/shared/) y EOO/AOO: van en SHELL_ASSETS como el resto del armazón.
  *
- * Teselas del mapa (/tiles/, F7): CACHE-FIRST en todas las cachés `biodex-tiles-*` (las zonas descargadas
+ * Teselas del mapa (/tiles/): CACHE-FIRST en todas las cachés `biodex-tiles-*` (las zonas descargadas
  * y la de uso, `biodex-tiles-runtime`). Si no está: red con corte de TILE_TIMEOUT_MS, y lo que llega se
  * guarda en la de uso, con tope de RUNTIME_TILES_MAX entradas (fuera las más antiguas). Sin red ni copia:
  * tesela transparente, nunca un error visible en el mapa. Nunca van a la caché del armazón.
  * Las peticiones de la descarga de zonas (cabecera X-BioDex-Zone) van directas a la red: allí un fallo
  * tiene que ser un fallo, no una tesela vacía.
  */
-var VERSION = 'v21';
+var VERSION = 'v22';
 var CACHE = 'biodex-shell-' + VERSION;
 var NET_TIMEOUT_MS = 3000;
 var TILE_TIMEOUT_MS = 5000;
@@ -48,7 +48,7 @@ var SHELL_ASSETS = [
 
   // img/
   'img/icon.svg', 'img/icon-192.png', 'img/icon-512.png', 'img/icon-maskable-512.png',
-  'img/silhouettes.svg',   // F11b: siluetas de las especies sin foto
+  'img/silhouettes.svg',   // Siluetas de las especies sin foto
 
   // vendor/fonts/ — nunca desde CDN: sin ellas precacheadas la app pierde su tipografía en el monte
   'vendor/fonts/fonts.css',
@@ -61,51 +61,51 @@ var SHELL_ASSETS = [
   // js/ (nav.js es script clásico; el resto, módulos ES)
   'js/nav.js', 'js/util.js', 'js/state.js', 'js/api.js', 'js/auth.js', 'js/app.js',
   'js/db.js', 'js/offline.js', 'js/marks.js', 'js/sync.js', 'js/metrics.js',
-  'js/tally.js',   // F11e: conteo rápido
-  'js/species-search.js',   // F11f: buscador de especies (sin DOM)
-  'js/flags.js',   // F11f: funciones ocultas tras un flag (Impacto)
+  'js/tally.js',   // Conteo rápido
+  'js/species-search.js',   // Buscador de especies (sin DOM)
+  'js/flags.js',   // Funciones ocultas tras un flag (Impacto)
 
-  // js/geo/ y js/map/ (F7)
+  // js/geo/ y js/map/
   'js/geo/utm.js',
   'js/map/layers.js', 'js/map/zones.js', 'js/map/zone-ui.js', 'js/map/marks-layer.js', 'js/map/metrics-layer.js',
 
-  // vendor/leaflet/ y vendor/markercluster/ (F7) — el mapa tiene que abrir sin red
+  // vendor/leaflet/ y vendor/markercluster/ — el mapa tiene que abrir sin red
   'vendor/leaflet/leaflet.js', 'vendor/leaflet/leaflet.css',
   'vendor/leaflet/images/layers.png', 'vendor/leaflet/images/layers-2x.png',
   'vendor/leaflet/images/marker-icon.png', 'vendor/leaflet/images/marker-icon-2x.png', 'vendor/leaflet/images/marker-shadow.png',
   'vendor/markercluster/leaflet.markercluster.js',
   'vendor/markercluster/MarkerCluster.css', 'vendor/markercluster/MarkerCluster.Default.css',
-  'vendor/qrcode-generator/qrcode.js',   // F11e: QR de invitación
+  'vendor/qrcode-generator/qrcode.js',   // QR de invitación
 
   // js/components/
-  'js/components/species-picker.js', 'js/components/fab.js',   // F11f: buscador y botones flotantes del modo campo
-  'js/components/species-minimap.js', 'js/components/species-parameters.js',   // F11f: página de especie
+  'js/components/species-picker.js', 'js/components/fab.js',   // Buscador y botones flotantes del modo campo
+  'js/components/species-minimap.js', 'js/components/species-parameters.js',   // Página de especie
   'js/components/overlay.js', 'js/components/species-card.js', 'js/components/marks.js', 'js/components/species-notes.js',
   'js/components/species-assessments.js', 'js/components/species-distribution.js',
-  'js/components/catalog-switcher.js',   // F11c: cambiar de catálogo desde la cabecera
-  'js/components/qr.js',   // F11e: QR de invitación
+  'js/components/catalog-switcher.js',   // Cambiar de catálogo desde la cabecera
+  'js/components/qr.js',   // QR de invitación
 
   // js/views/
   'js/views/map.js', 'js/views/catalogs.js', 'js/views/species.js', 'js/views/settings.js',
   'js/views/search.js', 'js/views/catalog-builder.js', 'js/views/species-new.js', 'js/views/species-detail.js',
   'js/views/catalog-team.js', 'js/views/join.js', 'js/views/mark-sheet.js', 'js/views/iucn-wizard.js',
   'js/views/catalog-export.js',
-  // F11g: impactos, evaluación UICN con cuantificadores, subpoblaciones en el mapa y comparación con GBIF
+  // Impactos, evaluación UICN con cuantificadores, subpoblaciones en el mapa y comparación con GBIF
   'js/views/impact-sheet.js', 'js/assessment.js', 'js/components/species-iucn.js', 'js/components/gbif-compare-map.js',
   'js/map/subpops-layer.js',
-  // F11h: visitas y sitios (campo y estudio) y series temporales
+  // Visitas y sitios (campo y estudio) y series temporales
   'js/visits.js', 'js/visit-records.js', 'js/site-geom.js', 'js/views/visit-sheet.js', 'js/components/visit-bar.js',
   'js/views/catalog-sites.js', 'js/components/species-series.js',
 
-  // shared/ (F8b): motor UICN y sus umbrales, servidos por nginx en /shared/ — el asistente funciona sin red
+  // shared/: motor UICN y sus umbrales, servidos por nginx en /shared/ — el asistente funciona sin red
   'shared/iucn-engine.js', 'shared/iucn-criteria.json',
-  // shared/ (F9): EOO y AOO provisionales sin red
+  // shared/: EOO y AOO provisionales sin red
   'shared/geo-metrics.js',
-  // shared/ (F11f): grupos de especies (separación por defecto entre subpoblaciones) sin red
+  // shared/: grupos de especies (separación por defecto entre subpoblaciones) sin red
   'shared/species-groups.json',
-  // shared/ (F11g): cuantificadores (maduros, subpoblaciones, fragmentación, localidades) y amenazas UICN sin red
+  // shared/: cuantificadores (maduros, subpoblaciones, fragmentación, localidades) y amenazas UICN sin red
   'shared/iucn-quantifiers.js', 'shared/iucn-threats.json',
-  // shared/ (F11h): series temporales (índice anual, tasa y criterio A) sin red
+  // shared/: series temporales (índice anual, tasa y criterio A) sin red
   'shared/iucn-series.js'
 
 ];
@@ -153,7 +153,7 @@ self.addEventListener('fetch', function (event) {
     return;
   }
 
-  // Teselas del IGN (F7)
+  // Teselas del IGN
   if (url.pathname.indexOf('/tiles/') === 0) {
     if (req.headers.get('X-BioDex-Zone')) return;   // descarga de una zona: directa a la red
     event.respondWith(tileResponse(req, url, event));

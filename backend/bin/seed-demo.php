@@ -1,10 +1,10 @@
 <?php
 // ================================================================================================
-// Datos de demostración (F10b): docker compose exec php php bin/seed-demo.php
+// Datos de demostración: docker compose exec php php bin/seed-demo.php
 // Solo con APP_ENV=dev. Idempotente: si el catálogo de demo ya existe, no toca nada y vuelve a imprimir
 // las cuentas. Para empezar de cero: bin/reset-demo.php.
 //
-// F11h: además, 4 sitios con visitas anuales 2014–2026 de la Plantago nivalis (serie con declive: EN por A2).
+// Además, 4 sitios con visitas anuales 2014–2026 de la Plantago nivalis (serie con declive: EN por A2).
 // Crea 3 cuentas verificadas (owner, custodio, editor) y el catálogo DEMO_CATALOG_NAME con 10 especies (12 desde F11g)
 // reales de EIDOS de Sierra Nevada y su nivel sugerido, confirmado por la owner. Después, 60 marcas (73 desde F11g)
 // FICTICIAS de los tres (presencias, 5 ausencias, individuos y maduros, 2 marcadas en el mapa), notas de
@@ -52,7 +52,7 @@ const ARTEMISIA_POINTS = [
     [36.9900, -3.3300], [36.9910, -3.3285], [36.9893, -3.3312], [36.9905, -3.3320],   // loma sur
 ];
 const ARTEMISIA_ABSENT = [37.0400, -3.3300];
-// F11g: especies de los cuantificadores UICN (datos ficticios). EN por B: tres núcleos a varios km; VU D2: una mancha.
+// Especies de los cuantificadores UICN (datos ficticios). EN por B: tres núcleos a varios km; VU D2: una mancha.
 const DEMO_EN_B = "650";     // Rothmaleria granatensis
 const DEMO_VU_D2 = "6452";   // Odontites viscosus subsp. granatensis
 const DEMO_EN_B_CORES = [[37.1300, -3.3800], [37.1050, -3.3350], [37.0820, -3.3620]];
@@ -367,7 +367,7 @@ if (($a["series"]["status"] ?? null) !== "ok" || ($seriesA["category"] ?? null) 
     fail("la serie de la demo no da EN por A2: " . json_encode([$a["series"]["status"] ?? null, $a["series"]["reduction"] ?? null, $seriesA["notation"] ?? null], JSON_UNESCAPED_UNICODE));
 }
 
-// 6. La demo exporta Plinian Core (F10c): el servidor valida el XML contra el XSD y, si no valida, no da ZIP.
+// 6. La demo exporta Plinian Core: el servidor valida el XML contra el XSD y, si no valida, no da ZIP.
 foreach (["public"] as $mode) {   // la completa dejaría una fila export_full en el Registro de la demo
     $ch = curl_init("{$BASE}/api/catalogs/{$cat}/export");
     curl_setopt_array($ch, [CURLOPT_POST => true, CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 120,

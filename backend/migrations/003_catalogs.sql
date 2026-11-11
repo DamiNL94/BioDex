@@ -1,4 +1,4 @@
--- F2a · Catálogos compartidos, miembros con rol, invitaciones, especies del catálogo y su nivel de sensibilidad.
+-- Catálogos compartidos, miembros con rol, invitaciones, especies del catálogo y su nivel de sensibilidad.
 -- Borrados lógicos (deleted_at) en catalogs y catalog_species.
 
 CREATE TABLE IF NOT EXISTS catalogs (

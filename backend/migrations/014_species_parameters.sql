@@ -1,4 +1,4 @@
--- F11f · Parámetros de una especie en un catálogo (base para F11g y F11h; docs/parametros.md).
+-- Parámetros de una especie en un catálogo (base de los cuantificadores y las series UICN; docs/parametros.md).
 -- Características que necesitan los criterios UICN y no salen de las marcas: duración de la generación,
 -- distancias de separación y de dispersión, definición de individuo maduro, tamaño mínimo viable de una
 -- subpoblación y forma de vida. Una fila por (catálogo, especie, clave). Los editan owner y custodio
@@ -6,8 +6,7 @@
 -- Bajan al móvil por el pull de /api/sync con el contador común server_seq; borrar deja la fila con
 -- deleted_at (tombstone) y server_seq nuevo, para que el borrado también llegue.
 -- La clave se llama param_key porque KEY es palabra reservada de MySQL; la lista cerrada de claves y sus
--- reglas están en backend/Lib/parameters.php (SPECIES_PARAMETERS): añadir una en F11g no exige migración.
--- (Las fotos de usuario de F12a/F12b pasan a la migración 017.)
+-- reglas están en backend/Lib/parameters.php (SPECIES_PARAMETERS): añadir una no exige migración.
 
 CREATE TABLE IF NOT EXISTS species_parameters (
     catalog_id  CHAR(36) NOT NULL,

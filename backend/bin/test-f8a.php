@@ -40,10 +40,6 @@ function note(string $text, string $ts, array $patch = []): array {
     return $patch + ["noteID" => uuidV4(), "taxonID" => LYNX, "text" => $text, "clientUpdatedAt" => $ts];
 }
 
-function syncSeq(PDO $pdo): int {
-    return (int) $pdo->query("SELECT value FROM sync_seq WHERE id = 1")->fetchColumn();
-}
-
 /** Pull completo por páginas: [marcas, notas, páginas, última respuesta]. */
 function pullAll(string $catalogId, array &$jar, int $limit = 500): array {
     $items = $notes = [];

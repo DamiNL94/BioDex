@@ -1,6 +1,6 @@
 <?php
 // ================================================================================================
-// plinian.php — fichas de especie en Plinian Core 3.2.2.7 (F10c): pliniancore/especies.xml del ZIP.
+// plinian.php — fichas de especie en Plinian Core 3.2.2.7: pliniancore/especies.xml del ZIP.
 // ------------------------------------------------------------------------------------------------
 // Darwin Core describe observaciones; Plinian Core, especies. Aquí va lo que el DwC-A deja fuera a
 // propósito: taxonomía, estado de amenaza (las categorías oficiales de EIDOS y, APARTE, la evaluación

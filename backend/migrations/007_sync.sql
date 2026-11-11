@@ -1,4 +1,4 @@
--- F5a · Sincronización: hora de edición en el dispositivo y dispositivo de origen de cada marca, y versión
+-- Sincronización: hora de edición en el dispositivo y dispositivo de origen de cada marca, y versión
 -- del contenido del catálogo (especies y niveles) para que el móvil sepa cuándo volver a descargarlo.
 
 -- client_updated_at (UTC, con milisegundos) decide los conflictos: gana la edición más reciente.

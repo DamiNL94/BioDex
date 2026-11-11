@@ -1,11 +1,11 @@
 // ================================================================================================
-// catalog-team.js — Catálogo › Equipo, Niveles y Registro (F6), dentro de «Datos del catálogo».
+// catalog-team.js — Catálogo › Equipo, Niveles y Registro, dentro de «Datos del catálogo».
 // ------------------------------------------------------------------------------------------------
 // Equipo (pestaña del detalle del catálogo): miembros con su rol en versalitas, email verificado y
 // ORCID. El owner invita (por email o con un enlace que se muestra UNA vez), revoca invitaciones,
 // cambia roles (conceder o quitar custodio explica lo que implica), expulsa y transfiere la propiedad
 // (pide la contraseña). Quien no es owner puede salir del catálogo.
-// F11e: tercera forma de invitar, «QR»: un enlace de varios usos que se enseña en grande para que lo
+// Tercera forma de invitar, «QR»: un enlace de varios usos que se enseña en grande para que lo
 // escaneen los que están al lado (components/qr.js). Cualquier enlace recién creado se puede ver en QR.
 // Niveles y Registro (owner): paneles a pantalla completa con su tabla.
 // Sin red se pinta lo último descargado («Datos de las HH:MM», meta de IndexedDB vía cachedRemote) y
@@ -389,7 +389,7 @@ export function openLevels(catalog, { onChanged } = {}) {
 
 /**
  * Tabla de niveles en `el`: especie · sugerido · actual · motivo · autor del cambio, editable en línea.
- * F11c: en escritorio se pinta dentro de la pestaña «Sensibilidad» del catálogo. Devuelve el desmontaje.
+ * En escritorio se pinta dentro de la pestaña «Sensibilidad» del catálogo. Devuelve el desmontaje.
  */
 export function mountLevels(el, catalog, { onChanged } = {}) {
   let alive = true;
@@ -494,7 +494,7 @@ export function openAudit(catalog) {
   return ov;
 }
 
-/** Registro en `el`: fecha · persona · acción · detalle, de lo más reciente a lo más antiguo (F11c: también en pestaña). */
+/** Registro en `el`: fecha · persona · acción · detalle, de lo más reciente a lo más antiguo (también en pestaña). */
 export function mountAudit(el, catalog) {
   let alive = true;
   let data = null;         // {data: {items, hasMore, before}, at, fromDevice}

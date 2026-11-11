@@ -1,5 +1,5 @@
 // ================================================================================================
-// components/species-series.js — serie temporal de una especie (F11h), en la pestaña Registros de su página.
+// components/species-series.js — serie temporal de una especie, en la pestaña Registros de su página.
 // ------------------------------------------------------------------------------------------------
 // Maduros por año: una línea por SITIO (el máximo de sus visitas de ese año) y el ÍNDICE total del modelo (Σ de los
 // sitios, shared/iucn-series.js). Los años sin ninguna visita se ven como HUECOS (banda y línea cortada); un sitio sin

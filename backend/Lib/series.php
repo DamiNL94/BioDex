@@ -1,10 +1,10 @@
 <?php
 // ================================================================================================
-// series.php — series temporales de recuentos por sitio para A y C1 (F11h): el cálculo DEFINITIVO.
+// series.php — series temporales de recuentos por sitio para A y C1: el cálculo DEFINITIVO.
 // ------------------------------------------------------------------------------------------------
 // Port función a función de shared/iucn-series.js (seriesFromVisits, poissonIrls, analyzeSeries, seriesEngineInputs).
 // Mismos casos: shared/iucn-cases.json › series (generados con bin/series-reference.py; los pasa bin/test-f11h.php).
-// Modelo y reglas: cabecera de shared/iucn-series.js y docs/iucn.md › «Series temporales (F11h)».
+// Modelo y reglas: cabecera de shared/iucn-series.js y docs/iucn.md › «Series temporales».
 // ================================================================================================
 
 require_once __DIR__ . "/iucn.php";   // iucnRound(): el redondeo de JS (Math.round)

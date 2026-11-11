@@ -1,5 +1,5 @@
 // ================================================================================================
-// visit-records.js — forma de sitios y visitas (F11h) en el push, en el pull y en el respaldo. Sin imports (lo usan
+// visit-records.js — forma de sitios y visitas en el push, en el pull y en el respaldo. Sin imports (lo usan
 // marks.js, sync.js y visits.js sin dependencias circulares). Campos de la API: docs/sync.md › «Sitios y visitas».
 // En el dispositivo, abierta/cerrada va en `visitStatus` (en la API es `status`); `status` es el de sincronización.
 // ================================================================================================

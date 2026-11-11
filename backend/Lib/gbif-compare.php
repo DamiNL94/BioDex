@@ -1,6 +1,6 @@
 <?php
 // ================================================================================================
-// gbif-compare.php — comparación de fuentes para la evaluación UICN (F11g; déficit wallaceano, póster).
+// gbif-compare.php — comparación de fuentes para la evaluación UICN (déficit wallaceano).
 // ------------------------------------------------------------------------------------------------
 // GET …/species/{taxonID}/assessment?gbif=1 añade `gbif`: los registros de GBIF de la especie (nombre de EIDOS →
 // backbone de GBIF, gbifMatchDecide de Lib/gbif.php) dentro del ÁREA DEL CATÁLOGO (el recuadro de todas sus marcas,

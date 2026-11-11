@@ -1,5 +1,5 @@
 // ================================================================================================
-// iucn-wizard.js — asistente de evaluación UICN de una especie en el catálogo activo (F8b).
+// iucn-wizard.js — asistente de evaluación UICN de una especie en el catálogo activo.
 // ------------------------------------------------------------------------------------------------
 // Pasos A → B → C → D → E → Resultado; cada criterio se puede saltar («Sin datos para este criterio»).
 // En cada paso: la tabla de umbrales CR/EN/VU de ese criterio y el resultado parcial en vivo. El motor
@@ -7,7 +7,7 @@
 // funciona SIN RED y guarda en IndexedDB + cola (marks.js › saveAssessment), como las marcas.
 // BioDex PROPONE y explica; la decisión es del investigador (aviso fijo arriba).
 // Datos que BioDex sugiere (siempre editables, con su origen): maduros desde el resumen de las marcas
-// (F8a, con el aviso de doble conteo); EOO/AOO desde las marcas (F9, js/metrics.js: el definitivo del
+// (con el aviso de doble conteo); EOO/AOO desde las marcas (js/metrics.js: el definitivo del
 // servidor o, sin red, el provisional del dispositivo), con su tamaño de celda.
 
 // Todo el HTML pasa por html`` (la justificación y los nombres vienen de usuarios).
@@ -134,8 +134,8 @@ export function openIucnWizard({ catalog, species, assessment = null, onSaved } 
   let crit = null;
   let step = 0;
   let dirty = false;
-  let summary = null;          // resumen de marcas (F8a) para las sugerencias de C y D
-  let calcState = null;        // cálculo de EOO/AOO en curso o fallido (F9)
+  let summary = null;          // resumen de marcas para las sugerencias de C y D
+  let calcState = null;        // cálculo de EOO/AOO en curso o fallido
   const inputs = mergeInputs(assessment && assessment.inputs);
   let justification = assessment ? assessment.justification || '' : '';
 
@@ -225,7 +225,7 @@ export function openIucnWizard({ catalog, species, assessment = null, onSaved } 
     paintActions();
   }
 
-  // F11c: «← Anterior» a la izquierda y la acción principal a la derecha, siempre en el mismo sitio.
+  // «← Anterior» a la izquierda y la acción principal a la derecha, siempre en el mismo sitio.
   function paintActions() {
     const last = step === STEPS.length - 1;
     const bar = $('.wz-actions', ov.body);
@@ -345,7 +345,7 @@ export function openIucnWizard({ catalog, species, assessment = null, onSaved } 
     },
   };
 
-  /** Origen de EOO/AOO calculados desde las marcas (F9): servidor con fecha o provisional; editables. */
+  /** Origen de EOO/AOO calculados desde las marcas: servidor con fecha o provisional; editables. */
   function calcOriginHtml() {
     const b = inputs.B;
     const o = b.metricsOrigin;

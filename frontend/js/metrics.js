@@ -1,5 +1,5 @@
 // ================================================================================================
-// metrics.js — EOO y AOO de una especie en el catálogo, en el dispositivo (F9).
+// metrics.js — EOO y AOO de una especie en el catálogo, en el dispositivo.
 // ------------------------------------------------------------------------------------------------
 // · Con servidor: el DEFINITIVO de GET /catalogs/{id}/species/{taxonID}/metrics (calculado con las
 //   coordenadas exactas). Se guarda en IndexedDB (meta `metrics:<catálogo>:<taxón>:<ámbito>:<celda>`)

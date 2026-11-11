@@ -1,6 +1,6 @@
 <?php
 // ================================================================================================
-// Común a bin/seed-demo.php y bin/reset-demo.php (F10b): cuentas, catálogo y borrado de la demo.
+// Común a bin/seed-demo.php y bin/reset-demo.php: cuentas, catálogo y borrado de la demo.
 // Solo con APP_ENV=dev. Las cuentas usan el dominio @biodex.demo (no @biodex.test: test-f2a.php
 // borra todos los usuarios de ese dominio).
 // ================================================================================================
@@ -64,7 +64,7 @@ function demoReset(PDO $pdo): array {
     try {
         foreach ([[$cats, "catalog_id"], [$users, "user_id"]] as [$ids, $col]) {
             if (!$ids) continue;
-            foreach (["occurrences", "species_notes", "species_assessments", "impacts", "visits", "sites", "access_log"] as $t) {   // F11g: impactos · F11h: visitas y sitios
+            foreach (["occurrences", "species_notes", "species_assessments", "impacts", "visits", "sites", "access_log"] as $t) {   // impactos, visitas y sitios
                 $st = $pdo->prepare("DELETE FROM {$t} WHERE {$col} IN ({$in($ids)})");
                 $st->execute($ids);
                 if ($t === "occurrences") $marks += $st->rowCount();

@@ -1,6 +1,6 @@
 <?php
 // ================================================================================================
-// photo-files.php — lo común a las fuentes de fotos de respaldo de GBIF y Wikimedia Commons (F11d).
+// photo-files.php — lo común a las fuentes de fotos de respaldo de GBIF y Wikimedia Commons.
 // ------------------------------------------------------------------------------------------------
 //   · photoHttpGet(): cliente HTTP con 1 petición/s POR FUENTE, timeout corto y reintentos con espera
 //     creciente ante 429, 5xx, error de red o «maxlag» de Wikimedia. Si sigue fallando, lanza

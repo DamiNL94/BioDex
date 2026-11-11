@@ -1,5 +1,5 @@
 // ================================================================================================
-// tally.js — conteo de una marca nueva (F11e): categorías por reino y paso de los totales a marcas.
+// tally.js — conteo de una marca nueva: categorías por reino y paso de los totales a marcas.
 // ------------------------------------------------------------------------------------------------
 // Marcar es contar: se toca una casilla por individuo (macho, hembra, juvenil… o plántula, en flor…)
 // o se escribe la cifra. Al guardar, cada categoría con algún individuo es UNA marca Darwin Core en el

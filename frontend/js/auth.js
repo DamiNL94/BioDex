@@ -3,12 +3,12 @@
 // ------------------------------------------------------------------------------------------------
 // La sesión vive en cookies HttpOnly (el JS no las ve). Lo que sí guarda el cliente es el último
 // `user` en localStorage (biodex.user): con él la app arranca sin red, que es lo normal tras varios
-// días en el campo. Reglas de arranque (bootSession, F3b):
+// días en el campo. Reglas de arranque (bootSession):
 //   · con usuario guardado → se pinta la app YA, sin esperar a la red; GET /auth/me va en segundo
 //     plano (corte de 3 s): 200 actualiza el usuario; 401 → acceso con aviso de sesión caducada (vía
 //     biodex:unauthorized); caído o timeout no cambian nada (la cabecera dirá «Servidor no disponible»).
 //   · sin usuario guardado → hace falta red: GET /auth/me decide entre la app y la pantalla de acceso.
-// Cerrar sesión (F5): con marcas sin sincronizar se BLOQUEA con un diálogo (sincronizar, exportar
+// Cerrar sesión: con marcas sin sincronizar se BLOQUEA con un diálogo (sincronizar, exportar
 // respaldo o cancelar): nunca se borran sin que el usuario lo decida. Al cerrar, se borra la base
 // `biodex-<userId>` y las imágenes de sus catálogos (dispositivos compartidos).
 // ================================================================================================
@@ -130,7 +130,7 @@ export async function logout() {
   if (userId && hasDb()) {
     const ids = (await getAll('catalogs').catch(() => [])).map((c) => c.id);
     if ('caches' in window) await Promise.all(ids.map((id) => caches.delete(IMG_CACHE_PREFIX + id).catch(() => {})));
-    await forgetAllZones();   // teselas de sus zonas (F7); la caché de uso es del IGN, no de la persona
+    await forgetAllZones();   // teselas de sus zonas; la caché de uso es del IGN, no de la persona
     await deleteUserDb(userId);
   } else {
     closeDb();

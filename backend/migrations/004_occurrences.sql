@@ -1,4 +1,4 @@
--- F2a · Observaciones (términos Darwin Core con su nombre exacto), contador de sincronización y métricas EOO/AOO.
+-- Observaciones (términos Darwin Core con su nombre exacto), contador de sincronización y métricas EOO/AOO.
 -- La coordenada exacta nunca se modifica: la generalización se aplica a copias (Lib/sensitivity.php).
 
 CREATE TABLE IF NOT EXISTS occurrences (
@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS occurrences (
     created_at                    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at                    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at                    DATETIME NULL,
-    server_seq                    BIGINT UNSIGNED NOT NULL, -- de sync_seq en cada insert/update (F5)
+    server_seq                    BIGINT UNSIGNED NOT NULL, -- de sync_seq en cada insert/update
     PRIMARY KEY (occurrenceID),
     UNIQUE KEY uq_occ_seq (server_seq),
     KEY ix_occ_catalog_taxon (catalog_id, taxonID),
@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS occurrences (
     CONSTRAINT fk_occ_species FOREIGN KEY (taxonID)    REFERENCES species (taxonID) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Una sola fila. Uso (F5): UPDATE sync_seq SET value = LAST_INSERT_ID(value + 1) WHERE id = 1; SELECT LAST_INSERT_ID();
+-- Una sola fila. Uso: UPDATE sync_seq SET value = LAST_INSERT_ID(value + 1) WHERE id = 1; SELECT LAST_INSERT_ID();
 CREATE TABLE IF NOT EXISTS sync_seq (
     id    TINYINT UNSIGNED NOT NULL,
     value BIGINT UNSIGNED NOT NULL,

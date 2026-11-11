@@ -3,11 +3,11 @@
 // ------------------------------------------------------------------------------------------------
 // Rutas: #/mapa · #/catalogos · #/especies · #/ajustes. Cambiar de sección NO apila historial
 // (replaceState): en el móvil «atrás» deshace el último panel abierto, no el último toque de pestaña.
-// F5: al entrar se abre la base local del usuario (db.js) y arranca el motor de sincronización
+// Al entrar se abre la base local del usuario (db.js) y arranca el motor de sincronización
 // (sync.js); la cabecera muestra «n pendientes» junto al indicador de conexión mientras haya cola.
-// F6: #/unirse/<código> abre la invitación (join.js) sobre Catálogos; sin sesión, el código se guarda,
+// #/unirse/<código> abre la invitación (join.js) sobre Catálogos; sin sesión, el código se guarda,
 // se pasa por la pantalla de acceso y se abre al entrar.
-// F11c: dos modos de disposición según el ancho (body.is-field < 900 px ≤ body.is-studio):
+// Dos modos de disposición según el ancho (body.is-field < 900 px ≤ body.is-studio):
 //   campo   barra superior fina (selector de catálogo, pendientes, conexión) + 4 pestañas abajo
 //           (Mapa · Especies · Catálogo · Ajustes). Sin ruta, entra en el Mapa.
 //   estudio barra lateral (marca, selector, navegación, estado y «Sincronizar ahora»). Sin ruta,
@@ -60,7 +60,7 @@ const MODE_SENSITIVE = new Set(['catalogos', 'mapa', 'especies']);
 let current = null;       // ruta pintada
 let cleanup = null;       // desmontaje de la vista actual
 let unsubscribeShell = null;
-let unmountVisitBar = null;   // F11h: barra de la visita en curso
+let unmountVisitBar = null;   // Barra de la visita en curso
 let banner = null;        // aviso de una sola vez bajo la cabecera (p. ej. «revisa tu correo»):
                           // {kind, text, action?: {label, run}}
 let returnTo = null;      // {label, run}: camino de vuelta tras un salto entre secciones
@@ -69,7 +69,7 @@ let droppingReturn = false;
 function applyMode() {
   document.body.classList.toggle('is-studio', studioQuery.matches);
   document.body.classList.toggle('is-field', !studioQuery.matches);
-  // F11f: la letra base del modo campo (17 px) cuelga de <html>, para que los rem escalen con ella.
+  // La letra base del modo campo (17 px) cuelga de <html>, para que los rem escalen con ella.
   document.documentElement.classList.toggle('is-field', !studioQuery.matches);
 }
 applyMode();
@@ -288,7 +288,7 @@ function go(route, { returnTo: rt = null } = {}) {
   if (rt) setReturn(rt);
 }
 
-// --- «Atrás» entre secciones (F11f) ---------------------------------------------------------------
+// --- «Atrás» entre secciones ---------------------------------------------------------------
 // Cambiar de pestaña no apila historial por sí solo, así que «atrás» desde Especies salía de la app (o
 // pedía la doble pulsación). Ahora, fuera de la sección de inicio (Mapa en campo, Catálogos en estudio)
 // hay un nivel «seccion» en BioDexNav: «atrás» cierra primero lo que haya abierto encima (hojas, modales,
@@ -309,7 +309,7 @@ function syncSection(route) {
   }
 }
 
-// --- Cada pestaña vuelve como se dejó (F11f) --------------------------------------------------------
+// --- Cada pestaña vuelve como se dejó --------------------------------------------------------
 // Texto, filtros y encuadre los guarda cada vista (species.js, map.js, catalogs.js); aquí, el desplazamiento.
 // Las vistas pintan tras cargar (a veces de la red): se reintenta hasta que la página es lo bastante alta.
 const scrollByRoute = {};
@@ -358,7 +358,7 @@ async function onLogout() {
 
 // Cruzar los 900 px: cambia la piel por CSS y, si la vista cambia de estructura, se vuelve a montar.
 // No se toca nada con un panel abierto (podría tener cambios sin guardar): se remonta al cerrarlo… o
-// al siguiente cambio de sección, que es lo mismo que pasaba antes de F11c.
+// al siguiente cambio de sección.
 studioQuery.addEventListener('change', () => {
   applyMode();
   if (current && MODE_SENSITIVE.has(current) && !document.querySelector('.overlay')) show(current, true);
@@ -387,7 +387,7 @@ window.addEventListener('hashchange', () => {
     try { history.replaceState(history.state, '', '#/' + current); } catch (e) { /* file:// */ }
   }
 });
-// Escape cierra hojas y paneles, pero no cambia de sección (eso es del «atrás» del sistema, F11f).
+// Escape cierra hojas y paneles, pero no cambia de sección (eso es del «atrás» del sistema).
 window.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && !(Nav.depth() === 1 && Nav.has('seccion'))) Nav.back(); });
 window.addEventListener('biodex:unauthorized', () => {
   if (!current) return;

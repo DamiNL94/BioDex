@@ -1,7 +1,7 @@
 // ================================================================================================
-// components/fab.js — botones flotantes del modo campo (F11f): «Marcar» siempre visible en Mapa y
+// components/fab.js — botones flotantes del modo campo: «Marcar» siempre visible en Mapa y
 // Especies, a la altura del pulgar (abajo a la derecha, encima de la barra de pestañas), y encima
-// «Impacto» (F11g: views/impact-sheet.js) y, en el Mapa, «Empezar visita» (F11h: views/visit-sheet.js).
+// «Impacto» (views/impact-sheet.js) y, en el Mapa, «Empezar visita» (views/visit-sheet.js).
 // En estudio (escritorio) el de Mapa sigue flotando sobre el mapa y Especies no lo lleva (allí cada fila
 // tiene su «Marcar aquí»).
 // ================================================================================================
@@ -14,7 +14,7 @@ const WARN = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 2
 const VISIT = html`<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>`;
 
 /**
- * Pila de botones flotantes: `data-visit` (F11h: empezar una visita, solo en el Mapa), `data-impact` (registrar un
+ * Pila de botones flotantes: `data-visit` (empezar una visita, solo en el Mapa), `data-impact` (registrar un
  * impacto) y `data-mark`.
  */
 export function fabStack({ label = 'Marcar aquí', visit = false } = {}) {

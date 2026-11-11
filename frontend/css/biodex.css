@@ -24,7 +24,7 @@
   --brass-ink:#DDC38A;      /* latón como TEXTO sobre el verde del cartel (el #C4A15E se quedaba en 3,97:1) */
   --sign-soft:#C7D6C9;      /* texto secundario sobre el cartel */
   --sea:#2E6D8E; --sea-tint:#DCE6E9;
-  /* Observadores del equipo en el mapa (F7): 8 colores de tierra distinguibles entre sí, del verde de
+  /* Observadores del equipo en el mapa: 8 colores de tierra distinguibles entre sí, del verde de
      «mis marcas» (--leaf-fill) y del azul del GPS (--me). */
   --obs-1:#B5476B; --obs-2:#9E5610; --obs-3:#6E4691; --obs-4:#2E6D8E;
   --obs-5:#3F8A76; --obs-6:#A8871C; --obs-7:#4F5AA8; --obs-8:#7A4A36;
@@ -47,13 +47,13 @@
   --rule:3px;
   --shadow-sm:0 4px 14px rgba(26,26,23,.10);
   --shadow:0 16px 44px rgba(26,26,23,.18);
-  /* F11f — objetivos táctiles (salida de campo de Sierra Nevada: botones pequeños).
+  /* Objetivos táctiles (salida de campo de Sierra Nevada: botones pequeños).
      --tap-min: mínimo de cualquier control en modo campo · --tap-main: la acción principal (guardar, casillas del
      conteo, botón de marcar) · --tap-gap: separación mínima entre dos objetivos. --tap-big queda como alias de
      --tap-main. En modo estudio (ratón) se conservan los 44/48 px de antes (body.is-studio, bloque F). */
   --tap-min:48px; --tap-main:56px; --tap-gap:8px; --tap-big:var(--tap-main);
   --nav-h:64px;
-  /* F11c: escala de espaciado y ancho de la barra lateral (modo estudio) */
+  /* Escala de espaciado y ancho de la barra lateral (modo estudio) */
   --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px;
   --side-w:232px;
   color-scheme:light;
@@ -78,7 +78,7 @@ button,input,textarea,select{font:inherit;color:inherit}
 .muted{color:var(--muted)}
 .hint{color:var(--muted);font-size:var(--fs-sm);margin:6px 0 0}
 
-/* Versalitas de metadato (F11c: solo eyebrows, rótulos de campo y códigos UICN; insignias en texto normal) */
+/* Versalitas de metadato (solo eyebrows, rótulos de campo y códigos UICN; insignias en texto normal) */
 .eyebrow,.field>span,.facts dt,.table-head,.counts dt,.badge.iucn{
   letter-spacing:var(--tracking-caps);text-transform:uppercase;font-weight:700;font-size:var(--fs-xs)}
 .eyebrow{margin:0 0 6px;color:var(--warn-ink)}   /* fuera del cartel el latón no llega a 4,5:1 */
@@ -116,7 +116,7 @@ button:disabled{opacity:.55;cursor:progress}
 .icon-btn{display:inline-flex;align-items:center;justify-content:center;width:var(--tap-min);
   height:var(--tap-min);border:1px solid var(--line);border-radius:var(--radius-md);color:var(--ink-soft);background:var(--panel);cursor:pointer}
 .icon-btn:hover,.icon-btn.is-active,.icon-btn[aria-expanded="true"]{border-color:var(--leaf);color:var(--leaf)}
-/* Iconos. El SVG del renderizador de Leaflet (F7) no es un icono: lleva su tamaño en atributos. */
+/* Iconos. El SVG del renderizador de Leaflet no es un icono: lleva su tamaño en atributos. */
 svg:not(.leaflet-zoom-animated){width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;
   stroke-linejoin:round}
 
@@ -151,7 +151,7 @@ svg:not(.leaflet-zoom-animated){width:22px;height:22px;fill:none;stroke:currentC
 .sign-title.is-empty{color:var(--sign-soft);font-weight:600}
 .sign-sub{margin:8px 0 0;color:var(--sign-soft)}
 
-/* F11c — Armazón. Campo (< 900 px): barra superior fina + pestañas abajo. Estudio (≥ 900 px): barra
+/* Armazón. Campo (< 900 px): barra superior fina + pestañas abajo. Estudio (≥ 900 px): barra
    lateral a la izquierda. El verde de relleno queda como franja de 3 px: es la marca, no el fondo. */
 .shell{min-height:100vh}
 .topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:8px;
@@ -292,7 +292,7 @@ button.row:hover{border-color:var(--line-strong);box-shadow:var(--shadow-sm)}
 .counts dt.iucn{text-transform:uppercase;letter-spacing:var(--tracking-caps)}
 .counts dd{margin:0;font-weight:700;font-variant-numeric:tabular-nums}
 
-/* ===== E2. F4: nombres, paneles, buscador, tarjetas, constructor, ficha ======================== */
+/* ===== E2. nombres, paneles, buscador, tarjetas, constructor, ficha ======================== */
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
 /* Nombre científico: cursiva solo el nombre; autor y marca de rango en redonda */
@@ -311,7 +311,7 @@ body.has-overlay{overflow:hidden}
 .overlay-backdrop{position:absolute;inset:0;background:rgba(20,22,15,.45)}
 .sheet{position:relative;display:flex;flex-direction:column;background:var(--paper);box-shadow:var(--shadow);
   width:100%;height:100%;outline:none}
-/* F11c: cabecera clara (papel, título en tinta, línea de 1 px); el verde, como franja de 3 px. */
+/* Cabecera clara (papel, título en tinta, línea de 1 px); el verde, como franja de 3 px. */
 .sheet-head{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:4px;min-height:56px;
   padding:calc(6px + env(safe-area-inset-top)) 8px 6px 16px;background:var(--paper);color:var(--ink);
   border-top:3px solid var(--leaf-fill);border-bottom:1px solid var(--line)}
@@ -416,14 +416,14 @@ body.has-overlay{overflow:hidden}
   background-image:repeating-linear-gradient(135deg,transparent 0 9px,var(--line) 9px 10px)}
 .sp-card-ph span{color:var(--muted);font-size:.625rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
   background:var(--surface-alt);padding:2px 4px}
-/* F11b: silueta del grupo cuando no hay foto (img/silhouettes.svg, en currentColor) */
+/* Silueta del grupo cuando no hay foto (img/silhouettes.svg, en currentColor) */
 .sil-box{display:flex;align-items:center;justify-content:center;width:100%;aspect-ratio:1;background:var(--surface-alt);
   border:1px solid var(--line);border-radius:var(--radius-sm);color:var(--muted-2)}
 svg.silhouette{display:block;width:62%;height:62%;fill:currentColor;stroke:none}   /* gana a la regla global de svg (iconos) */
 .sp-card-body{display:grid;gap:4px;align-content:start;min-width:0}
 .sp-card-title{margin:0;font-family:var(--font-ui);font-size:var(--fs-md);line-height:1.3}
 .sp-card-open{padding:0;border:0;background:none;color:var(--ink);font:inherit;font-weight:600;text-align:left;cursor:pointer;
-  min-height:var(--tap-min)}   /* F10b: única forma de abrir la ficha desde la tarjeta */
+  min-height:var(--tap-min)}   /* Única forma de abrir la ficha desde la tarjeta */
 .sp-card-open:hover .sci{text-decoration:underline;text-underline-offset:3px}
 .sp-card-common{margin:0;color:var(--ink-soft);font-size:var(--fs-sm)}
 .sp-card-meta{margin:0;display:flex;flex-wrap:wrap;row-gap:2px}
@@ -473,14 +473,14 @@ svg.silhouette{display:block;width:62%;height:62%;fill:currentColor;stroke:none}
 .gallery-item figcaption{margin-top:4px;color:var(--muted);font-size:var(--fs-xs)}
 .gallery-item .credit{font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:.625rem}
 .gallery-item:only-child{flex-basis:100%}
-/* F11b: una sola foto de respaldo (iNaturalist) o la silueta del grupo */
+/* Una sola foto de respaldo (iNaturalist) o la silueta del grupo */
 .detail-photo{margin:0 0 8px}
 .detail-photo-media img{display:block;width:100%;max-width:420px;aspect-ratio:4/3;object-fit:cover;border-radius:var(--radius-sm);
   background:var(--surface-alt)}
 .detail-photo.is-silhouette .detail-photo-media{max-width:160px}
 .credit-inat{margin-top:4px;color:var(--muted);font-size:var(--fs-xs);overflow-wrap:anywhere}
 .credit-inat a{color:inherit}
-/* F11b: fotos de iNaturalist por revisar (views/species.js) */
+/* Fotos de iNaturalist por revisar (views/species.js) */
 .photo-review-toggle{margin:8px 0 0}
 .chip[aria-pressed="true"]{border-color:var(--bark);background:var(--surface-alt);font-weight:700}
 .photo-reviews h3{margin:16px 0 4px}
@@ -542,7 +542,7 @@ svg.silhouette{display:block;width:62%;height:62%;fill:currentColor;stroke:none}
 .species-rows>li{list-style:none}
 .species-rows .empty{max-width:none}
 
-/* --- F5: sin conexión, marcas y sincronización --- */
+/* --- Sin conexión, marcas y sincronización --- */
 /* «n pendientes» en el cartel, junto al indicador de conexión */
 .pending-count{display:inline-flex;align-items:center;min-height:var(--tap-min);padding:0 10px;border:1px solid var(--brass);
   border-radius:var(--radius-md);color:var(--brass-ink);font-size:var(--fs-xs);font-weight:700;letter-spacing:var(--tracking-caps);
@@ -584,7 +584,7 @@ svg.silhouette{display:block;width:62%;height:62%;fill:currentColor;stroke:none}
 .file-btn input{position:absolute;inset:0;opacity:0;cursor:pointer}
 .file-btn:focus-within{outline:3px solid var(--brass);outline-offset:2px}
 
-/* --- F6: equipo, invitaciones, niveles y registro --- */
+/* --- Equipo, invitaciones, niveles y registro --- */
 .page-tools{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
 .join-code{display:flex;gap:6px;flex:1 1 260px}
 .join-code input{flex:1;min-width:0;min-height:var(--tap-min);padding:0 12px;background:var(--panel);
@@ -687,7 +687,7 @@ svg.silhouette{display:block;width:62%;height:62%;fill:currentColor;stroke:none}
 @keyframes spin{to{transform:rotate(360deg)}}
 @media (min-width:900px){
 
-  /* F4: paneles, buscador y constructor */
+  /* Paneles, buscador y constructor */
   .overlay-side{justify-content:flex-end}
   .overlay-side .sheet{width:min(600px,100%);border-left:1px solid var(--line-strong)}
   .overlay-full .sheet-body{padding:20px 32px 0}
@@ -756,7 +756,7 @@ svg.silhouette{display:block;width:62%;height:62%;fill:currentColor;stroke:none}
 :root[data-theme="dark"] .nav-exit-toast{background:#2A2117}
 
 /* ===== F. Áreas táctiles (bloque F de NaturDex) ================================================ */
-/* --tap-min en todo control; --tap-main en lo que se pulsa de pie y con prisa. F11f: en campo, 48 y 56 px y letra base
+/* --tap-min en todo control; --tap-main en lo que se pulsa de pie y con prisa. En campo, 48 y 56 px y letra base
    de 17 px (html.is-field: los rem escalan con ella); en estudio, los 44 y 48 px de antes. */
 body.is-studio{--tap-min:44px;--tap-main:48px}
 html.is-field{font-size:106.25%}
@@ -765,14 +765,14 @@ html.is-field{font-size:106.25%}
 .icon-btn,.band-close{min-width:var(--tap-min)}
 @media (max-width:899px){ .tab,.auth-screen .btn-primary{min-height:var(--tap-big)} }
 @media (min-width:900px) and (pointer:fine){ .icon-btn{width:36px;height:36px;min-width:36px;min-height:36px} }
-/* F11f: lo que en campo se quedaba por debajo de 48 px */
+/* Lo que en campo se quedaba por debajo de 48 px */
 .is-field .leaflet-container .leaflet-bar a{width:var(--tap-min);height:var(--tap-min);line-height:var(--tap-min)}
 .is-field .leaflet-container a.leaflet-popup-close-button.leaflet-popup-close-button{width:var(--tap-min);height:var(--tap-min);line-height:var(--tap-min)}
 .is-field .leaflet-popup-content{margin-right:52px}
 .is-studio .export-picks .check{min-height:0}
 @media (prefers-reduced-motion:reduce){ *{transition:none !important} }
 
-/* ===== G. F7: mapa ============================================================================= */
+/* ===== G. mapa ============================================================================= */
 /* El alto de .map-wrap lo pone views/map.js (lo que queda de pantalla); Leaflet va dentro con su
    propio contexto de apilado (z-index:0) para que los botones flotantes queden siempre encima. */
 .view.view-mapa{padding:10px 0 0}
@@ -917,7 +917,7 @@ path.zone-draft{stroke:var(--sea);fill:var(--sea);fill-opacity:.08}
   .fab-stack{bottom:40px;right:14px}
 }
 
-/* ===== H. F8a: hoja de marca, resumen y notas ================================================== */
+/* ===== H. hoja de marca, resumen y notas ================================================== */
 /* Hoja de marca (views/mark-sheet.js): se usa con una mano, con guantes o al sol → objetivos de 48 px
    y «Guardar» fijo abajo, siempre visible. */
 .mark-sheet .sheet-body{padding-bottom:0}
@@ -994,7 +994,7 @@ path.zone-draft{stroke:var(--sea);fill:var(--sea);fill-opacity:.08}
 :root[data-theme="dark"] .leaflet-control-attribution{background:rgba(22,24,15,.85) !important}
 :root[data-theme="dark"] .me-dot{stroke:#16180F}
 
-/* ===== I. F8b: asistente UICN y «Evaluación BioDex» ============================================= */
+/* ===== I. asistente UICN y «Evaluación BioDex» ============================================= */
 /* Asistente (views/iucn-wizard.js): pasos A–E + Resultado, tabla de umbrales y resultado parcial en vivo.
    Objetivos de 48 px como en la hoja de marca: se rellena en el campo. */
 .iucn-wizard .sheet-body{padding-bottom:0}
@@ -1079,7 +1079,7 @@ path.zone-draft{stroke:var(--sea);fill:var(--sea);fill-opacity:.08}
 /* El título del paso recibe el foco al cambiar de paso (lectores de pantalla); no es un control. */
 .wz-step h3:focus{outline:none}
 
-/* ===== J. F9: EOO y AOO ======================================================================== */
+/* ===== J. EOO y AOO ======================================================================== */
 /* Ficha: «Distribución» */
 .dist-controls{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
 .dist-counts{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:16px;margin:0 0 8px;padding:10px 12px;background:var(--surface);
@@ -1099,7 +1099,7 @@ path.metric-gen-cell{stroke:var(--muted);stroke-width:2;stroke-dasharray:4 4;fil
 .map-btn.is-active{background:var(--bark);color:#F2E5CE}
 .map-metrics{margin:0}
 
-/* --- Exportación (F10a): «Descargar datos» del catálogo y Ajustes › Descargas --- */
+/* --- Exportación: «Descargar datos» del catálogo y Ajustes › Descargas --- */
 .export-panel .sheet-body{max-width:720px;margin:0 auto;width:100%}
 .export-form{display:grid;gap:14px}
 .export-form .segmented{justify-self:start;flex-wrap:wrap}
@@ -1122,12 +1122,12 @@ path.metric-gen-cell{stroke:var(--muted);stroke-width:2;stroke-dasharray:4 4;fil
 .download-list li{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 12px;
   border-bottom:1px solid var(--line);padding:4px 0}
 
-/* ===== K. F11c: la hoja de marca conserva el cartel verde (es la acción principal del campo) ====== */
+/* ===== K. la hoja de marca conserva el cartel verde (es la acción principal del campo) ====== */
 .mark-sheet .sheet-head{background:var(--leaf-fill);color:var(--cream);border-top:0;border-bottom:3px solid var(--brass)}
 .mark-sheet .sheet-title{color:#FFFFFF}
 .mark-sheet .sheet-back,.mark-sheet .sheet-close{color:var(--cream)}
 .mark-sheet .sheet-back:hover,.mark-sheet .sheet-close:hover{background:rgba(251,247,238,.12);color:#FFFFFF}
-/* F11f: contraste AAA (7:1) en los textos de la hoja de marcar, que se lee a pleno sol. Se oscurecen (claro) o
+/* Contraste AAA (7:1) en los textos de la hoja de marcar, que se lee a pleno sol. Se oscurecen (claro) o
    aclaran (oscuro) los tonos secundarios solo aquí dentro; las razones están en docs/interfaz.md. */
 .mark-sheet{--muted:#4A4A43;--ink-soft:#3A3A33;--warn-ink:#6B4511;--danger:#7E3516;--danger-ink:#7E3516;--faint:#4A4A43}
 .mark-sheet .sheet-actions{gap:calc(var(--tap-gap) * 3)}
@@ -1138,7 +1138,7 @@ path.metric-gen-cell{stroke:var(--muted);stroke-width:2;stroke-dasharray:4 4;fil
 :root[data-theme="dark"] .mark-sheet .status-toggle button.active[data-status="absent"]{background:#7E3516}
 :root[data-theme="dark"] .mark-sheet .mark-generalized,:root[data-theme="dark"] .mark-sheet .badge.danger{color:var(--danger-ink)}
 
-/* ===== L. F11c: Catálogos ======================================================================== */
+/* ===== L. Catálogos ======================================================================== */
 .sec-title{margin:24px 0 8px;font-size:var(--fs-md);font-family:var(--font-ui);font-weight:700;color:var(--ink-soft)}
 .cat-meta{margin:2px 0 6px;display:flex;flex-wrap:wrap;align-items:center;row-gap:2px}
 .cat-empty{padding:4px 0}
@@ -1212,7 +1212,7 @@ path.metric-gen-cell{stroke:var(--muted);stroke-width:2;stroke-dasharray:4 4;fil
   .tab-panel .export-form{max-width:880px}
 }
 
-/* ===== M. F11c: Especies ========================================================================= */
+/* ===== M. Especies ========================================================================= */
 /* Campo: buscador + «Filtros (n)»; el resto en una hoja inferior (nivel de BioDexNav). */
 .list-filters{grid-template-columns:minmax(0,1fr) auto;align-items:end}
 .list-filters .lf-text{grid-column:auto}
@@ -1247,7 +1247,7 @@ path.metric-gen-cell{stroke:var(--muted);stroke-width:2;stroke-dasharray:4 4;fil
   .detail-step .sheet-close:disabled{opacity:.35;cursor:default}
 }
 
-/* ===== N. F11c: Mapa ============================================================================= */
+/* ===== N. Mapa ============================================================================= */
 .map-wrap{border-bottom:0}
 .map-main{position:relative;display:flex}
 .map-main .map-wrap{flex:1;min-width:0}
@@ -1317,14 +1317,14 @@ path.metric-gen-cell{stroke:var(--muted);stroke-width:2;stroke-dasharray:4 4;fil
 }
 .sheet-h{grid-column:1 / -1;margin:0;font-size:var(--fs-lg)}
 
-/* ===== O. F11c: Ajustes ========================================================================== */
+/* ===== O. Ajustes ========================================================================== */
 .settings-group{grid-column:1 / -1;margin:10px 0 -4px;color:var(--muted);font-size:var(--fs-xs);font-weight:700;
   letter-spacing:var(--tracking-caps);text-transform:uppercase}
 .settings-group:first-child{margin-top:0}
 .settings .panel{background:var(--panel)}
 
-/* ===== P. F11e: conteo rápido (hoja de marca) y QR de invitación ================================== */
-/* F11f: las casillas son la acción más repetida → «+1» de 88 px y cifra de 2,25 rem; «Deshacer» y «−» lejos
+/* ===== P. conteo rápido (hoja de marca) y QR de invitación ================================== */
+/* Las casillas son la acción más repetida → «+1» de 88 px y cifra de 2,25 rem; «Deshacer» y «−» lejos
    de la zona de contar (separación de --tap-gap × 2) para no restar sin querer con guantes. */
 .tally{display:grid;gap:calc(var(--tap-gap) * 1.5)}
 .tally-head{display:flex;align-items:center;justify-content:space-between;gap:calc(var(--tap-gap) * 2)}
@@ -1359,7 +1359,7 @@ svg.qr-code{width:min(78vw,320px);height:auto;display:block;stroke:none}
 .qr-dialog .hint{text-align:center}
 .qr-dialog .sheet-body{display:grid;gap:12px}
 
-/* ===== Q. F11f: buscador de especies del modo campo (components/species-picker.js) ================ */
+/* ===== Q. buscador de especies del modo campo (components/species-picker.js) ================ */
 .picker{display:grid;gap:calc(var(--tap-gap) * 1.5);min-width:0}
 .pk-search input{min-height:var(--tap-main);font-size:var(--fs-md)}
 .pk-chips{display:flex;gap:var(--tap-gap);overflow-x:auto;padding:2px 0 4px;margin:0 -2px;scrollbar-width:none}
@@ -1406,7 +1406,7 @@ svg.qr-code{width:min(78vw,320px);height:auto;display:block;stroke:none}
 .mark-change{flex:none}
 .list-filters.is-field-filters{display:flex;justify-content:flex-end;margin-bottom:4px}
 
-/* ===== R. F11f: botones flotantes del modo campo (components/fab.js) =============================== */
+/* ===== R. botones flotantes del modo campo (components/fab.js) =============================== */
 /* A la altura del pulgar: abajo a la derecha, por encima de la barra de pestañas, en Mapa y Especies. */
 .is-field .fab-stack{position:fixed;right:16px;bottom:calc(var(--nav-h) + env(safe-area-inset-bottom) + 16px);z-index:15}
 .is-field .fab-stack .mark-fab{min-height:var(--tap-main);padding:0 22px;font-size:var(--fs-md);border-radius:28px}
@@ -1416,7 +1416,7 @@ svg.qr-code{width:min(78vw,320px);height:auto;display:block;stroke:none}
 /* Que el botón no tape la última fila de la lista */
 .is-field .view-especies{padding-bottom:calc(var(--nav-h) + var(--tap-main) + 48px + env(safe-area-inset-bottom))}
 
-/* ===== S. F11f: página de especie (pestañas, minimapa y parámetros) ================================ */
+/* ===== S. página de especie (pestañas, minimapa y parámetros) ================================ */
 .detail-head .detail-common{margin:0;font-family:var(--font-display);font-size:var(--fs-lg);font-weight:700;color:var(--ink)}
 .detail-head .row-meta .badge.iucn{margin-right:8px}
 .detail-tabs{position:sticky;top:0;z-index:1;display:flex;gap:2px;margin:8px -16px 4px;padding:0 8px;overflow-x:auto;
@@ -1473,7 +1473,7 @@ svg.qr-code{width:min(78vw,320px);height:auto;display:block;stroke:none}
   .detail-tab[aria-selected="true"]::after{left:4px;right:4px}
 }
 
-/* ===== F11g · Impactos, evaluación UICN con cuantificadores, subpoblaciones y GBIF ===================== */
+/* ===== Impactos, evaluación UICN con cuantificadores, subpoblaciones y GBIF ===================== */
 .status-toggle.three{grid-template-columns:repeat(3,1fr)}
 .status-toggle button.active{background:var(--leaf-fill);color:var(--cream)}
 .status-toggle button:disabled{opacity:.5;cursor:not-allowed}
@@ -1542,7 +1542,7 @@ path.gbif-pt.is-biodex{stroke:var(--brass-ink);fill:var(--brass);fill-opacity:.9
 .legend-dot{display:inline-block;width:.8em;height:.8em;border-radius:50%;vertical-align:-1px;margin:0 4px 0 8px}
 .legend-dot.is-gbif{background:#2B5C8A} .legend-dot.is-biodex{background:var(--brass)}
 
-/* ===== T. F11h: visitas, sitios y series temporales ================================================ */
+/* ===== T. visitas, sitios y series temporales ================================================ */
 /* Botón grande «Empezar visita» (Mapa), encima de Impacto y Marcar */
 .visit-fab{min-height:var(--tap-main);padding:0 22px;border-radius:28px;background:var(--sea);border-color:var(--sea);box-shadow:var(--shadow)}
 .visit-fab svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2}

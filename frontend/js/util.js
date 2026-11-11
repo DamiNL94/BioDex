@@ -2,7 +2,7 @@
 // util.js — plantilla html`` con escapado automático y utilidades mínimas del DOM.
 // ------------------------------------------------------------------------------------------------
 // REGLA: todo HTML dinámico de la app pasa por html``. Los nombres de especie, las descripciones de
-// catálogo y, en F8, las notas de campo llegan de usuarios y de EIDOS: nunca se concatenan a mano en
+// catálogo y las notas de campo llegan de usuarios y de EIDOS: nunca se concatenan a mano en
 // un innerHTML. Las partes literales de la plantilla son de confianza (las escribimos nosotros); cada
 // valor interpolado se escapa, salvo que sea a su vez el resultado de otra html`` (composición).
 // ================================================================================================
@@ -39,7 +39,7 @@ export function render(el, fragment) {
   el.innerHTML = fragment.str;
 }
 
-// F11c: modo de disposición. Estudio (≥ 900 px: escritorio, tablet apaisada) o campo (móvil).
+// Modo de disposición. Estudio (≥ 900 px: escritorio, tablet apaisada) o campo (móvil).
 export const studioQuery = window.matchMedia('(min-width: 900px)');
 export const isStudio = () => studioQuery.matches;
 

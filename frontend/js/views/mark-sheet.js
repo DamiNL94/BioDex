@@ -1,5 +1,5 @@
 // ================================================================================================
-// views/mark-sheet.js — hoja de marca (F8a): crear una marca desde la ficha, la lista o el mapa, y
+// views/mark-sheet.js — hoja de marca: crear una marca desde la ficha, la lista o el mapa, y
 // editar las propias desde «Mis marcas».
 // ------------------------------------------------------------------------------------------------
 // Pensada para una mano, con guantes o al sol: objetivos de 48 px y «Guardar» siempre visible (pie
@@ -8,7 +8,7 @@
 //     PUNTO DEL MAPA (mantener pulsado en Mapa: individuo visto a distancia) con la precisión estimada
 //     por el usuario, obligatoria, y comentario de georreferencia. Al editar, la posición no se toca.
 //   · Presente / Ausente (una ausencia en un punto prospectado también es dato: 0 individuos).
-//   · MARCA NUEVA (F11e): marcar es contar. Casillas grandes por categoría según el reino (macho,
+//   · MARCA NUEVA: marcar es contar. Casillas grandes por categoría según el reino (macho,
 //     hembra, juvenil… / plántula, en flor…): un toque, un individuo; «−», «Deshacer» y la cifra se
 //     puede escribir (para 300 plantas no se toca 300 veces). Al guardar sale una marca por categoría
 //     con individuos, todas en el mismo punto (reglas en js/tally.js). Sin contar nada se guarda
@@ -17,9 +17,9 @@
 //     «Individuo maduro» (con varios: «¿cuántos maduros?») → lifeStage adult + mature_count, estado
 //     vital según el reino y sexo (solo fauna).
 //   · Hábitat (se recuerda el último de esta sesión) y observaciones.
-//   · F11h: con una VISITA en curso en el catálogo, la marca nueva lleva su visitID y el buscador pone primero las
+//   · Con una VISITA en curso en el catálogo, la marca nueva lleva su visitID y el buscador pone primero las
 //     especies objetivo; la hoja lo dice arriba.
-//   · F11g: «Superficie contada (m²)», opcional: la marca es una PARCELA y su densidad de maduros sirve para
+//   · «Superficie contada (m²)», opcional: la marca es una PARCELA y su densidad de maduros sirve para
 //     estimar el total (docs/iucn.md). Las marcas de un mismo conteo comparten fecha y superficie.
 // Vocabularios: los de GBIF que valida el servidor (Lib/sync.php); aquí solo sus etiquetas.
 // ================================================================================================
@@ -90,7 +90,7 @@ export function openMarkSheet({ catalog, species = null, occurrence = null, poin
   const editing = !!occurrence;
   const title = editing ? 'Editar marca' : point ? 'Marcar en este punto' : 'Marcar aquí';
   let watchId = null;
-  let picker = null;          // buscador de especies (F11f), si la hoja elige la especie
+  let picker = null;          // buscador de especies, si la hoja elige la especie
   const counting = !editing;   // marca nueva = conteo; editar = una ocurrencia
   let tally = emptyTally();
   let showExtra = false;
@@ -113,7 +113,7 @@ export function openMarkSheet({ catalog, species = null, occurrence = null, poin
 
   // --- Estado de la hoja ----------------------------------------------------------------------
   const o = occurrence || {};
-  const visit = !editing && catalog ? activeVisitFor(catalog.id) : null;   // F11h
+  const visit = !editing && catalog ? activeVisitFor(catalog.id) : null;
   let chosen = species;
   let speciesList = [];
   let pos = initialPos;
@@ -189,7 +189,7 @@ export function openMarkSheet({ catalog, species = null, occurrence = null, poin
   form.count.value = String(f.count);
 
   // --- Especie -----------------------------------------------------------------------------------
-  // F11f: sin especie de partida (Mapa, botón flotante), el buscador del modo campo (components/
+  // Sin especie de partida (Mapa, botón flotante), el buscador del modo campo (components/
   // species-picker.js): nombre común, científico o abreviatura, recientes y «cerca» arriba. Elegida, se
   // pliega en una línea con «Cambiar» para que el conteo quede a la vista.
 
@@ -345,7 +345,7 @@ export function openMarkSheet({ catalog, species = null, occurrence = null, poin
     paintTally(kingdom);
   }
 
-  // --- Conteo (F11e): la forma de crear una marca ---------------------------------------------
+  // --- Conteo: la forma de crear una marca ---------------------------------------------
   let categories = tallyCategories(null);
   function paintTally(kingdom = tallyKingdom) {
     if (!counting) return;
@@ -555,7 +555,7 @@ export function openMarkSheet({ catalog, species = null, occurrence = null, poin
       const batch = tallyToMarks(categories, tally, { habitat: form.habitat.value, remarks: form.remarks.value });
       if (!batch.length) { showError('Cuenta al menos un individuo.', save); paintSave(); return; }
       const saved = [];
-      // F11g: un conteo es UN recuento: misma fecha y misma superficie en todas sus marcas.
+      // Un conteo es UN recuento: misma fecha y misma superficie en todas sus marcas.
       const eventDate = isoNow();
       try {
         for (const fields of batch) {
@@ -595,7 +595,7 @@ export function openMarkSheet({ catalog, species = null, occurrence = null, poin
   paintSave();
   watchGps();
   if (point && form.uncertainty) form.uncertainty.focus();
-  else if (!species) { /* F11f: sin teclado de entrada; los recientes y «cerca» se tocan directamente */ }
+  else if (!species) { /* Sin teclado de entrada; los recientes y «cerca» se tocan directamente */ }
   else save.focus();
   return ov;
 }

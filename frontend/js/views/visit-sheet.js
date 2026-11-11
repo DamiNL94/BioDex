@@ -1,5 +1,5 @@
 // ================================================================================================
-// views/visit-sheet.js — empezar y cerrar una visita en el campo (F11h; lógica en js/visits.js).
+// views/visit-sheet.js — empezar y cerrar una visita en el campo (lógica en js/visits.js).
 // ------------------------------------------------------------------------------------------------
 // Empezar («Empezar visita», botón grande del Mapa):
 //   · Sitio: los del catálogo por cercanía (el más cercano primero, «dentro» si estás en él), uno NUEVO aquí con

@@ -1,6 +1,6 @@
 <?php
 // ================================================================================================
-// /api/invites — unirse a un catálogo con un código de invitación (F6). Requiere sesión.
+// /api/invites — unirse a un catálogo con un código de invitación. Requiere sesión.
 //   POST /api/invites/preview  {code}  → {catalog:{id, name, description, ownerName}, role, expiresAt, alreadyMember}
 //   POST /api/invites/accept   {code}  → {catalog, role, joined}
 // El código va en el cuerpo, nunca en la URL (no queda en los registros de nginx). Admite el enlace

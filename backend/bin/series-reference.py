@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # ================================================================================================
-# Referencia independiente de las series temporales (F11h) para shared/iucn-cases.json › «series».
+# Referencia independiente de las series temporales para shared/iucn-cases.json › «series».
 #   python backend/bin/series-reference.py            → imprime los casos (JSON)
 #   python backend/bin/series-reference.py --write    → los escribe en shared/iucn-cases.json (sustituye «series»)
 # Con statsmodels (pip install statsmodels) ajusta el GLM de Poisson con efecto sitio (y con factor año para el índice)
@@ -8,7 +8,7 @@
 # statsmodels solo genera los casos con SOLUCIÓN ANALÍTICA (dos sitios sin ruido: r exacta, EE = 1/√Σ μ (t − t̄_s)²,
 # índice = suma de las curvas) y avisa de los que se salta.
 # Los datos van escritos aquí (nada aleatorio): misma entrada, misma salida.
-# F11h (11/11/2026): generado con python:3.12-slim + statsmodels 0.15.0 (docker run --rm -v …:/w python:3.12-slim).
+# 11/11/2026: generado con python:3.12-slim + statsmodels 0.15.0 (docker run --rm -v …:/w python:3.12-slim).
 # ================================================================================================
 import json
 import math

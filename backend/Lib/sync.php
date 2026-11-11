@@ -12,7 +12,7 @@
 // ================================================================================================
 
 require_once __DIR__ . "/sensitivity.php";
-require_once __DIR__ . "/iucn.php";          // amenazas UICN de los impactos (F11g)
+require_once __DIR__ . "/iucn.php";          // amenazas UICN de los impactos
 
 const SYNC_MAX_ITEMS        = 200;     // marcas + borrados por push
 const SYNC_PULL_MAX_LIMIT   = 500;
@@ -22,13 +22,13 @@ const SYNC_UINT_MAX         = 4294967295;
 const SYNC_HABITAT_MAX      = 500;
 const SYNC_GEOREF_REMARKS_MAX = 255;
 const SYNC_NOTE_MAX         = 4000;
-// Evaluaciones UICN (F8b)
+// Evaluaciones UICN
 const SYNC_ASSESSMENT_JSON_MAX = 32768;   // inputs y result, cada uno (result lleva el detalle por criterio)
 const SYNC_JUSTIFICATION_MAX   = 4000;
 const ASSESSMENT_CATEGORIES    = ["CR", "EN", "VU", "NT", "LC", "DD"];
 const ASSESSMENT_STATUSES      = ["draft", "final"];
 const ASSESSMENT_ADJUSTMENTS   = ["down", "up"];
-// Impactos (F11g) y superficie contada de una marca
+// Impactos y superficie contada de una marca
 const SYNC_SAMPLE_AREA_MAX     = 100000000;   // m² (100 km²)
 const SYNC_IMPACT_RADIUS_MAX   = 100000;      // m
 const SYNC_IMPACT_POLYGON_MAX  = 200;         // vértices
@@ -36,7 +36,7 @@ const SYNC_IMPACT_SPECIES_MAX  = 200;
 const IMPACT_INTENSITIES       = ["low", "medium", "high"];
 const IMPACT_TIMINGS           = ["past", "ongoing", "future"];
 
-// Vocabularios cerrados (F8a). lifeStage y sex: vocabulario de GBIF; las etiquetas en castellano son
+// Vocabularios cerrados. lifeStage y sex: vocabulario de GBIF; las etiquetas en castellano son
 // cosa de la interfaz (frontend/js/views/mark-sheet.js).
 const OCC_STATUS      = ["present", "absent"];
 const OCC_LIFE_STAGES = ["adult", "juvenile", "subadult", "larva", "egg", "seedling", "flowering", "fruiting", "vegetative", "undetermined"];
@@ -139,8 +139,8 @@ function syncTaxonID(array $o): string {
 /**
  * Marca del cuerpo de un push → columnas de occurrences. Lanza SyncRejection si algo no vale.
  * Los términos llegan con su nombre DwC exacto; los que no se conocen se ignoran (también el antiguo
- * iucn_assessment: la evaluación UICN es de la especie, F8b).
- * Reglas entre campos (F8a): mature_count ≤ individualCount (y exige individualCount); una ausencia
+ * iucn_assessment: la evaluación UICN es de la especie).
+ * Reglas entre campos: mature_count ≤ individualCount (y exige individualCount); una ausencia
  * lleva individualCount 0 o nulo y ningún maduro; un punto marcado en el mapa, precisión ≥ 1 m.
  */
 function syncValidateOccurrence(mixed $o): array {
@@ -164,14 +164,14 @@ function syncValidateOccurrence(mixed $o): array {
     if ($protocol === GEOREF_MAP && $uncertain < 1) {
         syncReject("missing_field", "Un punto marcado en el mapa necesita la precisión estimada («coordinateUncertaintyInMeters» ≥ 1).");
     }
-    // F11g: superficie contada (m²): la marca es una parcela y su densidad sirve para estimar maduros.
+    // Superficie contada (m²): la marca es una parcela y su densidad sirve para estimar maduros.
     $area = syncPositiveNumber($o, "sampleSizeValue", SYNC_SAMPLE_AREA_MAX);
     if ($area !== null && $status === "absent") syncReject("invalid_absence", "Una ausencia no lleva superficie contada («sampleSizeValue»).");
-    // F11h: visita durante la que se hizo (null = marca oportunista). Que exista y sea del catálogo lo mira Api/sync.php.
+    // Visita durante la que se hizo (null = marca oportunista). Que exista y sea del catálogo lo mira Api/sync.php.
     $visit = $o["visitID"] ?? null;
     if ($visit !== null && !isUuidV4($visit)) syncReject("invalid_uuid", "«visitID» debe ser el UUID v4 de una visita o null.");
 
-    // visit_id solo si el cliente lo manda: una edición desde una app de antes de F11h (o un respaldo v4) no lo trae y
+    // visit_id solo si el cliente lo manda: una edición desde una versión anterior de la app (o un respaldo v4) no lo trae y
     // no debe dejar la marca sin su visita (en un alta, la columna queda NULL igual).
     return (array_key_exists("visitID", $o) ? ["visit_id" => $visit] : []) + [
         "occurrenceID"                  => $o["occurrenceID"],
@@ -205,7 +205,7 @@ function syncPositiveNumber(array $o, string $field, float $max): ?float {
 }
 
 /**
- * Impacto del cuerpo de un push (F11g) → columnas de impacts + `_species` (taxonIDs afectados; los escribe
+ * Impacto del cuerpo de un push → columnas de impacts + `_species` (taxonIDs afectados; los escribe
  * syncPushItem en impact_species). Punto + radio o polígono (uno de los dos); amenaza del esquema UICN v3.3.
  */
 function syncValidateImpact(mixed $i): array {
@@ -261,7 +261,7 @@ function syncValidateImpact(mixed $i): array {
 }
 
 /**
- * Impacto tal como sale hacia $viewerId (F11g). Su sitio delata dónde viven las especies afectadas, así que
+ * Impacto tal como sale hacia $viewerId. Su sitio delata dónde viven las especies afectadas, así que
  * sigue la regla de applyVisibility() con el nivel MÁS restrictivo de esas especies en el catálogo (sin
  * especies, 4): a quien no es el autor ni ve exactas, el centro generalizado, el radio ampliado a la celda y
  * sin polígono. $row lleva `recorded_by`; $species = taxonIDs; $level = nivel mínimo.
@@ -333,7 +333,7 @@ function syncValidateNote(mixed $n): array {
 }
 
 /**
- * Evaluación UICN del cuerpo de un push (F8b) → columnas de species_assessments. El servidor no recalcula
+ * Evaluación UICN del cuerpo de un push → columnas de species_assessments. El servidor no recalcula
  * (el motor es shared/iucn-engine.js, en el dispositivo): comprueba forma, tamaños y coherencia mínima.
  * No toca is_reference: la referencia solo la marca el owner (PUT .../reference-assessment).
  */
@@ -354,7 +354,7 @@ function syncValidateAssessment(mixed $a): array {
         $json[$field] = $v === [] ? "{}" : $enc;
     }
     $result = $a["result"];
-    // F11g: una instantánea del motor 2 se recalcula entera en el servidor al subirla (Api/sync.php ›
+    // Una instantánea del motor 2 se recalcula entera en el servidor al subirla (Api/sync.php ›
     // assessmentSnapshot(), con las coordenadas exactas): aquí solo se valida la forma.
     foreach (["category", "baseCategory"] as $k) {
         $cat = $result[$k] ?? null;
@@ -475,7 +475,7 @@ function noteOut(array $row): array {
 }
 
 /**
- * Evaluación UICN tal como sale (F8b). Sin coordenadas: EOO/AOO y localidades son números agregados.
+ * Evaluación UICN tal como sale. Sin coordenadas: EOO/AOO y localidades son números agregados.
  * El pull solo la manda a miembros con view. $row necesita `recorded_by` y `reference_set_by_name`.
  */
 function assessmentOut(array $row): array {

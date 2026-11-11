@@ -1,12 +1,12 @@
 // ================================================================================================
-// catalog-export.js — «Exportar datos» de un catálogo (antes «Descargar datos») (F10a): opciones, resumen y descarga del ZIP.
+// catalog-export.js — «Exportar datos» de un catálogo (antes «Descargar datos»): opciones, resumen y descarga del ZIP.
 // ------------------------------------------------------------------------------------------------
 // La exportación se genera EN EL SERVIDOR (tiene las exactas y aplica la seguridad): sin conexión el
-// panel lo explica y remite al respaldo JSON de Ajustes (F5b). Dos modos: «Para publicar» (cualquier
+// panel lo explica y remite al respaldo JSON de Ajustes. Dos modos: «Para publicar» (cualquier
 // miembro; coordenadas generalizadas según el nivel de cada especie) y «Completa (privada)» (owner y
 // custodio; exactas, y cada descarga queda en el Registro del catálogo).
 // POST /catalogs/{id}/export/preview da las opciones y el resumen; POST /catalogs/{id}/export, el ZIP.
-// Se abre desde el catálogo (Datos del catálogo) y desde Ajustes › Descargas. F10c: «Formatos» (DwC-A, Plinian
+// Se abre desde el catálogo (Datos del catálogo) y desde Ajustes › Descargas. «Formatos» (DwC-A, Plinian
 // Core, hojas; al menos uno), que van en «formats».
 // ================================================================================================
 
@@ -17,7 +17,7 @@ import { openOverlay } from '../components/overlay.js';
 
 const EXPORT_TIMEOUT_MS = 180000;   // un catálogo grande tarda: hojas, CSV y EOO/AOO de cada especie
 const MODES = [['public', 'Para publicar'], ['full', 'Completa (privada)']];
-// Formatos del ZIP (F10c): [valor, rótulo, marcado por defecto, ayuda, carpeta]. Al menos uno.
+// Formatos del ZIP: [valor, rótulo, marcado por defecto, ayuda, carpeta]. Al menos uno.
 const FORMATS = [
   ['dwc', 'Darwin Core (DwC-A)', true, 'Observaciones, para GBIF u otras bases de datos.', 'dwca/ (Darwin Core Archive)'],
   ['plinian', 'Plinian Core', false, 'Fichas de especie: estado de amenaza y distribución. No incluye observaciones.', 'pliniancore/ (Plinian Core)'],
@@ -54,7 +54,7 @@ export function openExport(catalog) {
   return ov;
 }
 
-/** Exportación en `el` (F11c: también en la pestaña «Exportar» del catálogo en escritorio). Devuelve el desmontaje. */
+/** Exportación en `el` (también en la pestaña «Exportar» del catálogo en escritorio). Devuelve el desmontaje. */
 export function mountExport(el, catalog) {
   let alive = true;
   let info = null;            // preview inicial: available, licenses, defaults, canFull

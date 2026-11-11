@@ -3,12 +3,12 @@
 // ------------------------------------------------------------------------------------------------
 // Una marca se guarda en `occurrences` con `status: pending` y deja una entrada en `outbox`; sync.js
 // la sube. Nunca hay una marca sin coordenadas: o la posición del GPS o un punto marcado en el mapa con
-// su precisión estimada (F8a, `georeferenceProtocol`). La coordenada no se edita después.
+// su precisión estimada (`georeferenceProtocol`). La coordenada no se edita después.
 // Borrar es lógico: `deletedAt` + entrada `delete` en la cola (el servidor la borra para el equipo).
 // Hay como mucho UNA entrada de cola por marca o nota: la última intención (crear/editar o borrar) gana.
-// Notas (F8a): almacén `notes`, cola `note` / `noteDelete`, mismas reglas que las marcas.
-// Evaluaciones UICN (F8b): almacén `assessments`, cola `assessment` / `assessmentDelete`, mismas reglas.
-// Impactos (F11g): almacén `impacts`, cola `impact` / `impactDelete`, mismas reglas.
+// Notas: almacén `notes`, cola `note` / `noteDelete`, mismas reglas que las marcas.
+// Evaluaciones UICN: almacén `assessments`, cola `assessment` / `assessmentDelete`, mismas reglas.
+// Impactos: almacén `impacts`, cola `impact` / `impactDelete`, mismas reglas.
 // ================================================================================================
 
 import { state } from './state.js';
@@ -79,7 +79,7 @@ export function markFields(f = {}) {
     occurrenceStatus: absent ? 'absent' : 'present',
     individualCount,
     mature_count: mature,
-    sampleSizeValue: absent ? null : area(f.sampleSizeValue),   // F11g: superficie contada (m²): la marca es una parcela
+    sampleSizeValue: absent ? null : area(f.sampleSizeValue),   // Superficie contada (m²): la marca es una parcela
     lifeStage: absent ? null : text(f.lifeStage),
     sex: absent ? null : text(f.sex),
     habitat: text(f.habitat),
@@ -114,11 +114,11 @@ export async function createMark({ catalogId, taxonID, pos = null, point = null,
   const now = isoNow();
   const occ = {
     occurrenceID: uuid(), catalogId, taxonID,
-    eventDate: eventDate || now,   // F11g: las marcas de un mismo conteo comparten fecha (son un solo recuento)
+    eventDate: eventDate || now,   // Las marcas de un mismo conteo comparten fecha (son un solo recuento)
     ...where,
     basisOfRecord: 'HumanObservation',
     ...markFields(fields),
-    visitID: visitID || null,   // F11h: visita en curso (null = marca oportunista)
+    visitID: visitID || null,   // Visita en curso (null = marca oportunista)
     clientUpdatedAt: now,
     status: 'pending', reason: null, authorId: state.user.id, recordedBy: state.user.name || state.user.email,
     generalized: false, serverSeq: null, deletedAt: null,
@@ -159,7 +159,7 @@ export async function deleteMark(occurrenceID) {
   });
 }
 
-// --- Notas de especie (F8a) --------------------------------------------------------------------------
+// --- Notas de especie --------------------------------------------------------------------------
 
 function cleanNote(value) {
   const v = String(value || '').trim();
@@ -205,7 +205,7 @@ export async function deleteNote(noteID) {
   });
 }
 
-// --- Evaluaciones UICN (F8b) --------------------------------------------------------------------------
+// --- Evaluaciones UICN --------------------------------------------------------------------------
 // De la especie en el catálogo, no de una marca. En el dispositivo, borrador/final va en
 // `assessmentStatus` (en la API es `status`); `status` es, como en las marcas, el de sincronización.
 
@@ -276,7 +276,7 @@ export async function assessmentsFor(catalogId, taxonID) {
     .sort((a, b) => (b.isReference - a.isReference) || (Date.parse(b.clientUpdatedAt) - Date.parse(a.clientUpdatedAt)));
 }
 
-// --- Impactos (F11g) -----------------------------------------------------------------------------
+// --- Impactos -----------------------------------------------------------------------------
 // Registrados en campo, también sin red. Punto + radio (GPS o punto del mapa) o polígono. Cada uno con su
 // amenaza del esquema UICN v3.3 (shared/iucn-threats.json) y las especies del catálogo afectadas.
 
@@ -526,7 +526,7 @@ export async function buildBackup(catalogId = null) {
     const c = await get('catalogs', id);
     catalogs.push({ id, name: c ? c.name : null });
   }
-  // version 2 (F8a): + notes · 3 (F8b): + assessments · 4 (F11g): + impacts · 5 (F11h): + sites y visits. El importador
+  // version 2: + notes · 3: + assessments · 4: + impacts · 5: + sites y visits. El importador
   // acepta también los anteriores.
   return {
     format: BACKUP_FORMAT, version: 5, exportedAt: isoNow(), userId: state.user.id, userEmail: state.user.email,
@@ -596,7 +596,7 @@ export async function importBackup(backup) {
       await enqueue(t, { kind: action === 'delete' ? 'impactDelete' : 'impact', ref: i.impactID, catalogId: i.catalogId });
       added++;
     }
-    // F11h: sitios y visitas (antes que nada que los use; el servidor también los recibe primero).
+    // Sitios y visitas (antes que nada que los use; el servidor también los recibe primero).
     for (const [store, list, idKey, kind] of [['sites', backup.sites, 'siteID', 'site'], ['visits', backup.visits, 'visitID', 'visit']]) {
       for (const x of Array.isArray(list) ? list : []) {
         if (!x || !x[idKey] || !x.catalogId || await t.get(store, x[idKey])) { skipped++; continue; }

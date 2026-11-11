@@ -11,7 +11,7 @@
 //   · Un 401 fuera de /auth/ avisa a la app con el evento `biodex:unauthorized` (sesión caducada).
 //   · `signal` propio (AbortController) para cancelar una petición que ya no interesa (buscador):
 //     el ApiError lleva entonces `aborted = true` y quien llama lo ignora.
-//   · Cada llamada actualiza `state.connection` (F3b): la cabecera refleja si el servidor contesta,
+//   · Cada llamada actualiza `state.connection`: la cabecera refleja si el servidor contesta,
 //     no solo si el dispositivo tiene red.
 // ================================================================================================
 
@@ -141,8 +141,8 @@ export function getSpeciesFilters() {
   return filtersPromise;
 }
 
-// --- Copias antiguas en localStorage (F3b) --------------------------------------------------------
-// Hasta F5 Catálogos y Especies guardaban aquí (biodex.copy:<ruta>) la última respuesta buena. Ahora
+// --- Copias antiguas en localStorage --------------------------------------------------------
+// Versiones antiguas de Catálogos y Especies guardaban aquí (biodex.copy:<ruta>) la última respuesta buena. Ahora
 // los datos de trabajo viven en IndexedDB (db.js, offline.js): las claves viejas se borran al arrancar.
 export function clearLegacyCopies() {
   try {

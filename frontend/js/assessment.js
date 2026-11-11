@@ -1,12 +1,12 @@
 // ================================================================================================
-// assessment.js — evaluación UICN de una especie en el catálogo, en el dispositivo (F11g).
+// assessment.js — evaluación UICN de una especie en el catálogo, en el dispositivo.
 // ------------------------------------------------------------------------------------------------
 // · Con servidor: el DEFINITIVO de GET /catalogs/{id}/species/{taxonID}/assessment (Lib/assessment.php: EOO/AOO,
 //   maduros, subpoblaciones, fragmentación y localidades con las coordenadas exactas; geometría según confianza).
 //   Se guarda en IndexedDB (meta `assessment:<catálogo>:<taxón>`) para verlo sin red con su fecha.
-// · F11h: la serie temporal (A y C1) sale de las visitas a sitios (js/visits.js › localSeries; en el servidor, Lib/series.php).
+// · La serie temporal (A y C1) sale de las visitas a sitios (js/visits.js › localSeries; en el servidor, Lib/series.php).
 // · Sin servidor: PROVISIONAL con shared/iucn-quantifiers.js + shared/iucn-engine.js y SOLO las marcas exactas
-//   que hay en el dispositivo (como EOO/AOO, F9), los parámetros, las localidades confirmadas y los impactos
+//   que hay en el dispositivo (como EOO/AOO), los parámetros, las localidades confirmadas y los impactos
 //   que bajaron por el pull. Mismas reglas en los dos lados (casos compartidos: shared/iucn-cases.json).
 // recompute(): el motor otra vez con las decisiones del usuario (NT/LC, posiblemente extinta), sin red.
 // ================================================================================================
@@ -72,7 +72,7 @@ export async function provisionalAssessment(catalog, species) {
   const loc = hasDb() ? await get('locations', [catalog.id, taxonID]) : null;
   const impacts = await localImpacts(catalog.id, taxonID);
   const q = quantify(records, { project: toUtm, params, defaults, impacts, metrics, habitatCodes: threats.habitat_codes });
-  // F11h: serie temporal con las visitas y marcas del dispositivo (A y C1).
+  // Serie temporal con las visitas y marcas del dispositivo (A y C1).
   const series = await localSeries(catalog.id, taxonID, { generationLength: params.generation_length ? params.generation_length.value : null, criteria })
     .catch(() => null);
   const inputs = engineInputs(q, { params, metrics, locations: loc || null, series });

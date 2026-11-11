@@ -1,6 +1,6 @@
 <?php
 // ================================================================================================
-// export.php — exportación de un catálogo (F10a): Darwin Core Archive + hojas legibles, en un ZIP.
+// export.php — exportación de un catálogo: Darwin Core Archive + hojas legibles, en un ZIP.
 // ------------------------------------------------------------------------------------------------
 // Se genera EN EL SERVIDOR, que tiene las exactas y aplica la seguridad:
 //   · «completa» (owner, custodio): coordenadas exactas, vía applyVisibility() con su rol; export_full
@@ -11,11 +11,11 @@
 //     un texto como «junto a la fuente de …» deshace la generalización. Se dice en informationWithheld.
 // El registro original nunca se altera: todo se hace sobre copias en memoria.
 //
-// Productos: dwca/ (F11h: núcleo Event: event.txt, occurrence.txt con eventID, measurementorfact.txt eMoF, meta.xml, eml.xml;
+// Productos: dwca/ (núcleo Event: event.txt, occurrence.txt con eventID, measurementorfact.txt eMoF, meta.xml, eml.xml;
 // Lib/dwc.php), hojas/
 // (un XLSX con Léeme · Observaciones · Especies · Evaluaciones UICN · Distribución · Notas, Lib/xlsx.php,
-// y los mismos datos en CSV para Excel en español), pliniancore/ (F10c, fichas de especie en Plinian Core;
-// Lib/plinian.php) y LEEME.txt. Formatos a elegir en «formats»; por defecto dwca/ y hojas/, como en F10a.
+// y los mismos datos en CSV para Excel en español), pliniancore/ (fichas de especie en Plinian Core;
+// Lib/plinian.php) y LEEME.txt. Formatos a elegir en «formats»; por defecto dwca/ y hojas/.
 // Mapeo: docs/dwc.md y docs/plinian.md.
 // ================================================================================================
 
@@ -26,12 +26,12 @@ require_once __DIR__ . "/metrics.php";   // metricsStored()
 require_once __DIR__ . "/utm.php";
 require_once __DIR__ . "/dwc.php";
 require_once __DIR__ . "/xlsx.php";
-require_once __DIR__ . "/plinian.php";   // F10c: pliniancore/
-require_once __DIR__ . "/assessment.php"; // F11g: evaluación por especie, subpoblaciones e impactos
-require_once __DIR__ . "/visits.php";     // F11h: visitas y sitios (núcleo Event, hojas Visitas y Series)
+require_once __DIR__ . "/plinian.php";   // pliniancore/
+require_once __DIR__ . "/assessment.php"; // Evaluación por especie, subpoblaciones e impactos
+require_once __DIR__ . "/visits.php";     // Visitas y sitios (núcleo Event, hojas Visitas y Series)
 
 const EXPORT_MODES      = ["full", "public"];
-/** Formatos del ZIP (F10c). Sin «formats» en la petición, los de F10a: el ZIP sale igual que antes. */
+/** Formatos del ZIP. Sin «formats» en la petición, dwca/ y hojas/. */
 const EXPORT_FORMATS         = ["dwc", "plinian", "sheets"];
 const EXPORT_FORMATS_DEFAULT = ["dwc", "sheets"];
 const EXPORT_TZ         = "Europe/Madrid";
@@ -224,7 +224,7 @@ function exportPrepare(PDO $pdo, string $catalogId, array $catalog, array $o, st
     $counts = ["occurrences" => 0, "presences" => 0, "absences" => 0, "generalized" => 0, "withheld" => 0, "measurements" => 0];
     $perSpecies = [];
     $observers = [];
-    // F11h: una marca de visita sale con el nivel más restrictivo entre su especie y su visita (Lib/visits.php).
+    // Una marca de visita sale con el nivel más restrictivo entre su especie y su visita (Lib/visits.php).
     $visitLevel = visitLevelMap($pdo, $catalogId, array_column($occ, "visit_id"));
     foreach ($occ as $row) {
         $row["sensitivity_level"] = min(normalizeSensitivityLevel($row["sensitivity_level"]), $visitLevel[$row["visit_id"] ?? ""] ?? 4);
@@ -255,7 +255,7 @@ function exportPrepare(PDO $pdo, string $catalogId, array $catalog, array $o, st
     return $prep;
 }
 
-// --- F11h · Eventos (núcleo Event del DwC-A) -----------------------------------------------------
+// --- Eventos (núcleo Event del DwC-A) -----------------------------------------------------
 
 /** Intervalo ISO de un evento: «inicio/fin» (o solo el inicio). */
 function exportInterval(?string $start, ?string $end): ?string {
@@ -285,7 +285,7 @@ function exportEventCommon(array $ctx, ?string $modified): array {
 }
 
 /**
- * Eventos del DwC-A (F11h): cada VISITA de las marcas exportadas es un evento (con su sitio como evento padre) y cada
+ * Eventos del DwC-A: cada VISITA de las marcas exportadas es un evento (con su sitio como evento padre) y cada
  * marca OPORTUNISTA (sin visita, o con una visita borrada) genera el suyo, `biodex:evt:<occurrenceID>`, porque toda
  * ocurrencia cuelga de un evento. Deja en cada registro su `eventID` (columna 0 de occurrence.txt).
  * → {rows (término → valor), visits [visitID => fila de visits], nVisits, nSites, effort (filas eMoF)}
@@ -542,7 +542,7 @@ function exportSheets(PDO $pdo, string $catalogId, array $catalog, array $o, arr
 }
 
 /**
- * F11h · «Visitas»: una fila por visita de las marcas exportadas, con su sitio. La posición y la geometría siguen la regla
+ * «Visitas»: una fila por visita de las marcas exportadas, con su sitio. La posición y la geometría siguen la regla
  * de los eventos del DwC-A (exportEventLocation): en la exportación para publicar, generalizadas si hay especies
  * sensibles, y en esas filas no salen ni el nombre del sitio, ni la geometría, ni las condiciones.
  */
@@ -581,7 +581,7 @@ function exportVisitsSheet(array $prep): array {
 }
 
 /**
- * F11h · «Series»: por especie con visitas a sitios, una fila por año (visitado o no, con el total observado y el índice
+ * «Series»: por especie con visitas a sitios, una fila por año (visitado o no, con el total observado y el índice
  * del modelo) y, en la primera fila de cada especie, la tasa anual con su IC, la reducción en la ventana de A y lo que
  * está observado. Solo cifras (sin coordenadas); el mismo cálculo que la pestaña Evaluación UICN (Lib/series.php).
  */
@@ -638,7 +638,7 @@ function exportRangeText(?array $r, ?string $quality = null): ?string {
 }
 
 /**
- * F11g · «Evaluación por especie» (una fila por especie con marcas: el cálculo definitivo del servidor, el mismo
+ * «Evaluación por especie» (una fila por especie con marcas: el cálculo definitivo del servidor, el mismo
  * de la pestaña Evaluación UICN) y «Subpoblaciones» (una fila por subpoblación, con su localidad). Solo cifras:
  * ninguna geometría. Calcula con todas las presencias del catálogo, no solo las filtradas (como Distribución).
  */
@@ -716,7 +716,7 @@ function exportSpeciesAssessmentSheets(PDO $pdo, string $catalogId, array $prep)
 }
 
 /**
- * F11g · «Impactos»: una fila por impacto del catálogo (de las especies exportadas o sin especie). Su sitio sigue
+ * «Impactos»: una fila por impacto del catálogo (de las especies exportadas o sin especie). Su sitio sigue
  * la regla de las marcas (impactOut → applyVisibility con el nivel más restrictivo de sus especies): en la
  * exportación para publicar, generalizado; y en las filas generalizadas no sale la nota (puede decir dónde está).
  */
@@ -1006,7 +1006,7 @@ function exportBuild(PDO $pdo, string $catalogId, array $catalog, array $o, arra
     $zipName = "BioDex_{$slug}_" . EXPORT_MODE_FILE[$o["mode"]] . "_{$meta["date"]}.zip";
     $xlsxName = "BioDex_{$slug}_{$meta["date"]}.xlsx";
 
-    // F11h: eMoF con núcleo Event: coreid = eventID; los maduros llevan además su occurrenceID; el esfuerzo de la visita, no.
+    // eMoF con núcleo Event: coreid = eventID; los maduros llevan además su occurrenceID; el esfuerzo de la visita, no.
     $mof = $prep["events"]["effort"];
     $occRows = [];
     foreach ($prep["records"] as $r) {

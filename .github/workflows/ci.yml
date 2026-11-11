@@ -38,7 +38,7 @@ jobs:
           node frontend/tests/species-search.test.mjs
           node frontend/tests/site-geom.test.mjs
 
-  # F11h: los casos de series (shared/iucn-cases.json › series) salen de bin/series-reference.py con statsmodels: se
+  # Los casos de series (shared/iucn-cases.json › series) salen de bin/series-reference.py con statsmodels: se
   # regeneran y no deben cambiar (referencia independiente y reproducible del ajuste de Poisson).
   series-reference:
     runs-on: ubuntu-latest
@@ -53,7 +53,7 @@ jobs:
           python -I backend/bin/series-reference.py --write
           git diff --exit-code shared/iucn-cases.json
 
-  # F11f: interfaz con Playwright y la API simulada (frontend/tests/e2e), móvil y escritorio.
+  # Interfaz con Playwright y la API simulada (frontend/tests/e2e), móvil y escritorio.
   e2e:
     runs-on: ubuntu-latest
     defaults:

@@ -1,4 +1,4 @@
--- F11h · Sitios de muestreo, visitas (= Event de Darwin Core) y occurrences.visit_id (docs/db.md, docs/sync.md).
+-- Sitios de muestreo, visitas (= Event de Darwin Core) y occurrences.visit_id (docs/db.md, docs/sync.md).
 --   sites          sitio de muestreo permanente: punto + radio, polígono o línea (transecto). Se crea en el móvil (también sin
 --                  red) o desde casa (pestaña Sitios). Se sincroniza como las marcas (UUID del cliente, client_updated_at
 --                  decide, solo el autor edita o borra, server_seq común y tombstones). Su posición sigue la regla de

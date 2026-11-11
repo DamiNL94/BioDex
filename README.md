@@ -13,7 +13,7 @@ demostración: [`docs/demo.md`](docs/demo.md). Convenciones de código, permisos
 - **Dos modos según la pantalla.** *Estudio* (≥ 900 px): crear catálogos, especies y equipos, revisar y exportar
   datos. *Campo* (< 900 px): mapa a pantalla completa, lista de especies y «Listo para el campo» para llevarse el
   catálogo, las fichas y las teselas del mapa antes de salir.
-- **Pensada para usarla de pie** (F11f, `docs/interfaz.md`). En campo, botones de 48–56 px y letra de 17 px, un
+- **Pensada para usarla de pie** (`docs/interfaz.md`). En campo, botones de 48–56 px y letra de 17 px, un
   botón flotante «Marcar», un buscador que encuentra la especie por nombre común, científico o abreviatura (`pinnev`)
   con las recientes y las de alrededor primero, pestañas que vuelven como se dejaron y un «atrás» que no saca de la app.
 - **Página de cada especie** con Resumen, Registros (minimapa), **Parámetros** (generación, distancias, individuo
@@ -26,20 +26,20 @@ demostración: [`docs/demo.md`](docs/demo.md). Convenciones de código, permisos
 - **Coordenadas sensibles protegidas.** Cada especie tiene un nivel de sensibilidad; según el rol, el servidor
   entrega las marcas de otros ya generalizadas y la coordenada exacta nunca sale hacia quien no debe.
 - **Equipos con roles** (owner, custodio, editor) e invitaciones por enlace o **código QR** para unirse en el campo.
-- **UICN.** EOO y AOO (celdas de 2 km por defecto, 1 km opcional) calculados en UTM 30N y, desde F11g, los
+- **UICN.** EOO y AOO (celdas de 2 km por defecto, 1 km opcional) calculados en UTM 30N y los
   cuantificadores de B, C y D a partir de las marcas: individuos maduros (observados y estimados con parcelas, con su
   intervalo), subpoblaciones, fragmentación grave y localidades definidas por amenaza. La pestaña Evaluación UICN
   propone la categoría con su rango plausible y su cadena de criterios, dice qué falta para cada criterio y guarda
   instantáneas comparables; se puede contrastar con los registros de GBIF. El resultado es orientativo (`docs/iucn.md`).
-- **Visitas y series temporales** (F11h): «Empezar visita» en el mapa (sitio de muestreo permanente, protocolo,
+- **Visitas y series temporales**: «Empezar visita» en el mapa (sitio de muestreo permanente, protocolo,
   especies objetivo, esfuerzo), una barra fija mientras dura, y al cerrarla las especies objetivo sin contar quedan
   como **ausentes**; todo sin red. Con visitas repetidas a los mismos sitios, la ficha de cada especie dibuja la serie
   por sitio y total, y la evaluación calcula la **tasa anual** y la **reducción** (criterios A y C1) con un modelo
   log-lineal de Poisson con efecto sitio. Sitios desde casa en Catálogo › Sitios.
-- **Impactos en campo** (F11g): pisoteo, residuos, ganado, recolección, obras, incendio, invasoras… con un toque,
+- **Impactos en campo**: pisoteo, residuos, ganado, recolección, obras, incendio, invasoras… con un toque,
   sin red, mapeados al esquema de amenazas de la UICN.
 - **Exportación** desde el servidor, completa (solo owner y custodio, queda registrada) o «para publicar»
-  (generalizada): Darwin Core Archive con núcleo Event (visitas y sus ocurrencias, F11h), fichas en Plinian Core 3.2.2.7 validadas contra su XSD, libro XLSX y CSV estándar
+  (generalizada): Darwin Core Archive con núcleo Event (visitas y sus ocurrencias), fichas en Plinian Core 3.2.2.7 validadas contra su XSD, libro XLSX y CSV estándar
   (RFC 4180) para R, Python o QGIS.
 - **Fotos de las especies**: Fototeca del MITECO vía EIDOS y, si no hay, iNaturalist, GBIF o Wikimedia Commons con
   su autor y licencia; si ninguna sirve, una silueta propia del grupo.
@@ -71,8 +71,8 @@ desarrollo (Mailpit) http://localhost:8025.
 ## Cuentas de demostración
 `bin/seed-demo.php` (solo con `APP_ENV=dev`; idempotente) crea tres cuentas verificadas y el catálogo
 **«DEMO — Flora amenazada de Sierra Nevada (datos ficticios)»**: 12 especies reales de EIDOS (10 con su nivel de
-sensibilidad confirmado y las 2 de F11g), 73 marcas **inventadas** de los tres (5 ausencias, 2 marcadas en el mapa), notas y la evaluación UICN
-de referencia de *Artemisia granatensis* (EN B1ab(iii)+2ab(iii)). Desde F11h, además, 4 sitios **ficticios** con
+sensibilidad confirmado y 2 para los cuantificadores UICN), 73 marcas **inventadas** de los tres (5 ausencias, 2 marcadas en el mapa), notas y la evaluación UICN
+de referencia de *Artemisia granatensis* (EN B1ab(iii)+2ab(iii)). Además, 4 sitios **ficticios** con
 visitas anuales de 2014 a 2026 (ninguna en 2019) de *Plantago nivalis*, con un declive de ≈ 58 % en 10 años: la
 tarjeta A de su evaluación sale completa (EN A2ab).
 
@@ -117,15 +117,15 @@ docker compose exec php php bin/test-f11f.php   # parámetros de especie (permis
 docker compose exec php php bin/test-f11g.php   # cuantificadores UICN (casos compartidos), impactos, localidades, exportación
 docker compose exec php php bin/test-f11h.php   # series (casos compartidos), sitios y visitas, A y C1, DwC con núcleo Event
 node shared/iucn-engine.test.js && node shared/geo-metrics.test.js && node frontend/tests/utm.test.mjs
-node frontend/tests/tally.test.mjs && node frontend/tests/qr.test.mjs   # conteo rápido y QR de invitación (F11e)
-node frontend/tests/species-search.test.mjs   # buscador de especies (F11f)
-node frontend/tests/site-geom.test.mjs        # geometría de los sitios de muestreo (F11h)
+node frontend/tests/tally.test.mjs && node frontend/tests/qr.test.mjs   # conteo rápido y QR de invitación
+node frontend/tests/species-search.test.mjs   # buscador de especies
+node frontend/tests/site-geom.test.mjs        # geometría de los sitios de muestreo
 ```
-Casos de las series temporales (F11h): `backend/bin/series-reference.py --write` los regenera con statsmodels (sin él,
+Casos de las series temporales: `backend/bin/series-reference.py --write` los regenera con statsmodels (sin él,
 solo los de solución analítica). En Docker: `docker run --rm -v "$PWD:/w" -w /w python:3.12-slim sh -c "pip install
 statsmodels==0.15.0 && python -I backend/bin/series-reference.py --write"`. La CI comprueba que no cambian.
 
-Interfaz (F11f, Playwright con la API simulada, en móvil 390×844 y escritorio 1280×800; no necesita Docker):
+Interfaz (Playwright con la API simulada, en móvil 390×844 y escritorio 1280×800; no necesita Docker):
 ```bash
 cd frontend/tests/e2e
 ```
@@ -143,8 +143,8 @@ Playwright carga su librería dos veces y falla con «did not expect test() to b
 Solo un tamaño o una prueba: `npm test -- --project=movil -g "atrás"`.
 Marcar contando desde el buscador, volver a una pestaña con su estado, «atrás» que cierra la hoja, editar un
 parámetro y verlo tras recargar sin red, y la auditoría de objetivos táctiles (ninguno por debajo de 48 px en campo).
-F11g: registrar un impacto sin red, sincronizar y verlo en la evaluación, y los objetivos táctiles de la hoja de impacto.
-F11h: una visita completa en el móvil sin red (empezar en un sitio nuevo, contar dos especies, cerrar con una ausente
+Registrar un impacto sin red, sincronizar y verlo en la evaluación, y los objetivos táctiles de la hoja de impacto.
+Una visita completa en el móvil sin red (empezar en un sitio nuevo, contar dos especies, cerrar con una ausente
 y sincronizar: sitio y visita llegan antes que sus marcas).
 La API la simula `mock-api.mjs` con respuestas de la demo grabadas en `fixtures/` (datos ficticios).
 

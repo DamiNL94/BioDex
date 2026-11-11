@@ -1,4 +1,4 @@
--- F2a · Usuarios, sesión persistente ("seguir conectado"), verificación de email y límite de login.
+-- Usuarios, sesión persistente ("seguir conectado"), verificación de email y límite de login.
 -- Marcas de tiempo siempre calculadas en SQL (NOW()), nunca en PHP.
 
 CREATE TABLE IF NOT EXISTS users (

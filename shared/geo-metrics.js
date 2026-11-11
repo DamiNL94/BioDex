@@ -1,5 +1,5 @@
 // ================================================================================================
-// geo-metrics.js — EOO y AOO de la UICN a partir de registros (F9). JS puro, sin DOM.
+// geo-metrics.js — EOO y AOO de la UICN a partir de registros. JS puro, sin DOM.
 // ------------------------------------------------------------------------------------------------
 // Lo usa el dispositivo (cálculo PROVISIONAL sin red, /shared/geo-metrics.js) y lo repite en PHP
 // backend/Lib/metrics.php (el DEFINITIVO, con las coordenadas exactas). Los dos pasan los mismos

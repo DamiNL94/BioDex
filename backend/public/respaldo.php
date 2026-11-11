@@ -1,7 +1,7 @@
 <?php
 // ================================================================================================
 // GET /img/respaldo/<taxonID>/<16 primeros hex del sha256>.<jpg|png|webp> — copia local de la foto de
-// respaldo de GBIF o Wikimedia Commons (F11d, docs/fotos-respaldo.md). No pasa por el router de /api.
+// respaldo de GBIF o Wikimedia Commons (docs/fotos-respaldo.md). No pasa por el router de /api.
 // ------------------------------------------------------------------------------------------------
 // nginx (biodex-app.conf) solo manda aquí las URL con esa forma exacta (guarda previa: lo demás → 400) y
 // solo GET (limit_except: POST → 403); las cabeceras de seguridad (CSP, nosniff…) las pone nginx.

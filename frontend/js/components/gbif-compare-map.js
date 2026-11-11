@@ -1,5 +1,5 @@
 // ================================================================================================
-// components/gbif-compare-map.js — mapa de la comparación de fuentes de la pestaña Evaluación UICN (F11g):
+// components/gbif-compare-map.js — mapa de la comparación de fuentes de la pestaña Evaluación UICN:
 // los registros de BioDex y los de GBIF en colores distintos sobre IGN Base (las teselas del Mapa).
 // Los de BioDex llegan ya recortados según la confianza (exactos, centro de su celda o ninguno); los de GBIF
 // son públicos. Sin interacción salvo el zoom.

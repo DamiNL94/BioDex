@@ -6,17 +6,17 @@
 //   POST /api/sync/push   {catalogId, deviceId, occurrences:[…], deletes:[{occurrenceID, clientUpdatedAt}],
 //                          notes:[…], noteDeletes:[{noteID, clientUpdatedAt}],
 //                          assessments:[…], assessmentDeletes:[{assessmentID, clientUpdatedAt}],
-//                          impacts:[…], impactDeletes:[{impactID, clientUpdatedAt}] (F11g),
-//                          sites:[…], siteDeletes, visits:[…], visitDeletes (F11h)}
+//                          impacts:[…], impactDeletes:[{impactID, clientUpdatedAt}],
+//                          sites:[…], siteDeletes, visits:[…], visitDeletes}
 //                         permiso mark → {results:[…], noteResults:[…], assessmentResults:[…], impactResults:[…],
 //                                         siteResults:[…], visitResults:[…]}
 //   GET  /api/sync/pull?catalogId=&since=&limit=500
-//                         permiso view → {items, notes, assessments, parameters (F11f), impacts y locations (F11g),
-//                                         sites y visits (F11h), cursor, hasMore, catalogContentSeq, role, visibilityEpoch}
+//                         permiso view → {items, notes, assessments, parameters, impacts y locations,
+//                                         sites y visits, cursor, hasMore, catalogContentSeq, role, visibilityEpoch}
 // Cada tipo de entidad (SYNC_ENTITIES) sigue las mismas reglas y comparte el contador server_seq.
 // Sin rol en el catálogo (expulsado o catálogo borrado): 403 {error, code: "not_member"}; el móvil
 // borra entonces sus datos de ese catálogo. Si visibilityEpoch no es la que tiene guardada, borra las
-// marcas AJENAS de ese catálogo y vuelve a bajarlas desde 0 (F6: cambió lo que puede ver; Lib/teams.php).
+// marcas AJENAS de ese catálogo y vuelve a bajarlas desde 0 (cambió lo que puede ver; Lib/teams.php).
 //
 // Nunca se descarta una marca en silencio: cada elemento del lote vuelve con su estado. Cada elemento
 // va en su propia transacción; si la BD falla a mitad de lote la petición da 500 y el móvil repite el
@@ -27,9 +27,9 @@ require_once __DIR__ . "/../Lib/session.php";
 require_once __DIR__ . "/../Lib/authz.php";
 require_once __DIR__ . "/../Lib/audit.php";
 require_once __DIR__ . "/../Lib/sync.php";
-require_once __DIR__ . "/../Lib/parameters.php";   // parámetros de especie en el pull (F11f)
-require_once __DIR__ . "/../Lib/assessment.php";   // localidades confirmadas en el pull (F11g)
-require_once __DIR__ . "/../Lib/visits.php";       // sitios y visitas (F11h)
+require_once __DIR__ . "/../Lib/parameters.php";   // parámetros de especie en el pull
+require_once __DIR__ . "/../Lib/assessment.php";   // localidades confirmadas en el pull
+require_once __DIR__ . "/../Lib/visits.php";       // sitios y visitas
 
 const UUID_RE = '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/';
 // Reintentos de un elemento ante clave duplicada (dos pushes a la vez de la misma marca nueva),
@@ -62,7 +62,7 @@ function syncRequireMembership(PDO $pdo, string $catalogId, int $userId, string 
 }
 
 /**
- * F11g: una instantánea del motor 2 (pestaña Evaluación UICN) se recalcula entera aquí, con las coordenadas
+ * Una instantánea del motor 2 (pestaña Evaluación UICN) se recalcula entera aquí, con las coordenadas
  * exactas (assessmentSnapshot): el dispositivo pudo calcularla sin red con menos marcas. Columnas derivadas al día.
  */
 function syncServerSnapshot(PDO $pdo, string $catalogId, int $userId, array $c): array {
@@ -95,16 +95,16 @@ function syncWithRetry(PDO $pdo, callable $fn): array {
 }
 
 /**
- * Tipos de entidad que se sincronizan (F8a). Todos con las mismas reglas: UUID del cliente,
+ * Tipos de entidad que se sincronizan. Todos con las mismas reglas: UUID del cliente,
  * clientUpdatedAt decide, solo el autor edita o borra, server_seq del contador común y tombstones.
  *   list/deletes/results  claves del cuerpo del push y de su respuesta
  *   pull                  clave de la lista en el pull
  *   noun                  para los mensajes («la marca es de otro autor…»)
- *   reference             (F8b) la fila puede ser la «evaluación de referencia» del owner: si su autor la
+ *   reference             la fila puede ser la «evaluación de referencia» del owner: si su autor la
  *                         borra o la pasa a borrador, deja de serlo (y queda en access_log)
  */
 const SYNC_ENTITIES = [
-    // F11h: sitios y visitas van PRIMERO en cada lote: así una marca de visita llega cuando su visita ya existe.
+    // Sitios y visitas van PRIMERO en cada lote: así una marca de visita llega cuando su visita ya existe.
     "site"       => ["table" => "sites", "id" => "siteID", "list" => "sites", "deletes" => "siteDeletes",
                      "results" => "siteResults", "pull" => "sites", "validate" => "syncValidateSite", "noun" => "El sitio",
                      "taxon" => false, "children" => "site_species"],
@@ -118,7 +118,7 @@ const SYNC_ENTITIES = [
     "assessment" => ["table" => "species_assessments", "id" => "assessmentID", "list" => "assessments",
                      "deletes" => "assessmentDeletes", "results" => "assessmentResults", "pull" => "assessments",
                      "validate" => "syncValidateAssessment", "noun" => "La evaluación", "reference" => true],
-    // F11g: impactos. Sin taxonID propio: sus especies van en impact_species («_species» del validador).
+    // Impactos. Sin taxonID propio: sus especies van en impact_species («_species» del validador).
     "impact"     => ["table" => "impacts", "id" => "impactID", "list" => "impacts", "deletes" => "impactDeletes",
                      "results" => "impactResults", "pull" => "impacts", "validate" => "syncValidateImpact", "noun" => "El impacto",
                      "taxon" => false, "children" => "impact_species"],
@@ -182,7 +182,7 @@ function syncStaleKey(array $ent): string {
 }
 
 /**
- * F8b: una evaluación de referencia que su autor borra o pasa a borrador deja de ser la referencia del
+ * Una evaluación de referencia que su autor borra o pasa a borrador deja de ser la referencia del
  * catálogo. Devuelve las columnas que hay que poner a cero (vacío si no toca) y lo deja en access_log,
  * dentro de la misma transacción.
  */
@@ -207,7 +207,7 @@ function syncOwnershipRejection(PDO $pdo, array $ent, array $existing, string $c
     return [$ent["id"] => $existing[$ent["id"]], "status" => "rejected", "reason" => $reason[0], "detail" => $reason[1]];
 }
 
-/** F11g: filas hijas del elemento (especies de un impacto): se sustituyen por las del push. */
+/** Filas hijas del elemento (especies de un impacto): se sustituyen por las del push. */
 function syncWriteChildren(PDO $pdo, array $ent, string $id, ?array $children): void {
     if (empty($ent["children"]) || $children === null) return;
     $pdo->prepare("DELETE FROM `{$ent["children"]}` WHERE `{$ent["id"]}` = ?")->execute([$id]);
@@ -216,7 +216,7 @@ function syncWriteChildren(PDO $pdo, array $ent, string $id, ?array $children): 
 }
 
 /**
- * F11h: sitio o visita cuya visibilidad puede cambiar con esta escritura → [siteId, visitId, nivel antes], o null.
+ * Sitio o visita cuya visibilidad puede cambiar con esta escritura → [siteId, visitId, nivel antes], o null.
  * Una marca de visita, una visita o las especies objetivo de un sitio pueden BAJAR su nivel (visitsRelevel).
  */
 function syncRelevelScope(PDO $pdo, array $ent, string $catalogId, array $c): ?array {
@@ -360,7 +360,7 @@ if ($action === "push") {
                     if (!isset($taxa[$t])) syncReject("taxon_not_in_catalog", "La especie {$t} no está en el catálogo.");
                 }
                 if ($ent["table"] === "species_assessments") $c = syncServerSnapshot($pdo, $catalogId, $userId, $c);
-                // F11h: la visita de una marca y el sitio de una visita, si ya están en el servidor, son de este catálogo.
+                // La visita de una marca y el sitio de una visita, si ya están en el servidor, son de este catálogo.
                 syncSameCatalog($pdo, "visits", "visitID", $c["visit_id"] ?? null, $catalogId, "La visita de la marca");
                 if ($ent["table"] === "visits") syncSameCatalog($pdo, "sites", "siteID", $c["site_id"], $catalogId, "El sitio de la visita");
             } catch (SyncRejection $e) {
@@ -423,27 +423,27 @@ $stmt = $pdo->prepare(
 $stmt->execute([$catalogId, $since]);
 foreach ($stmt->fetchAll() as $r) $rows[] = ["note", $r, null];
 
-// Evaluaciones UICN (F8b): tampoco llevan coordenadas; las mismas reglas que las notas.
+// Evaluaciones UICN: tampoco llevan coordenadas; las mismas reglas que las notas.
 $stmt = $pdo->prepare(assessmentSelect("a.catalog_id = ? AND a.server_seq > ?") . " ORDER BY a.server_seq LIMIT " . ($limit + 1));
 $stmt->execute([$catalogId, $since]);
 foreach ($stmt->fetchAll() as $r) $rows[] = ["assessment", $r, null];
 
-// Parámetros de especie (F11f): sin coordenadas; los fijan owner y custodio por la API y aquí solo bajan.
+// Parámetros de especie: sin coordenadas; los fijan owner y custodio por la API y aquí solo bajan.
 $stmt = $pdo->prepare(parameterSelect("p.catalog_id = ? AND p.server_seq > ?") . " ORDER BY p.server_seq LIMIT " . ($limit + 1));
 $stmt->execute([$catalogId, $since]);
 foreach ($stmt->fetchAll() as $r) $rows[] = ["parameter", $r, null];
 
-// Localidades confirmadas (F11g): sin coordenadas (subpoblaciones por etiqueta); las fijan owner y custodio.
+// Localidades confirmadas: sin coordenadas (subpoblaciones por etiqueta); las fijan owner y custodio.
 $stmt = $pdo->prepare(locationsSelect("l.catalog_id = ? AND l.server_seq > ?") . " ORDER BY l.server_seq LIMIT " . ($limit + 1));
 $stmt->execute([$catalogId, $since]);
 foreach ($stmt->fetchAll() as $r) $rows[] = ["locations", $r, null];
 
-// Impactos (F11g): llevan sitio; impactOut() lo generaliza con el nivel más restrictivo de sus especies.
+// Impactos: llevan sitio; impactOut() lo generaliza con el nivel más restrictivo de sus especies.
 foreach (impactRows($pdo, "i.catalog_id = ? AND i.server_seq > ?", [$catalogId, $since], $catalogId, "ORDER BY i.server_seq LIMIT " . ($limit + 1)) as $x) {
     $rows[] = ["impact", $x[0], $x];
 }
 
-// Sitios y visitas (F11h): llevan sitio; siteOut()/visitOut() lo generalizan con el nivel más restrictivo de sus especies.
+// Sitios y visitas: llevan sitio; siteOut()/visitOut() lo generalizan con el nivel más restrictivo de sus especies.
 foreach (siteRows($pdo, "s.catalog_id = ? AND s.server_seq > ?", [$catalogId, $since], $catalogId, "ORDER BY s.server_seq LIMIT " . ($limit + 1)) as $x) {
     $rows[] = ["site", $x[0], $x];
 }
@@ -464,7 +464,7 @@ $locations = [];
 $sites = [];
 $visits = [];
 $exactForeign = 0;
-// F11h: una marca de visita sale con el nivel más restrictivo entre su especie y su visita (Lib/visits.php).
+// Una marca de visita sale con el nivel más restrictivo entre su especie y su visita (Lib/visits.php).
 $visitLevel = visitLevelMap($pdo, $catalogId, array_map(fn($x) => $x[1]["visit_id"] ?? null, array_filter($rows, fn($x) => $x[0] === "occurrence")));
 foreach ($rows as [$kind, $r, $extra]) {
     if ($kind === "site") { $sites[] = siteOut($r, $extra[1], $extra[2], $role, $userId); continue; }
@@ -480,8 +480,8 @@ foreach ($rows as [$kind, $r, $extra]) {
     if (!$item["deleted"] && !$item["generalized"] && $level < 4 && (int) $r["user_id"] !== $userId) $exactForeign++;
     $items[] = $item;
 }
-// Coordenadas exactas ajenas de especies sensibles (owner/custodian): una fila por petición.
-if ($exactForeign > 0) logAccess($pdo, $userId, "view_exact", $catalogId, (string) $exactForeign);
+// Coordenadas exactas ajenas de especies sensibles (owner/custodian): una fila por día (Lib/audit.php).
+if ($exactForeign > 0) logViewExact($pdo, $userId, $catalogId, "", $exactForeign);
 
 $stmt = $pdo->prepare("SELECT content_seq FROM catalogs WHERE id = ?");
 $stmt->execute([$catalogId]);

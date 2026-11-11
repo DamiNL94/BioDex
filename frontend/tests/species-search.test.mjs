@@ -1,5 +1,5 @@
 // ================================================================================================
-// Pruebas de js/species-search.js (buscador de especies, F11f):  node frontend/tests/species-search.test.mjs
+// Pruebas de js/species-search.js (buscador de especies):  node frontend/tests/species-search.test.mjs
 // Abreviaturas 3+3, tildes y mayúsculas, principio de palabra, grupos y orden (recientes → cerca → resto).
 // ================================================================================================
 import assert from 'node:assert/strict';
@@ -118,7 +118,7 @@ assert.deepEqual(ids(withText), ['7', '1'], 'Saxifraga (reciente) antes que Ping
 const abbrFirst = searchSpecies(SP, { query: 'saxnev', recent: new Map(), near });
 assert.deepEqual(ids(abbrFirst), ['7']);
 
-// F11h: con una visita en curso, sus especies objetivo van antes que nada (también antes que las recientes)
+// Con una visita en curso, sus especies objetivo van antes que nada (también antes que las recientes)
 const visit = searchSpecies(SP, { recent, near, targets: new Set(['1', '3']) });
 assert.deepEqual(ids(visit).slice(0, 2), ['3', '1'], 'objetivo primero (alfabético entre ellas: Aquila, Pinguicula)');
 assert.deepEqual(visit.slice(0, 3).map((r) => r.tier), ['target', 'target', 'recent']);

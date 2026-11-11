@@ -1,5 +1,5 @@
 // ================================================================================================
-// components/visit-bar.js — barra fija de la visita en curso (F11h), en todas las pestañas, bajo los avisos.
+// components/visit-bar.js — barra fija de la visita en curso, en todas las pestañas, bajo los avisos.
 // ------------------------------------------------------------------------------------------------
 // Sitio, tiempo transcurrido y especies objetivo contadas o pendientes; «Cerrar visita» abre el resumen
 // (views/visit-sheet.js). Con «Grabar transecto», aquí vive el GPS que graba la traza (solo con la página visible:

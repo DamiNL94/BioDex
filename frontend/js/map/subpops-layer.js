@@ -1,5 +1,5 @@
 // ================================================================================================
-// map/subpops-layer.js — capa «Subpoblaciones» del mapa de estudio (F11g): las de la especie elegida en
+// map/subpops-layer.js — capa «Subpoblaciones» del mapa de estudio: las de la especie elegida en
 // Filtros, con un color por subpoblación, y sus impactos (punto + radio o perímetro, discontinuos).
 // La geometría llega ya recortada según la confianza (Lib/assessment.php, la regla de applyVisibility):
 //   full         casco de cada subpoblación (o un círculo pequeño si tiene menos de 3 puntos) y sus celdas de 2 km

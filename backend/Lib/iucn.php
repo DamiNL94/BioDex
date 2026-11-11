@@ -1,6 +1,6 @@
 <?php
 // ================================================================================================
-// iucn.php — motor de evaluación UICN y cuantificadores de B, C y D (F11g): el cálculo DEFINITIVO.
+// iucn.php — motor de evaluación UICN y cuantificadores de B, C y D: el cálculo DEFINITIVO.
 // ------------------------------------------------------------------------------------------------
 // Port de shared/iucn-engine.js (evaluateIucn, assessIucn, regionalStep2) y de shared/iucn-quantifiers.js
 // (prepareRecords, matureEstimate, subpopulations, fragmentation, proposeLocations, quantify, engineInputs),
@@ -10,7 +10,7 @@
 // ================================================================================================
 
 require_once __DIR__ . "/utm.php";
-require_once __DIR__ . "/series.php";   // F11h: series temporales (A y C1)
+require_once __DIR__ . "/series.php";   // Series temporales (A y C1)
 
 const IUCN_CRITERIA_JSON = __DIR__ . "/../../shared/iucn-criteria.json";
 const IUCN_THREATS_JSON  = __DIR__ . "/../../shared/iucn-threats.json";
@@ -121,7 +121,7 @@ function iucnEvalA(?array $inp, array &$ctx): array {
     $cats = $ctx["cats"];
     if (!$inp || !empty($inp["skip"])) return !empty($inp["reason"]) ? iucnSkipped($cats, $inp["reason"]) : iucnSkipped($cats);
     if (!is_array($inp["items"] ?? null)) return iucnEvalAItem($inp, $ctx);
-    // F11h: varios subcriterios (pasado, proyección, ventana mixta) con la misma serie (ver evalA de JS).
+    // Varios subcriterios (pasado, proyección, ventana mixta) con la misma serie (ver evalA de JS).
     $parts = array_map(fn($it) => iucnEvalAItem($it, $ctx), $inp["items"]);
     if (!$parts) return iucnSkipped($cats);
     $res = ["status" => "evaluated", "levels" => iucnEmptyLevels($cats), "notes" => [], "items" => array_map(fn($p, $it) => [
@@ -268,7 +268,7 @@ function iucnEvalC(?array $inp, array &$ctx): array {
         $lv["reasons"][] = "Maduros {$mature["value"]} " . ($small ? "<" : "≥") . " {$t} " . ($small ? "✓" : "✗");
         $c1 = false;
         if (isset($rate["value"])) {
-            // F11h: con la tasa de la serie, la disminución en la ventana de esta categoría: 1 − e^(r·W).
+            // Con la tasa de la serie, la disminución en la ventana de esta categoría: 1 − e^(r·W).
             $th = $C["C1"]["thresholds"][$c];
             $w = iucnWindowYears($th, $gen);
             $pct = max(0.0, iucnRound(100 * (1 - exp($rate["value"] * $w)), 2));
@@ -471,7 +471,7 @@ function iucnScenarioInputs(array $inputs, string $scenario): array {
         foreach ($fields as $f => $dir) {
             if (array_key_exists($f, $inputs[$k])) $inputs[$k][$f] = iucnScenarioValue($inputs[$k][$f], $dir, $scenario);
         }
-        // F11h: A con varios subcriterios, cada uno con su reducción (con intervalo).
+        // A con varios subcriterios, cada uno con su reducción (con intervalo).
         if ($k === "A" && is_array($inputs["A"]["items"] ?? null)) {
             foreach ($inputs["A"]["items"] as $i => $it) {
                 if (array_key_exists("reductionPct", $it)) $inputs["A"]["items"][$i]["reductionPct"] = iucnScenarioValue($it["reductionPct"], "higher", $scenario);
@@ -940,7 +940,7 @@ function iucnLocationsCurrent(?array $loc, array $q): bool {
     return true;
 }
 
-/** Port de engineInputs(). F11h: $series = seriesAnalyze() (A y C1). */
+/** Port de engineInputs(). $series = seriesAnalyze() (A y C1). */
 function iucnEngineInputs(array $q, array $params = [], array $metrics = [], ?array $locations = null, array $choices = [], ?array $series = null): array {
     $fromSeries = seriesEngineInputs($series, $params);
     $yes = fn($k) => iucnParamValue($params, $k) === "yes";

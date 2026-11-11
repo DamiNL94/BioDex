@@ -1,6 +1,6 @@
 <?php
 // ================================================================================================
-// Equipo de un catálogo (F6). Lo incluye Api/catalogs.php para estas rutas (no se sirve solo):
+// Equipo de un catálogo. Lo incluye Api/catalogs.php para estas rutas (no se sirve solo):
 //   GET    /api/catalogs/{id}/members                 view: miembros (email solo para el owner)
 //   PUT    /api/catalogs/{id}/members/{userId}        manage_members {role}: custodian·editor·viewer
 //   DELETE /api/catalogs/{id}/members/{userId}        manage_members: expulsar
@@ -61,6 +61,13 @@ function routeInt(?string $v): int {
     return $n;
 }
 
+/** «3» → «Recibió 3 coordenadas exactas ajenas»; «EOO/AOO 9918: 4» → «EOO/AOO de Artemisia granatensis: 4 coordenadas exactas ajenas». */
+function viewExactDetail(string $t, array $species): string {
+    $n = fn(int $k) => $k === 1 ? "1 coordenada exacta ajena" : "{$k} coordenadas exactas ajenas";
+    if (preg_match('/^(.+) (\S+): (\d+)$/', $t, $m)) return "{$m[1]} de " . ($species[$m[2]] ?? $m[2]) . ": " . $n((int) $m[3]);
+    return "Recibió " . $n((int) $t);
+}
+
 /** Texto legible de una fila de access_log: nombres en vez de ids y roles en castellano. */
 function auditDetail(array $r, array $names, array $species): string {
     $t = (string) $r["target"];
@@ -71,7 +78,7 @@ function auditDetail(array $r, array $names, array $species): string {
     $t = preg_replace('/invite:(\d+)/', 'invitación #$1', $t);
     $t = mb_strtoupper(mb_substr($t, 0, 1)) . mb_substr($t, 1);   // «Invitación #3 …»
     return match ($r["action"]) {
-        "view_exact"   => (int) $t === 1 ? "Recibió 1 coordenada exacta ajena" : "Recibió {$t} coordenadas exactas ajenas",
+        "view_exact"   => viewExactDetail($t, $species),
         "login_failed" => "Contraseña incorrecta al transferir la propiedad",
         "set_level", "set_reference", "photo_review", "set_parameter", "set_locations" => preg_replace_callback('/^([^:]+):/', fn($m) => ($species[$m[1]] ?? $m[1]) . ":", $t),
         default        => $t,
@@ -310,6 +317,7 @@ foreach ($rows as $r) {
     preg_match_all('/user:(\d+)/', (string) $r["target"], $mm);
     foreach ($mm[1] as $id) $userIds[(int) $id] = true;
     if (in_array($r["action"], ["set_level", "set_reference", "photo_review", "set_parameter", "set_locations"], true) && preg_match('/^([^:]+):/', (string) $r["target"], $t)) $taxa[$t[1]] = true;
+    if ($r["action"] === "view_exact" && preg_match('/^.+ (\S+): \d+$/', (string) $r["target"], $t)) $taxa[$t[1]] = true;
 }
 $names = [];
 if ($userIds) {

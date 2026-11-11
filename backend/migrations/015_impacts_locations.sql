@@ -1,4 +1,4 @@
--- F11g · Cuantificadores UICN (B, C, D) e impactos (docs/iucn.md, docs/db.md).
+-- Cuantificadores UICN (B, C, D) e impactos (docs/iucn.md, docs/db.md).
 --   impacts            impacto registrado en campo (también sin red): amenaza del esquema de la UICN (v3.3), punto + radio o
 --                      polígono, fecha, intensidad, alcance, temporalidad y nota. Se sincroniza como las marcas (UUID del
 --                      cliente, client_updated_at decide, solo el autor edita o borra, server_seq común y tombstones).

@@ -1,6 +1,6 @@
 <?php
 // ================================================================================================
-// teams.php — equipos (F6): códigos de invitación, ORCID, orden de roles y época de visibilidad.
+// teams.php — equipos: códigos de invitación, ORCID, orden de roles y época de visibilidad.
 // ------------------------------------------------------------------------------------------------
 // Códigos: 128 bits aleatorios en base32 (RFC 4648, sin relleno: 26 caracteres). En la BD solo su
 // SHA-256; el código en claro sale UNA vez, en la respuesta que crea la invitación (y en el correo).

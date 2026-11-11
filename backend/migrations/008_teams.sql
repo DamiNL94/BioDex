@@ -1,4 +1,4 @@
--- F6 · Equipos: invitaciones con código cifrado y usos, época de visibilidad por miembro, nuevas acciones
+-- Equipos: invitaciones con código cifrado y usos, época de visibilidad por miembro, nuevas acciones
 -- de auditoría, ORCID validado y límite de intentos al aceptar invitaciones.
 
 -- Invitaciones: el código solo se guarda como SHA-256 (se muestra una vez al crearlo). Un enlace admite

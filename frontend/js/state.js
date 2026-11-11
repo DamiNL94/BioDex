@@ -5,7 +5,7 @@
 //   biodex.user           último `user` de la API: permite entrar sin red (días en el campo)
 //   biodex.activeCatalog  {id, name, role} del catálogo con el que se trabaja
 //   biodex.theme          'system' | 'light' | 'dark'
-//   biodex.activeVisit    (F11h) visita en curso {userId, visitID, catalogId, siteID, siteName, startedAt, species, recording}:
+//   biodex.activeVisit    visita en curso {userId, visitID, catalogId, siteID, siteName, startedAt, species, recording}:
 //                         la barra de visita sigue ahí aunque se cierre la app a mitad de muestreo
 // Catálogos, especies, marcas y la cola de envío NO van aquí: van a IndexedDB (db.js), una base por usuario.
 // ================================================================================================
@@ -33,7 +33,7 @@ export const state = {
     unauthorized: false, nextRetryAt: null, revoked: [] },
   // Descargas en curso: catalogId → {phase, done, total}.
   downloads: {},
-  // F11h: visita en curso (js/visits.js). Solo la del usuario con sesión.
+  // Visita en curso (js/visits.js). Solo la del usuario con sesión.
   visit: store.get('biodex.activeVisit'),
 };
 
@@ -84,7 +84,7 @@ export function setDownload(catalogId, progress) {
   emit('download');
 }
 
-/** Visita en curso (F11h) o null; avisa con la clave 'visit'. */
+/** Visita en curso o null; avisa con la clave 'visit'. */
 export function setVisit(visit) {
   state.visit = visit || null;
   if (visit) store.set('biodex.activeVisit', visit); else store.remove('biodex.activeVisit');

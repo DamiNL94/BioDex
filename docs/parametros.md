@@ -1,4 +1,4 @@
-# Parámetros de especie (F11f)
+# Parámetros de especie
 
 Base para F11g (cuantificadores UICN de B, C y D) y F11h (visitas y criterio A): características de una especie
 **en un catálogo** que piden los criterios y que BioDex no puede deducir de las marcas. Dos equipos pueden usar
@@ -13,23 +13,23 @@ Pruebas: `bin/test-f11f.php` y `frontend/tests/e2e/f11f.spec.mjs`.
 | Clave | Unidad | Tipo | Para qué | Bloquea si falta |
 |---|---|---|---|---|
 | `generation_length` | años | número (0,1–500) | ventana de 10 años o 3 generaciones | A, C1 |
-| `separation_distance` | km | número | qué registros son subpoblaciones distintas (F11g) | B (subpoblaciones), C2a |
-| `dispersal_distance` | km | número | fragmentación grave (F11g) | B (fragmentación) |
+| `separation_distance` | km | número | qué registros son subpoblaciones distintas | B (subpoblaciones), C2a |
+| `dispersal_distance` | km | número | fragmentación grave | B (fragmentación) |
 | `mature_definition` | — | texto (≤ 2000) | qué cuenta como individuo maduro; en clonales, ramet o genet | C, D |
-| `min_viable_subpop` | individuos maduros | entero | fragmentación: subpoblación demasiado pequeña para ser viable (F11g) | B (fragmentación) |
+| `min_viable_subpop` | individuos maduros | entero | fragmentación: subpoblación demasiado pequeña para ser viable | B (fragmentación) |
 | `life_form` | — | lista: `perennial` perenne · `annual` anual · `biennial` bianual · `monocarpic` monocárpica · `other` otra | orienta la generación y cómo contar | — |
-| `occupied_habitat_km2` (F11g) | km² | número | maduros estimados = densidad de las parcelas × superficie | C, D (maduros estimados) |
-| `decline_b_i` … `decline_b_v`, `fluct_c_i` … `fluct_c_iv`, `plausible_threat` (F11g) | — | hecho: `yes` · `no` · `unknown` | disminución continua (b), fluctuaciones extremas (c), amenaza plausible de D2 | B, C2, D2 |
-| `regional_endemic`, `regional_immigration`, `regional_immigration_decrease`, `regional_sink` (F11g) | — | hecho | ajuste regional, paso 2 de las Directrices v4.0 | ajuste regional |
+| `occupied_habitat_km2` | km² | número | maduros estimados = densidad de las parcelas × superficie | C, D (maduros estimados) |
+| `decline_b_i` … `decline_b_v`, `fluct_c_i` … `fluct_c_iv`, `plausible_threat` | — | hecho: `yes` · `no` · `unknown` | disminución continua (b), fluctuaciones extremas (c), amenaza plausible de D2 | B, C2, D2 |
+| `regional_endemic`, `regional_immigration`, `regional_immigration_decrease`, `regional_sink` | — | hecho | ajuste regional, paso 2 de las Directrices v4.0 | ajuste regional |
 
-Los hechos (F11g) llevan además `justification` (≤ 4000). Se fijan en la pestaña Evaluación UICN, no en Parámetros.
+Los hechos llevan además `justification` (≤ 4000). Se fijan en la pestaña Evaluación UICN, no en Parámetros.
 
 Cada valor guarda `value`, `value_min` y `value_max` (intervalo opcional: los dos o ninguno, y `value` dentro;
 un número admite solo el intervalo), `quality` (vocabulario de las Directrices UICN: `observed` observado ·
 `estimated` estimado · `inferred` inferido · `suspected` sospechado · `projected` proyectado), `source` (texto libre
 o referencia bibliográfica, ≤ 1000), `set_by` y `set_at`. Las comas decimales se aceptan («1,5»).
 
-Añadir una clave (F11g) es añadirla a `SPECIES_PARAMETERS` (servidor) y a `PARAMETERS` (cliente): la columna es
+Añadir una clave es añadirla a `SPECIES_PARAMETERS` (servidor) y a `PARAMETERS` (cliente): la columna es
 `VARCHAR`, no hace falta migración.
 
 ## Valor por defecto: distancia de separación

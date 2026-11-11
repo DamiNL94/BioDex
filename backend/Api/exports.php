@@ -1,13 +1,13 @@
 <?php
 // ================================================================================================
-// /api/catalogs/{id}/export — exportación del catálogo (F10a). Incluido desde Api/catalogs.php, que ya
+// /api/catalogs/{id}/export — exportación del catálogo. Incluido desde Api/catalogs.php, que ya
 // ha abierto la sesión ($pdo, $userId, $method) y deja la ruta en $exportRoute = [catalogId, sub].
 // ------------------------------------------------------------------------------------------------
 //   POST /api/catalogs/{id}/export/preview   view (full: export_full) → resumen y opciones, JSON
 //   POST /api/catalogs/{id}/export           view (full: export_full) → application/zip
 // Cuerpo de las dos: {mode: full|public, dateFrom?, dateTo?, taxonIDs?, observers?, includeAbsences?,
 // license?, title?, description?, formats?: [dwc|plinian|sheets]} (Lib/export.php, exportOptions()).
-// Si Plinian Core no valida contra su XSD, 500 con un mensaje claro y sin ZIP (F10c).
+// Si Plinian Core no valida contra su XSD, 500 con un mensaje claro y sin ZIP.
 // «full» (coordenadas exactas) solo owner y custodio, y cada descarga va a access_log (export_full).
 // El ZIP es la única respuesta de /api que no es JSON; sus errores sí lo son.
 // ================================================================================================

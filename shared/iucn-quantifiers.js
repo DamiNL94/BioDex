@@ -1,10 +1,10 @@
 // ================================================================================================
-// iucn-quantifiers.js — cuantificadores para los criterios B, C y D de la UICN (F11g). JS puro, sin DOM.
+// iucn-quantifiers.js — cuantificadores para los criterios B, C y D de la UICN. JS puro, sin DOM.
 // ------------------------------------------------------------------------------------------------
 // Lo usa el dispositivo (cálculo PROVISIONAL sin red, /shared/iucn-quantifiers.js) y lo repite en PHP
 // backend/Lib/iucn.php (el DEFINITIVO, con las coordenadas exactas). Los dos pasan los mismos casos:
 // shared/iucn-cases.json (node shared/iucn-engine.test.js · bin/test-f11g.php). Métodos y fórmulas:
-// docs/iucn.md › «Cuantificadores (F11g)».
+// docs/iucn.md › «Cuantificadores».
 //
 //   prepareRecords(records, project)            → puntos {id, x, y, lat, lon, t, day, mature, area}
 //   matureEstimate(points, opts)                → individuos maduros: mínimo observado, mejor y máximo
@@ -92,7 +92,7 @@ const later = (a, b) => (a.t !== b.t ? a.t > b.t : a.id > b.id);   // a es más 
 
 /**
  * El recuento más reciente por clave (celda de 50 m + día, o solo celda). Un RECUENTO son las marcas del
- * mismo autor a ≤ EVENT_WINDOW_MS de la más reciente: el conteo por casillas (F11e) guarda una marca por
+ * mismo autor a ≤ EVENT_WINDOW_MS de la más reciente: el conteo por casillas guarda una marca por
  * categoría en el mismo punto, y sus maduros se SUMAN. → un punto por clave: el de la marca más reciente,
  * con `mature` sumado y la superficie de la primera que la tenga.
  */
@@ -459,7 +459,7 @@ export function locationsCurrent(loc, q) {
 /**
  * Entradas del motor (assessIucn) a partir de los cuantificadores, los parámetros (hechos sí/no), el nº de
  * localidades CONFIRMADO (la propuesta no cuenta hasta que alguien la guarda) y las decisiones del usuario
- * (expertCategory NT/LC, possiblyExtinct). F11h: A y C1 salen de la serie temporal (`series`, analyzeSeries() de
+ * (expertCategory NT/LC, possiblyExtinct). A y C1 salen de la serie temporal (`series`, analyzeSeries() de
  * iucn-series.js) y de los hechos de A (seriesEngineInputs); E queda fuera de alcance.
  */
 export function engineInputs(q, { params = {}, metrics = {}, locations = null, choices = {}, series = null } = {}) {

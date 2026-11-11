@@ -1,6 +1,6 @@
 <?php
 // ================================================================================================
-// gbif.php — foto de respaldo de GBIF para especies de EIDOS sin foto de la Fototeca ni de iNaturalist (F11d).
+// gbif.php — foto de respaldo de GBIF para especies de EIDOS sin foto de la Fototeca ni de iNaturalist.
 // ------------------------------------------------------------------------------------------------
 // Tres piezas puras (sin red ni BD), probadas con las respuestas reales de docs/gbif-samples/:
 //   · gbifMatchDecide(): ¿el taxón de GBIF es la especie de EIDOS?

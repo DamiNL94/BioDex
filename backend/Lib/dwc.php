@@ -1,6 +1,6 @@
 <?php
 // ================================================================================================
-// dwc.php — Darwin Core de BioDex (F10a): términos con su URI, fila de occurrence.txt, meta.xml y eml.xml.
+// dwc.php — Darwin Core de BioDex: términos con su URI, fila de occurrence.txt, meta.xml y eml.xml.
 // ------------------------------------------------------------------------------------------------
 // Adaptado de NaturDex (Backend/Lib/dwc.php): una sola declaración término ↔ URI, de la que salen la
 // cabecera del TSV y meta.xml (así no pueden discrepar). Los valores de campo pasan por dwcTsvValue():
@@ -8,7 +8,7 @@
 //
 // La coordenada que llega aquí YA es la que se puede publicar: la decide export.php con applyVisibility()
 // (modo completo) o applyPublicVisibility() (modo «para publicar»). Este fichero no generaliza nada.
-// F11h: el archivo pasa a tener NÚCLEO EVENT (event.txt: visitas, sitios como eventos padre y un evento por marca
+// El archivo pasa a tener NÚCLEO EVENT (event.txt: visitas, sitios como eventos padre y un evento por marca
 // oportunista), con occurrence.txt como extensión (su primera columna, eventID, es el coreid) y las medidas en la
 // extensión Extended MeasurementOrFact (admite occurrenceID además del eventID del núcleo).
 // Mapeo término a término: docs/dwc.md.
@@ -33,7 +33,7 @@ const DWC_OCCURRENCE_TERMS = [
 ];
 
 const DWC_ROWTYPE_OCCURRENCE = "http://rs.tdwg.org/dwc/terms/Occurrence";
-// F11h · núcleo Event
+// Núcleo Event
 const DWC_ROWTYPE_EVENT      = "http://rs.tdwg.org/dwc/terms/Event";
 const DWC_ROWTYPE_EMOF       = "http://rs.iobis.org/obis/terms/ExtendedMeasurementOrFact";
 
@@ -138,7 +138,7 @@ function dwcXml(string $s): string {
 }
 
 /**
- * F11h · descriptor del archivo con núcleo Event: event.txt (núcleo, <id> = eventID), occurrence.txt (extensión,
+ * Descriptor del archivo con núcleo Event: event.txt (núcleo, <id> = eventID), occurrence.txt (extensión,
  * coreid = su columna 0, eventID) y, si hay medidas, measurementorfact.txt (eMoF, coreid = eventID). Los <field> salen
  * de las mismas listas que las cabeceras: no pueden discrepar.
  */

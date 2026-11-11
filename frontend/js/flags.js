@@ -1,9 +1,9 @@
 // ================================================================================================
-// flags.js — funciones a medio hacer que no se enseñan todavía (F11f).
+// flags.js — funciones a medio hacer que no se enseñan todavía.
 // ------------------------------------------------------------------------------------------------
 // Se activan por dispositivo con localStorage `biodex.flags` = {"<nombre>": true} (desde la consola), sin
 // tocar el código ni la CSP. Cada flag dice qué fase la rellena. Ahora mismo no hay ninguna: `impact` (el
-// botón «Impacto») ya está activo para todos desde F11g.
+// botón «Impacto») ya está activo para todos.
 // ================================================================================================
 
 import { store } from './util.js';

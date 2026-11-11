@@ -1,4 +1,4 @@
--- F8b · Evaluaciones UICN de una especie en el ámbito de un catálogo (asistente del móvil).
+-- Evaluaciones UICN de una especie en el ámbito de un catálogo (asistente del móvil).
 -- Se sincronizan como las marcas y las notas: UUID del cliente, client_updated_at decide, solo el autor
 -- las edita o borra, server_seq del contador común y tombstones (docs/sync.md).
 -- BioDex PROPONE la categoría con el motor shared/iucn-engine.js en el dispositivo; aquí se guardan los
@@ -40,8 +40,7 @@ CREATE TABLE IF NOT EXISTS species_assessments (
     CONSTRAINT fk_assess_species FOREIGN KEY (taxonID)          REFERENCES species (taxonID) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Marcar o quitar la evaluación de referencia va a access_log (CLAUDE.md: registrar cambios de nivel y rol,
--- y F8b: la referencia).
+-- Marcar o quitar la evaluación de referencia va a access_log, como los cambios de nivel y de rol.
 ALTER TABLE access_log
     MODIFY action ENUM('view_exact','export_full','set_level','grant_role','revoke_role','login_failed',
                        'invite_created','invite_revoked','member_joined','member_removed','member_left',

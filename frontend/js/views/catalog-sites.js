@@ -1,5 +1,5 @@
 // ================================================================================================
-// views/catalog-sites.js — pestaña «Sitios» del catálogo (F11h): lista y mapa de los sitios de muestreo, y crear o
+// views/catalog-sites.js — pestaña «Sitios» del catálogo: lista y mapa de los sitios de muestreo, y crear o
 // dibujar sitios desde casa («llegar con los deberes hechos»): punto + radio, polígono (parcela) o línea (transecto con
 // banda). Nombre, tipo, especies objetivo, protocolo y, si se conoce, la superficie. Sin red también: va a la cola como
 // todo (js/visits.js) y sync.js lo sube. Solo el autor de un sitio lo edita o lo borra.

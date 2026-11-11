@@ -1,4 +1,4 @@
-# Evaluación UICN (F8b, F11g, F11h)
+# Evaluación UICN
 
 Motor: `shared/iucn-engine.js` (`evaluateIucn(inputs, criteria)`, JS puro). Umbrales: `shared/iucn-criteria.json`, única
 fuente; en el código no hay ninguno. nginx sirve **solo** esos dos ficheros en `/shared/` (sin copia en `frontend/`: la
@@ -50,14 +50,14 @@ Criterios de la Lista Roja de la UICN.» No sustituye a las evaluaciones oficial
 - Un solo valor por dato en el asistente de F8b (desde F11g la pestaña Evaluación UICN admite intervalos, y desde F11h
   A admite varios subcriterios a la vez con `A.items`).
 - C1 y E comparan el plazo introducido con la ventana de cada categoría; sin duración de generación solo cuentan años.
-  Con series (F11h), C1 usa la tasa anual y la ventana de cada categoría.
+  Con series, C1 usa la tasa anual y la ventana de cada categoría.
 - La serie supone una tasa constante (log-lineal): no detecta un cambio de tendencia dentro de la ventana; mírese el
   gráfico. El índice depende de que los sitios representen a la población.
 - El servidor guarda `inputs` y `result` tal como salen del dispositivo, sin recalcular (el motor es JS); valida la
   forma, los vocabularios y la coherencia mínima (final con categoría, ajuste con justificación).
 - La AOO debe medirse en celdas de 2×2 km para compararla con B2 (`criteria.B.metrics`).
 
-## EOO y AOO en BioDex (F9)
+## EOO y AOO en BioDex
 Cálculo: `shared/geo-metrics.js` (dispositivo) y su port `backend/Lib/metrics.php` + `Lib/utm.php` (servidor), con los
 mismos casos: `shared/metrics-cases.json` (`node shared/geo-metrics.test.js` · `bin/test-f9.php`, ±0,01 km²).
 - **EOO**: área del polígono convexo mínimo de los registros (cadena monótona de Andrew + fórmula del lazo), en km².
@@ -85,7 +85,7 @@ sus marcas. El casco convexo incluye zonas no habitables: así lo define la UICN
 La rejilla anclada puede variar la AOO (de ahí el rango). Pendiente: contrastar la referencia con shapely/pyproj
 (`backend/bin/metrics-reference.py`); hoy es PROJ (`cs2cs`) + envoltura de Jarvis.
 
-## Cuantificadores e incertidumbre (F11g)
+## Cuantificadores e incertidumbre
 La pestaña **Evaluación UICN** de la página de especie (`components/species-iucn.js`) sustituye al asistente: calcula
 las entradas de B, C y D a partir de las marcas, los parámetros (`docs/parametros.md`), los impactos y las localidades
 confirmadas, y pasa el motor. El asistente de F8b solo queda para editar las evaluaciones antiguas.
@@ -154,7 +154,7 @@ justificación (parámetros de tipo `fact`). BioDex **sugiere** b(iii) cuando ha
 especie, pero la sugerencia nunca cuenta sola: alguien tiene que fijar el hecho. C2 usa b(v) como disminución continua y
 c(iv) como fluctuación extrema. Desde F11h la serie temporal sugiere también b(v) y c(iv) (abajo).
 
-## Series temporales: criterios A y C1 (F11h)
+## Series temporales: criterios A y C1
 Código: `shared/iucn-series.js` (dispositivo: gráfico y provisional) y `backend/Lib/series.php` (definitivo, el mismo
 cálculo). Casos: `shared/iucn-cases.json › series`, generados con `backend/bin/series-reference.py` (statsmodels 0.15 para
 los casos con ruido; los de dos sitios sin ruido tienen solución analítica: r exacta, EE = 1/√Σ μ (t − t̄ₛ)²). Los

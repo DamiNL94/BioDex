@@ -50,10 +50,6 @@ function byId(array $list, string $id): ?array {
     return null;
 }
 
-function syncSeq(PDO $pdo): int {
-    return (int) $pdo->query("SELECT value FROM sync_seq WHERE id = 1")->fetchColumn();
-}
-
 // ------------------------------------------------------------------------------------------------
 section("Usuarios y catálogo");
 $suffix = bin2hex(random_bytes(4));
@@ -237,12 +233,26 @@ $ref($o, $e3["assessmentID"]);
 $n = (int) $pdo->query("SELECT COUNT(*) FROM species_assessments WHERE is_reference = 1 AND catalog_id = " . $pdo->quote($cat))->fetchColumn();
 check("O quita la referencia con null → ninguna, y se registra", $c === 200 && array_key_exists("reference", $r) && $r["reference"] === null && $n === 0 && $logs() === 7, "HTTP {$c}");
 
-// Registro del catálogo (F6) con la acción nueva y el nombre de la especie.
+// Registro del catálogo con la acción nueva y el nombre de la especie.
 [$c, $r] = http("GET", "/api/catalogs/{$cat}/audit", null, $o);
 $entry = null;
 foreach ($r["items"] ?? [] as $it) if ($it["action"] === "set_reference") { $entry = $it; break; }
 check("el Registro del catálogo muestra la referencia con el nombre de la especie", $c === 200 && $entry
     && str_starts_with($entry["detail"], "Artemisia granatensis"), json_encode($entry));
+
+// Editada DESPUÉS de marcarla: volver a marcarla la confirma (fecha nueva y registro); sin otra edición, nada.
+$ref($o, $e3["assessmentID"]);
+$refAt = (string) $pdo->query("SELECT reference_set_at FROM species_assessments WHERE assessmentID = " . $pdo->quote($e3["assessmentID"]))->fetchColumn();
+sleep(1);
+$one($a, ["clientUpdatedAt" => gmdate("Y-m-d\TH:i:s.000\Z"), "justification" => "Revisada otra vez."] + $e3);
+[$c, $r] = $ref($o, $e3["assessmentID"]);
+check("editada tras marcarla: marcarla otra vez la confirma (changed, fecha nueva)", $c === 200 && ($r["changed"] ?? null) === true
+    && ($r["reference"]["referenceSetAt"] ?? "") > str_replace(" ", "T", $refAt) . "Z" && $logs() === 9, json_encode($r));
+$stmt = $pdo->prepare("SELECT target FROM access_log WHERE action = 'set_reference' AND catalog_id = ? ORDER BY id DESC LIMIT 1");
+$stmt->execute([$cat]);
+check("…el registro dice que se confirmó tras editarla", str_ends_with((string) $stmt->fetchColumn(), "confirmada tras editarla"));
+[$c, $r] = $ref($o, $e3["assessmentID"]);
+check("…y otra vez sin editarla: sin cambio ni registro", $c === 200 && ($r["changed"] ?? null) === false && $logs() === 9, json_encode($r));
 
 // ------------------------------------------------------------------------------------------------
 section("Lotes mixtos");

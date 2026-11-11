@@ -1,8 +1,8 @@
 <?php
 // ================================================================================================
-// assessment.php — evaluación UICN de una especie en un catálogo calculada en el servidor (F11g).
+// assessment.php — evaluación UICN de una especie en un catálogo calculada en el servidor.
 // ------------------------------------------------------------------------------------------------
-// GET /api/catalogs/{id}/species/{taxonID}/assessment: con las coordenadas EXACTAS (como EOO/AOO, F9) junta
+// GET /api/catalogs/{id}/species/{taxonID}/assessment: con las coordenadas EXACTAS (como EOO/AOO) junta
 // EOO/AOO, maduros, subpoblaciones, fragmentación, localidades (propuesta y confirmadas), hechos y parámetros,
 // y pasa el motor (Lib/iucn.php). Cifras para cualquier miembro; la geometría de las subpoblaciones, según la
 // confianza (metricsGeometryAccess, la misma regla que applyVisibility): casco y celdas a quien ve exactas;
@@ -122,7 +122,7 @@ function assessmentRecords(PDO $pdo, string $catalogId, string $taxonID): array 
 }
 
 /**
- * F11h: serie temporal de la especie (Lib/series.php) con las visitas a SITIOS del catálogo en las que se contó: maduros
+ * Serie temporal de la especie (Lib/series.php) con las visitas a SITIOS del catálogo en las que se contó: maduros
  * por visita (las ausencias, 0), máximo por sitio y año, índice anual, tasa r con IC y reducción en la ventana de A.
  * Sin coordenadas: sitios por nombre, para cualquier miembro.
  */
@@ -211,12 +211,12 @@ function speciesAssessment(PDO $pdo, string $catalogId, string $taxonID, int $us
     $inputs = iucnEngineInputs($q, $params, $metrics, $locations, [], $series);
     $result = assessIucn($inputs);
 
-    // F11h: marcas de visitas a sitios de especies más sensibles: la geometría sale con ese nivel (Lib/visits.php).
+    // Marcas de visitas a sitios de especies más sensibles: la geometría sale con ese nivel (Lib/visits.php).
     $level = min($level, speciesVisitLevel($pdo, $catalogId, $taxonID));
     $access = metricsGeometryAccess($role, $level, "team");
     $foreign = count(array_filter($rows, fn($r) => (int) $r["user_id"] !== $userId));
     if ($access === "full" && $level < 4 && $foreign > 0 && canSeeExact($role, false) && $q["subpops"]["subpops"]) {
-        logAccess($pdo, $userId, "view_exact", $catalogId, "Subpoblaciones {$taxonID}: {$foreign}");
+        logViewExact($pdo, $userId, $catalogId, "Subpoblaciones {$taxonID}", $foreign);
     }
     $mature = $q["mature"];
     unset($mature["kept"]);

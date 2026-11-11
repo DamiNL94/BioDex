@@ -1,5 +1,5 @@
 // ================================================================================================
-// components/species-parameters.js — pestaña «Parámetros» de la ficha de especie (F11f).
+// components/species-parameters.js — pestaña «Parámetros» de la ficha de especie.
 // ------------------------------------------------------------------------------------------------
 // Características de la especie EN ESTE CATÁLOGO que piden los criterios UICN y no salen de las marcas
 // (docs/parametros.md). owner y custodio las editan (con red: PUT/DELETE /api/catalogs/{id}/species/
@@ -37,7 +37,7 @@ export const PARAMETERS = [
   { key: 'life_form', label: 'Forma de vida', type: 'choice', unit: null,
     choices: { perennial: 'Perenne', annual: 'Anual', biennial: 'Bianual', monocarpic: 'Monocárpica (florece una vez)', other: 'Otra' },
     help: 'Orienta la duración de la generación y cómo contar individuos.', criteria: [] },
-  // F11g: con parcelas de superficie conocida, maduros estimados = densidad media × esta superficie.
+  // Con parcelas de superficie conocida, maduros estimados = densidad media × esta superficie.
   { key: 'occupied_habitat_km2', label: 'Superficie de hábitat ocupado', type: 'number', unit: 'km²', step: 'any',
     help: 'Superficie de hábitat donde vive la especie en el área. Con las parcelas (marcas con superficie contada) estima el total de maduros; sin ella, la AOO es solo una cota superior.',
     criteria: ['C, D (maduros estimados)'] },
@@ -275,7 +275,7 @@ export function mountParameters(el, { species, catalog }) {
     if (btn) btn.focus();
   }
 
-  /** F11g: desde la pestaña Evaluación UICN, «rellenar este parámetro»: lo abre (si se puede editar) y lo enfoca. */
+  /** Desde la pestaña Evaluación UICN, «rellenar este parámetro»: lo abre (si se puede editar) y lo enfoca. */
   function focusKey(key) {
     if (!data) { refresh().then(() => focusKey(key)); return; }
     if (canEdit()) { editing = key; paint(); return; }

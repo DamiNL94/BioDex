@@ -1,5 +1,5 @@
 // ================================================================================================
-// components/species-minimap.js — minimapa de la pestaña «Registros» de la ficha (F11f): las marcas de
+// components/species-minimap.js — minimapa de la pestaña «Registros» de la ficha: las marcas de
 // la especie en el catálogo activo sobre IGN Base (las mismas teselas que el Mapa, por /tiles/; sin red
 // salen de las zonas descargadas o de la caché de uso).
 // Solo marcas con coordenada exacta: las generalizadas (celda de 1–10 km o sin punto) no se dibujan como un punto que

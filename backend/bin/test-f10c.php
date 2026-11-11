@@ -26,43 +26,6 @@ const ARTEMISIA = "9918";
 $pdo = db();
 runMigrations($pdo);
 
-/** Como http() de test-lib, pero devuelve el cuerpo sin decodificar (el ZIP). */
-function httpRaw(string $method, string $path, ?array $body, array $jar): array {
-    global $BASE;
-    $headers = [];
-    $ch = curl_init($BASE . $path);
-    $h = ["Content-Type: application/json"];
-    if ($jar) $h[] = "Cookie: " . implode("; ", array_map(fn($k, $v) => "{$k}={$v}", array_keys($jar), $jar));
-    curl_setopt_array($ch, [CURLOPT_CUSTOMREQUEST => $method, CURLOPT_RETURNTRANSFER => true, CURLOPT_HTTPHEADER => $h,
-        CURLOPT_TIMEOUT => 120, CURLOPT_POSTFIELDS => json_encode($body ?? new stdClass()),
-        CURLOPT_HEADERFUNCTION => function ($ch, $line) use (&$headers) {
-            if (preg_match("/^([\w-]+):\s*(.*)$/", trim($line), $m)) $headers[strtolower($m[1])] = $m[2];
-            return strlen($line);
-        }]);
-    $raw = (string) curl_exec($ch);
-    $code = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
-    curl_close($ch);
-    return [$code, $raw, $headers];
-}
-
-/** ZIP en memoria → [ruta interna → contenido]. Los .xlsx, desempaquetados («x.xlsx!parte»). */
-function unzipAll(string $raw): array {
-    $tmp = tempnam(sys_get_temp_dir(), "t10c");
-    file_put_contents($tmp, $raw);
-    $zip = new ZipArchive();
-    $out = [];
-    if ($zip->open($tmp) === true) {
-        for ($i = 0; $i < $zip->numFiles; $i++) {
-            $name = $zip->getNameIndex($i);
-            $out[$name] = $zip->getFromIndex($i);
-            if (str_ends_with($name, ".xlsx")) foreach (unzipAll($out[$name]) as $p => $c) $out["{$name}!{$p}"] = $c;
-        }
-        $zip->close();
-    }
-    unlink($tmp);
-    return $out;
-}
-
 /** Contenido sin lo que cambia entre dos descargas: UUID, fechas y horas. */
 function normalized(string $s): string {
     return preg_replace(['/[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/', '/\d{4}-\d{2}-\d{2}T[\d:.]+(Z|[+-]\d{2}:\d{2})/',
@@ -177,7 +140,7 @@ check("no es una lista → 400", $code === 400, "HTTP {$code}");
 // ------------------------------------------------------------------------------------------------
 section("«Para publicar» con Plinian Core (editor)");
 [$code, $raw] = $exp($e, ["mode" => "public", "formats" => $all]);
-$pub = unzipAll($raw);
+$pub = unzipAll($raw, true);
 check("200 con dwca/, hojas/, pliniancore/especies.xml y LEEME.txt", $code === 200 && isset($pub["dwca/occurrence.txt"], $pub["hojas/csv/especies.csv"],
     $pub[PLIC_FILE], $pub["LEEME.txt"]), "HTTP {$code} " . implode(", ", array_keys($pub)));
 $xml = $pub[PLIC_FILE] ?? "";
@@ -261,7 +224,7 @@ check("LEEME.txt y la hoja «Léeme» describen pliniancore/", str_contains($pub
 section("«Completa» con Plinian Core (owner)");
 $before = $logFull();
 [$code, $raw] = $exp($o, ["mode" => "full", "formats" => $all, "license" => "CC0-1.0"]);
-$full = unzipAll($raw);
+$full = unzipAll($raw, true);
 $fxml = $full[PLIC_FILE] ?? "";
 check("200, valida y una fila export_full", $code === 200 && plinianValidate($fxml) === [] && $logFull() === $before + 1, "HTTP {$code}");
 $fxp = plicXPath($fxml);
@@ -273,7 +236,7 @@ check("título «no publicar» y licencia CC0", str_contains($fxml, "no publicar
 // ------------------------------------------------------------------------------------------------
 section("Filtros y combinaciones de formatos");
 [$code, $raw] = $exp($e, ["mode" => "public", "formats" => ["plinian"], "taxonIDs" => [ARTEMISIA], "dateFrom" => "2026-07-01"]);
-$only = unzipAll($raw);
+$only = unzipAll($raw, true);
 $onlyNames = array_keys($only);
 sort($onlyNames);
 check("solo Plinian Core: pliniancore/ y LEEME.txt, nada más", $code === 200 && $onlyNames === ["LEEME.txt", PLIC_FILE], implode(", ", $onlyNames));
@@ -291,7 +254,7 @@ check("plinianValidate rechaza un elemento inventado", plinianValidate(str_repla
 // ------------------------------------------------------------------------------------------------
 section("Regresión: sin Plinian Core, el ZIP de F10a");
 foreach (["public" => $e, "full" => $o] as $mode => $jar) {
-    $zip = fn(array $extra) => unzipAll($exp($jar, ["mode" => $mode] + $extra)[1]);
+    $zip = fn(array $extra) => unzipAll($exp($jar, ["mode" => $mode] + $extra)[1], true);
     $default = $zip([]);
     $explicit = $zip(["formats" => ["dwc", "sheets"]]);
     check("{$mode}: sin «formats», los ficheros de F10a y ni rastro de pliniancore", !array_filter(array_keys($default), fn($k) => str_starts_with($k, "pliniancore/"))
@@ -312,7 +275,7 @@ if ($demo) {
         $prep = exportPrepare($pdo, $demo["id"], $demo, $opt, "owner", (int) $demo["owner_id"]);
         try {
             [$zipPath] = exportBuild($pdo, $demo["id"], $demo, $opt, $prep, (int) $demo["owner_id"], "test-f10c");
-            $dz = unzipAll((string) file_get_contents($zipPath));
+            $dz = unzipAll((string) file_get_contents($zipPath), true);
             unlink($zipPath);
             check("DEMO «{$mode}»: Plinian Core válido con " . count($prep["species"]) . " especies y la evaluación de la Artemisia",
                 plinianValidate($dz[PLIC_FILE] ?? "") === [] && str_contains($dz[PLIC_FILE] ?? "", PLIC_BIODEX_AUTHORITY));

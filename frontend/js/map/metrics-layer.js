@@ -1,5 +1,5 @@
 // ================================================================================================
-// map/metrics-layer.js — capa «EOO / AOO» de la especie elegida en el mapa (F9).
+// map/metrics-layer.js — capa «EOO / AOO» de la especie elegida en el mapa.
 // ------------------------------------------------------------------------------------------------
 // Dibuja lo que manda el servidor según la confianza (js/metrics.js, Lib/metrics.php):
 //   full         polígono convexo mínimo (EOO) y celdas UTM de la AOO (en grados no son rectángulos:

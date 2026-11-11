@@ -1,5 +1,5 @@
 // ================================================================================================
-// components/species-picker.js — buscador de especies del modo campo (F11f): la hoja de marcar (elegir
+// components/species-picker.js — buscador de especies del modo campo: la hoja de marcar (elegir
 // la especie) y la pestaña Especies en el móvil (abrir la ficha o marcar).
 // ------------------------------------------------------------------------------------------------
 // · Un solo cuadro: nombre común, científico o abreviatura 3+3 («pinnev»), sin tildes ni mayúsculas
@@ -44,7 +44,7 @@ function names(sp) {
  *   selectedId  taxonID marcado como elegido (hoja de marcar)
  *   onPick(sp)  toque en una especie
  *   onMark(sp)  si se da, cada fila lleva además «Marcar» (pestaña Especies)
- *   targets     (F11h) Set de taxonID objetivo de la visita en curso: van primero
+ *   targets     Set de taxonID objetivo de la visita en curso: van primero
  *   label       rótulo del cuadro de búsqueda
  * Devuelve {refresh(), setPosition(), focus(), destroy()}.
  */

@@ -1,12 +1,12 @@
 // ================================================================================================
-// components/species-assessments.js — «Evaluación BioDex» de una especie en el catálogo activo (F8b).
+// components/species-assessments.js — «Evaluación BioDex» de una especie en el catálogo activo.
 // ------------------------------------------------------------------------------------------------
 // Aparte de las evaluaciones oficiales de EIDOS (no las sustituye): la evaluación de referencia del
 // catálogo, si la hay, y las del equipo con autor, fecha, estado y detalle. «Evaluar (UICN)» abre el
 // asistente (views/iucn-wizard.js), también sin red. Cada autor edita y borra las suyas; solo el owner,
 // con red, marca una FINAL como «Evaluación de referencia del catálogo» (el servidor lo registra).
 // Todo el HTML pasa por html`` (la justificación y los nombres vienen de usuarios).
-// F11g: la pestaña Evaluación UICN (components/species-iucn.js) la monta con `hideEvaluate` como lista de
+// La pestaña Evaluación UICN (components/species-iucn.js) la monta con `hideEvaluate` como lista de
 // INSTANTÁNEAS: cada una con su versión (v1, v2… por fecha), su origen (servidor o dispositivo) y «Comparar»
 // (dos marcadas → tabla con las diferencias). Las instantáneas del motor 2 no se editan (se guarda otra); el
 // asistente solo queda para editar las evaluaciones antiguas.
@@ -23,6 +23,12 @@ import { openIucnWizard, loadIucnCriteria, assessmentHeadline, DISCLAIMER } from
 import { categoryLabel, criterionSummary } from '../../shared/iucn-engine.js';
 
 /** Pinta en `el` las evaluaciones de `species` en `catalog` ({id, name, role}). Devuelve {refresh, destroy}. */
+/** La de referencia se editó después de marcarla (la fecha de referencia es del servidor; 1 min de margen de reloj). */
+export function editedAfterReference(a) {
+  if (!a.isReference || !a.referenceSetAt || !a.clientUpdatedAt) return false;
+  return Date.parse(a.clientUpdatedAt) - Date.parse(a.referenceSetAt) > 60_000;
+}
+
 export function mountAssessments(el, { species, catalog, hideEvaluate = false }) {
   let alive = true;
   let list = [];
@@ -97,6 +103,8 @@ export function mountAssessments(el, { species, catalog, hideEvaluate = false })
       </div>
       ${a.isReference && a.referenceSetBy ? html`<p class="hint">Marcada por ${a.referenceSetBy}${a.referenceSetAt
         ? html`, ${formatDateTime(a.referenceSetAt)}` : ''}.</p>` : ''}
+      ${editedAfterReference(a) ? html`<p class="hint mark-reason">Editada después de marcarla como referencia: revísala${isOwner
+        ? ' y confírmala si sigue valiendo' : ''}.</p>` : ''}
       ${a.status === 'rejected' && a.reason ? html`<p class="hint mark-reason">${a.reason}</p>` : ''}
       ${detailHtml(a)}
       <div class="form-actions note-actions">
@@ -106,6 +114,8 @@ export function mountAssessments(el, { species, catalog, hideEvaluate = false })
           ${compare.has(a.assessmentID) ? html`checked` : ''}><span>Comparar</span></label>` : ''}
         ${isOwner && final && !a.isReference ? html`<button type="button" class="link-btn" data-ref="${a.assessmentID}"
           ${synced && state.online ? '' : html`disabled title="${synced ? 'Necesita conexión' : 'Sincronízala primero'}"`}>Marcar como referencia</button>` : ''}
+        ${isOwner && editedAfterReference(a) ? html`<button type="button" class="link-btn" data-ref="${a.assessmentID}"
+          ${synced && state.online ? '' : html`disabled title="${synced ? 'Necesita conexión' : 'Sincronízala primero'}"`}>Confirmar referencia</button>` : ''}
         ${isOwner && a.isReference ? html`<button type="button" class="link-btn" data-unref="${a.assessmentID}"
           ${state.online ? '' : html`disabled title="Necesita conexión"`}>Quitar referencia</button>` : ''}
       </div>
@@ -149,7 +159,7 @@ export function mountAssessments(el, { species, catalog, hideEvaluate = false })
         for (const a of await t.byIndex('assessments', 'taxonID', species.taxonID)) {
           if (a.catalogId !== catalog.id) continue;
           const isRef = a.assessmentID === refId;
-          if (!!a.isReference !== isRef) {
+          if (!!a.isReference !== isRef || (isRef && a.referenceSetAt !== res.reference.referenceSetAt)) {
             await t.put('assessments', { ...a, isReference: isRef, referenceSetBy: isRef ? res.reference.referenceSetBy : null,
               referenceSetAt: isRef ? res.reference.referenceSetAt : null });
           }

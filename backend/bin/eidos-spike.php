@@ -1,6 +1,6 @@
 <?php
 // ================================================================================================
-// eidos-spike.php — validación del cliente EIDOS (F1) contra la API real.
+// eidos-spike.php — validación del cliente EIDOS contra la API real.
 //   docker compose exec php php bin/eidos-spike.php
 // 1) Resuelve 9 taxones de prueba, ejecuta cada función y mide tiempos.
 // 2) Guarda una muestra recortada (máx. 3 filas por vista) en docs/eidos-samples/<especie>.json.
