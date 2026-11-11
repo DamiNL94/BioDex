@@ -8,6 +8,9 @@
 //
 // La coordenada que llega aquí YA es la que se puede publicar: la decide export.php con applyVisibility()
 // (modo completo) o applyPublicVisibility() (modo «para publicar»). Este fichero no generaliza nada.
+// F11h: el archivo pasa a tener NÚCLEO EVENT (event.txt: visitas, sitios como eventos padre y un evento por marca
+// oportunista), con occurrence.txt como extensión (su primera columna, eventID, es el coreid) y las medidas en la
+// extensión Extended MeasurementOrFact (admite occurrenceID además del eventID del núcleo).
 // Mapeo término a término: docs/dwc.md.
 // ================================================================================================
 
@@ -29,15 +32,29 @@ const DWC_OCCURRENCE_TERMS = [
     "rightsHolder" => DC_NS, "language" => DC_NS, "modified" => DC_NS,
 ];
 
-/** Extensión MeasurementOrFact: la primera columna es el id del núcleo (coreid, occurrenceID). */
-const DWC_MOF_TERMS = [
-    "measurementID" => DWC_NS, "measurementType" => DWC_NS, "measurementValue" => DWC_NS,
+const DWC_ROWTYPE_OCCURRENCE = "http://rs.tdwg.org/dwc/terms/Occurrence";
+// F11h · núcleo Event
+const DWC_ROWTYPE_EVENT      = "http://rs.tdwg.org/dwc/terms/Event";
+const DWC_ROWTYPE_EMOF       = "http://rs.iobis.org/obis/terms/ExtendedMeasurementOrFact";
+
+/** Términos de event.txt (núcleo), en orden. eventID es el <id>. */
+const DWC_EVENT_TERMS = [
+    "eventID" => DWC_NS, "parentEventID" => DWC_NS, "samplingProtocol" => DWC_NS, "sampleSizeValue" => DWC_NS,
+    "sampleSizeUnit" => DWC_NS, "samplingEffort" => DWC_NS, "eventDate" => DWC_NS, "eventRemarks" => DWC_NS,
+    "locationID" => DWC_NS, "decimalLatitude" => DWC_NS, "decimalLongitude" => DWC_NS, "geodeticDatum" => DWC_NS,
+    "coordinateUncertaintyInMeters" => DWC_NS, "footprintWKT" => DWC_NS, "footprintSRS" => DWC_NS,
+    "dataGeneralizations" => DWC_NS, "informationWithheld" => DWC_NS, "countryCode" => DWC_NS,
+    "datasetName" => DWC_NS, "license" => DC_NS, "rightsHolder" => DC_NS, "language" => DC_NS, "modified" => DC_NS,
+];
+
+/** Extended MeasurementOrFact: coreid = eventID; occurrenceID cuando el dato es de una ocurrencia. */
+const DWC_EMOF_TERMS = [
+    "occurrenceID" => DWC_NS, "measurementID" => DWC_NS, "measurementType" => DWC_NS, "measurementValue" => DWC_NS,
     "measurementUnit" => DWC_NS, "measurementDeterminedBy" => DWC_NS, "measurementDeterminedDate" => DWC_NS,
     "measurementMethod" => DWC_NS,
 ];
-
-const DWC_ROWTYPE_OCCURRENCE = "http://rs.tdwg.org/dwc/terms/Occurrence";
-const DWC_ROWTYPE_MOF        = "http://rs.tdwg.org/dwc/terms/MeasurementOrFact";
+const DWC_OPPORTUNISTIC = "observación oportunista";
+const DWC_EFFORT_TYPE   = "esfuerzo de muestreo";
 
 const DWC_EIDOS_ACCORDING_TO = "EIDOS (IEPNB, MITECO)";
 const DWC_USER_TAXON_REMARKS = "Taxón no presente en EIDOS";
@@ -120,25 +137,30 @@ function dwcXml(string $s): string {
     return htmlspecialchars($s, ENT_XML1 | ENT_QUOTES, "UTF-8");
 }
 
-/** Descriptor del archivo (esquema http://rs.tdwg.org/dwc/text/tdwg_dwc_text.xsd). */
-function dwcMetaXml(bool $withMof): string {
+/**
+ * F11h · descriptor del archivo con núcleo Event: event.txt (núcleo, <id> = eventID), occurrence.txt (extensión,
+ * coreid = su columna 0, eventID) y, si hay medidas, measurementorfact.txt (eMoF, coreid = eventID). Los <field> salen
+ * de las mismas listas que las cabeceras: no pueden discrepar.
+ */
+function dwcEventMetaXml(bool $withMof): string {
     $fileAttrs = 'encoding="UTF-8" fieldsTerminatedBy="\t" linesTerminatedBy="\n" fieldsEnclosedBy="" ignoreHeaderLines="1"';
     $x = '<?xml version="1.0" encoding="UTF-8"?>' . "\n"
        . '<archive xmlns="http://rs.tdwg.org/dwc/text/" metadata="eml.xml">' . "\n"
-       . "  <core {$fileAttrs} rowType=\"" . DWC_ROWTYPE_OCCURRENCE . "\">\n"
-       . "    <files><location>occurrence.txt</location></files>\n"
+       . "  <core {$fileAttrs} rowType=\"" . DWC_ROWTYPE_EVENT . "\">\n"
+       . "    <files><location>event.txt</location></files>\n"
        . "    <id index=\"0\"/>\n";
     $i = 0;
-    foreach (DWC_OCCURRENCE_TERMS as $term => $ns) $x .= "    <field index=\"" . $i++ . "\" term=\"{$ns}{$term}\"/>\n";
+    foreach (DWC_EVENT_TERMS as $term => $ns) $x .= "    <field index=\"" . $i++ . "\" term=\"{$ns}{$term}\"/>\n";
     $x .= "  </core>\n";
-    if ($withMof) {
-        $x .= "  <extension {$fileAttrs} rowType=\"" . DWC_ROWTYPE_MOF . "\">\n"
-            . "    <files><location>measurementorfact.txt</location></files>\n"
-            . "    <coreid index=\"0\"/>\n";
+    $ext = function (string $rowType, string $file, array $terms) use ($fileAttrs): string {
+        $s = "  <extension {$fileAttrs} rowType=\"{$rowType}\">\n    <files><location>{$file}</location></files>\n"
+           . "    <coreid index=\"0\"/>\n    <field index=\"0\" term=\"" . DWC_NS . "eventID\"/>\n";
         $i = 1;
-        foreach (DWC_MOF_TERMS as $term => $ns) $x .= "    <field index=\"" . $i++ . "\" term=\"{$ns}{$term}\"/>\n";
-        $x .= "  </extension>\n";
-    }
+        foreach ($terms as $term => $ns) $s .= "    <field index=\"" . $i++ . "\" term=\"{$ns}{$term}\"/>\n";
+        return $s . "  </extension>\n";
+    };
+    $x .= $ext(DWC_ROWTYPE_OCCURRENCE, "occurrence.txt", DWC_OCCURRENCE_TERMS);
+    if ($withMof) $x .= $ext(DWC_ROWTYPE_EMOF, "measurementorfact.txt", DWC_EMOF_TERMS);
     return $x . "</archive>\n";
 }
 

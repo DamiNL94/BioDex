@@ -9,10 +9,12 @@
 // autor edita o borra, server_seq común y tombstones.
 //
 // SEGURIDAD: un sitio delata dónde viven sus especies. Su posición (y la de las visitas) sale por applyVisibility() con
-// el nivel MÁS restrictivo de: las especies objetivo del sitio, las de sus visitas y las registradas en ellas. Si una
-// marca o una visita nueva baja ese nivel, el sitio y sus visitas se vuelven a emitir (server_seq nuevo: visitsRelevel)
-// para que el pull sustituya en los dispositivos la versión exacta por la generalizada. Generalizado: centro de la celda,
-// radio ampliado a la celda, SIN geometría (ni polígono ni traza del transecto) y sin las condiciones (texto libre).
+// el nivel MÁS restrictivo de: las especies objetivo del sitio, las de sus visitas y las registradas en ellas. Y una MARCA
+// de una visita sale con el más restrictivo entre su especie y su visita (visitLevelMap): una marca exacta de una especie
+// común no puede delatar el sitio de una sensible contada en la misma visita. Si una marca o una visita nueva baja ese
+// nivel, el sitio, sus visitas y sus marcas se vuelven a emitir (server_seq nuevo: visitsRelevel) para que el pull
+// sustituya en los dispositivos la versión exacta por la generalizada. Generalizado: centro de la celda, radio ampliado
+// a la celda, SIN geometría (ni polígono ni traza del transecto) y sin las condiciones (texto libre).
 // ================================================================================================
 
 require_once __DIR__ . "/sync.php";
@@ -274,6 +276,20 @@ function visitLevels(PDO $pdo, string $catalogId, array $rows): array {
     return $out;
 }
 
+/**
+ * Nivel de las visitas de una lista de marcas → [visitID => nivel]. Una marca hecha durante una visita sale con el MÁS
+ * restrictivo entre el de su especie y el de su visita: si no, una marca exacta de una especie no sensible delataría
+ * dónde está el sitio (generalizado) de una sensible de la misma visita. Visitas que no existen: no cuentan.
+ */
+function visitLevelMap(PDO $pdo, string $catalogId, array $visitIds): array {
+    $visitIds = array_values(array_unique(array_filter($visitIds)));
+    if (!$visitIds) return [];
+    $stmt = $pdo->prepare("SELECT visitID, site_id FROM visits WHERE catalog_id = ? AND visitID IN (" . implode(",", array_fill(0, count($visitIds), "?")) . ")");
+    $stmt->execute([$catalogId, ...$visitIds]);
+    $rows = $stmt->fetchAll();
+    return $rows ? visitLevels($pdo, $catalogId, $rows) : [];
+}
+
 /** Hijos (especies objetivo) de sitios o visitas → [id => [taxonID…]]. */
 function childTaxa(PDO $pdo, string $table, string $idCol, array $ids): array {
     if (!$ids) return [];
@@ -299,15 +315,21 @@ function visitsScopeLevel(PDO $pdo, string $catalogId, ?string $siteId, ?string 
 function visitsRelevel(PDO $pdo, string $catalogId, ?string $siteId, ?string $visitId, int $before): void {
     $after = visitsScopeLevel($pdo, $catalogId, $siteId, $visitId);
     if ($after >= $before) return;
+    $visits = [$visitId];
     if ($siteId !== null) {
         $pdo->prepare("UPDATE sites SET server_seq = ? WHERE siteID = ?")->execute([syncNextSeq($pdo), $siteId]);
         $stmt = $pdo->prepare("SELECT visitID FROM visits WHERE site_id = ? ORDER BY visitID");
         $stmt->execute([$siteId]);
-        foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $v) {
-            $pdo->prepare("UPDATE visits SET server_seq = ? WHERE visitID = ?")->execute([syncNextSeq($pdo), $v]);
-        }
-    } elseif ($visitId !== null) {
-        $pdo->prepare("UPDATE visits SET server_seq = ? WHERE visitID = ?")->execute([syncNextSeq($pdo), $visitId]);
+        $visits = $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+    $bump = $pdo->prepare("UPDATE visits SET server_seq = ? WHERE visitID = ?");
+    $marks = $pdo->prepare("SELECT occurrenceID FROM occurrences WHERE visit_id = ? ORDER BY occurrenceID");
+    $bumpMark = $pdo->prepare("UPDATE occurrences SET server_seq = ? WHERE occurrenceID = ?");
+    foreach (array_filter($visits) as $v) {
+        $bump->execute([syncNextSeq($pdo), $v]);
+        // Sus marcas también: salen con el nivel de la visita (visitLevelMap) y la copia exacta que ya bajó hay que sustituirla.
+        $marks->execute([$v]);
+        foreach ($marks->fetchAll(PDO::FETCH_COLUMN) as $o) $bumpMark->execute([syncNextSeq($pdo), $o]);
     }
 }
 

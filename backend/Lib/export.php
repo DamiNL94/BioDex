@@ -27,6 +27,7 @@ require_once __DIR__ . "/dwc.php";
 require_once __DIR__ . "/xlsx.php";
 require_once __DIR__ . "/plinian.php";   // F10c: pliniancore/
 require_once __DIR__ . "/assessment.php"; // F11g: evaluación por especie, subpoblaciones e impactos
+require_once __DIR__ . "/visits.php";     // F11h: visitas y sitios (núcleo Event, hojas Visitas y Series)
 
 const EXPORT_MODES      = ["full", "public"];
 /** Formatos del ZIP (F10c). Sin «formats» en la petición, los de F10a: el ZIP sale igual que antes. */
@@ -222,7 +223,10 @@ function exportPrepare(PDO $pdo, string $catalogId, array $catalog, array $o, st
     $counts = ["occurrences" => 0, "presences" => 0, "absences" => 0, "generalized" => 0, "withheld" => 0, "measurements" => 0];
     $perSpecies = [];
     $observers = [];
+    // F11h: una marca de visita sale con el nivel más restrictivo entre su especie y su visita (Lib/visits.php).
+    $visitLevel = visitLevelMap($pdo, $catalogId, array_column($occ, "visit_id"));
     foreach ($occ as $row) {
+        $row["sensitivity_level"] = min(normalizeSensitivityLevel($row["sensitivity_level"]), $visitLevel[$row["visit_id"] ?? ""] ?? 4);
         [$v, $generalized] = exportVisible($row, $o["mode"], $role, $userId);
         $sp = $species[$row["taxonID"]];
         $records[] = ["v" => $v, "dwc" => exportDwcRecord($v, $sp, $ctx), "sp" => $sp, "generalized" => $generalized,
@@ -241,8 +245,145 @@ function exportPrepare(PDO $pdo, string $catalogId, array $catalog, array $o, st
     usort($observers, fn($a, $b) => $b["count"] <=> $a["count"] ?: strcmp($a["name"], $b["name"]));
     $counts["species"] = count($perSpecies);
     $counts["observers"] = count($observers);
-    return ["records" => $records, "species" => $species, "perSpecies" => $perSpecies, "observers" => $observers,
-            "owner" => $owner, "counts" => $counts, "role" => $role, "userId" => $userId];
+    $prep = ["records" => $records, "species" => $species, "perSpecies" => $perSpecies, "observers" => $observers,
+            "owner" => $owner, "counts" => $counts, "role" => $role, "userId" => $userId, "ctx" => $ctx];
+    $prep["events"] = exportEvents($pdo, $catalogId, $o, $prep);
+    $prep["counts"]["events"] = count($prep["events"]["rows"]);
+    $prep["counts"]["visits"] = $prep["events"]["nVisits"];
+    $prep["counts"]["sites"] = $prep["events"]["nSites"];
+    return $prep;
+}
+
+// --- F11h · Eventos (núcleo Event del DwC-A) -----------------------------------------------------
+
+/** Intervalo ISO de un evento: «inicio/fin» (o solo el inicio). */
+function exportInterval(?string $start, ?string $end): ?string {
+    if ($start === null) return null;
+    return $end !== null && $end !== $start ? syncIsoUtc($start) . "/" . syncIsoUtc($end) : syncIsoUtc($start);
+}
+
+/**
+ * Posición publicable de un evento (sitio o visita): por applyVisibility() (completa) o applyPublicVisibility()
+ * (publicar), con el nivel del sitio o de la visita. Generalizada: sin footprintWKT (ni la traza de un transecto).
+ * → [lat, lon, incertidumbre, wkt, dataGeneralizations, informationWithheld, generalizada?]
+ */
+function exportEventLocation(?float $lat, ?float $lon, ?int $extent, ?string $wkt, int $authorId, int $level, array $o, array $prep): array {
+    if ($lat === null || $lon === null) return [null, null, null, null, null, null, false];
+    $row = ["user_id" => $authorId, "decimalLatitude" => $lat, "decimalLongitude" => $lon, "coordinateUncertaintyInMeters" => $extent];
+    $v = $o["mode"] === "full" ? applyVisibility($row, $level, $prep["role"], $prep["userId"]) : applyPublicVisibility($row, $level);
+    $gen = array_key_exists("dataGeneralizations", $v);
+    return [$v["decimalLatitude"] === null ? null : (float) $v["decimalLatitude"], $v["decimalLongitude"] === null ? null : (float) $v["decimalLongitude"],
+            $v["coordinateUncertaintyInMeters"] === null ? null : (int) $v["coordinateUncertaintyInMeters"], $gen ? null : $wkt,
+            $gen ? $v["dataGeneralizations"] : null, $gen ? $v["informationWithheld"] : null, $gen];
+}
+
+/** Términos comunes de cada fila de event.txt. */
+function exportEventCommon(array $ctx, ?string $modified): array {
+    return ["countryCode" => "ES", "datasetName" => $ctx["title"], "license" => DWC_LICENSES[$ctx["license"]][0],
+            "rightsHolder" => $ctx["rightsHolder"], "language" => "es", "modified" => syncIsoUtc($modified)];
+}
+
+/**
+ * Eventos del DwC-A (F11h): cada VISITA de las marcas exportadas es un evento (con su sitio como evento padre) y cada
+ * marca OPORTUNISTA (sin visita, o con una visita borrada) genera el suyo, `biodex:evt:<occurrenceID>`, porque toda
+ * ocurrencia cuelga de un evento. Deja en cada registro su `eventID` (columna 0 de occurrence.txt).
+ * → {rows (término → valor), visits [visitID => fila de visits], nVisits, nSites, effort (filas eMoF)}
+ */
+function exportEvents(PDO $pdo, string $catalogId, array $o, array &$prep): array {
+    $ctx = $prep["ctx"];
+    $visitIds = array_values(array_unique(array_filter(array_map(fn($r) => $r["v"]["visit_id"] ?? null, $prep["records"]))));
+    $in = fn(array $ids) => implode(",", array_fill(0, max(1, count($ids)), "?"));
+    $visits = $visitIds ? visitRows($pdo, "v.catalog_id = ? AND v.deleted_at IS NULL AND v.visitID IN ({$in($visitIds)})", [$catalogId, ...$visitIds], $catalogId) : [];
+    $byVisit = [];
+    foreach ($visits as $x) $byVisit[$x[0]["visitID"]] = $x;
+    $siteIds = array_values(array_unique(array_filter(array_map(fn($x) => $x[0]["site_id"], $visits))));
+    $sites = [];
+    foreach ($siteIds ? siteRows($pdo, "s.catalog_id = ? AND s.deleted_at IS NULL AND s.siteID IN ({$in($siteIds)})", [$catalogId, ...$siteIds], $catalogId) : [] as $x) {
+        $sites[$x[0]["siteID"]] = $x;
+    }
+    $siteGeom = function (array $s): array {
+        $g = $s["footprint_wkt"] !== null ? wktParse($s["footprint_wkt"]) : null;
+        $extent = $s["radius_m"] !== null ? (int) $s["radius_m"] : ($g ? (int) ceil(siteGeometryMetrics($g)["extentM"]) : null);
+        return [(float) $s["decimalLatitude"], (float) $s["decimalLongitude"], $extent, $s["footprint_wkt"]];
+    };
+
+    $rows = [];
+    $effort = [];
+    // Sitios como eventos padre: su intervalo es el de sus visitas exportadas.
+    $span = [];
+    foreach ($visits as [$v]) {
+        if (!isset($sites[$v["site_id"]])) continue;
+        $s = &$span[$v["site_id"]];
+        $s["from"] = min($s["from"] ?? $v["event_start"], $v["event_start"]);
+        $s["to"] = max($s["to"] ?? ($v["event_end"] ?? $v["event_start"]), $v["event_end"] ?? $v["event_start"]);
+        unset($s);
+    }
+    foreach ($sites as $id => [$s, , $level]) {
+        [$lat, $lon, $ext, $wkt] = $siteGeom($s);
+        [$la, $lo, $unc, $w, $dg, $iw, $gen] = exportEventLocation($lat, $lon, $ext, $wkt, (int) $s["user_id"], $level, $o, $prep);
+        $rows[] = ["eventID" => "biodex:site:{$id}", "parentEventID" => null,
+            "samplingProtocol" => "sitio de muestreo permanente (" . (SITE_TYPE_ES[$s["site_type"]] ?? $s["site_type"]) . ")",
+            "sampleSizeValue" => $s["area_m2"] === null ? null : (float) $s["area_m2"], "sampleSizeUnit" => $s["area_m2"] === null ? null : "square metre",
+            "samplingEffort" => null, "eventDate" => exportInterval($span[$id]["from"] ?? null, $span[$id]["to"] ?? null),
+            // El nombre de un sitio puede decir dónde está: solo si no se generaliza.
+            "eventRemarks" => $gen ? null : "Sitio «{$s["name"]}»", "locationID" => "biodex:site:{$id}",
+            "decimalLatitude" => $la, "decimalLongitude" => $lo, "geodeticDatum" => $la === null ? null : "EPSG:4326",
+            "coordinateUncertaintyInMeters" => $unc, "footprintWKT" => $w, "footprintSRS" => $w === null ? null : "EPSG:4326",
+            "dataGeneralizations" => $dg, "informationWithheld" => $iw] + exportEventCommon($ctx, $s["client_updated_at"]);
+    }
+    foreach ($visits as [$v, , $level]) {
+        $site = isset($sites[$v["site_id"]]) ? $sites[$v["site_id"]][0] : null;
+        if ($site) {
+            [$lat, $lon, $ext, $wkt] = $siteGeom($site);
+            $author = (int) $site["user_id"];
+        } else {
+            [$lat, $lon, $ext, $wkt] = [$v["decimalLatitude"] === null ? null : (float) $v["decimalLatitude"],
+                $v["decimalLongitude"] === null ? null : (float) $v["decimalLongitude"], null, null];
+            $author = (int) $v["user_id"];
+        }
+        [$la, $lo, $unc, $w, $dg, $iw, $gen] = exportEventLocation($lat, $lon, $ext, $wkt, $author, $level, $o, $prep);
+        $band = $v["band_m"] ?? ($site["band_m"] ?? null);
+        $protocol = $v["protocol"] === "transect" && $band !== null
+            ? "transecto con banda de " . rtrim(rtrim(number_format((float) $band, 2, ",", ""), "0"), ",") . " m"
+            : (VISIT_PROTOCOL_ES[$v["protocol"]] ?? $v["protocol"]);
+        // Tamaño de la muestra: superficie del sitio (longitud × banda en un transecto) o, en una búsqueda por tiempo, los minutos.
+        [$size, $unit] = [null, null];
+        if ($v["protocol"] === "timed_search") { if ($v["effort_minutes"] !== null) [$size, $unit] = [(int) $v["effort_minutes"], "minute"]; }
+        elseif ($v["protocol"] === "transect" && $site && $site["length_m"] !== null && $band !== null) [$size, $unit] = [round((float) $site["length_m"] * (float) $band, 2), "square metre"];
+        elseif ($site && $site["area_m2"] !== null) [$size, $unit] = [(float) $site["area_m2"], "square metre"];
+        $observers = $v["observers"] !== null ? array_values(array_filter(array_map("trim", preg_split('/[|,;]/', $v["observers"])))) : [];
+        $effortText = implode("; ", array_filter([
+            $v["effort_minutes"] !== null ? "{$v["effort_minutes"]} minutos" : null,
+            $observers ? count($observers) . " " . (count($observers) === 1 ? "observador" : "observadores") . ": " . implode(", ", $observers) : null]));
+        $rows[] = ["eventID" => $v["visitID"], "parentEventID" => $site ? "biodex:site:{$site["siteID"]}" : null, "samplingProtocol" => $protocol,
+            "sampleSizeValue" => $size, "sampleSizeUnit" => $unit, "samplingEffort" => $effortText ?: null,
+            "eventDate" => exportInterval($v["event_start"], $v["event_end"]),
+            "eventRemarks" => $gen ? null : $v["conditions"], "locationID" => $site ? "biodex:site:{$site["siteID"]}" : null,
+            "decimalLatitude" => $la, "decimalLongitude" => $lo, "geodeticDatum" => $la === null ? null : "EPSG:4326",
+            "coordinateUncertaintyInMeters" => $unc, "footprintWKT" => $w, "footprintSRS" => $w === null ? null : "EPSG:4326",
+            "dataGeneralizations" => $dg, "informationWithheld" => $iw] + exportEventCommon($ctx, $v["client_updated_at"]);
+        if ($v["effort_minutes"] !== null) {
+            $effort[] = ["eventID" => $v["visitID"], "occurrenceID" => null, "measurementID" => "{$v["visitID"]}:effort",
+                "measurementType" => DWC_EFFORT_TYPE, "measurementValue" => (int) $v["effort_minutes"], "measurementUnit" => "minutos",
+                "measurementDeterminedBy" => $v["recorded_by"], "measurementDeterminedDate" => syncIsoUtc($v["event_start"]),
+                "measurementMethod" => "Duración de la visita, entre inicio y fin (BioDex)"];
+        }
+    }
+    // Marcas oportunistas: un evento cada una, con su posición publicable (la misma que su ocurrencia).
+    foreach ($prep["records"] as &$rec) {
+        $vid = $rec["v"]["visit_id"] ?? null;
+        if ($vid !== null && isset($byVisit[$vid])) { $rec["eventID"] = $vid; continue; }
+        $d = $rec["dwc"];
+        $rec["eventID"] = "biodex:evt:{$d["occurrenceID"]}";
+        $rows[] = ["eventID" => $rec["eventID"], "parentEventID" => null, "samplingProtocol" => DWC_OPPORTUNISTIC, "sampleSizeValue" => null,
+            "sampleSizeUnit" => null, "samplingEffort" => null, "eventDate" => $d["eventDate"], "eventRemarks" => null, "locationID" => null,
+            "decimalLatitude" => $d["decimalLatitude"], "decimalLongitude" => $d["decimalLongitude"], "geodeticDatum" => $d["geodeticDatum"],
+            "coordinateUncertaintyInMeters" => $d["coordinateUncertaintyInMeters"], "footprintWKT" => null, "footprintSRS" => null,
+            "dataGeneralizations" => $d["dataGeneralizations"], "informationWithheld" => $d["informationWithheld"]]
+            + exportEventCommon($ctx, $rec["v"]["client_updated_at"]);
+    }
+    unset($rec);
+    return ["rows" => $rows, "visits" => $byVisit, "sites" => $sites, "nVisits" => count($visits), "nSites" => count($sites), "effort" => $effort];
 }
 
 /** Lo que el diálogo necesita para elegir: especies y observadores con marcas, y rango de fechas. Sin coordenadas. */
@@ -394,7 +535,85 @@ function exportSheets(PDO $pdo, string $catalogId, array $catalog, array $o, arr
         exportNotesSheet($pdo, $catalogId, $prep),
         ...exportSpeciesAssessmentSheets($pdo, $catalogId, $prep),
         exportImpactsSheet($pdo, $catalogId, $o, $prep),
+        exportVisitsSheet($prep),
+        exportSeriesSheet($pdo, $catalogId, $prep),
     ];
+}
+
+/**
+ * F11h · «Visitas»: una fila por visita de las marcas exportadas, con su sitio. La posición y la geometría siguen la regla
+ * de los eventos del DwC-A (exportEventLocation): en la exportación para publicar, generalizadas si hay especies
+ * sensibles, y en esas filas no salen ni el nombre del sitio, ni la geometría, ni las condiciones.
+ */
+function exportVisitsSheet(array $prep): array {
+    $head = ["ID de la visita (eventID)", "Sitio", "Tipo de sitio", "Protocolo", "Inicio (peninsular)", "Fin (peninsular)", "Esfuerzo (min)",
+        "Observadores", "Especies objetivo", "Marcas", "Ausencias", "Latitud", "Longitud", "Precisión (m)", "Superficie del sitio (m²)",
+        "Geometría (WKT)", "Generalizada", "Condiciones", "Autor/a"];
+    $rows = [exportHeader($head)];
+    $byEvent = [];
+    foreach ($prep["events"]["rows"] as $e) $byEvent[$e["eventID"]] = $e;
+    $marks = [];
+    foreach ($prep["records"] as $r) {
+        $k = $r["eventID"] ?? null;
+        if ($k === null) continue;
+        $marks[$k] ??= [0, 0];
+        $marks[$k][0]++;
+        if ($r["v"]["occurrenceStatus"] === "absent") $marks[$k][1]++;
+    }
+    foreach ($prep["events"]["visits"] as $id => [$v, $taxa]) {
+        $e = $byEvent[$id];
+        $site = $prep["events"]["sites"][$v["site_id"]][0] ?? null;
+        $gen = $e["dataGeneralizations"] !== null || $e["informationWithheld"] !== null;
+        $names = array_map(fn($t) => $prep["species"][$t]["canonical_name"] ?? $t, $taxa);
+        $rows[] = [
+            $id, $site ? ($gen ? "(retenido: especies sensibles)" : $site["name"]) : "Sin sitio (oportunista)",
+            $site ? (SITE_TYPE_ES[$site["site_type"]] ?? $site["site_type"]) : null, $e["samplingProtocol"],
+            exportLocal($v["event_start"]), $v["event_end"] ? exportLocal($v["event_end"]) : null, ["v" => $v["effort_minutes"] === null ? null : (int) $v["effort_minutes"], "s" => "int"],
+            $v["observers"], implode(", ", $names) ?: null, ["v" => $marks[$id][0] ?? 0, "s" => "int"], ["v" => $marks[$id][1] ?? 0, "s" => "int"],
+            ["v" => $e["decimalLatitude"], "s" => "coord"], ["v" => $e["decimalLongitude"], "s" => "coord"], ["v" => $e["coordinateUncertaintyInMeters"], "s" => "int"],
+            ["v" => $site && $site["area_m2"] !== null ? (float) $site["area_m2"] : null, "s" => "km2"], ["v" => $e["footprintWKT"], "s" => "wrap"],
+            $gen ? "Sí" : "No", ["v" => $e["eventRemarks"], "s" => "wrap"], $v["recorded_by"],
+        ];
+    }
+    return ["name" => "Visitas", "rows" => $rows, "widths" => [38, 28, 14, 28, 17, 17, 10, 26, 34, 8, 9, 12, 12, 10, 14, 40, 11, 40, 20],
+            "freeze" => 1, "autofilter" => [1, count($head)], "csv" => "visitas"];
+}
+
+/**
+ * F11h · «Series»: por especie con visitas a sitios, una fila por año (visitado o no, con el total observado y el índice
+ * del modelo) y, en la primera fila de cada especie, la tasa anual con su IC, la reducción en la ventana de A y lo que
+ * está observado. Solo cifras (sin coordenadas); el mismo cálculo que la pestaña Evaluación UICN (Lib/series.php).
+ */
+function exportSeriesSheet(PDO $pdo, string $catalogId, array $prep): array {
+    $head = ["Especie", "Año", "Visitado", "Sitios con recuento", "Maduros observados (suma de los máximos por sitio)", "Índice anual (modelo)",
+        "Tasa anual (%)", "IC 95 % (%)", "Reducción en la ventana de A (%)", "Ventana", "Observado (%)", "Estado"];
+    $rows = [exportHeader($head)];
+    $stmt = $pdo->prepare("SELECT DISTINCT o.taxonID FROM occurrences o JOIN visits v ON v.visitID = o.visit_id AND v.site_id IS NOT NULL
+                            WHERE o.catalog_id = ? AND o.deleted_at IS NULL AND v.deleted_at IS NULL");
+    $stmt->execute([$catalogId]);
+    $taxa = array_map("strval", $stmt->fetchAll(PDO::FETCH_COLUMN));
+    $n2 = fn($v) => $v === null ? null : rtrim(rtrim(number_format((float) $v, 2, ",", ""), "0"), ",");
+    foreach ($prep["species"] as $taxonID => $sp) {
+        if (!in_array((string) $taxonID, $taxa, true)) continue;
+        $s = assessmentSeries($pdo, $catalogId, (string) $taxonID, assessmentParams($pdo, $catalogId, (string) $taxonID));
+        $first = true;
+        foreach ($s["years"] ?: [["year" => null, "visited" => false, "sitesVisited" => 0, "total" => null, "index" => null]] as $y) {
+            $ok = $s["status"] === "ok";
+            $rows[] = [
+                ["v" => $sp["canonical_name"], "s" => $first ? "strong" : null], ["v" => $y["year"], "s" => "int"], $y["year"] === null ? null : ($y["visited"] ? "Sí" : "No"),
+                ["v" => $y["sitesVisited"], "s" => "int"], ["v" => $y["total"], "s" => "km2"], ["v" => $y["index"], "s" => "km2"],
+                $first && $ok ? $n2($s["trend"]["annualChangePct"]) : null,
+                $first && $ok ? $n2($s["trend"]["annualChangeLo"]) . " a " . $n2($s["trend"]["annualChangeHi"]) : null,
+                $first && $ok ? $n2($s["reduction"]["best"]) . " (" . $n2($s["reduction"]["min"]) . "–" . $n2($s["reduction"]["max"]) . ")" : null,
+                $first && $ok ? "{$s["window"]["years"]} años ({$s["window"]["from"]}–{$s["window"]["to"]})" : null,
+                $first && $ok ? $n2($s["window"]["observedPct"]) . ($s["window"]["projected"] ? " (resto proyectado)" : "") : null,
+                $first ? ($ok ? "Evaluable" : ($s["reason"] ?? $s["status"])) : null,
+            ];
+            $first = false;
+        }
+    }
+    return ["name" => "Series", "rows" => $rows, "widths" => [30, 7, 9, 10, 18, 14, 12, 18, 22, 22, 18, 40],
+            "freeze" => 1, "autofilter" => [1, count($head)], "csv" => "series"];
 }
 
 const EXPORT_QUALITY_ES = ["observed" => "observado", "estimated" => "estimado", "inferred" => "inferido", "suspected" => "sospechado",
@@ -686,7 +905,7 @@ function exportReadme(array $catalog, array $o, array $prep, array $meta): array
         [],
     ];
     if (in_array("dwc", $o["formats"], true)) {
-        $rows[] = $kv("dwca/", "Darwin Core Archive para GBIF u otras bases: occurrence.txt, measurementorfact.txt (individuos maduros), meta.xml y eml.xml. Para el validador de GBIF, comprime el CONTENIDO de dwca/ (meta.xml en la raíz del ZIP).");
+        $rows[] = $kv("dwca/", "Darwin Core Archive con núcleo Event para GBIF u otras bases: event.txt (cada visita es un evento, con su sitio como evento padre; cada marca suelta, el suyo), occurrence.txt (ocurrencias con su eventID, presencias y ausencias), measurementorfact.txt (individuos maduros y esfuerzo de las visitas), meta.xml y eml.xml. Para el validador de GBIF, comprime el CONTENIDO de dwca/ (meta.xml en la raíz del ZIP).");
     }
     if (in_array("plinian", $o["formats"], true)) $rows[] = $kv("pliniancore/", EXPORT_PLINIAN_README);
     $rows[] = $kv("hojas/csv/", "Los mismos datos en CSV estándar para R, Python o QGIS: UTF-8, separador «,», punto decimal, fechas AAAA-MM-DD hh:mm (hora peninsular). Para una hoja de cálculo, usa este libro.");
@@ -786,11 +1005,14 @@ function exportBuild(PDO $pdo, string $catalogId, array $catalog, array $o, arra
     $zipName = "BioDex_{$slug}_" . EXPORT_MODE_FILE[$o["mode"]] . "_{$meta["date"]}.zip";
     $xlsxName = "BioDex_{$slug}_{$meta["date"]}.xlsx";
 
-    $mof = [];
+    // F11h: eMoF con núcleo Event: coreid = eventID; los maduros llevan además su occurrenceID; el esfuerzo de la visita, no.
+    $mof = $prep["events"]["effort"];
+    $occRows = [];
     foreach ($prep["records"] as $r) {
         $v = $r["v"];
+        $occRows[] = ["eventID" => $r["eventID"]] + $r["dwc"];
         if ($v["occurrenceStatus"] === "absent" || $v["mature_count"] === null) continue;
-        $mof[] = ["coreid" => $v["occurrenceID"], "measurementID" => $v["occurrenceID"] . ":mature_count",
+        $mof[] = ["eventID" => $r["eventID"], "occurrenceID" => $v["occurrenceID"], "measurementID" => $v["occurrenceID"] . ":mature_count",
                   "measurementType" => DWC_MATURE_TYPE, "measurementValue" => (int) $v["mature_count"],
                   "measurementUnit" => "individuos", "measurementDeterminedBy" => $v["recorded_by"],
                   "measurementDeterminedDate" => $r["dwc"]["eventDate"], "measurementMethod" => "Conteo en campo (BioDex)"];
@@ -809,9 +1031,10 @@ function exportBuild(PDO $pdo, string $catalogId, array $catalog, array $o, arra
         $zip = new ZipArchive();
         if ($zip->open($zipPath, ZipArchive::OVERWRITE) !== true) throw new RuntimeException("No se pudo crear el ZIP");
         if ($withDwc) {
-            $zip->addFromString("dwca/occurrence.txt", dwcTsv(array_keys(DWC_OCCURRENCE_TERMS), array_column($prep["records"], "dwc")));
-            if ($mof) $zip->addFromString("dwca/measurementorfact.txt", dwcTsv(array_merge(["coreid"], array_keys(DWC_MOF_TERMS)), $mof));
-            $zip->addFromString("dwca/meta.xml", dwcMetaXml((bool) $mof));
+            $zip->addFromString("dwca/event.txt", dwcTsv(array_keys(DWC_EVENT_TERMS), $prep["events"]["rows"]));
+            $zip->addFromString("dwca/occurrence.txt", dwcTsv(["eventID", ...array_keys(DWC_OCCURRENCE_TERMS)], $occRows));
+            if ($mof) $zip->addFromString("dwca/measurementorfact.txt", dwcTsv(["eventID", ...array_keys(DWC_EMOF_TERMS)], $mof));
+            $zip->addFromString("dwca/meta.xml", dwcEventMetaXml((bool) $mof));
             $zip->addFromString("dwca/eml.xml", exportEml($catalog, $o, $prep, $meta));
         }
         if ($withSheets) {
@@ -850,7 +1073,8 @@ function exportLeemeTxt(array $catalog, array $o, array $prep, array $meta, stri
         "",
     ];
     if (in_array("dwc", $o["formats"], true)) array_push($lines,
-        "dwca/   Darwin Core Archive (occurrence.txt, measurementorfact.txt, meta.xml, eml.xml).",
+        "dwca/   Darwin Core Archive con núcleo Event: event.txt (visitas, sitios y un evento por marca suelta),",
+        "        occurrence.txt (con eventID), measurementorfact.txt (maduros y esfuerzo), meta.xml y eml.xml.",
         "        Para GBIF u otras bases. Al validador de GBIF se sube el CONTENIDO de dwca/ comprimido",
         "        (meta.xml en la raíz del ZIP): https://www.gbif.org/tools/data-validator");
     if (in_array("sheets", $o["formats"], true)) array_push($lines,

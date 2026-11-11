@@ -199,7 +199,7 @@ section("«Para publicar» (editor)");
 check("200 y nombre …_publicar_….zip", $code === 200 && str_contains($hd["content-disposition"] ?? "", "_publicar_"), "HTTP {$code} " . substr($raw, 0, 200));
 $pub = unzipAll($raw);
 $names = array_keys($pub);
-foreach (["dwca/occurrence.txt", "dwca/measurementorfact.txt", "dwca/meta.xml", "dwca/eml.xml", "LEEME.txt",
+foreach (["dwca/event.txt", "dwca/occurrence.txt", "dwca/measurementorfact.txt", "dwca/meta.xml", "dwca/eml.xml", "LEEME.txt",
           "hojas/csv/observaciones.csv", "hojas/csv/especies.csv", "hojas/csv/evaluaciones_uicn.csv", "hojas/csv/distribucion.csv", "hojas/csv/notas.csv", "hojas/csv/evaluacion_especie.csv", "hojas/csv/subpoblaciones.csv", "hojas/csv/impactos.csv"] as $f) {
     check("contiene {$f}", isset($pub[$f]));
 }
@@ -208,7 +208,8 @@ check("contiene hojas/BioDex_<catálogo>_<fecha>.xlsx", (bool) $xlsxName, implod
 
 $occTxt = $pub["dwca/occurrence.txt"] ?? "";
 [$head, $rows, $bad] = parseTsv($occTxt);
-check("cabecera en el orden de F10a", $head === array_keys(DWC_OCCURRENCE_TERMS));
+// F11h: núcleo Event: occurrence.txt es una extensión y su primera columna (eventID) es el coreid.
+check("cabecera: eventID + los términos de F10a, en orden", $head === ["eventID", ...array_keys(DWC_OCCURRENCE_TERMS)]);
 check("UTF-8 sin BOM y saltos \\n", mb_check_encoding($occTxt, "UTF-8") && !str_starts_with($occTxt, "\xEF\xBB\xBF") && !str_contains($occTxt, "\r"));
 check("sin tabuladores internos: todas las filas con " . count($head) . " columnas", $bad === 0, "{$bad} filas mal");
 check("una fila por marca no borrada (5)", count($rows) === count($live), count($rows) . " filas");
@@ -248,10 +249,12 @@ check("meta.xml bien formado", $meta !== null);
 if ($meta) {
     $xp = new DOMXPath($meta);
     $xp->registerNamespace("t", "http://rs.tdwg.org/dwc/text/");
-    $terms = array_map(fn($n) => substr(strrchr($n->getAttribute("term"), "/"), 1), iterator_to_array($xp->query("//t:core/t:field")));
+    $occExt = "//t:extension[@rowType='http://rs.tdwg.org/dwc/terms/Occurrence']";
+    $terms = array_map(fn($n) => substr(strrchr($n->getAttribute("term"), "/"), 1), iterator_to_array($xp->query("{$occExt}/t:field")));
     check("cabecera de occurrence.txt = campos de meta.xml", $terms === $head);
-    check("rowType Occurrence y MeasurementOrFact", $xp->query("//t:core[@rowType='http://rs.tdwg.org/dwc/terms/Occurrence']")->length === 1
-        && $xp->query("//t:extension[@rowType='http://rs.tdwg.org/dwc/terms/MeasurementOrFact']")->length === 1);
+    check("F11h: núcleo Event, extensiones Occurrence y eMoF", $xp->query("//t:core[@rowType='http://rs.tdwg.org/dwc/terms/Event']")->length === 1
+        && $xp->query($occExt)->length === 1
+        && $xp->query("//t:extension[@rowType='http://rs.iobis.org/obis/terms/ExtendedMeasurementOrFact']")->length === 1);
     $xsd = @file_get_contents("http://rs.tdwg.org/dwc/text/tdwg_dwc_text.xsd", false, stream_context_create(["http" => ["timeout" => 10]]));
     if ($xsd) {
         // El XSD importa tdwg_dwcterms.xsd, que libxml no compila (usa chrono: sin importarlo), y no lo usa
@@ -270,8 +273,16 @@ if ($meta) {
     }
 }
 [$mh, $mrows, $mbad] = parseTsv($pub["dwca/measurementorfact.txt"] ?? "");
-check("measurementorfact.txt: 2 filas de maduros enlazadas por occurrenceID", count($mrows) === 2 && $mbad === 0 && $mh[0] === "coreid"
-    && !array_diff(array_column($mrows, "coreid"), $ids10) && $mrows[0]["measurementType"] === "número de individuos maduros");
+check("measurementorfact.txt: 2 filas de maduros enlazadas por eventID y occurrenceID", count($mrows) === 2 && $mbad === 0 && $mh[0] === "eventID"
+    && !array_diff(array_column($mrows, "occurrenceID"), $ids10) && $mrows[0]["measurementType"] === "número de individuos maduros"
+    && $mrows[0]["eventID"] === $byId[$mrows[0]["occurrenceID"]]["eventID"]);
+// F11h: sin visitas, cada marca es un evento oportunista con su misma posición publicable.
+[$eh, $erows, $ebad] = parseTsv($pub["dwca/event.txt"] ?? "");
+$evById = array_column($erows, null, "eventID");
+check("event.txt: un evento oportunista por marca (biodex:evt:<occurrenceID>), con la posición de la marca", $ebad === 0
+    && count($erows) === count($rows) && !array_filter($rows, fn($r) => $r["eventID"] !== "biodex:evt:{$r["occurrenceID"]}"
+        || ($evById[$r["eventID"]]["decimalLatitude"] ?? "x") !== $r["decimalLatitude"]
+        || ($evById[$r["eventID"]]["samplingProtocol"] ?? "") !== "observación oportunista"));
 $eml = wellFormed($pub["dwca/eml.xml"] ?? "");
 check("eml.xml bien formado", $eml !== null);
 if ($eml) {
@@ -300,8 +311,8 @@ if ($py === "si") {
     check("XLSX: " . count($xmls) . " partes XML, todas bien formadas (sin openpyxl)", count($xmls) >= 11 && !$broken, implode(", ", $broken));
     $wb = wellFormed($parts["xl/workbook.xml"] ?? "");
     $sheets = $wb ? array_map(fn($n) => $n->getAttribute("name"), iterator_to_array($wb->getElementsByTagName("sheet"))) : [];
-    check("XLSX: pestañas Léeme · Observaciones · Especies · Evaluaciones UICN · Distribución · Notas · Evaluación por especie · Subpoblaciones · Impactos",
-        $sheets === ["Léeme", "Observaciones", "Especies", "Evaluaciones UICN", "Distribución", "Notas", "Evaluación por especie", "Subpoblaciones", "Impactos"], implode(", ", $sheets));
+    check("XLSX: pestañas Léeme · Observaciones · Especies · Evaluaciones UICN · Distribución · Notas · Evaluación por especie · Subpoblaciones · Impactos · Visitas · Series",
+        $sheets === ["Léeme", "Observaciones", "Especies", "Evaluaciones UICN", "Distribución", "Notas", "Evaluación por especie", "Subpoblaciones", "Impactos", "Visitas", "Series"], implode(", ", $sheets));
     $obs = $parts["xl/worksheets/sheet2.xml"] ?? "";
     check("Observaciones: 2 filas de cabecera + 5, congeladas y con autofiltro", substr_count($obs, "<row ") === 7
         && str_contains($obs, 'state="frozen"') && str_contains($obs, "<autoFilter ref=\"A2:"));

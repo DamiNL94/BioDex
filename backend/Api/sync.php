@@ -171,7 +171,8 @@ function syncCurrent(PDO $pdo, array $ent, string $id, string $role, int $userId
     );
     $stmt->execute([$id]);
     $row = $stmt->fetch();
-    return occurrenceOut($row, normalizeSensitivityLevel($row["sens_level"]), $role, $userId);
+    $visitLevel = visitLevelMap($pdo, $row["catalog_id"], [$row["visit_id"]])[$row["visit_id"] ?? ""] ?? 4;
+    return occurrenceOut($row, min(normalizeSensitivityLevel($row["sens_level"]), $visitLevel), $role, $userId);
 }
 
 /** Clave de la versión del servidor en un «stale»: `occurrence`, `note` o `assessment`. */
@@ -463,6 +464,8 @@ $locations = [];
 $sites = [];
 $visits = [];
 $exactForeign = 0;
+// F11h: una marca de visita sale con el nivel más restrictivo entre su especie y su visita (Lib/visits.php).
+$visitLevel = visitLevelMap($pdo, $catalogId, array_map(fn($x) => $x[1]["visit_id"] ?? null, array_filter($rows, fn($x) => $x[0] === "occurrence")));
 foreach ($rows as [$kind, $r, $extra]) {
     if ($kind === "site") { $sites[] = siteOut($r, $extra[1], $extra[2], $role, $userId); continue; }
     if ($kind === "visit") { $visits[] = visitOut($r, $extra[1], $extra[2], $role, $userId); continue; }
@@ -472,7 +475,7 @@ foreach ($rows as [$kind, $r, $extra]) {
     if ($kind === "assessment") { $assessments[] = assessmentOut($r); continue; }
     if ($kind === "parameter") { $parameters[] = parameterOut($r); continue; }
     // Sin nivel registrado → normalizeSensitivityLevel() cae al más restrictivo (1).
-    $level = normalizeSensitivityLevel($r["sens_level"]);
+    $level = min(normalizeSensitivityLevel($r["sens_level"]), $visitLevel[$r["visit_id"] ?? ""] ?? 4);
     $item = occurrenceOut($r, $level, $role, $userId);
     if (!$item["deleted"] && !$item["generalized"] && $level < 4 && (int) $r["user_id"] !== $userId) $exactForeign++;
     $items[] = $item;
