@@ -34,6 +34,9 @@ import { openOverlay, confirmDialog } from '../components/overlay.js';
 import { openMarkSheet, canMark } from './mark-sheet.js';
 import { fabStack } from '../components/fab.js';
 import { openImpactSheet } from './impact-sheet.js';
+import { openStartVisit } from './visit-sheet.js';
+import { sitesFor, activeVisitFor } from '../visits.js';
+import { parseWkt } from '../site-geom.js';
 import { openSpeciesDetail } from './species-detail.js';
 import { toUtm, formatUtm } from '../geo/utm.js';
 import { LAYERS, tileTemplate, attributionFor, MAP_MAX_ZOOM } from '../map/layers.js';
@@ -123,7 +126,7 @@ export function mount(el, { go = () => {}, isStudio = () => false } = {}) {
             <button type="button" class="map-fab" data-follow aria-pressed="false" aria-label="Seguir mi posición" title="Seguir mi posición">${ICON.follow}</button>
             <button type="button" class="map-fab" data-legend aria-expanded="false" aria-controls="mapLegend" aria-label="Leyenda" title="Leyenda">${ICON.info}</button>
           </div>
-          ${fabStack()}
+          ${fabStack({ visit: true })}
           <div class="zone-strip" id="zoneStrip" hidden></div>
           <div class="map-float">
             <div class="map-legend" id="mapLegend" hidden></div>
@@ -661,6 +664,38 @@ export function mount(el, { go = () => {}, isStudio = () => false } = {}) {
   $('[data-mark]', el).addEventListener('click', () => {
     openMarkSheet({ catalog: state.activeCatalog, initialPos: pos, taxonHint: filters.taxonID, onSaved: loadMarks });
   });
+  // F11h: «Empezar visita» (botón grande, encima de Impacto y Marcar); con una visita en curso se esconde (la barra
+  // fija de arriba la cierra).
+  $('[data-visit]', el).addEventListener('click', () => {
+    openStartVisit({ catalog: state.activeCatalog, initialPos: pos, onStarted: () => { paintVisitFab(); loadSites(); } });
+  });
+  function paintVisitFab() {
+    const b = $('[data-visit]', el);
+    if (b) b.hidden = !state.activeCatalog || !canMark(state.activeCatalog) || !!activeVisitFor(state.activeCatalog.id);
+  }
+  paintVisitFab();
+
+  // F11h: sitios de muestreo del catálogo (círculo, polígono o línea; los generalizados, con su radio ampliado).
+  const siteOutlines = Lf.featureGroup().addTo(map);
+  async function loadSites() {
+    const cat = state.activeCatalog;
+    const list = cat && hasDb() ? await sitesFor(cat.id).catch(() => []) : [];
+    if (!alive) return;
+    siteOutlines.clearLayers();
+    const style = { className: 'site-shape', color: '#7a4fb5', weight: 2, dashArray: '6 4', fillOpacity: 0.06, interactive: true };
+    for (const st of list) {
+      const g = st.footprintWKT ? parseWkt(st.footprintWKT) : null;
+      let shape = null;
+      if (g && g.type === 'POLYGON') shape = Lf.polygon(g.latlngs, style);
+      else if (g) shape = Lf.polyline(g.latlngs, { ...style, fill: false, weight: 4 });
+      else if (st.decimalLatitude !== null && st.decimalLatitude !== undefined) {
+        shape = Lf.circle([st.decimalLatitude, st.decimalLongitude], { ...style, radius: st.radiusM || 25 });
+      }
+      if (shape) shape.bindTooltip(st.name, { permanent: false }).addTo(siteOutlines);
+    }
+  }
+  loadSites();
+
   // F11g: «Impacto», junto a «Marcar»: la hoja de impacto con la última posición del GPS.
   $('[data-impact]', el).addEventListener('click', () => {
     openImpactSheet({ catalog: state.activeCatalog, initialPos: pos, onSaved: loadMarks });
@@ -753,6 +788,8 @@ export function mount(el, { go = () => {}, isStudio = () => false } = {}) {
     if (key === 'online' && state.online) { refreshMetrics(); refreshSubpops(); }
     // Descarga del catálogo terminada: ya hay fichas y marcas del equipo en el dispositivo.
     if (key === 'activeCatalog' || key === 'user' || key === 'download') loadMarks();
+    if (key === 'visit' || key === 'activeCatalog') paintVisitFab();
+    if ((key === 'sync' && !state.sync.running) || key === 'activeCatalog' || key === 'download' || key === 'visit') loadSites();
   });
 
   sensitivityLevels().then((l) => { levels = l || []; if (alive) repaintMarks(); }).catch(() => {});

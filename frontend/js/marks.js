@@ -13,12 +13,13 @@
 
 import { state } from './state.js';
 import { tx, getAll, byIndex, get, getMeta, setMeta } from './db.js';
+import { sitePayload, visitPayload, visitFromPayload } from './visit-records.js';
 
 export const MARK_ROLES = ['owner', 'custodian', 'editor'];
 // Términos que viajan en el push (el resto de campos del registro local son del dispositivo).
 const PUSH_FIELDS = ['occurrenceID', 'taxonID', 'eventDate', 'decimalLatitude', 'decimalLongitude',
   'coordinateUncertaintyInMeters', 'basisOfRecord', 'occurrenceStatus', 'individualCount', 'mature_count',
-  'lifeStage', 'sex', 'habitat', 'georeferenceProtocol', 'georeferenceRemarks', 'occurrenceRemarks', 'sampleSizeValue', 'clientUpdatedAt'];
+  'lifeStage', 'sex', 'habitat', 'georeferenceProtocol', 'georeferenceRemarks', 'occurrenceRemarks', 'sampleSizeValue', 'visitID', 'clientUpdatedAt'];
 const NOTE_PUSH_FIELDS = ['noteID', 'taxonID', 'text', 'clientUpdatedAt'];
 export const BACKUP_FORMAT = 'biodex-backup';
 export const GEOREF_GPS = 'GPS del dispositivo';
@@ -88,7 +89,7 @@ export function markFields(f = {}) {
 }
 
 /** Sustituye la entrada de cola de `ref` (si la hay) por una nueva. Dentro de una transacción con outbox. */
-async function enqueue(t, entry) {
+export async function enqueue(t, entry) {
   for (const old of await t.byIndex('outbox', 'ref', entry.ref)) await t.del('outbox', old.id);
   await t.add('outbox', { attempts: 0, lastError: null, ...entry });
 }
@@ -98,7 +99,7 @@ async function enqueue(t, entry) {
  * punto marcado en el mapa, con la precisión que estima el usuario, obligatoria). `fields`: los de
  * markFields(). Devuelve la marca guardada.
  */
-export async function createMark({ catalogId, taxonID, pos = null, point = null, fields = {}, eventDate = null }) {
+export async function createMark({ catalogId, taxonID, pos = null, point = null, fields = {}, eventDate = null, visitID = null }) {
   let where;
   if (point) {
     const unc = Math.round(Number(point.uncertainty));
@@ -117,6 +118,7 @@ export async function createMark({ catalogId, taxonID, pos = null, point = null,
     ...where,
     basisOfRecord: 'HumanObservation',
     ...markFields(fields),
+    visitID: visitID || null,   // F11h: visita en curso (null = marca oportunista)
     clientUpdatedAt: now,
     status: 'pending', reason: null, authorId: state.user.id, recordedBy: state.user.name || state.user.email,
     generalized: false, serverSeq: null, deletedAt: null,
@@ -391,13 +393,15 @@ export async function queueCounts() {
 export const storeOf = (kind) => (kind === 'note' || kind === 'noteDelete' ? 'notes'
   : kind === 'assessment' || kind === 'assessmentDelete' ? 'assessments'
     : kind === 'impact' || kind === 'impactDelete' ? 'impacts'
-      : kind === 'species' ? null : 'occurrences');
+      : kind === 'site' || kind === 'siteDelete' ? 'sites'
+        : kind === 'visit' || kind === 'visitDelete' ? 'visits'
+          : kind === 'species' ? null : 'occurrences');
 
 /** Entrada de cola que es un borrado (de marca, nota o evaluación). */
-export const isDeleteKind = (kind) => kind === 'delete' || kind === 'noteDelete' || kind === 'assessmentDelete' || kind === 'impactDelete';
+export const isDeleteKind = (kind) => ['delete', 'noteDelete', 'assessmentDelete', 'impactDelete', 'siteDelete', 'visitDelete'].includes(kind);
 
 /** Almacenes con registros en cola (para las transacciones que los tocan todos). */
-export const RECORD_STORES = ['occurrences', 'notes', 'assessments', 'impacts'];
+export const RECORD_STORES = ['occurrences', 'notes', 'assessments', 'impacts', 'sites', 'visits'];
 
 /** Rechazadas con su marca, nota o evaluación, para Ajustes › Sincronización. */
 export async function rejectedItems() {
@@ -408,6 +412,8 @@ export async function rejectedItems() {
     note: storeOf(e.kind) === 'notes' ? await get('notes', e.ref) : null,
     assessment: storeOf(e.kind) === 'assessments' ? await get('assessments', e.ref) : null,
     impact: storeOf(e.kind) === 'impacts' ? await get('impacts', e.ref) : null,
+    site: storeOf(e.kind) === 'sites' ? await get('sites', e.ref) : null,
+    visit: storeOf(e.kind) === 'visits' ? await get('visits', e.ref) : null,
     species: e.kind === 'species' ? await get('species', e.ref) : null,
   })));
 }
@@ -475,6 +481,8 @@ export async function buildBackup(catalogId = null) {
   const notes = [];
   const assessments = [];
   const impacts = [];
+  const sites = [];
+  const visits = [];
   const catalogIds = new Set();
   for (const e of entries) {
     catalogIds.add(e.catalogId);
@@ -495,6 +503,13 @@ export async function buildBackup(catalogId = null) {
         recordedBy: i.recordedBy, deletedAt: i.deletedAt || null });
       continue;
     }
+    if (storeOf(e.kind) === 'sites' || storeOf(e.kind) === 'visits') {
+      const store = storeOf(e.kind);
+      const rec = await get(store, e.ref);
+      if (rec) (store === 'sites' ? sites : visits).push({ catalogId: rec.catalogId, action: isDeleteKind(e.kind) ? 'delete' : 'upsert',
+        ...(store === 'sites' ? sitePayload(rec) : visitPayload(rec)), recordedBy: rec.recordedBy, deletedAt: rec.deletedAt || null });
+      continue;
+    }
     if (storeOf(e.kind) === 'notes') {
       const note = await get('notes', e.ref);
       if (note) notes.push({ catalogId: note.catalogId, action: e.kind === 'noteDelete' ? 'delete' : 'upsert',
@@ -511,10 +526,11 @@ export async function buildBackup(catalogId = null) {
     const c = await get('catalogs', id);
     catalogs.push({ id, name: c ? c.name : null });
   }
-  // version 2 (F8a): + notes · 3 (F8b): + assessments · 4 (F11g): + impacts. El importador acepta también los anteriores.
+  // version 2 (F8a): + notes · 3 (F8b): + assessments · 4 (F11g): + impacts · 5 (F11h): + sites y visits. El importador
+  // acepta también los anteriores.
   return {
-    format: BACKUP_FORMAT, version: 4, exportedAt: isoNow(), userId: state.user.id, userEmail: state.user.email,
-    catalogs, species, occurrences, notes, assessments, impacts,
+    format: BACKUP_FORMAT, version: 5, exportedAt: isoNow(), userId: state.user.id, userEmail: state.user.email,
+    catalogs, species, occurrences, notes, assessments, impacts, sites, visits,
   };
 }
 
@@ -579,6 +595,18 @@ export async function importBackup(backup) {
         serverSeq: null, deletedAt: i.deletedAt || null });
       await enqueue(t, { kind: action === 'delete' ? 'impactDelete' : 'impact', ref: i.impactID, catalogId: i.catalogId });
       added++;
+    }
+    // F11h: sitios y visitas (antes que nada que los use; el servidor también los recibe primero).
+    for (const [store, list, idKey, kind] of [['sites', backup.sites, 'siteID', 'site'], ['visits', backup.visits, 'visitID', 'visit']]) {
+      for (const x of Array.isArray(list) ? list : []) {
+        if (!x || !x[idKey] || !x.catalogId || await t.get(store, x[idKey])) { skipped++; continue; }
+        const { action, ...fields } = x;
+        const rec = store === 'visits' ? visitFromPayload(fields) : fields;
+        await t.put(store, { ...rec, status: 'pending', reason: null, authorId: state.user.id, generalized: false, serverSeq: null,
+          deletedAt: x.deletedAt || null });
+        await enqueue(t, { kind: action === 'delete' ? kind + 'Delete' : kind, ref: x[idKey], catalogId: x.catalogId });
+        added++;
+      }
     }
     for (const a of Array.isArray(backup.assessments) ? backup.assessments : []) {
       if (!a || !a.assessmentID || !a.catalogId || await t.get('assessments', a.assessmentID)) { skipped++; continue; }

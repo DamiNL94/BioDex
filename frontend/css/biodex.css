@@ -1541,3 +1541,64 @@ path.gbif-pt.is-gbif{stroke:#2B5C8A;fill:#2B5C8A;fill-opacity:.55}
 path.gbif-pt.is-biodex{stroke:var(--brass-ink);fill:var(--brass);fill-opacity:.9}
 .legend-dot{display:inline-block;width:.8em;height:.8em;border-radius:50%;vertical-align:-1px;margin:0 4px 0 8px}
 .legend-dot.is-gbif{background:#2B5C8A} .legend-dot.is-biodex{background:var(--brass)}
+
+/* ===== T. F11h: visitas, sitios y series temporales ================================================ */
+/* Botón grande «Empezar visita» (Mapa), encima de Impacto y Marcar */
+.visit-fab{min-height:var(--tap-main);padding:0 22px;border-radius:28px;background:var(--sea);border-color:var(--sea);box-shadow:var(--shadow)}
+.visit-fab svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2}
+.visit-fab[hidden]{display:none}
+/* Barra fija de la visita en curso (components/visit-bar.js) */
+#visitBar[hidden]{display:none}
+.visit-bar{position:sticky;top:0;z-index:12;margin:0 0 8px;padding:8px 12px;background:var(--sea-tint);border-left:var(--rule) solid var(--sea);
+  border-radius:var(--radius-md);color:var(--ink)}
+.visit-bar-main{display:flex;align-items:center;gap:10px;min-width:0}
+.visit-bar-dot{flex:none;width:10px;height:10px;border-radius:50%;background:var(--sea);animation:visit-pulse 2s ease-in-out infinite}
+@keyframes visit-pulse{50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){.visit-bar-dot{animation:none}}
+.visit-bar-text{flex:1;min-width:0;overflow-wrap:anywhere}
+.visit-bar-meta{color:var(--muted)}
+.visit-bar-close{flex:none;min-height:var(--tap-min)}
+.visit-bar-targets,.visit-bar-track{margin:4px 0 0 20px;font-size:var(--fs-sm)}
+.visit-bar-ok{color:var(--leaf);font-weight:700}
+.visit-bar-pending{color:var(--warn-ink);font-weight:700}
+.visit-bar-track{color:var(--danger-ink);font-weight:700}
+/* Hojas de empezar y cerrar visita */
+.visit-sites{display:flex;flex-direction:column;gap:var(--tap-gap)}
+.visit-site{min-height:var(--tap-main);text-align:left;padding:8px 12px;border:1px solid var(--line-strong);border-radius:var(--radius-md);
+  background:var(--panel);color:var(--ink);cursor:pointer}
+.visit-site.active{border-color:var(--sea);box-shadow:inset var(--rule) 0 0 var(--sea);background:var(--sea-tint)}
+.visit-protocols button{min-height:var(--tap-min)}
+.vt-list{list-style:none;margin:6px 0 0;padding:0;max-height:320px;overflow:auto;border:1px solid var(--line);border-radius:var(--radius-md)}
+.vt-list li{border-bottom:1px solid var(--line)}
+.vt-list li:last-child{border-bottom:0}
+.vt-row{display:flex;align-items:center;gap:10px;min-height:var(--tap-min);padding:4px 10px}
+.vt-count{margin:0;font-weight:700}
+.visit-h{font-size:var(--fs-md);margin:12px 0 6px}
+.visit-summary-head{margin:0 0 8px}
+.mark-visit{margin:0 0 8px}
+/* Sitios en los mapas */
+path.site-shape{stroke:#7A4FB5;fill:#7A4FB5}
+[data-theme="dark"] path.site-shape{stroke:#B79BE0;fill:#B79BE0}
+.sites-map{height:360px;border-radius:var(--radius-md);margin:8px 0}
+.sites-draw-tools{display:flex;flex-wrap:wrap;gap:var(--tap-gap);margin:8px 0}
+.sites-draw-tools .active{background:var(--leaf-fill);color:var(--cream)}
+/* Serie temporal (components/species-series.js) */
+.series-chart{width:100%;overflow-x:auto}
+.series-chart svg{display:block;width:100%;min-width:320px;height:auto;font-family:var(--font-ui);font-size:12px}
+.series-axis{stroke:var(--line-strong);stroke-width:1}
+.series-grid{stroke:var(--line);stroke-width:1}
+.series-tick{fill:var(--muted)}
+.series-line{fill:none;stroke-width:1.5;stroke-linejoin:round}
+.series-line.is-total{stroke:var(--leaf);stroke-width:3}
+.series-pt.is-total{fill:var(--leaf)}
+.series-line.is-trend{stroke:var(--brass);stroke-width:2;stroke-dasharray:6 4}
+.series-gap{fill:var(--warn-bg)}
+.series-gap-label{fill:var(--warn-ink);font-size:11px}
+.series-window{fill:var(--sea-tint);opacity:.6}
+.series-legend{display:flex;flex-wrap:wrap;gap:4px 14px;margin:6px 0;font-size:var(--fs-sm)}
+.series-key{display:inline-block;width:18px;height:3px;vertical-align:middle;margin-right:6px;background:var(--sp, var(--leaf))}
+.series-key.is-total{height:4px;background:var(--leaf)}
+.series-key.is-trend{background:repeating-linear-gradient(90deg,var(--brass) 0 6px,transparent 6px 10px)}
+.series-key.is-gap{height:10px;background:var(--warn-bg);border:1px solid var(--warn)}
+.series-stats{margin:8px 0}
+.series-table td.is-gap{color:var(--warn-ink)}

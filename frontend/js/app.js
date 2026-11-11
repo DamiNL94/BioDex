@@ -30,6 +30,7 @@ import * as catalogsView from './views/catalogs.js';
 import * as speciesView from './views/species.js';
 import * as settingsView from './views/settings.js';
 import { codeFromHash, pendingJoin, openJoin } from './views/join.js';
+import { mountVisitBar } from './components/visit-bar.js';
 
 const Nav = window.BioDexNav;
 const root = document.getElementById('app');
@@ -59,6 +60,7 @@ const MODE_SENSITIVE = new Set(['catalogos', 'mapa', 'especies']);
 let current = null;       // ruta pintada
 let cleanup = null;       // desmontaje de la vista actual
 let unsubscribeShell = null;
+let unmountVisitBar = null;   // F11h: barra de la visita en curso
 let banner = null;        // aviso de una sola vez bajo la cabecera (p. ej. «revisa tu correo»):
                           // {kind, text, action?: {label, run}}
 let returnTo = null;      // {label, run}: camino de vuelta tras un salto entre secciones
@@ -77,6 +79,7 @@ applyMode();
 function showAuth() {
   stopSync();
   if (unsubscribeShell) { unsubscribeShell(); unsubscribeShell = null; }
+  if (unmountVisitBar) { unmountVisitBar(); unmountVisitBar = null; }
   if (cleanup) { cleanup(); cleanup = null; }
   current = null;
   returnTo = null;
@@ -147,6 +150,7 @@ async function showApp() {
       </aside>
       <div class="main">
         <div id="bands"></div>
+        <div id="visitBar" hidden></div>
         <div id="backSlot"></div>
         <main class="view" id="view" tabindex="-1"></main>
       </div>
@@ -164,6 +168,8 @@ async function showApp() {
   $('[data-sync-now]', root).addEventListener('click', () => { syncNow(); });
 
   updateShell();
+  if (unmountVisitBar) unmountVisitBar();
+  unmountVisitBar = dbError ? null : mountVisitBar($('#visitBar', root));
   unsubscribeShell = subscribe((key) => {
     if (key === 'online' || key === 'activeCatalog' || key === 'user' || key === 'sync') updateShell();
   });

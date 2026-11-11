@@ -139,17 +139,18 @@ const groupId = (sp) => (sp.silhouette && sp.silhouette.id) || 'generic';
  *   recent  Map taxonID → instante (recentFromMarks)
  *   near    Map taxonID → metros (nearFromMarks)
  */
-export function searchSpecies(species, { query = '', group = '', recent = new Map(), near = new Map() } = {}) {
+export function searchSpecies(species, { query = '', group = '', recent = new Map(), near = new Map(), targets = null } = {}) {
   const recentRank = new Map([...recent.keys()].map((id, i) => [id, i]));
   const out = [];
   for (const sp of species || []) {
     if (group && groupId(sp) !== group) continue;
     const score = matchScore(query, sp);
     if (score === null) continue;
-    const tier = recentRank.has(sp.taxonID) ? 'recent' : near.has(sp.taxonID) ? 'near' : 'all';
+    // F11h: las especies objetivo de la visita en curso, antes que nada.
+    const tier = targets && targets.has(sp.taxonID) ? 'target' : recentRank.has(sp.taxonID) ? 'recent' : near.has(sp.taxonID) ? 'near' : 'all';
     out.push({ sp, tier, score, distance: near.get(sp.taxonID) });
   }
-  const TIER = { recent: 0, near: 1, all: 2 };
+  const TIER = { target: -1, recent: 0, near: 1, all: 2 };
   const byName = (a, b) => canonicalOf(a.sp).localeCompare(canonicalOf(b.sp), 'es');
   const hasQuery = !!fold(query);
   return out.sort((a, b) => (hasQuery ? a.score - b.score : 0)

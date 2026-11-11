@@ -31,9 +31,20 @@
 //                   deletedAt}. Cola `impact` / `impactDelete`, como las marcas.
 //   locations       [catalogId, taxonID] → nº de localidades confirmado (F11g): {count, groups, justification, quality,
 //                   source, separationKm, setBy, setAt, serverSeq}. Solo bajan por el pull (se editan con red).
+//   sites           siteID → sitio de muestreo (F11h, js/visits.js): {siteID, catalogId, name, siteType, decimalLatitude,
+//                   decimalLongitude, radiusM | footprintWKT, bandM, areaM2, areaGiven, lengthM, protocol, species,
+//                   authorId, recordedBy, generalized, clientUpdatedAt, status, reason, serverSeq, deletedAt}.
+//                   Cola `site` / `siteDelete`.
+//   visits          visitID → visita (F11h): {visitID, catalogId, siteID, protocol, bandM, effortMinutes, observers,
+//                   eventStart, eventEnd, conditions, visitStatus (open · closed; en la API, `status`), species,
+//                   decimalLatitude, decimalLongitude, authorId, recordedBy, generalized, clientUpdatedAt, status, reason,
+//                   serverSeq, deletedAt}. Cola `visit` / `visitDelete`. La traza de un transecto en grabación va en
+//                   meta `track:<visitID>` (no se sube: al cerrar se convierte en la línea del sitio).
+//   occurrences (F11h) gana el índice `visitID` (marcas de una visita).
 // ================================================================================================
 
-const DB_VERSION = 6;   // 2 (F7): zones · 3 (F8a): notes · 4 (F8b): assessments · 5 (F11f): parameters · 6 (F11g): impacts, locations
+const DB_VERSION = 7;   // 2 (F7): zones · 3 (F8a): notes · 4 (F8b): assessments · 5 (F11f): parameters · 6 (F11g): impacts, locations
+                        // 7 (F11h): sites, visits y occurrences.visitID
 let current = null;       // {name, db}
 
 const req = (r) => new Promise((resolve, reject) => {
@@ -43,7 +54,7 @@ const req = (r) => new Promise((resolve, reject) => {
 
 export const dbName = (userId) => `biodex-${userId}`;
 
-function upgrade(db, oldVersion) {
+function upgrade(db, oldVersion, t) {
   if (oldVersion < 1) createV1(db);
   if (oldVersion < 2) db.createObjectStore('zones', { keyPath: 'id' });
   if (oldVersion < 3) {
@@ -65,6 +76,14 @@ function upgrade(db, oldVersion) {
     const impacts = db.createObjectStore('impacts', { keyPath: 'impactID' });
     impacts.createIndex('catalogId', 'catalogId');
     db.createObjectStore('locations', { keyPath: ['catalogId', 'taxonID'] });
+  }
+  if (oldVersion < 7) {
+    const sites = db.createObjectStore('sites', { keyPath: 'siteID' });
+    sites.createIndex('catalogId', 'catalogId');
+    const visits = db.createObjectStore('visits', { keyPath: 'visitID' });
+    visits.createIndex('catalogId', 'catalogId');
+    visits.createIndex('siteID', 'siteID');
+    t.objectStore('occurrences').createIndex('visitID', 'visitID');
   }
 }
 
@@ -88,7 +107,7 @@ export async function openUserDb(userId) {
   if (current && current.name === name) return current.db;
   closeDb();
   const open = indexedDB.open(name, DB_VERSION);
-  open.onupgradeneeded = (ev) => upgrade(open.result, ev.oldVersion);
+  open.onupgradeneeded = (ev) => upgrade(open.result, ev.oldVersion, open.transaction);
   const db = await req(open);
   // Otra pestaña borra la base (cerrar sesión): se suelta para no bloquearla.
   db.onversionchange = () => { db.close(); if (current && current.db === db) current = null; };

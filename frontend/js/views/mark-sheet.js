@@ -17,6 +17,8 @@
 //     «Individuo maduro» (con varios: «¿cuántos maduros?») → lifeStage adult + mature_count, estado
 //     vital según el reino y sexo (solo fauna).
 //   · Hábitat (se recuerda el último de esta sesión) y observaciones.
+//   · F11h: con una VISITA en curso en el catálogo, la marca nueva lleva su visitID y el buscador pone primero las
+//     especies objetivo; la hoja lo dice arriba.
 //   · F11g: «Superficie contada (m²)», opcional: la marca es una PARCELA y su densidad de maduros sirve para
 //     estimar el total (docs/iucn.md). Las marcas de un mismo conteo comparten fecha y superficie.
 // Vocabularios: los de GBIF que valida el servidor (Lib/sync.php); aquí solo sus etiquetas.
@@ -32,6 +34,7 @@ import { remoteOrLocal, localCatalogData, localSpecies } from '../offline.js';
 import { toUtm, formatUtm } from '../geo/utm.js';
 import { mountSpeciesPicker } from '../components/species-picker.js';
 import { tallyCategories, emptyTally, tallyAdd, tallySet, tallyUndo, tallyKeep, tallyTotal, tallyToMarks } from '../tally.js';
+import { activeVisitFor } from '../visits.js';
 
 const LOW_ACCURACY_M = 50;
 const GPS_TIMEOUT_MS = 30000;
@@ -110,6 +113,7 @@ export function openMarkSheet({ catalog, species = null, occurrence = null, poin
 
   // --- Estado de la hoja ----------------------------------------------------------------------
   const o = occurrence || {};
+  const visit = !editing && catalog ? activeVisitFor(catalog.id) : null;   // F11h
   let chosen = species;
   let speciesList = [];
   let pos = initialPos;
@@ -127,6 +131,7 @@ export function openMarkSheet({ catalog, species = null, occurrence = null, poin
 
   render(ov.body, html`
     <form class="form mark-form" novalidate>
+      ${visit ? html`<p class="mark-visit"><span class="badge ok">Visita</span> ${visit.siteName ? `En la visita a «${visit.siteName}»` : 'En la visita en curso (sin sitio)'}</p>` : ''}
       <div class="mark-sp"></div>
       <section class="mark-pos" aria-label="Posición"></section>
 
@@ -229,6 +234,7 @@ export function openMarkSheet({ catalog, species = null, occurrence = null, poin
     if (picker) picker.destroy();
     picker = mountSpeciesPicker(pickBox, {
       species: speciesList, catalogId: catalog.id, keep: pickKeep, position: here, selectedId: chosen && chosen.taxonID,
+      targets: visit ? new Set(visit.species || []) : null,
       label: `Buscar especie en «${catalog.name}»`,
       onPick: (sp) => {
         chosen = sp;
@@ -553,7 +559,7 @@ export function openMarkSheet({ catalog, species = null, occurrence = null, poin
       const eventDate = isoNow();
       try {
         for (const fields of batch) {
-          saved.push(await createMark({ catalogId: catalog.id, taxonID: sp.taxonID, ...target, eventDate,
+          saved.push(await createMark({ catalogId: catalog.id, taxonID: sp.taxonID, ...target, eventDate, visitID: visit ? visit.visitID : null,
             fields: markFields({ ...fields, sampleSizeValue: form.sampleArea.value }) }));
         }
       } catch (e) {
@@ -571,7 +577,7 @@ export function openMarkSheet({ catalog, species = null, occurrence = null, poin
     try {
       const occ = editing
         ? await updateMark(o.occurrenceID, fields)
-        : await createMark({ catalogId: catalog.id, taxonID: sp.taxonID, ...target, fields });
+        : await createMark({ catalogId: catalog.id, taxonID: sp.taxonID, ...target, fields, visitID: visit ? visit.visitID : null });
       if (!occ) throw new Error('Esta marca ya no se puede editar (¿se borró?).');
       sessionSet(HABITAT_KEY, (fields.habitat || '').trim());
       requestSync();

@@ -6,8 +6,8 @@
 // Orden de cada pasada:
 //   1. especies creadas sin red (POST /species con su taxonID; 409 → se reasignan sus marcas) y su
 //      alta en el catálogo;
-//   2. push de marcas, notas de especie (F8a), evaluaciones UICN (F8b) y sus borrados en lotes de 200,
-//      por catálogo;
+//   2. push de marcas, notas de especie (F8a), evaluaciones UICN (F8b), impactos (F11g), sitios y visitas (F11h,
+//      primero en cada lote) y sus borrados en lotes de 200, por catálogo;
 //   3. pull de cada catálogo descargado hasta `hasMore: false` (marcas en `items`, notas en `notes`,
 //      evaluaciones en `assessments`, un solo cursor); si `catalogContentSeq` cambió, se vuelve a bajar el paquete.
 // Red caída a mitad → reintento con espera creciente (30 s, 1, 2, 5 min). 401 → la cola se conserva
@@ -22,13 +22,14 @@ import { tx, getAll, get, put, getMeta, setMeta, hasDb } from './db.js';
 import { deviceId, pushPayload, notePayload, assessmentPayload, assessmentFromServer, impactPayload, storeOf, queueCounts, outboxEntries,
   RECORD_STORES } from './marks.js';
 import { downloadCatalog, forgetCatalog, isDownloading } from './offline.js';
+import { sitePayload, visitPayload, siteFromServer, visitFromServer } from './visit-records.js';
 
 const PERIOD_MS = 5 * 60 * 1000;
 // Versión del protocolo de pull que tiene aplicada cada catálogo (meta `syncv:<id>`). 2 (F8a): el pull
 // trae también `notes`. Un cursor de antes pudo saltarse notas (se lo comía una versión anterior de la
 // app que no las guardaba): con una versión menor se vuelve a pedir desde 0. 3 (F8b): + `assessments`.
 // 4 (F11f): + `parameters` (parámetros de especie).
-const PULL_VERSION = 5;   // 5 (F11g): + `impacts` y `locations`
+const PULL_VERSION = 6;   // 5 (F11g): + `impacts` y `locations` · 6 (F11h): + `sites` y `visits` (y visitID en las marcas)
 const BACKOFF_S = [30, 60, 120, 300];
 const PUSH_BATCH = 200;
 const PULL_LIMIT = 500;
@@ -131,7 +132,13 @@ const ENTITIES = {
   notes: { id: 'noteID', results: 'noteResults', stale: 'note', deleteKind: 'noteDelete' },
   assessments: { id: 'assessmentID', results: 'assessmentResults', stale: 'assessment', deleteKind: 'assessmentDelete' },
   impacts: { id: 'impactID', results: 'impactResults', stale: 'impact', deleteKind: 'impactDelete' },   // F11g
+  sites: { id: 'siteID', results: 'siteResults', stale: 'site', deleteKind: 'siteDelete' },              // F11h
+  visits: { id: 'visitID', results: 'visitResults', stale: 'visit', deleteKind: 'visitDelete' },        // F11h
 };
+
+// F11h: sitios y visitas primero, para que una marca de visita no llegue al servidor antes que su visita.
+const PUSH_ORDER = { site: 0, siteDelete: 0, visit: 1, visitDelete: 1 };
+const pushRank = (e) => PUSH_ORDER[e.kind] ?? 2;
 
 async function applyResults(catalogId, entries, res) {
   const byRef = new Map(entries.map((e) => [e.ref, e]));
@@ -169,10 +176,11 @@ async function applyResults(catalogId, entries, res) {
 }
 
 async function pushCatalog(catalogId, entries, device) {
+  entries = [...entries].sort((a, b) => pushRank(a) - pushRank(b) || a.id - b.id);
   for (let i = 0; i < entries.length; i += PUSH_BATCH) {
     const batch = entries.slice(i, i + PUSH_BATCH);
     const body = { catalogId, deviceId: device, occurrences: [], deletes: [], notes: [], noteDeletes: [],
-      assessments: [], assessmentDeletes: [], impacts: [], impactDeletes: [] };
+      assessments: [], assessmentDeletes: [], impacts: [], impactDeletes: [], sites: [], siteDeletes: [], visits: [], visitDeletes: [] };
     const sent = [];
     for (const e of batch) {
       const store = storeOf(e.kind);
@@ -183,6 +191,10 @@ async function pushCatalog(catalogId, entries, device) {
       else if (e.kind === 'assessmentDelete') body.assessmentDeletes.push({ assessmentID: e.ref, clientUpdatedAt: rec.clientUpdatedAt });
       else if (e.kind === 'impactDelete') body.impactDeletes.push({ impactID: e.ref, clientUpdatedAt: rec.clientUpdatedAt });
       else if (e.kind === 'impact') body.impacts.push(impactPayload(rec));
+      else if (e.kind === 'siteDelete') body.siteDeletes.push({ siteID: e.ref, clientUpdatedAt: rec.clientUpdatedAt });
+      else if (e.kind === 'visitDelete') body.visitDeletes.push({ visitID: e.ref, clientUpdatedAt: rec.clientUpdatedAt });
+      else if (e.kind === 'site') body.sites.push(sitePayload(rec));
+      else if (e.kind === 'visit') body.visits.push(visitPayload(rec));
       else if (e.kind === 'note') body.notes.push(notePayload(rec));
       else if (e.kind === 'assessment') body.assessments.push(assessmentPayload(rec));
       else body.occurrences.push(pushPayload(rec));
@@ -209,6 +221,8 @@ async function pushCatalog(catalogId, entries, device) {
 /** Elemento del servidor (pull o «stale») → registro local sincronizado. */
 function fromServer(store, it, catalogId) {
   if (store === 'assessments') return assessmentFromServer(it, catalogId);
+  if (store === 'sites') return siteFromServer(it, catalogId);
+  if (store === 'visits') return visitFromServer(it, catalogId);
   return { ...it, catalogId, authorId: it.userId, status: 'synced', reason: null, deletedAt: null };
 }
 
@@ -227,7 +241,8 @@ async function applyPulled(catalogId, res) {
       else await t.put('locations', { ...l, catalogId });
     }
     for (const [store, list, idKey] of [['occurrences', res.items || [], 'occurrenceID'], ['notes', res.notes || [], 'noteID'],
-      ['assessments', res.assessments || [], 'assessmentID'], ['impacts', res.impacts || [], 'impactID']]) {
+      ['assessments', res.assessments || [], 'assessmentID'], ['impacts', res.impacts || [], 'impactID'],
+      ['sites', res.sites || [], 'siteID'], ['visits', res.visits || [], 'visitID']]) {
       for (const it of list) {
         if ((await t.byIndex('outbox', 'ref', it[idKey])).length) continue;
         if (it.deleted) { await t.del(store, it[idKey]); continue; }
@@ -249,7 +264,7 @@ async function applyPulled(catalogId, res) {
  */
 async function resetForeignMarks(catalogId, epoch) {
   const me = state.user && state.user.id;
-  await tx(['occurrences', 'impacts', 'meta'], 'readwrite', async (t) => {
+  await tx(['occurrences', 'impacts', 'sites', 'visits', 'meta'], 'readwrite', async (t) => {
     for (const o of await t.byIndex('occurrences', 'catalogId', catalogId)) {
       if (o.authorId !== me) await t.del('occurrences', o.occurrenceID);
     }
@@ -257,6 +272,9 @@ async function resetForeignMarks(catalogId, epoch) {
     for (const i of await t.byIndex('impacts', 'catalogId', catalogId)) {
       if (i.authorId !== me) await t.del('impacts', i.impactID);
     }
+    // F11h: y los sitios y visitas ajenos (su posición se generaliza con el nivel de sus especies).
+    for (const x of await t.byIndex('sites', 'catalogId', catalogId)) if (x.authorId !== me) await t.del('sites', x.siteID);
+    for (const x of await t.byIndex('visits', 'catalogId', catalogId)) if (x.authorId !== me) await t.del('visits', x.visitID);
     await t.put('meta', { key: 'cursor:' + catalogId, value: 0 });
     await t.put('meta', { key: 'epoch:' + catalogId, value: epoch });
   });

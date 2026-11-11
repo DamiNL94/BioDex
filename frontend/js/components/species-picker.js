@@ -20,7 +20,7 @@ import { silhouette, silhouetteData, swapToSilhouette } from './species-card.js'
 import { searchSpecies, recentFromMarks, nearFromMarks, groupsOf, GRID_MAX, NEAR_M } from '../species-search.js';
 
 const ROW_LIMIT = 80;   // más filas no se leen en una pantalla de móvil; el buscador afina
-const TIER_LABELS = { recent: 'Recientes', near: `Cerca de aquí (< ${NEAR_M} m)`, all: 'Todas' };
+const TIER_LABELS = { target: 'Objetivo de la visita', recent: 'Recientes', near: `Cerca de aquí (< ${NEAR_M} m)`, all: 'Todas' };
 
 function media(sp, cls) {
   return sp.thumbnail
@@ -44,11 +44,12 @@ function names(sp) {
  *   selectedId  taxonID marcado como elegido (hoja de marcar)
  *   onPick(sp)  toque en una especie
  *   onMark(sp)  si se da, cada fila lleva además «Marcar» (pestaña Especies)
+ *   targets     (F11h) Set de taxonID objetivo de la visita en curso: van primero
  *   label       rótulo del cuadro de búsqueda
  * Devuelve {refresh(), setPosition(), focus(), destroy()}.
  */
 export function mountSpeciesPicker(el, { species = [], catalogId, keep = {}, position = () => null, selectedId = null,
-  onPick, onMark = null, label = 'Buscar especie' } = {}) {
+  onPick, onMark = null, label = 'Buscar especie', targets = null } = {}) {
   let alive = true;
   let recent = new Map();
   let near = new Map();
@@ -79,14 +80,14 @@ export function mountSpeciesPicker(el, { species = [], catalogId, keep = {}, pos
 
   function paint() {
     if (!alive) return;
-    const rows = searchSpecies(species, { query: keep.query, group: keep.group, recent, near });
+    const rows = searchSpecies(species, { query: keep.query, group: keep.group, recent, near, targets });
     const shown = rows.slice(0, ROW_LIMIT);
     const filtered = keep.query.trim() || keep.group;
     $('.pk-count', el).textContent = !species.length ? ''
       : filtered ? (rows.length ? `${rows.length} de ${plural(species.length, 'especie', 'especies')}` : 'Ninguna especie coincide.')
         : plural(species.length, 'especie', 'especies');
     let lastTier = null;
-    const showTiers = !keep.query.trim() && (recent.size || near.size);
+    const showTiers = !keep.query.trim() && (recent.size || near.size || (targets && targets.size));
     const items = [];
     for (const { sp, tier, distance } of shown) {
       if (showTiers && tier !== lastTier) {

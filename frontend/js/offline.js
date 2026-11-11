@@ -11,7 +11,7 @@
 // ================================================================================================
 
 import { apiGetJson, getSpeciesFilters } from './api.js';
-import { state, setActiveCatalog } from './state.js';
+import { state, setActiveCatalog, setVisit } from './state.js';
 import { tx, get, getAll, byIndex, put, getMeta, setMeta } from './db.js';
 
 export const IMG_CACHE_PREFIX = 'biodex-img-';
@@ -211,7 +211,8 @@ export const isDownloading = (catalogId) => downloads.has(catalogId);
 
 /** Borra un catálogo del dispositivo (expulsado, salido o borrado): fichas, marcas, notas, evaluaciones, meta e imágenes. */
 export async function forgetCatalog(catalogId) {
-  await tx(['catalogs', 'catalogSpecies', 'occurrences', 'notes', 'assessments', 'parameters', 'impacts', 'locations', 'outbox', 'meta'], 'readwrite', async (t) => {
+  await tx(['catalogs', 'catalogSpecies', 'occurrences', 'notes', 'assessments', 'parameters', 'impacts', 'locations', 'sites', 'visits',
+    'outbox', 'meta'], 'readwrite', async (t) => {
     await t.del('catalogs', catalogId);
     for (const r of await t.byIndex('catalogSpecies', 'catalogId', catalogId)) await t.del('catalogSpecies', [catalogId, r.taxonID]);
     for (const o of await t.byIndex('occurrences', 'catalogId', catalogId)) await t.del('occurrences', o.occurrenceID);
@@ -221,6 +222,9 @@ export async function forgetCatalog(catalogId) {
     // F11g: impactos (llevan sitio) y localidades confirmadas del catálogo.
     for (const i of await t.byIndex('impacts', 'catalogId', catalogId)) await t.del('impacts', i.impactID);
     for (const l of await t.getAll('locations')) if (l.catalogId === catalogId) await t.del('locations', [catalogId, l.taxonID]);
+    // F11h: sitios y visitas (y la traza de un transecto a medias).
+    for (const x of await t.byIndex('sites', 'catalogId', catalogId)) await t.del('sites', x.siteID);
+    for (const x of await t.byIndex('visits', 'catalogId', catalogId)) { await t.del('visits', x.visitID); await t.del('meta', 'track:' + x.visitID); }
     for (const o of await t.getAll('outbox')) if (o.catalogId === catalogId) await t.del('outbox', o.id);
     for (const prefix of CATALOG_META) await t.del('meta', prefix + catalogId);
     // EOO/AOO guardados (F9, js/metrics.js): metrics:<catálogo>:<taxón>:<ámbito>:<celda>
@@ -232,6 +236,7 @@ export async function forgetCatalog(catalogId) {
   });
   if ('caches' in window) await caches.delete(IMG_CACHE_PREFIX + catalogId).catch(() => {});
   if (state.activeCatalog && state.activeCatalog.id === catalogId) setActiveCatalog(null);
+  if (state.visit && state.visit.catalogId === catalogId) setVisit(null);
 }
 
 // --- Lecturas locales con la forma de la API ----------------------------------------------------------
