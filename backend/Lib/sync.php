@@ -171,7 +171,9 @@ function syncValidateOccurrence(mixed $o): array {
     $visit = $o["visitID"] ?? null;
     if ($visit !== null && !isUuidV4($visit)) syncReject("invalid_uuid", "«visitID» debe ser el UUID v4 de una visita o null.");
 
-    return [
+    // visit_id solo si el cliente lo manda: una edición desde una app de antes de F11h (o un respaldo v4) no lo trae y
+    // no debe dejar la marca sin su visita (en un alta, la columna queda NULL igual).
+    return (array_key_exists("visitID", $o) ? ["visit_id" => $visit] : []) + [
         "occurrenceID"                  => $o["occurrenceID"],
         "taxonID"                       => $taxonID,
         "eventDate"                     => syncUtcDate($o["eventDate"] ?? null, "eventDate")->format("Y-m-d H:i:s"),
@@ -188,7 +190,6 @@ function syncValidateOccurrence(mixed $o): array {
         "occurrenceRemarks"             => syncText($o, "occurrenceRemarks", SYNC_REMARKS_MAX),
         "mature_count"                  => $mature,
         "sampleSizeValue"               => $area,
-        "visit_id"                      => $visit,
         "client_updated_at"             => syncClientUpdatedAt($o["clientUpdatedAt"] ?? null),
     ];
 }

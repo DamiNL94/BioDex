@@ -12,6 +12,7 @@ require_once __DIR__ . "/utm.php";
 require_once __DIR__ . "/sensitivity.php";   // canSeeExact(), sensitivityConfig()
 require_once __DIR__ . "/audit.php";         // logAccess()
 require_once __DIR__ . "/sync.php";          // syncIsoUtc()
+require_once __DIR__ . "/visits.php";        // F11h: speciesVisitLevel()
 
 const METRICS_DEFAULT_CELL_KM = 2;
 const METRICS_CELL_OPTIONS_KM = [2, 1];
@@ -199,6 +200,8 @@ function speciesMetrics(PDO $pdo, string $catalogId, string $taxonID, int $userI
     ["m" => $m, "rows" => $rows, "computedAt" => $computedAt, "cached" => $cached, "maxSeq" => $maxSeq]
         = metricsStored($pdo, $catalogId, $taxonID, $userId, $scope, $cellKm);
 
+    // F11h: marcas de visitas a sitios de especies más sensibles: la geometría sale con ese nivel (Lib/visits.php).
+    $level = min($level, speciesVisitLevel($pdo, $catalogId, $taxonID));
     $access = metricsGeometryAccess($role, $level, $scope);
     $geometry = ["access" => $access];
     if ($access === "full") {

@@ -24,6 +24,7 @@ import { PROTOCOLS, SITE_TYPES, SITE_RADIUS_DEFAULT, BAND_DEFAULT, defaultProtoc
   closeVisit, discardVisit, visitTally, minutesBetween, trackOf } from '../visits.js';
 import { formatArea, formatLength, lineWkt, siteMetrics } from '../site-geom.js';
 import { toUtm } from '../geo/utm.js';
+import { fold } from '../species-search.js';
 
 const GPS_TIMEOUT_MS = 30000;
 const NEAR_LIST = 6;
@@ -39,7 +40,6 @@ async function catalogSpecies(catalog) {
 /** Lista de especies con casillas (objetivo). `selected`: Set. Filtro por nombre. */
 export function targetPicker(box, species, selected, onChange) {
   let q = '';
-  const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
   function paint() {
     const f = fold(q);
     const rows = species.filter((sp) => !f || fold(sp.vernacularName).includes(f) || fold(sp.canonicalName || sp.scientificName).includes(f))

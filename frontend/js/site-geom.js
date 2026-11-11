@@ -65,16 +65,6 @@ export function siteMetrics({ radiusM = null, wkt = null, bandM = null, center =
   return { areaM2: area, lengthM, center: c, extentM: extent };
 }
 
-/** Distancia en metros entre dos puntos {lat, lng} (haversine). */
-export function distanceM(a, b) {
-  const R = 6371008.8;
-  const rad = Math.PI / 180;
-  const dLat = (b.lat - a.lat) * rad;
-  const dLon = (b.lng - a.lng) * rad;
-  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLon / 2) ** 2;
-  return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
-}
-
 /** «350 m²» o «1,25 ha». */
 export function formatArea(m2) {
   if (m2 === null || m2 === undefined || !Number.isFinite(Number(m2))) return '—';

@@ -249,6 +249,20 @@ check("al custodio, el sitio exacto", $s && $s["generalized"] === false && $s["d
 $s = $by($p["sites"] ?? [], "siteID", $site);
 check("a su autor (editor), exacto", $s && $s["generalized"] === false, json_encode($s));
 
+// Revisión: la geometría de TODAS las marcas de la Viola (EOO/AOO, subpoblaciones) incluye una hecha en el sitio
+// sensible: al lector le sale generalizada, no el casco exacto.
+[$code, $mt] = http("GET", "/api/catalogs/{$cat}/species/" . COMMON . "/metrics?scope=team", null, $v);
+check("EOO/AOO de la Viola para el lector: geometría no exacta (marca en el sitio sensible)", $code === 200
+    && ($mt["geometry"]["access"] ?? "full") !== "full" && !isset($mt["geometry"]["hull"]), json_encode($mt["geometry"] ?? $mt));
+[$code, $as] = http("GET", "/api/catalogs/{$cat}/species/" . COMMON . "/assessment", null, $v);
+check("…y las subpoblaciones de su evaluación, tampoco", $code === 200 && ($as["geometry"] ?? "full") !== "full", json_encode($as["geometry"] ?? null));
+// Revisión: una edición sin visitID (app anterior a F11h) no deja la marca sin su visita.
+$edit = $commonMark;
+unset($edit["visitID"]);
+[, $r] = $push($e, ["occurrences" => [["clientUpdatedAt" => $now(), "occurrenceRemarks" => "editada desde una app vieja"] + $edit]]);
+$vid = $pdo->query("SELECT visit_id FROM occurrences WHERE occurrenceID = " . $pdo->quote($commonMark["occurrenceID"]))->fetchColumn();
+check("editar una marca sin «visitID» conserva su visita", ($r["results"][0]["status"] ?? null) === "accepted" && $vid === $visit, json_encode([$r, $vid]));
+
 // Cierre de la visita con una ausencia: ida y vuelta.
 $absent = $mark(COMMON, ["occurrenceStatus" => "absent", "individualCount" => 0, "mature_count" => null, "eventDate" => "2026-10-20T09:40:00Z"]);
 unset($absent["mature_count"]);

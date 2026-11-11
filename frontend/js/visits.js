@@ -17,7 +17,8 @@
 import { state, setVisit } from './state.js';
 import { tx, byIndex, get, getMeta, setMeta } from './db.js';
 import { uuid, isoNow, enqueue, GEOREF_MAP } from './marks.js';
-import { siteMetrics, distanceM, lineWkt } from './site-geom.js';
+import { siteMetrics, lineWkt } from './site-geom.js';
+import { distanceM } from './species-search.js';
 import { toUtm } from './geo/utm.js';
 import { seriesFromVisits, analyzeSeries } from '../shared/iucn-series.js';
 
@@ -129,13 +130,15 @@ export async function sitesFor(catalogId) {
 export async function nearestSites(catalogId, pos) {
   const list = await sitesFor(catalogId);
   if (!pos) return list.map((site) => ({ site, distance: null }));
-  return list.filter((s) => s.decimalLatitude !== null && s.decimalLatitude !== undefined)
-    .map((site) => {
-      const d = distanceM(pos, { lat: site.decimalLatitude, lng: site.decimalLongitude });
-      const extent = site.radiusM || (site.footprintWKT ? localSiteMetrics(site).extentM : 0) || 0;
-      return { site, distance: Math.max(0, d - extent) };
-    })
-    .sort((a, b) => a.distance - b.distance || a.site.name.localeCompare(b.site.name, 'es'));
+  // Sin coordenadas (nivel 1 para quien no es de confianza) no hay distancia, pero el sitio se puede visitar: al final.
+  const located = (s) => s.decimalLatitude !== null && s.decimalLatitude !== undefined;
+  return list.map((site) => {
+    if (!located(site)) return { site, distance: null };
+    const d = distanceM(pos.lat, pos.lng, site.decimalLatitude, site.decimalLongitude);
+    const extent = site.radiusM || (site.footprintWKT ? localSiteMetrics(site).extentM : 0) || 0;
+    return { site, distance: Math.max(0, d - extent) };
+  }).sort((a, b) => (a.distance === null) - (b.distance === null) || (a.distance ?? 0) - (b.distance ?? 0)
+    || a.site.name.localeCompare(b.site.name, 'es'));
 }
 
 /** Especies objetivo que se proponen para una visita al sitio: las recordadas en este dispositivo o las del sitio. */
@@ -206,7 +209,7 @@ export async function appendTrack(visitID, pos) {
   if (!pos || !(pos.accuracy <= TRACK_MAX_ACCURACY_M)) return null;
   const track = (await getMeta('track:' + visitID, [])) || [];
   const last = track[track.length - 1];
-  if (last && distanceM({ lat: last[0], lng: last[1] }, pos) < TRACK_MIN_STEP_M) return track.length;
+  if (last && distanceM(last[0], last[1], pos.lat, pos.lng) < TRACK_MIN_STEP_M) return track.length;
   if (track.length >= TRACK_MAX_POINTS) return track.length;
   track.push([Math.round(pos.lat * 1e6) / 1e6, Math.round(pos.lng * 1e6) / 1e6]);
   await setMeta('track:' + visitID, track);

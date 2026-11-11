@@ -290,6 +290,18 @@ function visitLevelMap(PDO $pdo, string $catalogId, array $visitIds): array {
     return $rows ? visitLevels($pdo, $catalogId, $rows) : [];
 }
 
+/**
+ * Nivel más restrictivo de las visitas en las que se registró una especie (4 si ninguna). Para la geometría que sale de
+ * TODAS sus marcas juntas (casco y celdas de EOO/AOO, subpoblaciones): si una sola se hizo en el sitio de una especie
+ * sensible, el conjunto se generaliza como ella (Lib/metrics.php, Lib/assessment.php).
+ */
+function speciesVisitLevel(PDO $pdo, string $catalogId, string $taxonID): int {
+    $stmt = $pdo->prepare("SELECT DISTINCT visit_id FROM occurrences WHERE catalog_id = ? AND taxonID = ? AND visit_id IS NOT NULL AND deleted_at IS NULL");
+    $stmt->execute([$catalogId, $taxonID]);
+    $levels = visitLevelMap($pdo, $catalogId, $stmt->fetchAll(PDO::FETCH_COLUMN));
+    return $levels ? min($levels) : 4;
+}
+
 /** Hijos (especies objetivo) de sitios o visitas → [id => [taxonID…]]. */
 function childTaxa(PDO $pdo, string $table, string $idCol, array $ids): array {
     if (!$ids) return [];

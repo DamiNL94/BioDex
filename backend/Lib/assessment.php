@@ -211,6 +211,8 @@ function speciesAssessment(PDO $pdo, string $catalogId, string $taxonID, int $us
     $inputs = iucnEngineInputs($q, $params, $metrics, $locations, [], $series);
     $result = assessIucn($inputs);
 
+    // F11h: marcas de visitas a sitios de especies más sensibles: la geometría sale con ese nivel (Lib/visits.php).
+    $level = min($level, speciesVisitLevel($pdo, $catalogId, $taxonID));
     $access = metricsGeometryAccess($role, $level, "team");
     $foreign = count(array_filter($rows, fn($r) => (int) $r["user_id"] !== $userId));
     if ($access === "full" && $level < 4 && $foreign > 0 && canSeeExact($role, false) && $q["subpops"]["subpops"]) {

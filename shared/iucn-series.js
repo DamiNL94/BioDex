@@ -267,7 +267,8 @@ export function analyzeSeries(obs, { generationLength = null, criteria = null } 
   const years = yearsOut().map((x) => ({ ...x, index: index.has(x.year) ? index.get(x.year) : null }));
 
   // Ventana de A: los T años que acaban en el último año con datos. La parte anterior al primero es proyectada.
-  const from = yr.last - T;
+  // Años enteros: con una generación no entera (T = 13,5) la ventana empieza en el año anterior que la cubre.
+  const from = Math.floor(yr.last - T);
   const observedYears = Math.min(yr.last - yr.first, T);
   const window = { years: T, from, to: yr.last, observedYears, observedPct: round((100 * observedYears) / T, 1),
     projected: yr.last - yr.first < T };

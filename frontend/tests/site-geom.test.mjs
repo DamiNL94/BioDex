@@ -1,10 +1,10 @@
 // ================================================================================================
 // Pruebas de js/site-geom.js (F11h, geometría de los sitios):  node frontend/tests/site-geom.test.mjs
 // WKT (orden «lon lat», cierre del polígono), superficie y longitud en UTM 30N (las mismas cifras que calcula el
-// servidor, Lib/visits.php › siteGeometryMetrics), banda del transecto y distancias.
+// servidor, Lib/visits.php › siteGeometryMetrics) y banda del transecto.
 // ================================================================================================
 import assert from 'node:assert/strict';
-import { polygonWkt, lineWkt, parseWkt, siteMetrics, distanceM, formatArea, formatLength } from '../js/site-geom.js';
+import { polygonWkt, lineWkt, parseWkt, siteMetrics, formatArea, formatLength } from '../js/site-geom.js';
 import { toUtm } from '../js/geo/utm.js';
 
 // WKT: orden de la norma (lon lat) y polígono cerrado
@@ -37,8 +37,7 @@ const c = siteMetrics({ radiusM: 20, center: [37, -3] }, toUtm);
 assert.ok(Math.abs(c.areaM2 - Math.PI * 400) < 1e-9);
 assert.equal(c.extentM, 20);
 
-// Distancia y formatos
-assert.ok(Math.abs(distanceM({ lat: 37, lng: -3 }, { lat: 37.001, lng: -3 }) - 111.2) < 0.5);
+// Formatos
 assert.equal(formatArea(350.4), '350 m²');
 assert.equal(formatArea(12500), '1,25 ha');
 assert.equal(formatLength(850), '850 m');

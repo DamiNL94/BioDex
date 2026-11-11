@@ -35,6 +35,11 @@ Se declaran en `SYNC_ENTITIES` (`Api/sync.php`); añadir uno es añadir una entr
   especies objetivo del sitio, las de sus visitas y las registradas en ellas (sin especies: 4). Una visita, con el de su
   sitio y el suyo. Si una marca o una visita nueva **baja** ese nivel, el servidor da `server_seq` nuevo al sitio y a
   sus visitas (`visitsRelevel`) y el pull sustituye la versión exacta que ya tenía quien no es de confianza.
+  Una **marca** de una visita sale con el nivel más restrictivo entre su especie y su visita (`visitLevelMap`): una
+  marca exacta de una especie común no puede delatar el sitio de una sensible contada en la misma visita; por eso
+  `visitsRelevel` re-emite también las marcas de esas visitas. La misma regla vale para la geometría que sale de todas
+  las marcas de una especie (casco y celdas de EOO/AOO, subpoblaciones: `speciesVisitLevel`) y para la exportación.
+  Una edición sin `visitID` (app anterior a F11h) conserva la visita de la marca.
 
 Las notas y las evaluaciones no llevan coordenadas y no pasan por `applyVisibility()`, pero **solo las recibe quien
 tiene permiso `view`** en el catálogo (el pull lo exige; un no miembro recibe 403 `not_member` y nada más). Subirlas

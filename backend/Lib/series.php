@@ -7,6 +7,8 @@
 // Modelo y reglas: cabecera de shared/iucn-series.js y docs/iucn.md › «Series temporales (F11h)».
 // ================================================================================================
 
+require_once __DIR__ . "/iucn.php";   // iucnRound(): el redondeo de JS (Math.round)
+
 const SERIES_Z95 = 1.959963984540054;
 const SERIES_MIN_YEARS = 3;
 const SERIES_FLUCT_RATIO = 10;
@@ -14,11 +16,6 @@ const SERIES_IRLS_MAX_ITER = 100;
 const SERIES_IRLS_TOL = 1e-10;
 const SERIES_A_BASIS = ["a", "b", "c", "d", "e"];
 
-/** Math.round(v · 10^d) / 10^d de JS. */
-function seriesRound(float $v, int $d): float {
-    $f = 10 ** $d;
-    return floor($v * $f + 0.5) / $f;
-}
 
 function seriesYearOf(?string $iso): ?int {
     if ($iso === null || $iso === "") return null;
@@ -149,7 +146,7 @@ function seriesAWindowYears(mixed $generationLength, ?array $criteria = null): f
 }
 
 function seriesReductionPct(float $r, float $T): float {
-    return max(0.0, seriesRound(100 * (1 - exp($r * $T)), 2));
+    return max(0.0, iucnRound(100 * (1 - exp($r * $T)), 2));
 }
 
 /** Un número JSON-amable: los enteros exactos como int (igual que JS al serializar). */
@@ -250,24 +247,24 @@ function seriesAnalyze(array $obs, mixed $generationLength = null, ?array $crite
         $g = isset($yIdx[$y]) ? $fitI["beta"][$yIdx[$y]] : 0.0;
         $s = 0.0;
         for ($i = 0; $i < $nS; $i++) $s += exp($fitI["beta"][$i] + $g);
-        $index[$y] = seriesNum(seriesRound($s, 4));
+        $index[$y] = seriesNum(iucnRound($s, 4));
     }
     $years = array_map(fn($x) => array_merge($x, ["index" => array_key_exists($x["year"], $index) ? $index[$x["year"]] : null]), $yearsOut());
 
-    $from = $yr["last"] - $T;
+    $from = (int) floor($yr["last"] - $T);   // años enteros (ver analyzeSeries de JS)
     $observed = min($yr["last"] - $yr["first"], $T);
     $window = ["years" => seriesNum($T), "from" => seriesNum($from), "to" => $yr["last"], "observedYears" => seriesNum($observed),
-               "observedPct" => seriesNum(seriesRound(100 * $observed / $T, 1)), "projected" => $yr["last"] - $yr["first"] < $T];
+               "observedPct" => seriesNum(iucnRound(100 * $observed / $T, 1)), "projected" => $yr["last"] - $yr["first"] < $T];
 
     $inWin = [];
     foreach ($years as $x) if ($x["index"] !== null && $x["year"] >= $from && $x["year"] <= $yr["last"]) $inWin[] = (float) $x["index"];
     $maxI = $inWin ? max($inWin) : null;
     $minI = $inWin ? min($inWin) : null;
-    $ratio = $maxI === null ? null : ($minI > 0 ? seriesNum(seriesRound($maxI / $minI, 2)) : ($maxI > 0 ? null : 1));
+    $ratio = $maxI === null ? null : ($minI > 0 ? seriesNum(iucnRound($maxI / $minI, 2)) : ($maxI > 0 ? null : 1));
     $extreme = $maxI !== null && ($minI == 0 ? $maxI > 0 : $maxI / $minI > SERIES_FLUCT_RATIO);
     $fluctuation = ["ratio" => $ratio, "zeroYear" => $minI !== null && $minI == 0 && $maxI > 0, "extreme" => $extreme, "nYears" => count($inWin)];
 
-    $pctTxt = fn($v) => str_replace(".", ",", (string) seriesNum(seriesRound(100 * (exp($v) - 1), 1)));
+    $pctTxt = fn($v) => str_replace(".", ",", (string) seriesNum(iucnRound(100 * (exp($v) - 1), 1)));
     $suggestions = [];
     if ($hi < 0) {
         $suggestions[] = ["key" => "decline_b_v", "value" => "yes",
@@ -278,13 +275,13 @@ function seriesAnalyze(array $obs, mixed $generationLength = null, ?array $crite
             "reason" => $fluctuation["zeroYear"] ? "El índice anual llega a 0 en la ventana: posible fluctuación extrema (compruébalo; no se aplica sola)."
                 : "El índice anual varía ×" . str_replace(".", ",", (string) $ratio) . " (máx./mín.) en la ventana, más de ×" . SERIES_FLUCT_RATIO . ": posible fluctuación extrema (no se aplica sola)."];
     }
-    $n6 = fn($v) => seriesNum(seriesRound($v, 6));
-    $n2 = fn($v) => seriesNum(seriesRound($v, 2));
+    $n6 = fn($v) => seriesNum(iucnRound($v, 6));
+    $n2 = fn($v) => seriesNum(iucnRound($v, 2));
     return $base + [
         "status" => "ok", "reason" => null, "years" => $years, "nSites" => $nS, "nYears" => count($modelYears), "nObs" => count($rows),
         "firstYear" => $yr["first"], "lastYear" => $yr["last"],
-        "trend" => ["r" => $n6($r), "se" => $n6($se), "lo" => $n6($lo), "hi" => $n6($hi), "phi" => seriesNum(seriesRound($phi, 4)),
-                    "phiRaw" => $phiRaw === null ? null : seriesNum(seriesRound($phiRaw, 4)), "deviance" => seriesNum(seriesRound($fit["deviance"], 4)),
+        "trend" => ["r" => $n6($r), "se" => $n6($se), "lo" => $n6($lo), "hi" => $n6($hi), "phi" => seriesNum(iucnRound($phi, 4)),
+                    "phiRaw" => $phiRaw === null ? null : seriesNum(iucnRound($phiRaw, 4)), "deviance" => seriesNum(iucnRound($fit["deviance"], 4)),
                     "iterations" => $fit["iterations"], "converged" => $fit["converged"],
                     "annualChangePct" => $n2(100 * (exp($r) - 1)), "annualChangeLo" => $n2(100 * (exp($lo) - 1)), "annualChangeHi" => $n2(100 * (exp($hi) - 1))],
         "window" => $window,

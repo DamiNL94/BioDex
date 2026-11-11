@@ -25,13 +25,15 @@ export function mountVisitBar(el) {
   let watchId = null;
   let points = null;
   let painting = false;
+  let repaint = false;   // llegó otro aviso mientras se pintaba: se vuelve a pintar al terminar
 
   async function paint() {
     const v = state.visit;
     const mine = v && state.user && v.userId === state.user.id;
     if (!mine) { render(el, html``); el.hidden = true; stopTrack(); return; }
-    if (painting) return;
+    if (painting) { repaint = true; return; }
     painting = true;
+    repaint = false;
     try {
       const { counted, pending } = await visitTally(v.visitID, v.species || []);
       const other = state.activeCatalog && state.activeCatalog.id !== v.catalogId;
@@ -55,6 +57,7 @@ export function mountVisitBar(el) {
       console.info('Barra de visita:', e && e.message);
     } finally {
       painting = false;
+      if (repaint) paint();
     }
   }
 

@@ -9,7 +9,7 @@
 // SVG propio (sin librerías); todo el texto pasa por html``.
 // ================================================================================================
 
-import { html, render, $, plural } from '../util.js';
+import { html, render, plural } from '../util.js';
 import { byIndex, hasDb } from '../db.js';
 import { subscribe, state } from '../state.js';
 import { localSeries } from '../visits.js';

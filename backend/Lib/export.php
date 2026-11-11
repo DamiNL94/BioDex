@@ -11,7 +11,8 @@
 //     un texto como «junto a la fuente de …» deshace la generalización. Se dice en informationWithheld.
 // El registro original nunca se altera: todo se hace sobre copias en memoria.
 //
-// Productos: dwca/ (occurrence.txt, measurementorfact.txt, meta.xml, eml.xml; Lib/dwc.php), hojas/
+// Productos: dwca/ (F11h: núcleo Event: event.txt, occurrence.txt con eventID, measurementorfact.txt eMoF, meta.xml, eml.xml;
+// Lib/dwc.php), hojas/
 // (un XLSX con Léeme · Observaciones · Especies · Evaluaciones UICN · Distribución · Notas, Lib/xlsx.php,
 // y los mismos datos en CSV para Excel en español), pliniancore/ (F10c, fichas de especie en Plinian Core;
 // Lib/plinian.php) y LEEME.txt. Formatos a elegir en «formats»; por defecto dwca/ y hojas/, como en F10a.
