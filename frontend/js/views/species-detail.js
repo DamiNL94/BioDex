@@ -27,6 +27,7 @@ import { mountNotes } from '../components/species-notes.js';
 import { mountSpeciesIucn } from '../components/species-iucn.js';
 import { mountDistribution } from '../components/species-distribution.js';
 import { mountMinimap } from '../components/species-minimap.js';
+import { mountSpeciesSeries } from '../components/species-series.js';
 import { mountParameters } from '../components/species-parameters.js';
 import { remoteOrLocal, localSpecies, localCatalogData, sensitivityLevels, localNote } from '../offline.js';
 
@@ -144,10 +145,11 @@ export function openSpeciesDetail(taxonID, { onChanged, step, onOpen } = {}) {
   let distribution = null;
   let minimap = null;
   let params = null;
+  let series = null;   // F11h: serie temporal (pestaña Registros)
   let fromDevice = false;   // sin servidor: el nivel no se puede cambiar
   // F11f: en estudio, página propia (pantalla completa con «← Volver»); en campo ya lo era.
   const ov = openOverlay({ key: 'ficha-especie', title: 'Ficha de especie', variant: isStudio() ? 'full' : 'side', className: 'species-detail',
-    onClose: () => { alive = false; for (const m of [marks, notes, assessments, distribution, minimap, params]) if (m) m.destroy(); } });
+    onClose: () => { alive = false; for (const m of [marks, notes, assessments, distribution, minimap, params, series]) if (m) m.destroy(); } });
   render(ov.body, html`<p class="muted">Cargando ficha…</p>`);
 
   if (onOpen) onOpen(taxonID);
@@ -272,6 +274,8 @@ export function openSpeciesDetail(taxonID, { onChanged, step, onOpen } = {}) {
 
         ${inCatalog ? html`
         <div class="detail-panel" data-panel="records" ${panel('records')}>
+          <section class="detail-sec" aria-labelledby="d-series"><h4 id="d-series">Serie temporal (visitas a sitios)</h4>
+            <div class="series-box"></div></section>
           <section class="detail-sec" aria-labelledby="d-marks"><h4 id="d-marks">Marcas en «${catalogData.catalog.name}»</h4>
             <div class="minimap-box"></div>
             <div class="marks-box"></div></section>
@@ -312,9 +316,10 @@ export function openSpeciesDetail(taxonID, { onChanged, step, onOpen } = {}) {
       swapToSilhouette(ev.target, photo.querySelector('.detail-photo-media'));
     }, true);
     if (inCatalog) {
-      for (const m of [marks, notes, assessments, distribution, minimap, params]) if (m) m.destroy();
+      for (const m of [marks, notes, assessments, distribution, minimap, params, series]) if (m) m.destroy();
       minimap = null;
       params = null;
+      series = null;
       const catalog = { ...catalogData.catalog, role: catalogData.catalog.role };
       marks = mountMarks($('.marks-box', ov.body), { species: sp, catalog, levels, sensitivity: inCatalog.sensitivity });
       notes = mountNotes($('.notes-box', ov.body), { species: sp, catalog });
@@ -333,6 +338,8 @@ export function openSpeciesDetail(taxonID, { onChanged, step, onOpen } = {}) {
         if (key === 'records') {
           if (!minimap) minimap = mountMinimap($('.minimap-box', ov.body), { species: sp, catalog });
           else minimap.resize();
+          // F11h: serie temporal de las visitas a sitios.
+          if (!series) series = mountSpeciesSeries($('.series-box', ov.body), { species: sp, catalog });
         }
         if (key === 'params' && !params) params = mountParameters($('.params-box', ov.body), { species: sp, catalog });
         // F11g: la evaluación se calcula al abrir su pestaña (pide al servidor o calcula en el dispositivo).

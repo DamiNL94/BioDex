@@ -4,6 +4,7 @@
 // · Con servidor: el DEFINITIVO de GET /catalogs/{id}/species/{taxonID}/assessment (Lib/assessment.php: EOO/AOO,
 //   maduros, subpoblaciones, fragmentación y localidades con las coordenadas exactas; geometría según confianza).
 //   Se guarda en IndexedDB (meta `assessment:<catálogo>:<taxón>`) para verlo sin red con su fecha.
+// · F11h: la serie temporal (A y C1) sale de las visitas a sitios (js/visits.js › localSeries; en el servidor, Lib/series.php).
 // · Sin servidor: PROVISIONAL con shared/iucn-quantifiers.js + shared/iucn-engine.js y SOLO las marcas exactas
 //   que hay en el dispositivo (como EOO/AOO, F9), los parámetros, las localidades confirmadas y los impactos
 //   que bajaron por el pull. Mismas reglas en los dos lados (casos compartidos: shared/iucn-cases.json).
@@ -21,6 +22,7 @@ import { assessIucn } from '../shared/iucn-engine.js';
 import { loadIucnCriteria } from './views/iucn-wizard.js';
 import { loadThreats } from './views/impact-sheet.js';
 import { localParameterDefaults } from './components/species-parameters.js';
+import { localSeries } from './visits.js';
 
 const key = (catalogId, taxonID) => `assessment:${catalogId}:${taxonID}`;
 
@@ -38,6 +40,9 @@ export function quantifierSummary(a) {
     fragmentation: a.fragmentation ? { status: a.fragmentation.status, severe: a.fragmentation.severe, pctAoo: a.fragmentation.pctAoo,
       pctIndividuals: a.fragmentation.pctIndividuals, missing: a.fragmentation.missing } : null,
     locations: a.locations ? { count: a.locations.count, confirmed: true } : { count: a.locationsProposal ? a.locationsProposal.count : null, confirmed: false },
+    series: a.series ? { status: a.series.status, reason: a.series.reason, nSites: a.series.nSites, nYears: a.series.nYears, firstYear: a.series.firstYear,
+      lastYear: a.series.lastYear, trend: a.series.trend, window: a.series.window, reduction: a.series.reduction, fluctuation: a.series.fluctuation,
+      windowYears: a.series.windowYears } : null,
   };
 }
 
@@ -67,14 +72,18 @@ export async function provisionalAssessment(catalog, species) {
   const loc = hasDb() ? await get('locations', [catalog.id, taxonID]) : null;
   const impacts = await localImpacts(catalog.id, taxonID);
   const q = quantify(records, { project: toUtm, params, defaults, impacts, metrics, habitatCodes: threats.habitat_codes });
-  const inputs = engineInputs(q, { params, metrics, locations: loc || null });
+  // F11h: serie temporal con las visitas y marcas del dispositivo (A y C1).
+  const series = await localSeries(catalog.id, taxonID, { generationLength: params.generation_length ? params.generation_length.value : null, criteria })
+    .catch(() => null);
+  const inputs = engineInputs(q, { params, metrics, locations: loc || null, series });
   const result = assessIucn(inputs, criteria);
   const { kept: _kept, ...mature } = q.mature;
   const subpops = { ...q.subpops, subpops: q.subpops.subpops.map(({ points, ...s }) => s) };
   return {
     taxonID, computedAt: new Date().toISOString(), origin: 'device', geometry: 'full', nExact: records.length, metrics, nPoints: q.nPoints,
     mature, subpopulations: subpops, fragmentation: q.fragmentation, locationsProposal: q.locations,
-    locations: loc || null, suggestions: q.suggestions, separation: q.separation, parameters: params, defaults, inputs, result,
+    locations: loc || null, suggestions: [...q.suggestions, ...((series && series.suggestions) || [])], separation: q.separation, parameters: params,
+    defaults, inputs, result, series,
     canEdit: false,
   };
 }

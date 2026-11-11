@@ -1602,3 +1602,5 @@ path.site-shape{stroke:#7A4FB5;fill:#7A4FB5}
 .series-key.is-gap{height:10px;background:var(--warn-bg);border:1px solid var(--warn)}
 .series-stats{margin:8px 0}
 .series-table td.is-gap{color:var(--warn-ink)}
+.series-line.is-site{stroke:var(--sp)}
+.series-pt.is-site{fill:var(--sp)}

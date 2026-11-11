@@ -4,8 +4,9 @@
 // Arriba: categoría propuesta (con «posiblemente extinta» solo si el usuario lo decide), rango plausible, cadena de
 // criterios y fecha y origen del cálculo (servidor = definitivo; dispositivo = provisional, js/assessment.js).
 // Debajo, una tarjeta por criterio (A–E): sus datos con su calidad, qué umbral cumple y qué falta para poder
-// evaluarlo, con enlace directo al parámetro (pestaña Parámetros), al hecho o a las localidades. A, C1 y E quedan
-// «pendientes de series temporales» hasta F11h.
+// evaluarlo, con enlace directo al parámetro (pestaña Parámetros), al hecho o a las localidades. F11h: A y C1 salen de
+// la serie temporal de las visitas a sitios (shared/iucn-series.js): tasa con IC, reducción en la ventana (lo observado
+// y lo proyectado) y los hechos que eligen A1/A2 y añaden A3/A4; E queda fuera de alcance (lo dice su tarjeta).
 // Hechos de B y C (b(i)–(v), c(i)–(iv)), amenaza plausible (D2) y preguntas del ajuste regional: sí · no ·
 // desconocido con calidad, fuente y justificación; los fijan owner y custodio con red (son parámetros,
 // Lib/parameters.php). BioDex SUGIERE b(iii) con impactos en curso, nunca lo fija.
@@ -41,6 +42,13 @@ export const FACTS = {
   fluct: [['fluct_c_i', '(i) EOO'], ['fluct_c_ii', '(ii) AOO'], ['fluct_c_iii', '(iii) Nº de localidades o subpoblaciones'],
     ['fluct_c_iv', '(iv) Nº de individuos maduros']],
   d2: [['plausible_threat', 'Amenaza futura plausible que podría llevarla a CR o EX en muy poco tiempo']],
+  // F11h: criterio A con series temporales.
+  aCauses: [['a_reversible', '¿Las causas de la reducción son reversibles?'], ['a_understood', '¿Se comprenden las causas?'],
+    ['a_ceased', '¿Han cesado las causas?']],
+  aFuture: [['a_future', '¿Se espera que la reducción continúe en el futuro? (añade A3, proyección, y A4, ventana pasado + futuro)']],
+  aBasis: [['a_basis_a', '(a) Observación directa (no vale para A3)'], ['a_basis_b', '(b) Índice de abundancia apropiado para el taxón'],
+    ['a_basis_c', '(c) Reducción de AOO, EOO o calidad del hábitat'], ['a_basis_d', '(d) Niveles de explotación reales o potenciales'],
+    ['a_basis_e', '(e) Taxones introducidos, hibridación, patógenos, contaminantes, competidores o parásitos']],
   regional: [['regional_endemic', '¿Es endémica del área de evaluación?'],
     ['regional_immigration', '¿Recibe inmigración significativa de propágulos capaces de reproducirse en la región?'],
     ['regional_immigration_decrease', '¿Se espera que esa inmigración disminuya?'],
@@ -167,13 +175,13 @@ export function mountSpeciesIucn(el, { species, catalog, goToParam }) {
     </li>`;
   }
 
-  function criterionCard(key, title, body, needs = [], { pending = null } = {}) {
+  function criterionCard(key, title, body, needs = [], { pending = null, badge = 'Pendiente de series temporales' } = {}) {
     const c = view.result.byCriterion[key];
     const determining = (view.result.determining || []).includes(key);
     const met = c && c.status === 'met';
     return html`<section class="crit-card${determining ? ' is-determining' : ''}" aria-labelledby="cc-${key}">
       <header class="crit-card-head"><h5 id="cc-${key}"><span class="crit-key">${key}</span> ${title}</h5>
-        ${pending ? html`<span class="badge">Pendiente de series temporales</span>`
+        ${pending ? html`<span class="badge">${badge}</span>`
           : html`<span class="badge ${met ? 'ok' : c && c.status === 'not_met' ? '' : 'warn'}">${met ? `${c.category} · ${c.notation}` : STATUS_TEXT[c ? c.status : 'skipped']}</span>`}
       </header>
       ${pending ? html`<p class="hint">${pending}</p>` : ''}
@@ -213,7 +221,7 @@ export function mountSpeciesIucn(el, { species, catalog, goToParam }) {
       </dl>
       ${locationsHtml()}
       <h6>(b) Disminución continua</h6><ul class="facts">${FACTS.decline.map(([k, l]) => factRow(k, l, { suggestion: sugg.get(k) }))}</ul>
-      <h6>(c) Fluctuaciones extremas</h6><ul class="facts">${FACTS.fluct.map(([k, l]) => factRow(k, l))}</ul>`, needs);
+      <h6>(c) Fluctuaciones extremas</h6><ul class="facts">${FACTS.fluct.map(([k, l]) => factRow(k, l, { suggestion: sugg.get(k) }))}</ul>`, needs);
   }
 
   function subpopsTable() {
@@ -256,8 +264,42 @@ export function mountSpeciesIucn(el, { species, catalog, goToParam }) {
       <dl class="crit-data">
         <dt>C2a(i) · máx. por subpoblación</dt><dd>${c2a ? `${fmtN(c2a.maxPerSubpop.best)} (${fmtN(c2a.maxPerSubpop.min)}–${fmtN(c2a.maxPerSubpop.max)})` : '—'}</dd>
         <dt>C2a(ii) · % en la mayor</dt><dd>${c2a && c2a.pctInLargest.best !== null ? `${fmtN(c2a.pctInLargest.best)} % (${fmtN(c2a.pctInLargest.min)}–${fmtN(c2a.pctInLargest.max)})` : '—'}</dd>
-        <dt>C1</dt><dd class="muted">Pendiente de series temporales (F11h)</dd>
+        <dt>C1 · disminución continua</dt><dd>${seriesOk() ? html`tasa anual ${fmtPct(data.series.trend.annualChangePct)} (IC 95 %:
+          ${fmtPct(data.series.trend.annualChangeLo)} a ${fmtPct(data.series.trend.annualChangeHi)}); el motor la lleva a la ventana de cada categoría
+          (3 años o 1 generación, 5 o 2, 10 o 3)` : html`<span class="muted">Sin serie temporal: ${seriesReason()}</span>`}</dd>
       </dl>`, needs);
+  }
+
+  // --- A · Reducción (F11h: series temporales) -------------------------------------------------------
+  const seriesOk = () => !!(data.series && data.series.status === 'ok');
+  const seriesReason = () => (data.series ? data.series.reason : 'sin visitas a sitios.') || '';
+  const fmtPct = (n) => (n === null || n === undefined ? '—' : `${n > 0 ? '+' : ''}${fmtN(n)} %`);
+
+  function cardA() {
+    const s = data.series;
+    const items = (view.inputs.A && view.inputs.A.items) || [];
+    const needs = [];
+    if (!seriesOk()) needs.push(html`Visitas a sitios con recuentos en al menos 3 años (Mapa › «Empezar visita»; sitios en Catálogo › Sitios).`);
+    if (!param('generation_length')) needs.push(html`${gotoParam('generation_length')}: sin ella la ventana es de 10 años (con ella, 3 generaciones si es mayor).`);
+    if (!FACTS.aBasis.some(([k]) => factValue(k) === 'yes')) needs.push(html`Al menos una ${gotoFact('a_basis_b', 'base (a)–(e)')} de la reducción.`);
+    if (FACTS.aCauses.some(([k]) => factValue(k) === null)) needs.push(html`Las ${gotoFact('a_reversible', 'causas')} (reversibles, comprendidas y cesadas) para elegir entre A1 y A2 (sin responder: A2).`);
+    const body = !s || s.status === 'no_data' ? html`<p class="hint">${s ? s.reason : 'Sin visitas a sitios.'} La reducción se mide repitiendo el mismo muestreo:
+        empieza visitas a sitios desde el Mapa.</p>`
+      : s.status !== 'ok' ? html`<p class="guard-band warn">No evaluable: ${s.reason}</p>`
+        : html`<dl class="crit-data">
+          <dt>Serie</dt><dd>${s.nSites} ${s.nSites === 1 ? 'sitio' : 'sitios'} · ${s.firstYear}–${s.lastYear} (${s.nYears} años con recuentos)</dd>
+          <dt>Tendencia</dt><dd><strong>${fmtPct(s.trend.annualChangePct)} al año</strong> <span class="muted">(IC 95 %: ${fmtPct(s.trend.annualChangeLo)} a
+            ${fmtPct(s.trend.annualChangeHi)}${s.trend.phi > 1 ? `; sobredispersión φ = ${fmtN(s.trend.phi)}` : ''})</span></dd>
+          <dt>Reducción en ${fmtN(s.window.years)} años</dt><dd><strong>${fmtN(s.reduction.best)} %</strong> <span class="muted">(${fmtN(s.reduction.min)}–${fmtN(s.reduction.max)} %,
+            ventana ${s.window.from}–${s.window.to})</span></dd>
+          <dt>Observado</dt><dd>${fmtN(s.window.observedPct)} % de la ventana${s.window.projected ? html` · <span class="badge warn">el resto (${fmtN(100 - s.window.observedPct)} %) es proyectado</span>` : ''}</dd>
+          <dt>Subcriterios</dt><dd>${items.map((it) => it.subcriterion).join(', ') || '—'} <span class="muted">(misma tasa: cambian el umbral y las bases admitidas)</span></dd>
+        </dl>
+        <p class="hint">El gráfico y la tabla de la serie están en la pestaña Registros.</p>`;
+    return criterionCard('A', 'Reducción del tamaño poblacional', html`${body}
+      <h6>Causas: A1 (las tres «sí») o A2</h6><ul class="facts">${FACTS.aCauses.map(([k, l]) => factRow(k, l))}</ul>
+      <h6>Futuro: A3 y A4</h6><ul class="facts">${FACTS.aFuture.map(([k, l]) => factRow(k, l))}</ul>
+      <h6>Bases de la reducción</h6><ul class="facts">${FACTS.aBasis.map(([k, l]) => factRow(k, l))}</ul>`, needs);
   }
 
   function cardD() {
@@ -390,11 +432,12 @@ export function mountSpeciesIucn(el, { species, catalog, goToParam }) {
       ${head()}
       <p class="sr-only" role="status" aria-live="polite">${status}</p>
       ${(r.warnings || []).length ? html`<ul class="wz-warnings">${r.warnings.map((w) => html`<li>${w}</li>`)}</ul>` : ''}
-      ${criterionCard('A', 'Reducción del tamaño poblacional', '', [], { pending: 'Necesita series temporales de recuentos o de superficie (llegan con las visitas, F11h).' })}
+      ${cardA()}
       ${cardB()}
       ${cardC()}
       ${cardD()}
-      ${criterionCard('E', 'Análisis cuantitativo', '', [], { pending: 'Necesita un análisis de viabilidad con series temporales (F11h).' })}
+      ${criterionCard('E', 'Análisis cuantitativo', '', [], { badge: 'Fuera de alcance',
+        pending: 'BioDex no evalúa E: haría falta un análisis de viabilidad poblacional (PVA) con series largas, fuera del alcance de la app. Si tienes uno, cítalo en la justificación.' })}
       ${regionalHtml()}
       ${gbifHtml()}
       ${saveHtml()}

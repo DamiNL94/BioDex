@@ -3,7 +3,7 @@
 // ------------------------------------------------------------------------------------------------
 // F11c — dos disposiciones (app.js decide el modo; al cruzar los 900 px la vista se vuelve a montar):
 //   ESTUDIO (escritorio/tablet): maestro-detalle a lo ancho. A la izquierda la lista; a la derecha el
-//     catálogo elegido como espacio de trabajo con pestañas: Resumen · Equipo · Sensibilidad (owner) ·
+//     catálogo elegido como espacio de trabajo con pestañas: Resumen · Equipo · Sitios (F11h) · Sensibilidad (owner) ·
 //     Registro (owner) · Exportar. Sensibilidad, Registro y Exportar se pintan DENTRO de la pestaña
 //     (mountLevels/mountAudit/mountExport), no en un panel encima.
 //   CAMPO (móvil): «¿Listo para el campo?». Arriba el catálogo activo y su preparación (llevarlo al
@@ -31,6 +31,7 @@ import { ROLE_LABELS, mountTeam, openLevels, openAudit, mountLevels, mountAudit 
 import { openJoin } from './join.js';
 import { openExport, mountExport } from './catalog-export.js';
 import { listZones } from '../map/zones.js';
+import { mountSites, openSites } from './catalog-sites.js';
 
 export { ROLE_LABELS };
 const ADD_ROLES = ['owner', 'custodian', 'editor'];
@@ -38,7 +39,8 @@ const OFFLINE_EMPTY = 'Sin conexión con el servidor y aún no hay catálogos en
 const PHASES = { package: 'Descargando fichas y niveles…', marks: 'Descargando marcas del equipo…', images: 'Guardando imágenes' };
 const RANK_LABELS = { kingdom: 'Reino', phylum: 'Filo', class: 'Clase', order: 'Orden', family: 'Familia' };
 const TABS = [
-  ['summary', 'Resumen'], ['team', 'Equipo'], ['levels', 'Sensibilidad', 'owner'], ['audit', 'Registro', 'owner'], ['export', 'Exportar'],
+  ['summary', 'Resumen'], ['team', 'Equipo'], ['sites', 'Sitios'], ['levels', 'Sensibilidad', 'owner'], ['audit', 'Registro', 'owner'],
+  ['export', 'Exportar'],
 ];
 const ICON_CHEV = html`<svg viewBox="0 0 24 24" aria-hidden="true" class="chev-r"><path d="m9 6 6 6-6 6"/></svg>`;
 
@@ -326,6 +328,8 @@ export function mount(el, { go, isStudio }) {
       tabCleanup = mountLevels(panel, catalog, { onChanged: () => {} });
     } else if (lastTab === 'audit') {
       tabCleanup = mountAudit(panel, catalog);
+    } else if (lastTab === 'sites') {
+      tabCleanup = mountSites(panel, catalog);   // F11h
     } else if (lastTab === 'export') {
       tabCleanup = mountExport(panel, catalog);
     }
@@ -358,6 +362,7 @@ export function mount(el, { go, isStudio }) {
     const manage = [
       canAdd && ['add', 'Añadir especies', 'Buscar en EIDOS y añadir al catálogo'],
       ['team', 'Equipo', 'Miembros, roles e invitaciones'],
+      ['sites', 'Sitios de muestreo', 'Parcelas, transectos y puntos de conteo'],
       catalog.role === 'owner' && ['levels', 'Niveles de sensibilidad', 'Qué coordenadas ve cada uno'],
       catalog.role === 'owner' && ['audit', 'Registro', 'Accesos y cambios'],
       ['export', 'Exportar datos', 'Darwin Core, Plinian Core y hojas (necesita conexión)'],
@@ -394,6 +399,7 @@ export function mount(el, { go, isStudio }) {
       const k = b.dataset.manage;
       if (k === 'add') openAddSpecies(catalog, { onChanged: () => { asideFor = null; load(); } });
       else if (k === 'team') openTeamPanel(catalog);
+      else if (k === 'sites') openSites(catalog);
       else if (k === 'levels') openLevels(catalog, { onChanged: () => { asideFor = null; load(); } });
       else if (k === 'audit') openAudit(catalog);
       else if (k === 'export') openExport(catalog);

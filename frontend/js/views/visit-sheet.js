@@ -37,7 +37,7 @@ async function catalogSpecies(catalog) {
 }
 
 /** Lista de especies con casillas (objetivo). `selected`: Set. Filtro por nombre. */
-function targetPicker(box, species, selected, onChange) {
+export function targetPicker(box, species, selected, onChange) {
   let q = '';
   const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
   function paint() {
