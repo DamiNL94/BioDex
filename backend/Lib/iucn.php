@@ -11,6 +11,7 @@
 
 require_once __DIR__ . "/utm.php";
 require_once __DIR__ . "/series.php";   // Series temporales (A y C1)
+require_once __DIR__ . "/sufficiency.php";   // Calidad de los datos y requisitos mínimos (tabla 3.1)
 
 const IUCN_CRITERIA_JSON = __DIR__ . "/../../shared/iucn-criteria.json";
 const IUCN_THREATS_JSON  = __DIR__ . "/../../shared/iucn-threats.json";
@@ -718,12 +719,13 @@ function iucnDoubleCountPairs(array $list): int {
     return $pairs;
 }
 
-function iucnBootstrapMean(array $values, int $reps = IUCN_BOOTSTRAP_REPS, int $seed = IUCN_BOOTSTRAP_SEED): array {
+/** Port de bootstrapMean(): media con intervalo BCa al nivel del rango plausible (90 %). */
+function iucnBootstrapMean(array $values, int $reps = IUCN_BOOTSTRAP_REPS, int $seed = IUCN_BOOTSTRAP_SEED, float $level = SUFF_LEVEL): array {
     $n = count($values);
     $sum = 0.0;
     foreach ($values as $v) $sum += $v;
     $mean = $sum / $n;
-    if ($n < 2) return ["mean" => $mean, "low" => $mean, "high" => $mean, "reps" => 0];
+    if ($n < 2) return ["mean" => $mean, "low" => $mean, "high" => $mean, "reps" => 0, "level" => $level, "method" => "none"];
     $rnd = iucnMinstd($seed);
     $means = [];
     for ($r = 0; $r < $reps; $r++) {
@@ -732,11 +734,26 @@ function iucnBootstrapMean(array $values, int $reps = IUCN_BOOTSTRAP_REPS, int $
         $means[] = $s / $n;
     }
     sort($means);
-    $at = fn($q) => $means[min($reps - 1, (int) floor($q * $reps))];
-    return ["mean" => $mean, "low" => $at(0.025), "high" => $at(0.975), "reps" => $reps];
+    if ($means[0] === $means[$reps - 1]) return ["mean" => $mean, "low" => $mean, "high" => $mean, "reps" => $reps, "level" => $level, "method" => "bca"];
+    $less = $ties = 0;
+    foreach ($means as $m) { if ($m < $mean) $less++; elseif ($m === $mean) $ties++; }
+    $prop = min(1 - 0.5 / $reps, max(0.5 / $reps, ($less + $ties / 2) / $reps));
+    $z0 = suffNormInv($prop);
+    $jack = array_map(fn($v) => ($sum - $v) / ($n - 1), $values);
+    $jMean = 0.0;
+    foreach ($jack as $j) $jMean += $j;
+    $jMean /= $n;
+    $num = $den = 0.0;
+    foreach ($jack as $j) { $d = $jMean - $j; $num += $d * $d * $d; $den += $d * $d; }
+    $acc = $den > 0 ? $num / (6 * $den ** 1.5) : 0.0;
+    $zl = suffNormInv((1 - $level) / 2);
+    $adj = fn($z) => suffNormCdf($z0 + ($z0 + $z) / (1 - $acc * ($z0 + $z)));
+    $at = fn($q) => $means[min($reps - 1, max(0, (int) floor($q * $reps)))];
+    return ["mean" => $mean, "low" => $at($adj($zl)), "high" => $at($adj(-$zl)), "reps" => $reps, "level" => $level, "method" => "bca"];
 }
 
-function iucnMatureEstimate(array $points, ?float $habitatKm2 = null, ?float $aooKm2 = null, int $reps = IUCN_BOOTSTRAP_REPS, int $seed = IUCN_BOOTSTRAP_SEED): array {
+function iucnMatureEstimate(array $points, ?float $habitatKm2 = null, ?float $aooKm2 = null, int $reps = IUCN_BOOTSTRAP_REPS, int $seed = IUCN_BOOTSTRAP_SEED,
+                            bool $censusComplete = false): array {
     $warnings = [];
     $withCount = array_values(array_filter($points, fn($p) => $p["mature"] !== null && $p["t"] !== null));
     $from = $to = null;
@@ -753,30 +770,44 @@ function iucnMatureEstimate(array $points, ?float $habitatKm2 = null, ?float $ao
     $plots = iucnLatestBy(array_values(array_filter($list, fn($p) => $p["area"] !== null)), fn($p) => iucnCellKey($p, IUCN_DEDUP_CELL_M));
     $densities = array_map(fn($p) => $p["mature"] / ($p["area"] * 1e-6), $plots);
     $iso = fn($t) => $t === null ? null : gmdate("Y-m-d\TH:i:s", intdiv($t, 1000)) . "." . sprintf("%03d", $t % 1000) . "Z";
+    $census = $censusComplete;
     $out = ["min" => $kept ? $min : null, "best" => $kept ? $min : null, "max" => $kept ? $min : null,
-            "quality" => ["min" => "observed", "best" => "observed", "max" => "observed"], "method" => "observed",
-            "density" => null, "areaKm2" => null, "areaSource" => null, "nCounted" => count($kept), "nPlots" => count($plots),
+            "quality" => ["min" => "observed", "best" => $census ? "observed" : "inferred", "max" => $census ? "observed" : "inferred"],
+            "totalQuality" => $kept ? ($census ? "observed" : "inferred") : null, "method" => $census ? "census" : "observed",
+            "density" => null, "areaKm2" => null, "areaSource" => null, "nCounted" => count($kept), "nPlots" => count($plots), "plotsRequired" => SUFF_PLOTS_BASE,
             "window" => $from === null ? null : ["from" => $iso($from), "to" => $iso($to)],
             "doubleCountPairs" => $pairs, "kept" => $kept, "warnings" => []];
     if (!$kept) { $warnings[] = "Sin recuentos de individuos maduros en las marcas."; return ["warnings" => $warnings] + $out; }
     if (!$plots) return ["warnings" => $warnings] + $out;
     $b = iucnBootstrapMean($densities, $reps, $seed);
+    // Coeficiente de variación de la densidad: decide cuántas parcelas hacen falta (como en JS).
+    $n = count($densities);
+    $cv = null;
+    if ($n >= 2 && $b["mean"] > 0) {
+        $ss = 0.0;
+        foreach ($densities as $v) $ss += ($v - $b["mean"]) ** 2;
+        $cv = suffRound(sqrt($ss / ($n - 1)) / $b["mean"], 3);
+    }
+    $out["plotsRequired"] = $cv !== null && $cv > SUFF_CV_HIGH ? SUFF_PLOTS_HIGH_CV : SUFF_PLOTS_BASE;
+    $est = count($plots) >= $out["plotsRequired"] ? "estimated" : "inferred";
     $out["density"] = ["mean" => iucnRound($b["mean"], 3), "low" => iucnRound($b["low"], 3), "high" => iucnRound($b["high"], 3),
-                       "reps" => $b["reps"], "plots" => count($plots)];
+                       "reps" => $b["reps"], "plots" => count($plots), "level" => $b["level"], "method" => $b["method"], "cv" => $cv];
     if (count($plots) < 2) $warnings[] = "Una sola parcela con superficie: sin intervalo de confianza.";
+    if ($census) return ["warnings" => $warnings] + $out;
     if ($habitatKm2 !== null && $habitatKm2 > 0) {
         $out["areaKm2"] = $habitatKm2;
         $out["areaSource"] = "habitat";
         $out["method"] = "density";
         $out["best"] = max($min, iucnJsRoundInt($b["mean"] * $habitatKm2));
         $out["max"] = max($out["best"], iucnJsRoundInt($b["high"] * $habitatKm2));
-        $out["quality"]["best"] = $out["quality"]["max"] = "estimated";
+        $out["quality"]["best"] = $out["quality"]["max"] = $est;
+        $out["totalQuality"] = $est;
     } elseif ($aooKm2 !== null && $aooKm2 > 0) {
         $out["areaKm2"] = $aooKm2;
         $out["areaSource"] = "aoo";
         $out["method"] = "density-aoo-bound";
         $out["max"] = max($min, iucnJsRoundInt($b["high"] * $aooKm2));
-        $out["quality"]["max"] = "estimated";
+        $out["quality"]["max"] = $est;
         $warnings[] = "Sin superficie de hábitat ocupado: la AOO se usa como cota superior (solo el máximo).";
     } else {
         $warnings[] = "Sin superficie de hábitat ocupado ni AOO: los maduros estimados no se calculan.";
@@ -965,6 +996,7 @@ function iucnSuggestDecline(array $impacts, array $habitatCodes): array {
 }
 
 function iucnParamValue(array $params, string $key): mixed { return $params[$key]["value"] ?? null; }
+function iucnParamQuality(array $params, string $key): ?string { $q = $params[$key]["quality"] ?? null; return is_string($q) && $q !== "" ? $q : null; }
 
 /** Port de quantify(). $opts: params, defaults, impacts (con x/y), metrics {eooKm2, aooKm2, aooRange}, habitatCodes, seed, reps. */
 function iucnQuantify(array $records, array $opts = []): array {
@@ -972,7 +1004,7 @@ function iucnQuantify(array $records, array $opts = []): array {
     $params = $opts["params"] ?? [];
     $metrics = $opts["metrics"] ?? [];
     $mature = iucnMatureEstimate($points, iucnToNum(iucnParamValue($params, "occupied_habitat_km2")), iucnToNum($metrics["aooKm2"] ?? null),
-        $opts["reps"] ?? IUCN_BOOTSTRAP_REPS, $opts["seed"] ?? IUCN_BOOTSTRAP_SEED);
+        $opts["reps"] ?? IUCN_BOOTSTRAP_REPS, $opts["seed"] ?? IUCN_BOOTSTRAP_SEED, iucnParamValue($params, "census_complete") === "yes");
     $sepKm = iucnToNum(iucnParamValue($params, "separation_distance"));
     $fromDefault = false;
     if ($sepKm === null && !empty($opts["defaults"]["separation_distance"])) { $sepKm = (float) $opts["defaults"]["separation_distance"]["value"]; $fromDefault = true; }
@@ -981,7 +1013,7 @@ function iucnQuantify(array $records, array $opts = []): array {
     $frag = iucnFragmentation($sp["subpops"], iucnParamValue($params, "min_viable_subpop"), iucnParamValue($params, "dispersal_distance"));
     $impacts = $opts["impacts"] ?? [];
     return ["nPoints" => count($points), "mature" => $mature, "subpops" => $sp, "fragmentation" => $frag,
-            "locations" => iucnProposeLocations($sp["subpops"], $impacts),
+            "locations" => iucnProposeLocations($sp["subpops"], $impacts), "completeness" => suffSamplingCompleteness($records),
             "suggestions" => iucnSuggestDecline($impacts, $opts["habitatCodes"] ?? []), "separation" => ["km" => $sepKm, "fromDefault" => $fromDefault]];
 }
 
@@ -1007,7 +1039,10 @@ function iucnEngineInputs(array $q, array $params = [], array $metrics = [], ?ar
     $decline = array_values(array_filter(["i", "ii", "iii", "iv", "v"], fn($r) => $yes("decline_b_{$r}")));
     $fluct = array_values(array_filter(["i", "ii", "iii", "iv"], fn($r) => $yes("fluct_c_{$r}")));
     $m = $q["mature"] ?? [];
-    $open = ($m["method"] ?? null) === "observed";   // solo un mínimo observado: máximo desconocido
+    $rq = suffRangeQuality($q["completeness"] ?? null);
+    $sq = suffSeriesQuality($series);
+    $tq = $m["totalQuality"] ?? null;
+    $open = ($m["method"] ?? null) === "observed";   // solo un mínimo: máximo desconocido
     $matureRange = ($m["best"] ?? null) === null ? null : ["best" => $m["best"], "min" => $m["min"], "max" => $m["max"]] + ($open ? ["openMax" => true] : []);
     $c2a = !empty($q["subpops"]["c2a"]["complete"]) ? $q["subpops"]["c2a"] : null;
     if ($c2a && $open) $c2a["maxPerSubpop"]["openMax"] = true;
@@ -1023,11 +1058,14 @@ function iucnEngineInputs(array $q, array $params = [], array $metrics = [], ?ar
         "A" => $fromSeries["A"],
         "B" => ["eoo" => $metrics["eooKm2"] ?? null, "aoo" => $aoo, "severelyFragmented" => ($q["fragmentation"]["severe"] ?? null) === true,
                 "locations" => $locations !== null && is_int($locations["count"] ?? null) ? $locations["count"] : null,
-                "decline" => $decline, "fluctuation" => $fluct],
+                "decline" => $decline, "fluctuation" => $fluct,
+                "quality" => ["eoo" => $rq["eoo"], "aoo" => $rq["aoo"],
+                              "decline" => array_combine(["i", "ii", "iii", "iv", "v"], array_map(fn($r) => iucnParamQuality($params, "decline_b_{$r}"), ["i", "ii", "iii", "iv", "v"]))]],
         "C" => ["mature" => $matureRange, "c1DeclinePct" => null, "c1Years" => null, "c1AnnualRate" => $fromSeries["c1AnnualRate"],
                 "continuingDecline" => $yes("decline_b_v"),
-                "maxPerSubpop" => $c2a["maxPerSubpop"] ?? null, "pctInOneSubpop" => $c2a["pctInLargest"] ?? null, "extremeFluctuation" => $yes("fluct_c_iv")],
-        "D" => ["mature" => $matureRange, "plausibleThreat" => $yes("plausible_threat"), "aoo" => null, "locations" => null],
+                "maxPerSubpop" => $c2a["maxPerSubpop"] ?? null, "pctInOneSubpop" => $c2a["pctInLargest"] ?? null, "extremeFluctuation" => $yes("fluct_c_iv"),
+                "quality" => ["mature" => $tq, "c1" => $sq["c1"], "continuingDecline" => iucnParamQuality($params, "decline_b_v"), "maxPerSubpop" => $tq]],
+        "D" => ["mature" => $matureRange, "plausibleThreat" => $yes("plausible_threat"), "aoo" => null, "locations" => null, "quality" => ["mature" => $tq]],
         "E" => ["skip" => true, "pending" => "out_of_scope",
                 "reason" => "Fuera del alcance de BioDex: haría falta un análisis de viabilidad poblacional con series largas."],
         "expertCategory" => in_array($expert, ["NT", "LC"], true) ? $expert : null,

@@ -22,9 +22,18 @@
 //     EE(r) = √(φ · [(XᵀWX)⁻¹]_rr); IC 95 % = r ± 1,96 · EE.
 //   · Reducción en T años: 1 − e^(r·T), con T = máx(10 años, 3 generaciones) y tope de 100 (criterio A). Con menos de
 //     3 años con datos: «no evaluable». Si la serie cubre menos que T, el resto de la ventana es PROYECTADO.
+//   · Rango plausible para el motor: IC 90 % (Directrices v16 §3.2): `trend.lo90/hi90` y `reduction90`. El IC 95 % se
+//     sigue dando (gráfico y sugerencia de b(v)).
+//   · Suficiencia (iucn-sufficiency.js): grados de libertad `df` y potencia para detectar la reducción del umbral de VU
+//     de A2 en la ventana con el EE actual: potencia = Φ(|r_VU| / EE − z₀,₉₇₅), r_VU = −ln(1 − 0,30) / T; reducción mínima
+//     detectable con potencia 0,8: 1 − e^(−(z₀,₉₇₅ + z₀,₈₀)·EE·T) (Gerrodette 1987).
 // ================================================================================================
 
+import { normCdf, seriesQuality } from './iucn-sufficiency.js';
+
 export const Z95 = 1.959963984540054;
+export const Z90 = 1.6448536269514722;
+export const Z80 = 0.8416212335729143;   // potencia 0,8 (una cola)
 export const MIN_YEARS = 3;               // por debajo: «no evaluable»
 export const FLUCT_RATIO = 10;            // fluctuación extrema: máx/mín del índice > 10 (Directrices UICN)
 const IRLS_MAX_ITER = 100;
@@ -281,6 +290,14 @@ export function analyzeSeries(obs, { generationLength = null, criteria = null } 
   const extreme = maxI !== null && (minI === 0 ? maxI > 0 : maxI / minI > FLUCT_RATIO);
   const fluctuation = { ratio, zeroYear: minI === 0 && maxI > 0, extreme, nYears: inWin.length };
 
+  // IC 90 % (rango plausible) y potencia (suficiencia de la serie).
+  const lo90 = r - Z90 * se;
+  const hi90 = r + Z90 * se;
+  const targetPct = criteria && criteria.criteria ? criteria.criteria.A.thresholdsPct.A2_A3_A4.VU : 30;
+  const rTarget = -Math.log(1 - targetPct / 100) / T;
+  const power = se > 0 ? normCdf(rTarget / se - Z95) : 1;
+  const mdrPct = round(100 * (1 - Math.exp(-(Z95 + Z80) * se * T)), 1);
+
   const pctTxt = (v) => String(round(100 * (Math.exp(v) - 1), 1)).replace('.', ',');
   const suggestions = [];
   if (hi < 0) {
@@ -306,9 +323,13 @@ export function analyzeSeries(obs, { generationLength = null, criteria = null } 
     trend: { r: round(r, 6), se: round(se, 6), lo: round(lo, 6), hi: round(hi, 6), phi: round(phi, 4), phiRaw: phiRaw === null ? null : round(phiRaw, 4),
       deviance: round(fit.deviance, 4), iterations: fit.iterations, converged: fit.converged,
       annualChangePct: round(100 * (Math.exp(r) - 1), 2), annualChangeLo: round(100 * (Math.exp(lo) - 1), 2),
-      annualChangeHi: round(100 * (Math.exp(hi) - 1), 2) },
+      annualChangeHi: round(100 * (Math.exp(hi) - 1), 2), lo90: round(lo90, 6), hi90: round(hi90, 6),
+      annualChangeLo90: round(100 * (Math.exp(lo90) - 1), 2), annualChangeHi90: round(100 * (Math.exp(hi90) - 1), 2) },
+    df,
+    power: { targetPct, power: round(power, 4), mdrPct },
     window,
     reduction: { best: reductionPct(r, T), min: reductionPct(hi, T), max: reductionPct(lo, T) },
+    reduction90: { best: reductionPct(r, T), min: reductionPct(hi90, T), max: reductionPct(lo90, T) },
     fluctuation,
     suggestions,
   };
@@ -322,7 +343,9 @@ export const A_BASIS = ['a', 'b', 'c', 'd', 'e'];
  *   a_reversible, a_understood, a_ceased → A1 si los tres son «sí»; si no, A2 (pasado).
  *   a_future (¿se espera que la reducción continúe?) = sí → además A3 (proyección) y A4 (ventana centrada en el último año).
  *   a_basis_a … a_basis_e → bases (a)–(e) del criterio. A3 no admite (a).
- * → {A, c1AnnualRate}. Sin serie evaluable: A salta con el motivo y C1 sin dato.
+ * Rango plausible con el IC 90 % (reduction90, lo90/hi90) y la calidad de la serie (seriesQuality: estimada,
+ * proyectada o inferida con pocos grados de libertad).
+ * → {A, c1AnnualRate, c1Quality}. Sin serie evaluable: A salta con el motivo y C1 sin dato.
  */
 export function seriesEngineInputs(series, params = {}) {
   if (!series || series.status !== 'ok') {
@@ -331,14 +354,18 @@ export function seriesEngineInputs(series, params = {}) {
   const yes = (k) => FACT(params, k) === 'yes';
   const past = yes('a_reversible') && yes('a_understood') && yes('a_ceased') ? 'A1' : 'A2';
   const basis = A_BASIS.filter((b) => yes(`a_basis_${b}`));
-  const red = { ...series.reduction };
-  const items = [{ subcriterion: past, reductionPct: red, basis }];
+  const red = { ...(series.reduction90 || series.reduction) };
+  const q = seriesQuality(series);
+  const items = [{ subcriterion: past, reductionPct: red, basis, quality: q.a }];
   if (yes('a_future')) {
-    items.push({ subcriterion: 'A3', reductionPct: red, basis: basis.filter((b) => b !== 'a') });
-    items.push({ subcriterion: 'A4', reductionPct: red, basis });
+    items.push({ subcriterion: 'A3', reductionPct: red, basis: basis.filter((b) => b !== 'a'), quality: q.a });
+    items.push({ subcriterion: 'A4', reductionPct: red, basis, quality: q.a });
   }
+  const lo = series.trend.lo90 ?? series.trend.lo;
+  const hi = series.trend.hi90 ?? series.trend.hi;
   return {
     A: { items, window: series.window },
-    c1AnnualRate: { best: series.trend.r, min: series.trend.lo, max: series.trend.hi },
+    c1AnnualRate: { best: series.trend.r, min: lo, max: hi },
+    c1Quality: q.c1,
   };
 }

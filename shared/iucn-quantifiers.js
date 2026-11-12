@@ -12,12 +12,14 @@
 //   fragmentation(subpops, params)              → fragmentación grave (B a) o «no evaluable»
 //   proposeLocations(subpops, impacts)          → localidades definidas por amenaza (propuesta)
 //   quantify(records, opts)                     → todo junto, como lo pinta la pestaña Evaluación UICN
+// Calidad de cada dato y requisitos mínimos (censo, parcelas, completitud): iucn-sufficiency.js.
 //
 // Distancias en metros sobre ETRS89 / UTM 30N (la proyección se INYECTA: toUtm() de js/geo/utm.js en el
 // navegador). Fechas en UTC: «día de campaña» = fecha UTC de eventDate.
 // ================================================================================================
 
 import { seriesEngineInputs } from './iucn-series.js';
+import { SUFFICIENCY, normCdf, normInv, samplingCompleteness, rangeQuality, seriesQuality } from './iucn-sufficiency.js';
 
 export const DEDUP_CELL_M = 50;              // celda de deduplicación de maduros
 export const LAST_YEAR_MS = 365 * 86400000;   // ventana: el último año de datos
@@ -141,11 +143,16 @@ function doubleCountPairs(list) {
   return pairs;
 }
 
-/** Media y su IC 95 % por bootstrap (percentiles 2,5 y 97,5; semilla fija). */
-export function bootstrapMean(values, { reps = BOOTSTRAP_REPS, seed = BOOTSTRAP_SEED } = {}) {
+/**
+ * Media y su intervalo por bootstrap BCa (corregido de sesgo y acelerado; DiCiccio y Efron 1996), al nivel del rango
+ * plausible (90 %, Directrices v16 §3.2). El de percentiles se queda corto con pocas muestras (Hesterberg 2015).
+ * Semilla fija: mismo resultado en JS y en PHP. Sesgo z0 = Φ⁻¹(proporción de medias remuestreadas < media, con la
+ * mitad de los empates); aceleración a por navaja (jackknife).
+ */
+export function bootstrapMean(values, { reps = BOOTSTRAP_REPS, seed = BOOTSTRAP_SEED, level = SUFFICIENCY.level } = {}) {
   const n = values.length;
   const mean = values.reduce((s, v) => s + v, 0) / n;
-  if (n < 2) return { mean, low: mean, high: mean, reps: 0 };
+  if (n < 2) return { mean, low: mean, high: mean, reps: 0, level, method: 'none' };
   const rnd = minstd(seed);
   const means = [];
   for (let r = 0; r < reps; r++) {
@@ -154,8 +161,23 @@ export function bootstrapMean(values, { reps = BOOTSTRAP_REPS, seed = BOOTSTRAP_
     means.push(s / n);
   }
   means.sort((a, b) => a - b);
-  const at = (q) => means[Math.min(reps - 1, Math.floor(q * reps))];
-  return { mean, low: at(0.025), high: at(0.975), reps };
+  if (means[0] === means[reps - 1]) return { mean, low: mean, high: mean, reps, level, method: 'bca' };
+  let less = 0;
+  let ties = 0;
+  for (const m of means) { if (m < mean) less++; else if (m === mean) ties++; }
+  const prop = Math.min(1 - 0.5 / reps, Math.max(0.5 / reps, (less + ties / 2) / reps));
+  const z0 = normInv(prop);
+  const sum = values.reduce((s, v) => s + v, 0);
+  const jack = values.map((v) => (sum - v) / (n - 1));
+  const jMean = jack.reduce((s, v) => s + v, 0) / n;
+  let num = 0;
+  let den = 0;
+  for (const j of jack) { const d = jMean - j; num += d * d * d; den += d * d; }
+  const acc = den > 0 ? num / (6 * den ** 1.5) : 0;
+  const zl = normInv((1 - level) / 2);
+  const adj = (z) => normCdf(z0 + (z0 + z) / (1 - acc * (z0 + z)));
+  const at = (q) => means[Math.min(reps - 1, Math.max(0, Math.floor(q * reps)))];
+  return { mean, low: at(adj(zl)), high: at(adj(-zl)), reps, level, method: 'bca' };
 }
 
 /**
@@ -166,9 +188,12 @@ export function bootstrapMean(values, { reps = BOOTSTRAP_REPS, seed = BOOTSTRAP_
  *     sampleSizeValue en m²; la más reciente por celda de 50 m) × superficie de hábitat ocupado
  *     (`habitatKm2`), con IC 95 % por bootstrap. Sin superficie de hábitat, la AOO como cota superior
  *     (solo el máximo; el mejor sigue siendo el observado).
- * opts: {habitatKm2, aooKm2, reps, seed} → {min, best, max, quality, density, areaKm2, areaSource, …}
+ *   Calidad del TOTAL (`totalQuality`, la que mira la tabla 3.1): observado con censo completo declarado
+ *     (`censusComplete`); estimado con parcelas suficientes (≥ 10, o ≥ 15 si el CV de la densidad es > 1) y
+ *     superficie de hábitat; si no, inferido (el mínimo contado es solo una cota inferior). iucn-sufficiency.js.
+ * opts: {habitatKm2, aooKm2, reps, seed, censusComplete} → {min, best, max, quality, totalQuality, density, plotsRequired, …}
  */
-export function matureEstimate(points, { habitatKm2 = null, aooKm2 = null, reps = BOOTSTRAP_REPS, seed = BOOTSTRAP_SEED } = {}) {
+export function matureEstimate(points, { habitatKm2 = null, aooKm2 = null, reps = BOOTSTRAP_REPS, seed = BOOTSTRAP_SEED, censusComplete = false } = {}) {
   const warnings = [];
   const { list, from, to } = countedPoints(points);
   const kept = latestBy(list, (p) => `${cellKey(p, DEDUP_CELL_M)}|${p.day}`);
@@ -178,17 +203,28 @@ export function matureEstimate(points, { habitatKm2 = null, aooKm2 = null, reps 
 
   const plots = latestBy(list.filter((p) => p.area !== null), (p) => cellKey(p, DEDUP_CELL_M));
   const densities = plots.map((p) => p.mature / (p.area * KM2_PER_M2));   // maduros por km²
+  const census = censusComplete === true;
   const out = { min: kept.length ? min : null, best: kept.length ? min : null, max: kept.length ? min : null,
-    quality: { min: 'observed', best: 'observed', max: 'observed' }, method: 'observed',
-    density: null, areaKm2: null, areaSource: null, nCounted: kept.length, nPlots: plots.length,
+    quality: { min: 'observed', best: census ? 'observed' : 'inferred', max: census ? 'observed' : 'inferred' },
+    totalQuality: kept.length ? (census ? 'observed' : 'inferred') : null, method: census ? 'census' : 'observed',
+    density: null, areaKm2: null, areaSource: null, nCounted: kept.length, nPlots: plots.length, plotsRequired: SUFFICIENCY.plotsBase,
     window: from === null ? null : { from: new Date(from).toISOString(), to: new Date(to).toISOString() },
     doubleCountPairs: pairs, kept, warnings };
   if (!kept.length) { warnings.push('Sin recuentos de individuos maduros en las marcas.'); return out; }
   if (!plots.length) return out;
 
   const b = bootstrapMean(densities, { reps, seed });
-  out.density = { mean: round(b.mean, 3), low: round(b.low, 3), high: round(b.high, 3), reps: b.reps, plots: plots.length };
+  // Coeficiente de variación de la densidad (desviación típica muestral / media): decide cuántas parcelas hacen falta.
+  const n = densities.length;
+  const sd = n >= 2 ? Math.sqrt(densities.reduce((s, v) => s + (v - b.mean) ** 2, 0) / (n - 1)) : null;
+  const cv = sd !== null && b.mean > 0 ? round(sd / b.mean, 3) : null;
+  out.plotsRequired = cv !== null && cv > SUFFICIENCY.cvHigh ? SUFFICIENCY.plotsHighCv : SUFFICIENCY.plotsBase;
+  const plotsOk = plots.length >= out.plotsRequired;
+  out.density = { mean: round(b.mean, 3), low: round(b.low, 3), high: round(b.high, 3), reps: b.reps, plots: plots.length,
+    level: b.level, method: b.method, cv };
   if (plots.length < 2) warnings.push('Una sola parcela con superficie: sin intervalo de confianza.');
+  if (census) return out;                       // con censo completo el total es el contado (observado)
+  const est = plotsOk ? 'estimated' : 'inferred';
   const habitat = toNum(habitatKm2);
   const aoo = toNum(aooKm2);
   if (habitat !== null && habitat > 0) {
@@ -197,14 +233,15 @@ export function matureEstimate(points, { habitatKm2 = null, aooKm2 = null, reps 
     out.method = 'density';
     out.best = Math.max(min, Math.round(b.mean * habitat));
     out.max = Math.max(out.best, Math.round(b.high * habitat));
-    out.quality.best = 'estimated';
-    out.quality.max = 'estimated';
+    out.quality.best = est;
+    out.quality.max = est;
+    out.totalQuality = est;
   } else if (aoo !== null && aoo > 0) {
     out.areaKm2 = aoo;
     out.areaSource = 'aoo';
     out.method = 'density-aoo-bound';
     out.max = Math.max(min, Math.round(b.high * aoo));
-    out.quality.max = 'estimated';
+    out.quality.max = est;
     warnings.push('Sin superficie de hábitat ocupado: la AOO se usa como cota superior (solo el máximo).');
   } else {
     warnings.push('Sin superficie de hábitat ocupado ni AOO: los maduros estimados no se calculan.');
@@ -416,6 +453,7 @@ export function suggestDecline(impacts, habitatCodes) {
 const DECLINE_KEYS = { i: 'decline_b_i', ii: 'decline_b_ii', iii: 'decline_b_iii', iv: 'decline_b_iv', v: 'decline_b_v' };
 const FLUCT_KEYS = { i: 'fluct_c_i', ii: 'fluct_c_ii', iii: 'fluct_c_iii', iv: 'fluct_c_iv' };
 const paramValue = (params, key) => (params && params[key] ? params[key].value : null);
+const paramQuality = (params, key) => (params && params[key] && params[key].quality ? params[key].quality : null);
 
 /**
  * Cuantificadores de una especie en el catálogo a partir de sus registros, parámetros e impactos.
@@ -428,7 +466,7 @@ export function quantify(records, opts = {}) {
   const params = opts.params || {};
   const metrics = opts.metrics || {};
   const mature = matureEstimate(points, { habitatKm2: paramValue(params, 'occupied_habitat_km2'), aooKm2: metrics.aooKm2,
-    seed: opts.seed, reps: opts.reps });
+    seed: opts.seed, reps: opts.reps, censusComplete: paramValue(params, 'census_complete') === 'yes' });
   let sepKm = toNum(paramValue(params, 'separation_distance'));
   let fromDefault = false;
   if (sepKm === null && opts.defaults && opts.defaults.separation_distance) { sepKm = opts.defaults.separation_distance.value; fromDefault = true; }
@@ -437,6 +475,7 @@ export function quantify(records, opts = {}) {
   const frag = fragmentation(sp.subpops, { minViable: paramValue(params, 'min_viable_subpop'), dispersalKm: paramValue(params, 'dispersal_distance') });
   const locations = proposeLocations(sp.subpops, opts.impacts || []);
   return { nPoints: points.length, mature, subpops: sp, fragmentation: frag, locations,
+    completeness: samplingCompleteness(records, opts.project),
     suggestions: suggestDecline(opts.impacts || [], opts.habitatCodes), separation: { km: sepKm, fromDefault } };
 }
 
@@ -461,6 +500,7 @@ export function locationsCurrent(loc, q) {
  * localidades CONFIRMADO (la propuesta no cuenta hasta que alguien la guarda) y las decisiones del usuario
  * (expertCategory NT/LC, possiblyExtinct). A y C1 salen de la serie temporal (`series`, analyzeSeries() de
  * iucn-series.js) y de los hechos de A (seriesEngineInputs); E queda fuera de alcance.
+ * Cada paso lleva la CALIDAD de sus datos (iucn-sufficiency.js y la calidad de los hechos) para la tabla 3.1.
  */
 export function engineInputs(q, { params = {}, metrics = {}, locations = null, choices = {}, series = null } = {}) {
   const fromSeries = seriesEngineInputs(series, params);
@@ -468,7 +508,9 @@ export function engineInputs(q, { params = {}, metrics = {}, locations = null, c
   const decline = Object.keys(DECLINE_KEYS).filter((r) => yes(DECLINE_KEYS[r]));
   const fluct = Object.keys(FLUCT_KEYS).filter((r) => yes(FLUCT_KEYS[r]));
   const m = q.mature || {};
-  // Sin parcelas el total es solo un MÍNIMO observado: el máximo no se conoce (openMax) y el rango lo refleja.
+  const rq = rangeQuality(q.completeness);
+  const sq = seriesQuality(series);
+  // Sin parcelas ni censo el total es solo un MÍNIMO: el máximo no se conoce (openMax) y el rango lo refleja.
   const open = m.method === 'observed';
   const matureRange = m.best === null || m.best === undefined ? null : { best: m.best, min: m.min, max: m.max, ...(open ? { openMax: true } : {}) };
   const c2aRaw = q.subpops && q.subpops.c2a && q.subpops.c2a.complete ? q.subpops.c2a : null;
@@ -482,10 +524,12 @@ export function engineInputs(q, { params = {}, metrics = {}, locations = null, c
     generationLength: toNum(paramValue(params, 'generation_length')),
     A: fromSeries.A,
     B: { eoo: metrics.eooKm2 === undefined ? null : metrics.eooKm2, aoo, severelyFragmented: q.fragmentation && q.fragmentation.severe === true,
-      locations: locations && Number.isInteger(locations.count) && locationsCurrent(locations, q) ? locations.count : null, decline, fluctuation: fluct },
+      locations: locations && Number.isInteger(locations.count) && locationsCurrent(locations, q) ? locations.count : null, decline, fluctuation: fluct,
+      quality: { eoo: rq.eoo, aoo: rq.aoo, decline: Object.fromEntries(Object.entries(DECLINE_KEYS).map(([r, k]) => [r, paramQuality(params, k)])) } },
     C: { mature: matureRange, c1DeclinePct: null, c1Years: null, c1AnnualRate: fromSeries.c1AnnualRate, continuingDecline: yes('decline_b_v'),
-      maxPerSubpop: c2a ? c2a.maxPerSubpop : null, pctInOneSubpop: c2a ? c2a.pctInLargest : null, extremeFluctuation: yes('fluct_c_iv') },
-    D: { mature: matureRange, plausibleThreat: yes('plausible_threat'), aoo: null, locations: null },
+      maxPerSubpop: c2a ? c2a.maxPerSubpop : null, pctInOneSubpop: c2a ? c2a.pctInLargest : null, extremeFluctuation: yes('fluct_c_iv'),
+      quality: { mature: m.totalQuality || null, c1: sq.c1, continuingDecline: paramQuality(params, 'decline_b_v'), maxPerSubpop: m.totalQuality || null } },
+    D: { mature: matureRange, plausibleThreat: yes('plausible_threat'), aoo: null, locations: null, quality: { mature: m.totalQuality || null } },
     E: { skip: true, pending: 'out_of_scope', reason: 'Fuera del alcance de BioDex: haría falta un análisis de viabilidad poblacional con series largas.' },
     expertCategory: choices.expertCategory === 'NT' || choices.expertCategory === 'LC' ? choices.expertCategory : null,
     possiblyExtinct: choices.possiblyExtinct === true,

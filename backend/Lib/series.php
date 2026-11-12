@@ -10,6 +10,8 @@
 require_once __DIR__ . "/iucn.php";   // iucnRound(): el redondeo de JS (Math.round)
 
 const SERIES_Z95 = 1.959963984540054;
+const SERIES_Z90 = 1.6448536269514722;   // rango plausible (IC 90 %)
+const SERIES_Z80 = 0.8416212335729143;   // potencia 0,8
 const SERIES_MIN_YEARS = 3;
 const SERIES_FLUCT_RATIO = 10;
 const SERIES_IRLS_MAX_ITER = 100;
@@ -277,15 +279,26 @@ function seriesAnalyze(array $obs, mixed $generationLength = null, ?array $crite
     }
     $n6 = fn($v) => seriesNum(iucnRound($v, 6));
     $n2 = fn($v) => seriesNum(iucnRound($v, 2));
+    // IC 90 % (rango plausible) y potencia (suficiencia), como en JS.
+    $lo90 = $r - SERIES_Z90 * $se;
+    $hi90 = $r + SERIES_Z90 * $se;
+    $targetPct = $criteria ? $criteria["criteria"]["A"]["thresholdsPct"]["A2_A3_A4"]["VU"] : 30;
+    $rTarget = -log(1 - $targetPct / 100) / $T;
+    $power = $se > 0 ? suffNormCdf($rTarget / $se - SERIES_Z95) : 1.0;
+    $mdrPct = seriesNum(iucnRound(100 * (1 - exp(-(SERIES_Z95 + SERIES_Z80) * $se * $T)), 1));
     return $base + [
         "status" => "ok", "reason" => null, "years" => $years, "nSites" => $nS, "nYears" => count($modelYears), "nObs" => count($rows),
         "firstYear" => $yr["first"], "lastYear" => $yr["last"],
         "trend" => ["r" => $n6($r), "se" => $n6($se), "lo" => $n6($lo), "hi" => $n6($hi), "phi" => seriesNum(iucnRound($phi, 4)),
                     "phiRaw" => $phiRaw === null ? null : seriesNum(iucnRound($phiRaw, 4)), "deviance" => seriesNum(iucnRound($fit["deviance"], 4)),
                     "iterations" => $fit["iterations"], "converged" => $fit["converged"],
-                    "annualChangePct" => $n2(100 * (exp($r) - 1)), "annualChangeLo" => $n2(100 * (exp($lo) - 1)), "annualChangeHi" => $n2(100 * (exp($hi) - 1))],
+                    "annualChangePct" => $n2(100 * (exp($r) - 1)), "annualChangeLo" => $n2(100 * (exp($lo) - 1)), "annualChangeHi" => $n2(100 * (exp($hi) - 1)),
+                    "lo90" => $n6($lo90), "hi90" => $n6($hi90), "annualChangeLo90" => $n2(100 * (exp($lo90) - 1)), "annualChangeHi90" => $n2(100 * (exp($hi90) - 1))],
+        "df" => $df,
+        "power" => ["targetPct" => $targetPct, "power" => seriesNum(iucnRound($power, 4)), "mdrPct" => $mdrPct],
         "window" => $window,
         "reduction" => ["best" => seriesNum(seriesReductionPct($r, $T)), "min" => seriesNum(seriesReductionPct($hi, $T)), "max" => seriesNum(seriesReductionPct($lo, $T))],
+        "reduction90" => ["best" => seriesNum(seriesReductionPct($r, $T)), "min" => seriesNum(seriesReductionPct($hi90, $T)), "max" => seriesNum(seriesReductionPct($lo90, $T))],
         "fluctuation" => $fluctuation,
         "suggestions" => $suggestions,
     ];
@@ -299,14 +312,16 @@ function seriesEngineInputs(?array $series, array $params = []): array {
     $yes = fn($k) => ($params[$k]["value"] ?? null) === "yes";
     $past = $yes("a_reversible") && $yes("a_understood") && $yes("a_ceased") ? "A1" : "A2";
     $basis = array_values(array_filter(SERIES_A_BASIS, fn($b) => $yes("a_basis_{$b}")));
-    $red = $series["reduction"];
-    $items = [["subcriterion" => $past, "reductionPct" => $red, "basis" => $basis]];
+    $red = $series["reduction90"] ?? $series["reduction"];
+    $q = suffSeriesQuality($series);
+    $items = [["subcriterion" => $past, "reductionPct" => $red, "basis" => $basis, "quality" => $q["a"]]];
     if ($yes("a_future")) {
-        $items[] = ["subcriterion" => "A3", "reductionPct" => $red, "basis" => array_values(array_filter($basis, fn($b) => $b !== "a"))];
-        $items[] = ["subcriterion" => "A4", "reductionPct" => $red, "basis" => $basis];
+        $items[] = ["subcriterion" => "A3", "reductionPct" => $red, "basis" => array_values(array_filter($basis, fn($b) => $b !== "a")), "quality" => $q["a"]];
+        $items[] = ["subcriterion" => "A4", "reductionPct" => $red, "basis" => $basis, "quality" => $q["a"]];
     }
     return [
         "A" => ["items" => $items, "window" => $series["window"]],
-        "c1AnnualRate" => ["best" => $series["trend"]["r"], "min" => $series["trend"]["lo"], "max" => $series["trend"]["hi"]],
+        "c1AnnualRate" => ["best" => $series["trend"]["r"], "min" => $series["trend"]["lo90"] ?? $series["trend"]["lo"], "max" => $series["trend"]["hi90"] ?? $series["trend"]["hi"]],
+        "c1Quality" => $q["c1"],
     ];
 }

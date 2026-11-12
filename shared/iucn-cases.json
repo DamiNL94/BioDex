@@ -1787,7 +1787,7 @@
    }
   },
   {
-   "name": "Maduros estimados: densidad de parcelas × hábitat, IC 95 % por bootstrap (semilla fija)",
+   "name": "Maduros estimados: densidad de parcelas × hábitat, intervalo BCa del 90 % (semilla fija)",
    "kind": "mature",
    "habitatKm2": 0.02,
    "records": [
@@ -1843,14 +1843,17 @@
    "expect": {
     "min": 59,
     "best": 1567,
-    "max": 2100,
+    "max": 2000,
     "method": "density",
     "density": {
      "mean": 78333.333,
      "low": 45000,
-     "high": 105000,
+     "high": 100000,
      "reps": 1000,
-     "plots": 6
+     "plots": 6,
+     "level": 0.9,
+     "method": "bca",
+     "cv": 0.55
     }
    }
   },

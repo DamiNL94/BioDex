@@ -8,6 +8,7 @@ import { readFileSync } from 'node:fs';
 import { evaluateIucn, assessIucn, NO_THREAT_MESSAGE } from './iucn-engine.js';
 import { prepareRecords, matureEstimate, subpopulations, fragmentation, proposeLocations, minstd } from './iucn-quantifiers.js';
 import { analyzeSeries, seriesFromVisits } from './iucn-series.js';
+import { samplingCompleteness, rangeQuality, requirements } from './iucn-sufficiency.js';
 
 const criteria = JSON.parse(readFileSync(new URL('./iucn-criteria.json', import.meta.url), 'utf8'));
 
@@ -173,6 +174,44 @@ tweaked.criteria.B.conditions.a.maxLocations.CR = 3;
 r = evaluateIucn(B(80, 12, 3), tweaked);
 check('Los umbrales salen del JSON (CR con EOO < 50 y ≤ 3 localidades → EN; con ≤ 3 y EOO 40 → CR)',
   r.category === 'EN' && evaluateIucn(B(40, 12, 3), tweaked).category === 'CR', r.criteriaString);
+
+// --- Suficiencia de datos y calidad mínima (shared/sufficiency-cases.json; también bin/test-sufficiency.php) ----
+{
+  const SC = JSON.parse(readFileSync(new URL('./sufficiency-cases.json', import.meta.url), 'utf8'));
+  const sameNum = (a, b) => (typeof a === 'number' && typeof b === 'number' ? Math.abs(a - b) < 1e-9
+    : Array.isArray(a) && Array.isArray(b) ? a.length === b.length && a.every((v, i) => sameNum(v, b[i]))
+      : a && b && typeof a === 'object' && typeof b === 'object' ? same(Object.keys(a), Object.keys(b)) && Object.keys(a).every((k) => sameNum(a[k], b[k]))
+        : a === b);
+  for (const c of SC.completeness) {
+    const got = samplingCompleteness(c.records);
+    const q = rangeQuality(got);
+    check(`Completitud: ${c.name}`, sameNum(got, c.expect) && q.eoo === c.expectQuality.eoo && q.aoo === c.expectQuality.aoo,
+      JSON.stringify([got, q]));
+  }
+  for (const c of SC.mature) {
+    const m = matureEstimate(prepareRecords(c.records), { habitatKm2: c.habitatKm2 ?? null, aooKm2: c.aooKm2 ?? null, censusComplete: c.censusComplete === true });
+    const got = { min: m.min, best: m.best, max: m.max, totalQuality: m.totalQuality, method: m.method, plotsRequired: m.plotsRequired, quality: m.quality, density: m.density };
+    check(`Maduros: ${c.name}`, sameNum(got, c.expect), JSON.stringify(got));
+  }
+  for (const c of SC.series) {
+    const s = analyzeSeries(c.obs, { generationLength: c.generationLength, criteria });
+    const got = { df: s.df, power: s.power, lo90: s.trend.lo90, hi90: s.trend.hi90, reduction90: s.reduction90 };
+    check(`Serie: ${c.name}`, sameNum(got, c.expect), JSON.stringify(got));
+  }
+  for (const c of SC.engine) {
+    const r = c.fn === 'assess' ? assessIucn(c.inputs, criteria) : evaluateIucn(c.inputs, criteria);
+    const e = c.expect;
+    const bad = [];
+    for (const k of ['category', 'criteriaString', 'basis', 'dataMinimum']) if (k in e && r[k] !== e[k]) bad.push(`${k} ${r[k]}`);
+    for (const [k, v] of Object.entries(e.status || {})) if (r.byCriterion[k].status !== v) bad.push(`${k} ${r.byCriterion[k].status}`);
+    if (e.warningIncludes && !r.warnings.some((w) => w.includes(e.warningIncludes))) bad.push(`avisos ${r.warnings.join(' | ')}`);
+    check(`Calidad mínima: ${c.name}`, !bad.length, bad.join('; '));
+  }
+  for (const c of SC.requirements) {
+    const got = requirements(c.q, { series: c.series });
+    check(`Requisitos: ${c.name}`, sameNum(got, c.expect), JSON.stringify(got).slice(0, 300));
+  }
+}
 
 console.log(failures ? `\n${failures} fallo(s) de ${count}` : `\nTodo OK (${count} comprobaciones)`);
 process.exit(failures ? 1 : 0);

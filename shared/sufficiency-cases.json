@@ -1,0 +1,2220 @@
+{
+ "description": "Casos compartidos de la suficiencia de datos (shared/iucn-sufficiency.js · backend/Lib/sufficiency.php) y de la calidad mínima de la tabla 3.1 en el motor. Los ejecutan node shared/iucn-engine.test.js y php backend/bin/test-sufficiency.php: mismos resultados en JS y PHP. Las cifras de Chao2 están comprobadas a mano en el nombre de cada caso.",
+ "completeness": [
+  {
+   "name": "5 días, 4 celdas (incidencias 4, 2, 1, 1): Chao2 = 4 + (4/5)·2·1/(2·2) = 4,4 → 90,9 %; una celda con 3 ausencias; fuera la imprecisa y la borrada",
+   "records": [
+    {
+     "occurrenceID": "a1",
+     "x": 100,
+     "y": 100,
+     "eventDate": "2024-05-01T10:00:00Z",
+     "occurrenceStatus": "present"
+    },
+    {
+     "occurrenceID": "b1",
+     "x": 2500,
+     "y": 100,
+     "eventDate": "2024-05-01T10:00:00Z",
+     "occurrenceStatus": "present"
+    },
+    {
+     "occurrenceID": "a2",
+     "x": 120,
+     "y": 100,
+     "eventDate": "2024-05-10T10:00:00Z",
+     "occurrenceStatus": "present"
+    },
+    {
+     "occurrenceID": "c1",
+     "x": 4500,
+     "y": 100,
+     "eventDate": "2024-05-10T10:00:00Z",
+     "occurrenceStatus": "present"
+    },
+    {
+     "occurrenceID": "a3",
+     "x": 130,
+     "y": 100,
+     "eventDate": "2024-06-01T10:00:00Z",
+     "occurrenceStatus": "present"
+    },
+    {
+     "occurrenceID": "b2",
+     "x": 2600,
+     "y": 100,
+     "eventDate": "2024-06-01T10:00:00Z",
+     "occurrenceStatus": "present"
+    },
+    {
+     "occurrenceID": "e1",
+     "x": 8000,
+     "y": 100,
+     "eventDate": "2024-06-01T10:00:00Z",
+     "occurrenceStatus": "absent"
+    },
+    {
+     "occurrenceID": "d1",
+     "x": 100,
+     "y": 2500,
+     "eventDate": "2024-06-15T10:00:00Z",
+     "occurrenceStatus": "present"
+    },
+    {
+     "occurrenceID": "e2",
+     "x": 8000,
+     "y": 100,
+     "eventDate": "2024-06-15T10:00:00Z",
+     "occurrenceStatus": "absent"
+    },
+    {
+     "occurrenceID": "a4",
+     "x": 140,
+     "y": 100,
+     "eventDate": "2024-07-01T10:00:00Z",
+     "occurrenceStatus": "present"
+    },
+    {
+     "occurrenceID": "e3",
+     "x": 8000,
+     "y": 100,
+     "eventDate": "2024-07-01T10:00:00Z",
+     "occurrenceStatus": "absent"
+    },
+    {
+     "occurrenceID": "z1",
+     "x": 9000,
+     "y": 9000,
+     "eventDate": "2024-07-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "coordinateUncertaintyInMeters": 5000
+    },
+    {
+     "occurrenceID": "z2",
+     "x": 9000,
+     "y": 9000,
+     "eventDate": "2024-07-02T10:00:00Z",
+     "occurrenceStatus": "present",
+     "deletedAt": "2024-07-03T00:00:00Z"
+    }
+   ],
+   "expect": {
+    "occasions": 5,
+    "cellsPresent": 4,
+    "q1": 2,
+    "q2": 1,
+    "chao2": 4.4,
+    "completenessPct": 90.9,
+    "absentCells": 1,
+    "confirmedAbsentCells": 1
+   },
+   "expectQuality": {
+    "eoo": "estimated",
+    "aoo": "estimated"
+   }
+  },
+  {
+   "name": "3 días: Chao2 = 3 (Q1 = 1) → 100 %, pero menos de 5 días: inferidas",
+   "records": [
+    {
+     "occurrenceID": "a1",
+     "x": 100,
+     "y": 100,
+     "eventDate": "2024-05-01T10:00:00Z",
+     "occurrenceStatus": "present"
+    },
+    {
+     "occurrenceID": "b1",
+     "x": 2500,
+     "y": 100,
+     "eventDate": "2024-05-01T10:00:00Z",
+     "occurrenceStatus": "present"
+    },
+    {
+     "occurrenceID": "a2",
+     "x": 120,
+     "y": 100,
+     "eventDate": "2024-05-10T10:00:00Z",
+     "occurrenceStatus": "present"
+    },
+    {
+     "occurrenceID": "c1",
+     "x": 4500,
+     "y": 100,
+     "eventDate": "2024-05-10T10:00:00Z",
+     "occurrenceStatus": "present"
+    },
+    {
+     "occurrenceID": "a3",
+     "x": 130,
+     "y": 100,
+     "eventDate": "2024-06-01T10:00:00Z",
+     "occurrenceStatus": "present"
+    },
+    {
+     "occurrenceID": "b2",
+     "x": 2600,
+     "y": 100,
+     "eventDate": "2024-06-01T10:00:00Z",
+     "occurrenceStatus": "present"
+    },
+    {
+     "occurrenceID": "e1",
+     "x": 8000,
+     "y": 100,
+     "eventDate": "2024-06-01T10:00:00Z",
+     "occurrenceStatus": "absent"
+    }
+   ],
+   "expect": {
+    "occasions": 3,
+    "cellsPresent": 3,
+    "q1": 1,
+    "q2": 1,
+    "chao2": 3,
+    "completenessPct": 100,
+    "absentCells": 1,
+    "confirmedAbsentCells": 0
+   },
+   "expectQuality": {
+    "eoo": "inferred",
+    "aoo": "inferred"
+   }
+  },
+  {
+   "name": "Sin registros",
+   "records": [],
+   "expect": {
+    "occasions": 0,
+    "cellsPresent": 0,
+    "q1": 0,
+    "q2": 0,
+    "chao2": null,
+    "completenessPct": null,
+    "absentCells": 0,
+    "confirmedAbsentCells": 0
+   },
+   "expectQuality": {
+    "eoo": null,
+    "aoo": null
+   }
+  }
+ ],
+ "mature": [
+  {
+   "name": "10 parcelas de CV bajo y superficie de hábitat: estimado (BCa 90 %)",
+   "records": [
+    {
+     "occurrenceID": "p00",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 5,
+     "sampleSizeValue": 100
+    },
+    {
+     "occurrenceID": "p01",
+     "x": 1200,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 7,
+     "sampleSizeValue": 100
+    },
+    {
+     "occurrenceID": "p02",
+     "x": 1400,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 6,
+     "sampleSizeValue": 100
+    },
+    {
+     "occurrenceID": "p03",
+     "x": 1600,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 8,
+     "sampleSizeValue": 100
+    },
+    {
+     "occurrenceID": "p04",
+     "x": 1800,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 4,
+     "sampleSizeValue": 100
+    },
+    {
+     "occurrenceID": "p05",
+     "x": 2000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 6,
+     "sampleSizeValue": 100
+    },
+    {
+     "occurrenceID": "p06",
+     "x": 2200,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 5,
+     "sampleSizeValue": 100
+    },
+    {
+     "occurrenceID": "p07",
+     "x": 2400,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 7,
+     "sampleSizeValue": 100
+    },
+    {
+     "occurrenceID": "p08",
+     "x": 2600,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 6,
+     "sampleSizeValue": 100
+    },
+    {
+     "occurrenceID": "p09",
+     "x": 2800,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 9,
+     "sampleSizeValue": 100
+    }
+   ],
+   "habitatKm2": 0.5,
+   "expect": {
+    "min": 63,
+    "best": 31500,
+    "max": 35500,
+    "totalQuality": "estimated",
+    "method": "density",
+    "plotsRequired": 10,
+    "quality": {
+     "min": "observed",
+     "best": "estimated",
+     "max": "estimated"
+    },
+    "density": {
+     "mean": 63000,
+     "low": 56000,
+     "high": 71000,
+     "reps": 1000,
+     "plots": 10,
+     "level": 0.9,
+     "method": "bca",
+     "cv": 0.237
+    }
+   }
+  },
+  {
+   "name": "6 parcelas: faltan 4, el total es inferido aunque se calcule",
+   "records": [
+    {
+     "occurrenceID": "p00",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 5,
+     "sampleSizeValue": 100
+    },
+    {
+     "occurrenceID": "p01",
+     "x": 1200,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 7,
+     "sampleSizeValue": 100
+    },
+    {
+     "occurrenceID": "p02",
+     "x": 1400,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 6,
+     "sampleSizeValue": 100
+    },
+    {
+     "occurrenceID": "p03",
+     "x": 1600,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 8,
+     "sampleSizeValue": 100
+    },
+    {
+     "occurrenceID": "p04",
+     "x": 1800,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 4,
+     "sampleSizeValue": 100
+    },
+    {
+     "occurrenceID": "p05",
+     "x": 2000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 6,
+     "sampleSizeValue": 100
+    }
+   ],
+   "habitatKm2": 0.5,
+   "expect": {
+    "min": 36,
+    "best": 30000,
+    "max": 34167,
+    "totalQuality": "inferred",
+    "method": "density",
+    "plotsRequired": 10,
+    "quality": {
+     "min": "observed",
+     "best": "inferred",
+     "max": "inferred"
+    },
+    "density": {
+     "mean": 60000,
+     "low": 51666.667,
+     "high": 68333.333,
+     "reps": 1000,
+     "plots": 6,
+     "level": 0.9,
+     "method": "bca",
+     "cv": 0.236
+    }
+   }
+  },
+  {
+   "name": "12 parcelas muy desiguales (CV > 1): se piden 15, inferido",
+   "records": [
+    {
+     "occurrenceID": "p00",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 0,
+     "sampleSizeValue": 100
+    },
+    {
+     "occurrenceID": "p01",
+     "x": 1200,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 0,
+     "sampleSizeValue": 100
+    },
+    {
+     "occurrenceID": "p02",
+     "x": 1400,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 0,
+     "sampleSizeValue": 100
+    },
+    {
+     "occurrenceID": "p03",
+     "x": 1600,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 1,
+     "sampleSizeValue": 100
+    },
+    {
+     "occurrenceID": "p04",
+     "x": 1800,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 20,
+     "sampleSizeValue": 100
+    },
+    {
+     "occurrenceID": "p05",
+     "x": 2000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 0,
+     "sampleSizeValue": 100
+    },
+    {
+     "occurrenceID": "p06",
+     "x": 2200,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 0,
+     "sampleSizeValue": 100
+    },
+    {
+     "occurrenceID": "p07",
+     "x": 2400,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 0,
+     "sampleSizeValue": 100
+    },
+    {
+     "occurrenceID": "p08",
+     "x": 2600,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 0,
+     "sampleSizeValue": 100
+    },
+    {
+     "occurrenceID": "p09",
+     "x": 2800,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 30,
+     "sampleSizeValue": 100
+    },
+    {
+     "occurrenceID": "p10",
+     "x": 3000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 0,
+     "sampleSizeValue": 100
+    },
+    {
+     "occurrenceID": "p11",
+     "x": 3200,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 2,
+     "sampleSizeValue": 100
+    }
+   ],
+   "habitatKm2": 0.5,
+   "expect": {
+    "min": 53,
+    "best": 22083,
+    "max": 55000,
+    "totalQuality": "inferred",
+    "method": "density",
+    "plotsRequired": 15,
+    "quality": {
+     "min": "observed",
+     "best": "inferred",
+     "max": "inferred"
+    },
+    "density": {
+     "mean": 44166.667,
+     "low": 5000,
+     "high": 110000,
+     "reps": 1000,
+     "plots": 12,
+     "level": 0.9,
+     "method": "bca",
+     "cv": 2.234
+    }
+   }
+  },
+  {
+   "name": "Censo completo declarado: el total es el contado, observado, aunque haya parcelas",
+   "records": [
+    {
+     "occurrenceID": "p00",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 5,
+     "sampleSizeValue": 100
+    },
+    {
+     "occurrenceID": "p01",
+     "x": 1200,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 7,
+     "sampleSizeValue": 100
+    },
+    {
+     "occurrenceID": "p02",
+     "x": 1400,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 6,
+     "sampleSizeValue": 100
+    },
+    {
+     "occurrenceID": "p03",
+     "x": 1600,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 8,
+     "sampleSizeValue": 100
+    },
+    {
+     "occurrenceID": "p04",
+     "x": 1800,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 4,
+     "sampleSizeValue": 100
+    },
+    {
+     "occurrenceID": "p05",
+     "x": 2000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 6,
+     "sampleSizeValue": 100
+    },
+    {
+     "occurrenceID": "p06",
+     "x": 2200,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 5,
+     "sampleSizeValue": 100
+    },
+    {
+     "occurrenceID": "p07",
+     "x": 2400,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 7,
+     "sampleSizeValue": 100
+    },
+    {
+     "occurrenceID": "p08",
+     "x": 2600,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 6,
+     "sampleSizeValue": 100
+    },
+    {
+     "occurrenceID": "p09",
+     "x": 2800,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 9,
+     "sampleSizeValue": 100
+    }
+   ],
+   "habitatKm2": 0.5,
+   "censusComplete": true,
+   "expect": {
+    "min": 63,
+    "best": 63,
+    "max": 63,
+    "totalQuality": "observed",
+    "method": "census",
+    "plotsRequired": 10,
+    "quality": {
+     "min": "observed",
+     "best": "observed",
+     "max": "observed"
+    },
+    "density": {
+     "mean": 63000,
+     "low": 56000,
+     "high": 71000,
+     "reps": 1000,
+     "plots": 10,
+     "level": 0.9,
+     "method": "bca",
+     "cv": 0.237
+    }
+   }
+  },
+  {
+   "name": "Sin parcelas ni censo: mínimo inferido",
+   "records": [
+    {
+     "occurrenceID": "p00",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 5,
+     "sampleSizeValue": null
+    },
+    {
+     "occurrenceID": "p01",
+     "x": 1200,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 7,
+     "sampleSizeValue": null
+    },
+    {
+     "occurrenceID": "p02",
+     "x": 1400,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 6,
+     "sampleSizeValue": null
+    },
+    {
+     "occurrenceID": "p03",
+     "x": 1600,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 8,
+     "sampleSizeValue": null
+    },
+    {
+     "occurrenceID": "p04",
+     "x": 1800,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 4,
+     "sampleSizeValue": null
+    },
+    {
+     "occurrenceID": "p05",
+     "x": 2000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 6,
+     "sampleSizeValue": null
+    },
+    {
+     "occurrenceID": "p06",
+     "x": 2200,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 5,
+     "sampleSizeValue": null
+    },
+    {
+     "occurrenceID": "p07",
+     "x": 2400,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 7,
+     "sampleSizeValue": null
+    },
+    {
+     "occurrenceID": "p08",
+     "x": 2600,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 6,
+     "sampleSizeValue": null
+    },
+    {
+     "occurrenceID": "p09",
+     "x": 2800,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "mature_count": 9,
+     "sampleSizeValue": null
+    }
+   ],
+   "expect": {
+    "min": 63,
+    "best": 63,
+    "max": 63,
+    "totalQuality": "inferred",
+    "method": "observed",
+    "plotsRequired": 10,
+    "quality": {
+     "min": "observed",
+     "best": "inferred",
+     "max": "inferred"
+    },
+    "density": null
+   }
+  }
+ ],
+ "series": [
+  {
+   "name": "Potencia, g. l. e IC 90 %: Cuatro sitios con ruido y años sin visita (2019, 2023), 2014–2026, generación 3 años (GLM de statsmodels)",
+   "obs": [
+    {
+     "site": "S1",
+     "year": 2014,
+     "mature": 52
+    },
+    {
+     "site": "S1",
+     "year": 2015,
+     "mature": 50
+    },
+    {
+     "site": "S1",
+     "year": 2016,
+     "mature": 41
+    },
+    {
+     "site": "S1",
+     "year": 2017,
+     "mature": 44
+    },
+    {
+     "site": "S1",
+     "year": 2018,
+     "mature": 37
+    },
+    {
+     "site": "S1",
+     "year": 2020,
+     "mature": 30
+    },
+    {
+     "site": "S1",
+     "year": 2021,
+     "mature": 27
+    },
+    {
+     "site": "S1",
+     "year": 2022,
+     "mature": 26
+    },
+    {
+     "site": "S1",
+     "year": 2024,
+     "mature": 21
+    },
+    {
+     "site": "S1",
+     "year": 2025,
+     "mature": 18
+    },
+    {
+     "site": "S1",
+     "year": 2026,
+     "mature": 17
+    },
+    {
+     "site": "S2",
+     "year": 2014,
+     "mature": 31
+    },
+    {
+     "site": "S2",
+     "year": 2015,
+     "mature": 26
+    },
+    {
+     "site": "S2",
+     "year": 2016,
+     "mature": 29
+    },
+    {
+     "site": "S2",
+     "year": 2017,
+     "mature": 22
+    },
+    {
+     "site": "S2",
+     "year": 2018,
+     "mature": 23
+    },
+    {
+     "site": "S2",
+     "year": 2020,
+     "mature": 17
+    },
+    {
+     "site": "S2",
+     "year": 2021,
+     "mature": 18
+    },
+    {
+     "site": "S2",
+     "year": 2022,
+     "mature": 14
+    },
+    {
+     "site": "S2",
+     "year": 2024,
+     "mature": 11
+    },
+    {
+     "site": "S2",
+     "year": 2025,
+     "mature": 12
+    },
+    {
+     "site": "S2",
+     "year": 2026,
+     "mature": 9
+    },
+    {
+     "site": "S3",
+     "year": 2014,
+     "mature": 18
+    },
+    {
+     "site": "S3",
+     "year": 2015,
+     "mature": 17
+    },
+    {
+     "site": "S3",
+     "year": 2016,
+     "mature": 15
+    },
+    {
+     "site": "S3",
+     "year": 2017,
+     "mature": 16
+    },
+    {
+     "site": "S3",
+     "year": 2018,
+     "mature": 12
+    },
+    {
+     "site": "S3",
+     "year": 2020,
+     "mature": 11
+    },
+    {
+     "site": "S3",
+     "year": 2021,
+     "mature": 9
+    },
+    {
+     "site": "S3",
+     "year": 2022,
+     "mature": 10
+    },
+    {
+     "site": "S3",
+     "year": 2024,
+     "mature": 7
+    },
+    {
+     "site": "S3",
+     "year": 2025,
+     "mature": 6
+    },
+    {
+     "site": "S3",
+     "year": 2026,
+     "mature": 6
+    },
+    {
+     "site": "S4",
+     "year": 2014,
+     "mature": 75
+    },
+    {
+     "site": "S4",
+     "year": 2015,
+     "mature": 71
+    },
+    {
+     "site": "S4",
+     "year": 2016,
+     "mature": 62
+    },
+    {
+     "site": "S4",
+     "year": 2017,
+     "mature": 64
+    },
+    {
+     "site": "S4",
+     "year": 2018,
+     "mature": 55
+    },
+    {
+     "site": "S4",
+     "year": 2020,
+     "mature": 47
+    },
+    {
+     "site": "S4",
+     "year": 2021,
+     "mature": 40
+    },
+    {
+     "site": "S4",
+     "year": 2022,
+     "mature": 41
+    },
+    {
+     "site": "S4",
+     "year": 2024,
+     "mature": 31
+    },
+    {
+     "site": "S4",
+     "year": 2025,
+     "mature": 30
+    },
+    {
+     "site": "S4",
+     "year": 2026,
+     "mature": 26
+    }
+   ],
+   "generationLength": 3,
+   "expect": {
+    "df": 39,
+    "power": {
+     "targetPct": 30,
+     "power": 0.9967,
+     "mdrPct": 19.2
+    },
+    "lo90": -0.103976,
+    "hi90": -0.078911,
+    "reduction90": {
+     "best": 59.93,
+     "min": 54.57,
+     "max": 64.65
+    }
+   }
+  },
+  {
+   "name": "Potencia, g. l. e IC 90 %: Sobredispersión: φ > 1 ensancha el IC (statsmodels, cuasi-Poisson)",
+   "obs": [
+    {
+     "site": "P1",
+     "year": 2015,
+     "mature": 40
+    },
+    {
+     "site": "P1",
+     "year": 2016,
+     "mature": 12
+    },
+    {
+     "site": "P1",
+     "year": 2017,
+     "mature": 55
+    },
+    {
+     "site": "P1",
+     "year": 2018,
+     "mature": 20
+    },
+    {
+     "site": "P1",
+     "year": 2019,
+     "mature": 61
+    },
+    {
+     "site": "P1",
+     "year": 2020,
+     "mature": 15
+    },
+    {
+     "site": "P1",
+     "year": 2021,
+     "mature": 48
+    },
+    {
+     "site": "P1",
+     "year": 2022,
+     "mature": 22
+    },
+    {
+     "site": "P2",
+     "year": 2015,
+     "mature": 22
+    },
+    {
+     "site": "P2",
+     "year": 2016,
+     "mature": 35
+    },
+    {
+     "site": "P2",
+     "year": 2017,
+     "mature": 9
+    },
+    {
+     "site": "P2",
+     "year": 2018,
+     "mature": 41
+    },
+    {
+     "site": "P2",
+     "year": 2019,
+     "mature": 14
+    },
+    {
+     "site": "P2",
+     "year": 2020,
+     "mature": 37
+    },
+    {
+     "site": "P2",
+     "year": 2021,
+     "mature": 11
+    },
+    {
+     "site": "P2",
+     "year": 2022,
+     "mature": 30
+    },
+    {
+     "site": "P3",
+     "year": 2015,
+     "mature": 60
+    },
+    {
+     "site": "P3",
+     "year": 2016,
+     "mature": 18
+    },
+    {
+     "site": "P3",
+     "year": 2017,
+     "mature": 70
+    },
+    {
+     "site": "P3",
+     "year": 2018,
+     "mature": 25
+    },
+    {
+     "site": "P3",
+     "year": 2019,
+     "mature": 80
+    },
+    {
+     "site": "P3",
+     "year": 2020,
+     "mature": 21
+    },
+    {
+     "site": "P3",
+     "year": 2021,
+     "mature": 66
+    },
+    {
+     "site": "P3",
+     "year": 2022,
+     "mature": 19
+    }
+   ],
+   "generationLength": 4,
+   "expect": {
+    "df": 20,
+    "power": {
+     "targetPct": 30,
+     "power": 0.0839,
+     "mdrPct": 82.1
+    },
+    "lo90": -0.103829,
+    "hi90": 0.064617,
+    "reduction90": {
+     "best": 20.96,
+     "min": 0,
+     "max": 71.23
+    }
+   }
+  },
+  {
+   "name": "Potencia, g. l. e IC 90 %: Dos sitios sin ruido, r = −0,08, 2014–2024, generación 2 años: r exacta y EE analítico",
+   "obs": [
+    {
+     "site": "A",
+     "year": 2014,
+     "mature": 100
+    },
+    {
+     "site": "A",
+     "year": 2015,
+     "mature": 92.31163463866358
+    },
+    {
+     "site": "A",
+     "year": 2016,
+     "mature": 85.21437889662113
+    },
+    {
+     "site": "A",
+     "year": 2017,
+     "mature": 78.66278610665535
+    },
+    {
+     "site": "A",
+     "year": 2018,
+     "mature": 72.6149037073691
+    },
+    {
+     "site": "A",
+     "year": 2019,
+     "mature": 67.03200460356393
+    },
+    {
+     "site": "A",
+     "year": 2020,
+     "mature": 61.878339180614084
+    },
+    {
+     "site": "A",
+     "year": 2021,
+     "mature": 57.120906384881486
+    },
+    {
+     "site": "A",
+     "year": 2022,
+     "mature": 52.729242404304856
+    },
+    {
+     "site": "A",
+     "year": 2023,
+     "mature": 48.67522559599717
+    },
+    {
+     "site": "A",
+     "year": 2024,
+     "mature": 44.932896411722155
+    },
+    {
+     "site": "B",
+     "year": 2014,
+     "mature": 40
+    },
+    {
+     "site": "B",
+     "year": 2015,
+     "mature": 36.92465385546543
+    },
+    {
+     "site": "B",
+     "year": 2016,
+     "mature": 34.085751558648454
+    },
+    {
+     "site": "B",
+     "year": 2017,
+     "mature": 31.465114442662138
+    },
+    {
+     "site": "B",
+     "year": 2018,
+     "mature": 29.04596148294764
+    },
+    {
+     "site": "B",
+     "year": 2019,
+     "mature": 26.812801841425575
+    },
+    {
+     "site": "B",
+     "year": 2020,
+     "mature": 24.751335672245634
+    },
+    {
+     "site": "B",
+     "year": 2021,
+     "mature": 22.848362553952594
+    },
+    {
+     "site": "B",
+     "year": 2022,
+     "mature": 21.091696961721944
+    },
+    {
+     "site": "B",
+     "year": 2023,
+     "mature": 19.470090238398868
+    },
+    {
+     "site": "B",
+     "year": 2024,
+     "mature": 17.973158564688863
+    }
+   ],
+   "generationLength": 2,
+   "expect": {
+    "df": 19,
+    "power": {
+     "targetPct": 30,
+     "power": 0.9507,
+     "mdrPct": 24.2
+    },
+    "lo90": -0.096244,
+    "hi90": -0.063756,
+    "reduction90": {
+     "best": 55.07,
+     "min": 47.14,
+     "max": 61.8
+    }
+   }
+  }
+ ],
+ "engine": [
+  {
+   "name": "B: EOO estimada y AOO inferida → solo B1 (B2 no por calidad)",
+   "fn": "evaluate",
+   "inputs": {
+    "B": {
+     "eoo": 80,
+     "aoo": 12,
+     "locations": 1,
+     "decline": [
+      "iii"
+     ],
+     "quality": {
+      "eoo": "estimated",
+      "aoo": "inferred"
+     }
+    }
+   },
+   "expect": {
+    "category": "CR",
+    "criteriaString": "CR B1ab(iii)",
+    "status": {
+     "B": "met"
+    }
+   }
+  },
+  {
+   "name": "B: EOO y AOO inferidas → calidad insuficiente, sin categoría",
+   "fn": "evaluate",
+   "inputs": {
+    "B": {
+     "eoo": 80,
+     "aoo": 12,
+     "locations": 1,
+     "decline": [
+      "iii"
+     ],
+     "quality": {
+      "eoo": "inferred",
+      "aoo": "inferred"
+     }
+    }
+   },
+   "expect": {
+    "category": null,
+    "status": {
+     "B": "low_quality"
+    }
+   }
+  },
+  {
+   "name": "Solo criterios con calidad insuficiente → DD (sin datos mínimos)",
+   "fn": "assess",
+   "inputs": {
+    "B": {
+     "eoo": 80,
+     "aoo": 12,
+     "locations": 1,
+     "decline": [
+      "iii"
+     ],
+     "quality": {
+      "eoo": "inferred",
+      "aoo": "inferred"
+     }
+    }
+   },
+   "expect": {
+    "category": "DD",
+    "basis": "insufficient",
+    "dataMinimum": false,
+    "status": {
+     "B": "low_quality"
+    }
+   }
+  },
+  {
+   "name": "B: b(iii) sospechada no cuenta (tabla 3.1 pide inferida) → 1 de 2 subcriterios",
+   "fn": "evaluate",
+   "inputs": {
+    "B": {
+     "eoo": 80,
+     "aoo": 12,
+     "locations": 1,
+     "decline": [
+      "iii"
+     ],
+     "quality": {
+      "eoo": "estimated",
+      "aoo": "estimated",
+      "decline": {
+       "iii": "suspected"
+      }
+     }
+    }
+   },
+   "expect": {
+    "category": null,
+    "status": {
+     "B": "not_met"
+    },
+    "warningIncludes": "B b(iii): dato sospechado"
+   }
+  },
+  {
+   "name": "C: maduros inferidos (solo un mínimo) → calidad insuficiente",
+   "fn": "evaluate",
+   "inputs": {
+    "C": {
+     "mature": 100,
+     "continuingDecline": true,
+     "maxPerSubpop": 40,
+     "quality": {
+      "mature": "inferred",
+      "maxPerSubpop": "inferred"
+     }
+    }
+   },
+   "expect": {
+    "category": null,
+    "status": {
+     "C": "low_quality"
+    }
+   }
+  },
+  {
+   "name": "C: maduros observados (censo) → CR C2a(i)",
+   "fn": "evaluate",
+   "inputs": {
+    "C": {
+     "mature": 100,
+     "continuingDecline": true,
+     "maxPerSubpop": 40,
+     "quality": {
+      "mature": "observed",
+      "maxPerSubpop": "observed"
+     }
+    }
+   },
+   "expect": {
+    "category": "CR",
+    "criteriaString": "CR C2a(i)",
+    "status": {
+     "C": "met"
+    }
+   }
+  },
+  {
+   "name": "C1: tasa inferida (pocos grados de libertad) no cuenta",
+   "fn": "evaluate",
+   "inputs": {
+    "C": {
+     "mature": 100,
+     "c1AnnualRate": -0.2,
+     "quality": {
+      "mature": "observed",
+      "c1": "inferred"
+     }
+    }
+   },
+   "expect": {
+    "category": null,
+    "status": {
+     "C": "low_quality"
+    }
+   }
+  },
+  {
+   "name": "C1: tasa estimada → CR C1",
+   "fn": "evaluate",
+   "inputs": {
+    "C": {
+     "mature": 100,
+     "c1AnnualRate": -0.2,
+     "quality": {
+      "mature": "observed",
+      "c1": "estimated"
+     }
+    }
+   },
+   "expect": {
+    "category": "CR",
+    "criteriaString": "CR C1",
+    "status": {
+     "C": "met"
+    }
+   }
+  },
+  {
+   "name": "C2: disminución continua sospechada no cuenta",
+   "fn": "evaluate",
+   "inputs": {
+    "C": {
+     "mature": 100,
+     "continuingDecline": true,
+     "maxPerSubpop": 40,
+     "quality": {
+      "mature": "observed",
+      "continuingDecline": "suspected",
+      "maxPerSubpop": "observed"
+     }
+    }
+   },
+   "expect": {
+    "category": null,
+    "status": {
+     "C": "not_met"
+    },
+    "warningIncludes": "C2: disminución continua, dato sospechado"
+   }
+  },
+  {
+   "name": "D: D1 bloqueado por calidad, D2 sigue valiendo → VU D2",
+   "fn": "evaluate",
+   "inputs": {
+    "D": {
+     "mature": 30,
+     "plausibleThreat": true,
+     "aoo": 10,
+     "quality": {
+      "mature": "inferred"
+     }
+    }
+   },
+   "expect": {
+    "category": "VU",
+    "criteriaString": "VU D2",
+    "status": {
+     "D": "met"
+    }
+   }
+  },
+  {
+   "name": "Sin calidad indicada no se comprueba (evaluaciones antiguas)",
+   "fn": "evaluate",
+   "inputs": {
+    "D": {
+     "mature": 30
+    }
+   },
+   "expect": {
+    "category": "CR",
+    "criteriaString": "CR D",
+    "status": {
+     "D": "met"
+    }
+   }
+  },
+  {
+   "name": "A: varios subcriterios con calidad proyectada (≥ sospechada) → cuentan",
+   "fn": "evaluate",
+   "inputs": {
+    "A": {
+     "items": [
+      {
+       "subcriterion": "A2",
+       "reductionPct": 55,
+       "basis": [
+        "b"
+       ],
+       "quality": "projected"
+      },
+      {
+       "subcriterion": "A3",
+       "reductionPct": 55,
+       "basis": [
+        "b"
+       ],
+       "quality": "projected"
+      }
+     ]
+    }
+   },
+   "expect": {
+    "category": "EN",
+    "criteriaString": "EN A2b+3b",
+    "status": {
+     "A": "met"
+    }
+   }
+  }
+ ],
+ "requirements": [
+  {
+   "name": "Todo suficiente salvo la serie",
+   "q": {
+    "mature": {
+     "min": 63,
+     "best": 31500,
+     "max": 35500,
+     "quality": {
+      "min": "observed",
+      "best": "estimated",
+      "max": "estimated"
+     },
+     "totalQuality": "estimated",
+     "method": "density",
+     "density": {
+      "mean": 63000,
+      "low": 56000,
+      "high": 71000,
+      "reps": 1000,
+      "plots": 10,
+      "level": 0.9,
+      "method": "bca",
+      "cv": 0.237
+     },
+     "areaKm2": 0.5,
+     "areaSource": "habitat",
+     "nCounted": 10,
+     "nPlots": 10,
+     "plotsRequired": 10,
+     "window": {
+      "from": "2024-05-01T10:00:00.000Z",
+      "to": "2025-05-01T10:00:00.000Z"
+     },
+     "doubleCountPairs": 0,
+     "warnings": []
+    },
+    "completeness": {
+     "occasions": 5,
+     "cellsPresent": 4,
+     "q1": 2,
+     "q2": 1,
+     "chao2": 4.4,
+     "completenessPct": 90.9,
+     "absentCells": 1,
+     "confirmedAbsentCells": 1
+    }
+   },
+   "series": {
+    "sites": [
+     {
+      "site": "S1",
+      "name": null,
+      "counts": {
+       "2014": 52,
+       "2015": 50,
+       "2016": 41,
+       "2017": 44,
+       "2018": 37,
+       "2020": 30,
+       "2021": 27,
+       "2022": 26,
+       "2024": 21,
+       "2025": 18,
+       "2026": 17
+      },
+      "included": true,
+      "excluded": null
+     },
+     {
+      "site": "S2",
+      "name": null,
+      "counts": {
+       "2014": 31,
+       "2015": 26,
+       "2016": 29,
+       "2017": 22,
+       "2018": 23,
+       "2020": 17,
+       "2021": 18,
+       "2022": 14,
+       "2024": 11,
+       "2025": 12,
+       "2026": 9
+      },
+      "included": true,
+      "excluded": null
+     },
+     {
+      "site": "S3",
+      "name": null,
+      "counts": {
+       "2014": 18,
+       "2015": 17,
+       "2016": 15,
+       "2017": 16,
+       "2018": 12,
+       "2020": 11,
+       "2021": 9,
+       "2022": 10,
+       "2024": 7,
+       "2025": 6,
+       "2026": 6
+      },
+      "included": true,
+      "excluded": null
+     },
+     {
+      "site": "S4",
+      "name": null,
+      "counts": {
+       "2014": 75,
+       "2015": 71,
+       "2016": 62,
+       "2017": 64,
+       "2018": 55,
+       "2020": 47,
+       "2021": 40,
+       "2022": 41,
+       "2024": 31,
+       "2025": 30,
+       "2026": 26
+      },
+      "included": true,
+      "excluded": null
+     }
+    ],
+    "windowYears": 10,
+    "generationLength": 2,
+    "status": "ok",
+    "reason": null,
+    "years": [
+     {
+      "year": 2014,
+      "visited": true,
+      "total": 176,
+      "sitesVisited": 4,
+      "index": 176
+     },
+     {
+      "year": 2015,
+      "visited": true,
+      "total": 164,
+      "sitesVisited": 4,
+      "index": 164
+     },
+     {
+      "year": 2016,
+      "visited": true,
+      "total": 147,
+      "sitesVisited": 4,
+      "index": 147
+     },
+     {
+      "year": 2017,
+      "visited": true,
+      "total": 146,
+      "sitesVisited": 4,
+      "index": 146
+     },
+     {
+      "year": 2018,
+      "visited": true,
+      "total": 127,
+      "sitesVisited": 4,
+      "index": 127
+     },
+     {
+      "year": 2019,
+      "visited": false,
+      "total": null,
+      "sitesVisited": 0,
+      "index": null
+     },
+     {
+      "year": 2020,
+      "visited": true,
+      "total": 105,
+      "sitesVisited": 4,
+      "index": 105
+     },
+     {
+      "year": 2021,
+      "visited": true,
+      "total": 94,
+      "sitesVisited": 4,
+      "index": 94
+     },
+     {
+      "year": 2022,
+      "visited": true,
+      "total": 91,
+      "sitesVisited": 4,
+      "index": 91
+     },
+     {
+      "year": 2023,
+      "visited": false,
+      "total": null,
+      "sitesVisited": 0,
+      "index": null
+     },
+     {
+      "year": 2024,
+      "visited": true,
+      "total": 70,
+      "sitesVisited": 4,
+      "index": 70
+     },
+     {
+      "year": 2025,
+      "visited": true,
+      "total": 66,
+      "sitesVisited": 4,
+      "index": 66
+     },
+     {
+      "year": 2026,
+      "visited": true,
+      "total": 58,
+      "sitesVisited": 4,
+      "index": 58
+     }
+    ],
+    "nSites": 4,
+    "nYears": 11,
+    "nObs": 44,
+    "firstYear": 2014,
+    "lastYear": 2026,
+    "trend": {
+     "r": -0.091443,
+     "se": 0.007619,
+     "lo": -0.106377,
+     "hi": -0.07651,
+     "phi": 1,
+     "phiRaw": 0.1029,
+     "deviance": 3.9792,
+     "iterations": 4,
+     "converged": true,
+     "annualChangePct": -8.74,
+     "annualChangeLo": -10.09,
+     "annualChangeHi": -7.37,
+     "lo90": -0.103976,
+     "hi90": -0.078911,
+     "annualChangeLo90": -9.88,
+     "annualChangeHi90": -7.59
+    },
+    "df": 39,
+    "power": {
+     "targetPct": 30,
+     "power": 0.9967,
+     "mdrPct": 19.2
+    },
+    "window": {
+     "years": 10,
+     "from": 2016,
+     "to": 2026,
+     "observedYears": 10,
+     "observedPct": 100,
+     "projected": false
+    },
+    "reduction": {
+     "best": 59.93,
+     "min": 53.47,
+     "max": 65.48
+    },
+    "reduction90": {
+     "best": 59.93,
+     "min": 54.57,
+     "max": 64.65
+    },
+    "fluctuation": {
+     "ratio": 2.53,
+     "zeroYear": false,
+     "extreme": false,
+     "nYears": 9
+    },
+    "suggestions": [
+     {
+      "key": "decline_b_v",
+      "value": "yes",
+      "reason": "El IC 95 % de la tasa anual queda por debajo de 0 (-10,1 % a -7,4 % al año): declive continuo de maduros."
+     }
+    ]
+   },
+   "expect": [
+    {
+     "id": "range",
+     "title": "Distribución: EOO y AOO",
+     "criteria": [
+      "B"
+     ],
+     "quality": {
+      "eoo": "estimated",
+      "aoo": "estimated"
+     },
+     "items": [
+      {
+       "id": "occasions",
+       "label": "Días de muestreo de la especie",
+       "value": 5,
+       "target": 5,
+       "unit": "días",
+       "boolean": false,
+       "met": true,
+       "progress": 1,
+       "ref": "BioDex (Chao2: Colwell y Coddington 1994)",
+       "hint": "Cada día con alguna marca de la especie, presente o ausente."
+      },
+      {
+       "id": "completeness",
+       "label": "Completitud del muestreo (Chao2 sobre celdas de 2 km)",
+       "value": 90.9,
+       "target": 90,
+       "unit": "%",
+       "boolean": false,
+       "met": true,
+       "progress": 1,
+       "ref": "Colwell y Coddington 1994; Marsh et al. 2023",
+       "hint": "Sube cuando las celdas ocupadas se vuelven a encontrar en días distintos y deja de aparecer ocupación nueva."
+      },
+      {
+       "id": "eooCells",
+       "label": "Celdas de 2 km con presencia (EOO estable)",
+       "value": 4,
+       "target": 20,
+       "unit": "celdas",
+       "boolean": false,
+       "met": false,
+       "progress": 0.2,
+       "ref": "Syfert et al. 2014 (vía Marsh et al. 2023)",
+       "hint": "Con 20 o más, el EOO es estimado aunque falte completitud."
+      }
+     ],
+     "note": "Calidad: EOO estimado; AOO estimado. Ausencias: 1 celda sin detección, 1 confirmadas (≥ 3 días).",
+     "met": true
+    },
+    {
+     "id": "mature",
+     "title": "Individuos maduros",
+     "criteria": [
+      "C",
+      "D"
+     ],
+     "quality": {
+      "mature": "estimated"
+     },
+     "items": [
+      {
+       "id": "census",
+       "label": "Censo completo declarado (hecho «censo completo» = sí)",
+       "value": 0,
+       "target": 1,
+       "unit": "",
+       "boolean": true,
+       "met": false,
+       "progress": 0,
+       "ref": "Iriondo 2011 (AFA)",
+       "hint": "Si se han contado todos los individuos de la población, el total es observado. Es una vía; las parcelas son la otra."
+      },
+      {
+       "id": "plots",
+       "label": "Parcelas con superficie contada",
+       "value": 10,
+       "target": 10,
+       "unit": "parcelas",
+       "boolean": false,
+       "met": true,
+       "progress": 1,
+       "ref": "Elzinga et al. 1998",
+       "hint": "CV de la densidad 0,237: se piden 10 parcelas (15 si el CV es > 1)."
+      },
+      {
+       "id": "habitat",
+       "label": "Superficie de hábitat ocupado (parámetro)",
+       "value": 1,
+       "target": 1,
+       "unit": "",
+       "boolean": true,
+       "met": true,
+       "progress": 1,
+       "ref": "Directrices v16 §4.3",
+       "hint": "Densidad × superficie; la proporción ocupada debe salir del conocimiento del taxón."
+      }
+     ],
+     "note": "Calidad del total: estimado.",
+     "met": true
+    },
+    {
+     "id": "series",
+     "title": "Serie temporal: reducción y tasa",
+     "criteria": [
+      "A",
+      "C1"
+     ],
+     "quality": {
+      "a": "estimated",
+      "c1": "estimated"
+     },
+     "items": [
+      {
+       "id": "years",
+       "label": "Años con recuentos en sitios",
+       "value": 11,
+       "target": 3,
+       "unit": "años",
+       "boolean": false,
+       "met": true,
+       "progress": 1,
+       "ref": "Directrices v16 §4.5.1",
+       "hint": "La reducción se mide repitiendo el mismo muestreo en los mismos sitios."
+      },
+      {
+       "id": "df",
+       "label": "Grados de libertad para la sobredispersión",
+       "value": 39,
+       "target": 5,
+       "unit": "g. l.",
+       "boolean": false,
+       "met": true,
+       "progress": 1,
+       "ref": "BioDex (Ver Hoef y Boveng 2007)",
+       "hint": "Recuentos sitio-año menos parámetros del modelo. Más sitios o más años."
+      },
+      {
+       "id": "power",
+       "label": "Potencia para detectar la reducción de VU en la ventana",
+       "value": 99.7,
+       "target": 80,
+       "unit": "%",
+       "boolean": false,
+       "met": true,
+       "progress": 1,
+       "ref": "Gerrodette 1987; White 2019; Connors et al. 2014",
+       "hint": "Reducción mínima detectable: 19,2 % en 10 años (objetivo: 30 %)."
+      }
+     ],
+     "note": "Calidad: reducción (A) estimado; tasa de C1 estimado.",
+     "met": true
+    }
+   ]
+  },
+  {
+   "name": "Datos escasos y sin serie",
+   "q": {
+    "mature": {
+     "min": 53,
+     "best": 53,
+     "max": 53,
+     "quality": {
+      "min": "observed",
+      "best": "inferred",
+      "max": "inferred"
+     },
+     "totalQuality": "inferred",
+     "method": "observed",
+     "density": {
+      "mean": 44166.667,
+      "low": 5000,
+      "high": 110000,
+      "reps": 1000,
+      "plots": 12,
+      "level": 0.9,
+      "method": "bca",
+      "cv": 2.234
+     },
+     "areaKm2": null,
+     "areaSource": null,
+     "nCounted": 12,
+     "nPlots": 12,
+     "plotsRequired": 15,
+     "window": {
+      "from": "2024-05-01T10:00:00.000Z",
+      "to": "2025-05-01T10:00:00.000Z"
+     },
+     "doubleCountPairs": 0,
+     "warnings": [
+      "Sin superficie de hábitat ocupado ni AOO: los maduros estimados no se calculan."
+     ]
+    },
+    "completeness": {
+     "occasions": 3,
+     "cellsPresent": 3,
+     "q1": 1,
+     "q2": 1,
+     "chao2": 3,
+     "completenessPct": 100,
+     "absentCells": 1,
+     "confirmedAbsentCells": 0
+    }
+   },
+   "series": null,
+   "expect": [
+    {
+     "id": "range",
+     "title": "Distribución: EOO y AOO",
+     "criteria": [
+      "B"
+     ],
+     "quality": {
+      "eoo": "inferred",
+      "aoo": "inferred"
+     },
+     "items": [
+      {
+       "id": "occasions",
+       "label": "Días de muestreo de la especie",
+       "value": 3,
+       "target": 5,
+       "unit": "días",
+       "boolean": false,
+       "met": false,
+       "progress": 0.6,
+       "ref": "BioDex (Chao2: Colwell y Coddington 1994)",
+       "hint": "Cada día con alguna marca de la especie, presente o ausente."
+      },
+      {
+       "id": "completeness",
+       "label": "Completitud del muestreo (Chao2 sobre celdas de 2 km)",
+       "value": 100,
+       "target": 90,
+       "unit": "%",
+       "boolean": false,
+       "met": true,
+       "progress": 1,
+       "ref": "Colwell y Coddington 1994; Marsh et al. 2023",
+       "hint": "Sube cuando las celdas ocupadas se vuelven a encontrar en días distintos y deja de aparecer ocupación nueva."
+      },
+      {
+       "id": "eooCells",
+       "label": "Celdas de 2 km con presencia (EOO estable)",
+       "value": 3,
+       "target": 20,
+       "unit": "celdas",
+       "boolean": false,
+       "met": false,
+       "progress": 0.15,
+       "ref": "Syfert et al. 2014 (vía Marsh et al. 2023)",
+       "hint": "Con 20 o más, el EOO es estimado aunque falte completitud."
+      }
+     ],
+     "note": "Calidad: EOO inferido (cota o indicio); AOO inferido (cota o indicio). Mientras la AOO sea inferida es solo una cota inferior: B2 no se puede cumplir (tabla 3.1 pide estimada). Ausencias: 1 celda sin detección, 0 confirmadas (≥ 3 días).",
+     "met": false
+    },
+    {
+     "id": "mature",
+     "title": "Individuos maduros",
+     "criteria": [
+      "C",
+      "D"
+     ],
+     "quality": {
+      "mature": "inferred"
+     },
+     "items": [
+      {
+       "id": "census",
+       "label": "Censo completo declarado (hecho «censo completo» = sí)",
+       "value": 0,
+       "target": 1,
+       "unit": "",
+       "boolean": true,
+       "met": false,
+       "progress": 0,
+       "ref": "Iriondo 2011 (AFA)",
+       "hint": "Si se han contado todos los individuos de la población, el total es observado. Es una vía; las parcelas son la otra."
+      },
+      {
+       "id": "plots",
+       "label": "Parcelas con superficie contada",
+       "value": 12,
+       "target": 15,
+       "unit": "parcelas",
+       "boolean": false,
+       "met": false,
+       "progress": 0.8,
+       "ref": "Elzinga et al. 1998",
+       "hint": "CV de la densidad 2,234: se piden 15 parcelas (15 si el CV es > 1)."
+      },
+      {
+       "id": "habitat",
+       "label": "Superficie de hábitat ocupado (parámetro)",
+       "value": 0,
+       "target": 1,
+       "unit": "",
+       "boolean": true,
+       "met": false,
+       "progress": 0,
+       "ref": "Directrices v16 §4.3",
+       "hint": "Densidad × superficie; la proporción ocupada debe salir del conocimiento del taxón."
+      }
+     ],
+     "note": "Calidad del total: inferido (cota o indicio). Es un mínimo: C y D no se pueden cumplir hasta que sea estimado u observado (tabla 3.1).",
+     "met": false
+    },
+    {
+     "id": "series",
+     "title": "Serie temporal: reducción y tasa",
+     "criteria": [
+      "A",
+      "C1"
+     ],
+     "quality": {
+      "a": null,
+      "c1": null
+     },
+     "items": [
+      {
+       "id": "years",
+       "label": "Años con recuentos en sitios",
+       "value": 0,
+       "target": 3,
+       "unit": "años",
+       "boolean": false,
+       "met": false,
+       "progress": 0,
+       "ref": "Directrices v16 §4.5.1",
+       "hint": "La reducción se mide repitiendo el mismo muestreo en los mismos sitios."
+      },
+      {
+       "id": "df",
+       "label": "Grados de libertad para la sobredispersión",
+       "value": 0,
+       "target": 5,
+       "unit": "g. l.",
+       "boolean": false,
+       "met": false,
+       "progress": 0,
+       "ref": "BioDex (Ver Hoef y Boveng 2007)",
+       "hint": "Recuentos sitio-año menos parámetros del modelo. Más sitios o más años."
+      },
+      {
+       "id": "power",
+       "label": "Potencia para detectar la reducción de VU en la ventana",
+       "value": 0,
+       "target": 80,
+       "unit": "%",
+       "boolean": false,
+       "met": false,
+       "progress": 0,
+       "ref": "Gerrodette 1987; White 2019; Connors et al. 2014",
+       "hint": ""
+      }
+     ],
+     "note": "Sin series temporales.",
+     "met": false
+    }
+   ]
+  }
+ ]
+}
