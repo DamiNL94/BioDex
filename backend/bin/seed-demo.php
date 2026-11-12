@@ -247,6 +247,17 @@ foreach (DEMO_EN_B_CORES as $c => [$lat, $lon]) {
             "habitat" => "Matorral almohadillado sobre micaesquistos"];
     }
 }
+// Seguimiento de los tres núcleos en tres días más (presencia sin recuento): 6 días de campo y cada celda reencontrada,
+// así la completitud del muestreo llega al 90 % y EOO y AOO son ESTIMADAS (shared/iucn-sufficiency.js, tabla 3.1).
+foreach (["2026-08-01", "2026-08-16", "2026-09-02"] as $d) {
+    foreach (DEMO_EN_B_CORES as $c => [$lat, $lon]) {
+        $day = "{$d}T10:" . sprintf("%02d", 10 + $c) . ":00+02:00";
+        $f11gMarks["editor"][] = ["occurrenceID" => uuidV4(), "taxonID" => DEMO_EN_B, "eventDate" => $day,
+            "clientUpdatedAt" => (new DateTimeImmutable($day))->setTimezone(new DateTimeZone("UTC"))->format("Y-m-d\TH:i:s.000\Z"),
+            "decimalLatitude" => $lat, "decimalLongitude" => $lon, "coordinateUncertaintyInMeters" => 5, "individualCount" => 30 + 5 * $c,
+            "habitat" => "Matorral almohadillado sobre micaesquistos (seguimiento, sin recuento de maduros)"];
+    }
+}
 foreach ([[37.1560, -3.4210], [37.1566, -3.4202], [37.1552, -3.4215], [37.1571, -3.4220]] as $i => [$lat, $lon]) {
     $day = sprintf("2026-08-%02dT11:00:00+02:00", 3 + $i);
     $f11gMarks["editor"][] = ["occurrenceID" => uuidV4(), "taxonID" => DEMO_VU_D2, "eventDate" => $day,

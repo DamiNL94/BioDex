@@ -245,6 +245,25 @@ foreach (["decline_b_iii" => "yes", "decline_b_v" => "unknown"] as $k => $val) {
 [$code] = http("PUT", "{$base}/parameters/decline_b_i", ["value" => "quizá"], $cu);
 check("un hecho solo admite yes/no/unknown → 400", $code === 400, "HTTP {$code}");
 [, $a] = http("GET", "{$base}/assessment", null, $o);
+check("un solo día de campo: AOO inferida (cota inferior) y B «calidad insuficiente» (tabla 3.1)",
+    ($a["result"]["byCriterion"]["B"]["status"] ?? null) === "low_quality" && ($a["inputs"]["B"]["quality"]["aoo"] ?? null) === "inferred"
+    && ($a["sufficiency"][0]["id"] ?? null) === "range" && ($a["sufficiency"][0]["items"][0]["value"] ?? null) === 1,
+    json_encode([$a["result"]["byCriterion"]["B"]["status"] ?? null, $a["inputs"]["B"]["quality"] ?? null, $a["completeness"] ?? null]));
+// Seguimiento: cuatro días más volviendo a los dos núcleos (presencia sin recuento) → 5 días y cada celda reencontrada.
+$revisits = [];
+foreach (["2026-09-01", "2026-09-10", "2026-09-20", "2026-10-01"] as $d) {
+    foreach ([[37.0950, -3.3970], [37.1200, -3.3700]] as [$lat, $lon]) {
+        $revisits[] = ["occurrenceID" => uuidV4(), "taxonID" => ARTEMISIA, "eventDate" => "{$d}T10:00:00+02:00", "decimalLatitude" => $lat,
+            "decimalLongitude" => $lon, "coordinateUncertaintyInMeters" => 10, "individualCount" => 5, "clientUpdatedAt" => $now()];
+    }
+}
+[$code, $r] = $push($o, ["occurrences" => $revisits]);
+check("8 marcas de seguimiento en 4 días más → accepted", $code === 200 && count(array_filter($r["results"] ?? [], fn($x) => $x["status"] === "accepted")) === 8, json_encode($r));
+[, $a] = http("GET", "{$base}/assessment", null, $o);
+check("5 días y completitud del 100 %: EOO y AOO estimadas", ($a["completeness"]["occasions"] ?? null) === 5 && ($a["completeness"]["completenessPct"] ?? null) == 100
+    && ($a["inputs"]["B"]["quality"]["aoo"] ?? null) === "estimated" && ($a["inputs"]["B"]["quality"]["eoo"] ?? null) === "estimated", json_encode($a["completeness"] ?? null));
+check("maduros con 5 parcelas (< 10): el total es inferido", ($a["mature"]["totalQuality"] ?? null) === "inferred" && ($a["inputs"]["C"]["quality"]["mature"] ?? null) === "inferred",
+    json_encode($a["mature"] ?? null));
 check("con 2 localidades y b(iii) → EN B1ab(iii)+2ab(iii)", ($a["result"]["category"] ?? null) === "EN"
     && str_starts_with($a["result"]["criteriaString"] ?? "", "EN B1ab(iii)+2ab(iii)"), json_encode([$a["result"]["criteriaString"] ?? null, $a["inputs"]["B"] ?? null]));
 
@@ -269,7 +288,7 @@ $row = $pdo->query("SELECT category, inputs, result FROM species_assessments WHE
 $res = json_decode($row["result"] ?? "{}", true);
 $inp = json_decode($row["inputs"] ?? "{}", true);
 check("…con la categoría y los cuantificadores del servidor, no los del dispositivo", ($row["category"] ?? null) === "EN" && ($res["computedBy"] ?? null) === "server"
-    && ($res["quantifiers"]["nPoints"] ?? null) === 5 && ($inp["B"]["locations"] ?? null) === 2 && ($inp["C"]["mature"]["min"] ?? null) === 50,
+    && ($res["quantifiers"]["nPoints"] ?? null) === 13 && ($inp["B"]["locations"] ?? null) === 2 && ($inp["C"]["mature"]["min"] ?? null) === 50,
     json_encode([$row["category"] ?? null, $res["criteriaString"] ?? null, $inp["B"]["locations"] ?? null]));
 
 section("Exportación: evaluación por especie, subpoblaciones e impactos");

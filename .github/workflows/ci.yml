@@ -28,6 +28,9 @@ jobs:
       - name: SHELL_ASSETS del Service Worker al día
         run: php backend/bin/check-sw.php
 
+      - name: Suficiencia de datos y calidad mínima en PHP (mismos casos que JS, sin base de datos)
+        run: php backend/bin/test-sufficiency.php
+
       - name: Pruebas de JS (motor UICN y series, EOO/AOO, UTM, conteo, QR, buscador y geometría de sitios)
         run: |
           node shared/iucn-engine.test.js

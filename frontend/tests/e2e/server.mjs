@@ -16,7 +16,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const FRONT = path.resolve(here, '../..');
 const SHARED = path.resolve(here, '../../../shared');
 const SHARED_PUBLIC = new Set(['iucn-engine.js', 'iucn-criteria.json', 'geo-metrics.js', 'species-groups.json',
-  'iucn-quantifiers.js', 'iucn-threats.json', 'iucn-series.js']);
+  'iucn-quantifiers.js', 'iucn-threats.json', 'iucn-series.js', 'iucn-sufficiency.js']);
 const PORT = Number(process.argv[2] || process.env.PORT || 4173);
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
   '.json': 'application/json; charset=utf-8', '.webmanifest': 'application/manifest+json', '.svg': 'image/svg+xml',

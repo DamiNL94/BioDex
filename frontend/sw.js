@@ -29,7 +29,7 @@
  * Las peticiones de la descarga de zonas (cabecera X-BioDex-Zone) van directas a la red: allí un fallo
  * tiene que ser un fallo, no una tesela vacía.
  */
-var VERSION = 'v22';
+var VERSION = 'v23';
 var CACHE = 'biodex-shell-' + VERSION;
 var NET_TIMEOUT_MS = 3000;
 var TILE_TIMEOUT_MS = 5000;
@@ -106,7 +106,9 @@ var SHELL_ASSETS = [
   // shared/: cuantificadores (maduros, subpoblaciones, fragmentación, localidades) y amenazas UICN sin red
   'shared/iucn-quantifiers.js', 'shared/iucn-threats.json',
   // shared/: series temporales (índice anual, tasa y criterio A) sin red
-  'shared/iucn-series.js'
+  'shared/iucn-series.js',
+  // shared/: suficiencia de los datos (calidad mínima de la tabla 3.1 y requisitos mínimos) sin red
+  'shared/iucn-sufficiency.js'
 
 ];
 
