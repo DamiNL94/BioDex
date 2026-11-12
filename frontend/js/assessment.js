@@ -18,6 +18,7 @@ import { remoteOrLocal } from './offline.js';
 import { toUtm } from './geo/utm.js';
 import { provisionalMetrics } from './metrics.js';
 import { quantify, engineInputs } from '../shared/iucn-quantifiers.js';
+import { requirements } from '../shared/iucn-sufficiency.js';
 import { assessIucn } from '../shared/iucn-engine.js';
 import { loadIucnCriteria } from './views/iucn-wizard.js';
 import { loadThreats } from './views/impact-sheet.js';
@@ -33,12 +34,13 @@ export function quantifierSummary(a) {
   return {
     origin: a.origin, computedAt: a.computedAt, nPoints: a.nPoints,
     metrics: a.metrics ? { eooKm2: a.metrics.eooKm2, aooKm2: a.metrics.aooKm2, aooRange: a.metrics.aooRange, cellSizeKm: a.metrics.cellSizeKm } : null,
-    mature: { min: m.min, best: m.best, max: m.max, quality: m.quality, method: m.method, density: m.density, areaKm2: m.areaKm2,
-      areaSource: m.areaSource, doubleCountPairs: m.doubleCountPairs },
+    mature: { min: m.min, best: m.best, max: m.max, quality: m.quality, totalQuality: m.totalQuality, method: m.method, density: m.density, areaKm2: m.areaKm2,
+      areaSource: m.areaSource, doubleCountPairs: m.doubleCountPairs, nPlots: m.nPlots, plotsRequired: m.plotsRequired },
     subpopulations: { separationKm: sp.separationKm, c2a: sp.c2a,
       list: (sp.subpops || []).map((s) => ({ label: s.label, nRecords: s.nRecords, mature: s.mature, nearestKm: s.nearestKm })) },
     fragmentation: a.fragmentation ? { status: a.fragmentation.status, severe: a.fragmentation.severe, pctAoo: a.fragmentation.pctAoo,
       pctIndividuals: a.fragmentation.pctIndividuals, missing: a.fragmentation.missing } : null,
+    completeness: a.completeness || null,
     locations: a.locations ? { count: a.locations.count, confirmed: true } : { count: a.locationsProposal ? a.locationsProposal.count : null, confirmed: false },
     series: a.series ? { status: a.series.status, reason: a.series.reason, nSites: a.series.nSites, nYears: a.series.nYears, firstYear: a.series.firstYear,
       lastYear: a.series.lastYear, trend: a.series.trend, window: a.series.window, reduction: a.series.reduction, fluctuation: a.series.fluctuation,
@@ -81,7 +83,8 @@ export async function provisionalAssessment(catalog, species) {
   const subpops = { ...q.subpops, subpops: q.subpops.subpops.map(({ points, ...s }) => s) };
   return {
     taxonID, computedAt: new Date().toISOString(), origin: 'device', geometry: 'full', nExact: records.length, metrics, nPoints: q.nPoints,
-    mature, subpopulations: subpops, fragmentation: q.fragmentation, locationsProposal: q.locations,
+    mature, subpopulations: subpops, fragmentation: q.fragmentation, completeness: q.completeness, sufficiency: requirements(q, { series }),
+    locationsProposal: q.locations,
     locations: loc || null, suggestions: [...q.suggestions, ...((series && series.suggestions) || [])], separation: q.separation, parameters: params,
     defaults, inputs, result, series,
     canEdit: false,

@@ -467,6 +467,8 @@ svg.silhouette{display:block;width:62%;height:62%;fill:currentColor;stroke:none}
 
 /* --- Ficha de especie (views/species-detail.js) --- */
 .detail{display:grid;gap:4px}
+/* min-width:0: una tabla ancha (subpoblaciones) se desplaza dentro de .table-scroll en vez de ensanchar la ficha en el móvil. */
+.detail>*{min-width:0}
 .gallery{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding:0 16px;margin:0 -16px 8px;padding:0 16px 6px}
 .gallery-item{flex:0 0 85%;max-width:420px;margin:0;scroll-snap-align:start}
 .gallery-item img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:var(--radius-sm);background:var(--surface-alt)}
@@ -1491,6 +1493,7 @@ svg.qr-code{width:min(78vw,320px);height:auto;display:block;stroke:none}
 .impact-species legend{font-weight:700}
 /* Pestaña Evaluación UICN */
 .iucn-tab{display:grid;gap:14px}
+.iucn-tab>*{min-width:0}
 .iucn-head{border-left:6px solid var(--iucn-dd);padding:10px 14px;background:var(--surface);border-radius:var(--radius-md);box-shadow:var(--shadow-sm)}
 .iucn-cat-line{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:2px 0}
 .iucn-cat-line .assess-cat{font-size:var(--fs-xl)}
@@ -1510,6 +1513,36 @@ svg.qr-code{width:min(78vw,320px);height:auto;display:block;stroke:none}
 .crit-needs ul{margin:4px 0 0;padding-left:18px}
 .crit-needs .link-btn{color:inherit;text-decoration:underline}
 .crit-reasons{padding-left:18px;font-size:var(--fs-sm)}
+/* Requisitos mínimos de datos (shared/iucn-sufficiency.js): barra que pasa del rojo al verde en 11 pasos.
+   Sin style="" (CSP): el ancho y el color van en las clases suff-p0…suff-p10. La barra no es texto: basta 3:1 con el carril. */
+.crit-quality{margin:6px 0 0;font-size:var(--fs-sm);color:var(--muted)}
+.crit-quality .badge+.muted{margin-left:2px}
+.suff-card{margin:12px 0}
+.suff-groups{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));margin-top:8px}
+.suff-group{border:1px solid var(--line);border-radius:var(--radius-sm);padding:8px 10px;background:var(--panel)}
+.suff-group.is-met{border-color:var(--leaf)}
+.suff-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.suff-head h6{margin:0}
+.suff-quality{margin:4px 0 0;font-size:var(--fs-sm)}
+.suff-items{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:10px}
+.suff-row{display:flex;justify-content:space-between;gap:8px;font-size:var(--fs-sm)}
+.suff-label{flex:1 1 auto}
+.suff-val{font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:600}
+.suff-item.is-met .suff-val{color:var(--leaf)}
+.suff-bar{height:10px;margin-top:4px;background:var(--surface-alt);border:1px solid var(--line-strong);border-radius:999px;overflow:hidden}
+.suff-fill{display:block;height:100%;border-radius:999px;transition:width .3s ease}
+.suff-ref{font-style:normal;color:var(--muted-2)}
+.suff-note{margin-top:8px}
+.suff-p0{width:3%;background:#A0451F}  .suff-p1{width:10%;background:#A84C1E}  .suff-p2{width:20%;background:#B0581F}
+.suff-p3{width:30%;background:#B86622} .suff-p4{width:40%;background:#BF7326} .suff-p5{width:50%;background:#AD7D28}
+.suff-p6{width:60%;background:#96852A} .suff-p7{width:70%;background:#7C8D33} .suff-p8{width:80%;background:#5B873A}
+.suff-p9{width:90%;background:#3A733F} .suff-p10{width:100%;background:#1F6B3E}
+/* Oscuro: mismo tono con más luz, para seguir ≥ 3,2:1 con el carril (#2C3325); en claro, ≥ 3,2:1 con #F1F1EE. */
+:root[data-theme="dark"] .suff-p0{background:#D15A29} :root[data-theme="dark"] .suff-p1{background:#CD5D25}
+:root[data-theme="dark"] .suff-p2{background:#C66323} :root[data-theme="dark"] .suff-p3{background:#BE6A23}
+:root[data-theme="dark"] .suff-p8{background:#5D8B3C} :root[data-theme="dark"] .suff-p9{background:#488E4E}
+:root[data-theme="dark"] .suff-p10{background:#298F53}
+@media (prefers-reduced-motion: reduce){.suff-fill{transition:none}}
 .facts{list-style:none;padding:0;margin:4px 0 8px;display:grid;gap:6px}
 .fact{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--line)}
 .fact-label{flex:1 1 220px}

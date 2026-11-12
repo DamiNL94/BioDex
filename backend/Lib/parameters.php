@@ -50,6 +50,9 @@ const SPECIES_PARAMETERS = [
     "fluct_c_iii"   => ["type" => "fact", "unit" => null, "criteria" => ["B c(iii)"]],
     "fluct_c_iv"    => ["type" => "fact", "unit" => null, "criteria" => ["B c(iv)", "C2b"]],
     "plausible_threat" => ["type" => "fact", "unit" => null, "criteria" => ["D2"]],
+    // Censo completo: los recuentos del último año cubren TODOS los individuos maduros (el total es observado, no un
+    // mínimo). Sin él, el total solo es estimado con parcelas suficientes (shared/iucn-sufficiency.js).
+    "census_complete" => ["type" => "fact", "unit" => null, "criteria" => ["C", "D (maduros observados)"]],
     // Criterio A con series temporales. Las tres primeras eligen A1 (las tres «sí») o A2; a_future añade A3 y A4;
     // a_basis_* son las bases (a)–(e) en las que se apoya la reducción (A3 no admite (a)).
     "a_reversible"  => ["type" => "fact", "unit" => null, "criteria" => ["A1 / A2"]],

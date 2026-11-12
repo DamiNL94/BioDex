@@ -16,6 +16,9 @@
 // «Guardar evaluación»: instantánea versionada (entradas + resultado + autor + fecha) en species_assessments, sin
 // red también; el servidor la recalcula con el motor en PHP al sincronizar. Debajo, las guardadas
 // (components/species-assessments.js) con su comparación.
+// «Requisitos mínimos de datos» (shared/iucn-sufficiency.js): por grupo (distribución, maduros, serie), cada requisito
+// con una barra de progreso que pasa del rojo al verde (clases suff-p0…suff-p10: la CSP no admite style=""), la
+// calidad que alcanza el dato y la fuente. Un criterio que solo falla por la calidad del dato sale «Calidad insuficiente».
 // Todo el HTML pasa por html`` (las justificaciones y los nombres vienen de usuarios).
 // ================================================================================================
 
@@ -42,6 +45,7 @@ export const FACTS = {
   fluct: [['fluct_c_i', '(i) EOO'], ['fluct_c_ii', '(ii) AOO'], ['fluct_c_iii', '(iii) Nº de localidades o subpoblaciones'],
     ['fluct_c_iv', '(iv) Nº de individuos maduros']],
   d2: [['plausible_threat', 'Amenaza futura plausible que podría llevarla a CR o EX en muy poco tiempo']],
+  census: [['census_complete', 'Censo completo: los recuentos del último año cubren todos los individuos maduros de la población']],
   // Criterio A con series temporales.
   aCauses: [['a_reversible', '¿Las causas de la reducción son reversibles?'], ['a_understood', '¿Se comprenden las causas?'],
     ['a_ceased', '¿Han cesado las causas?']],
@@ -57,7 +61,10 @@ export const FACTS = {
 const ALL_FACTS = Object.fromEntries(Object.values(FACTS).flat());
 const PARAM_LABELS = Object.fromEntries(PARAMETERS.map((p) => [p.key, p.label]));
 const fmtN = (n) => (n === null || n === undefined ? '—' : Number(n).toLocaleString('es-ES', { maximumFractionDigits: 2 }));
-const STATUS_TEXT = { met: 'Cumple', not_met: 'No alcanza umbrales', skipped: 'Sin datos', incomplete: 'Datos incompletos' };
+const STATUS_TEXT = { met: 'Cumple', not_met: 'No alcanza umbrales', skipped: 'Sin datos', incomplete: 'Datos incompletos',
+  low_quality: 'Calidad insuficiente' };
+// Calidad mínima de la tabla 3.1 por dato (la misma que shared/iucn-criteria.json › dataQuality, para el texto).
+const QUALITY_MIN_TEXT = { estimated: 'estimado', inferred: 'inferido', suspected: 'sospechado' };
 
 /** Monta la pestaña en `el`. `goToParam(key)` abre la pestaña Parámetros en esa clave. → {refresh, destroy} */
 export function mountSpeciesIucn(el, { species, catalog, goToParam }) {
@@ -175,6 +182,64 @@ export function mountSpeciesIucn(el, { species, catalog, goToParam }) {
     </li>`;
   }
 
+  // --- Requisitos mínimos de datos ------------------------------------------------------------------
+  const suffGroups = () => (Array.isArray(data.sufficiency) ? data.sufficiency : []);
+  const suffGroup = (id) => suffGroups().find((g) => g.id === id) || null;
+  const stepOf = (p) => Math.max(0, Math.min(10, Math.floor((Number(p) || 0) * 10 + 1e-9)));
+  const qualityText = (q) => (q ? (QUALITY_LABELS[q] || q).toLowerCase() : 'sin datos');
+
+  function suffItemHtml(it) {
+    const pct = Math.round((it.progress || 0) * 100);
+    const v = fmtN(it.value === null ? 0 : it.value);
+    const val = it.boolean ? (it.met ? 'Sí' : 'No')
+      : it.unit === '%' ? `${v} % (mín. ${fmtN(it.target)} %)` : `${v} de ${fmtN(it.target)}${it.unit ? ` ${it.unit}` : ''}`;
+    return html`<li class="suff-item${it.met ? ' is-met' : ''}">
+      <div class="suff-row"><span class="suff-label">${it.label}</span><span class="suff-val">${it.met ? html`<span aria-hidden="true">✓ </span>` : ''}${val}</span></div>
+      <div class="suff-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"
+        aria-label="${it.label}: ${pct} % del mínimo"><span class="suff-fill suff-p${it.met ? 10 : stepOf(it.progress)}"></span></div>
+      ${it.hint || it.ref ? html`<p class="hint">${it.hint}${it.ref ? html` <cite class="suff-ref">${it.ref}</cite>` : ''}</p>` : ''}
+    </li>`;
+  }
+
+  function suffGroupHtml(g) {
+    const q = Object.entries(g.quality || {});
+    const names = { eoo: 'EOO', aoo: 'AOO', mature: 'Total', a: 'Reducción (A)', c1: 'Tasa (C1)' };
+    return html`<section class="suff-group${g.met ? ' is-met' : ''}" aria-labelledby="suff-${g.id}">
+      <header class="suff-head"><h6 id="suff-${g.id}">${g.title} <span class="muted">· ${g.criteria.join(', ')}</span></h6>
+        <span class="badge ${g.met ? 'ok' : 'warn'}">${g.met ? 'Mínimo cumplido' : 'Faltan datos'}</span></header>
+      ${q.length ? html`<p class="suff-quality">${q.map(([k, v], i) => html`${i ? ' · ' : ''}${names[k] || k}: <strong>${qualityText(v)}</strong>`)}</p>` : ''}
+      ${g.id === 'mature' ? html`<p class="hint">Basta una de las dos vías: censo completo, o parcelas suficientes con la superficie de hábitat.</p>` : ''}
+      <ul class="suff-items">${g.items.map(suffItemHtml)}</ul>
+      ${g.note ? html`<p class="hint suff-note">${g.note}</p>` : ''}
+    </section>`;
+  }
+
+  function sufficiencyHtml() {
+    const groups = suffGroups();
+    if (!groups.length) return '';
+    const met = groups.filter((g) => g.met).length;
+    return html`<section class="crit-card suff-card" aria-labelledby="suffTitle">
+      <header class="crit-card-head"><h5 id="suffTitle">Requisitos mínimos de datos</h5>
+        <span class="badge ${met === groups.length ? 'ok' : 'warn'}">${met} de ${groups.length} grupos con el mínimo</span></header>
+      <p class="hint">La UICN no da por cumplido un criterio si la calidad del dato es inferior a la mínima (Directrices v16, tabla 3.1): C y D piden
+        maduros estimados u observados; B, EOO y AOO estimadas; C1, una tasa estimada. Las barras se llenan al marcar en el mapa, visitar sitios y
+        fijar parámetros. Fuentes: <span class="muted">bibliografia/suficiencia-de-datos.md</span>.</p>
+      <div class="suff-groups">${groups.map(suffGroupHtml)}</div>
+    </section>`;
+  }
+
+  /** «Calidad del dato» de un criterio frente al mínimo de la tabla 3.1 (línea bajo la cabecera de la tarjeta). */
+  function qualityLine(pairs) {
+    const shown = pairs.filter(([, q]) => q);
+    if (!shown.length) return '';
+    return html`<p class="crit-quality">${shown.map(([label, q, min], i) => {
+      const rank = (crit.dataQuality && crit.dataQuality.rank) || {};
+      const ok = rank[q] >= rank[min];
+      return html`${i ? ' · ' : ''}${label}: <span class="badge ${ok ? 'ok' : 'warn'}">${QUALITY_LABELS[q] || q}</span>${
+        ok ? '' : html` <span class="muted">(mínimo: ${QUALITY_MIN_TEXT[min] || min})</span>`}`;
+    })}</p>`;
+  }
+
   function criterionCard(key, title, body, needs = [], { pending = null, badge = 'Pendiente de series temporales' } = {}) {
     const c = view.result.byCriterion[key];
     const determining = (view.result.determining || []).includes(key);
@@ -182,7 +247,7 @@ export function mountSpeciesIucn(el, { species, catalog, goToParam }) {
     return html`<section class="crit-card${determining ? ' is-determining' : ''}" aria-labelledby="cc-${key}">
       <header class="crit-card-head"><h5 id="cc-${key}"><span class="crit-key">${key}</span> ${title}</h5>
         ${pending ? html`<span class="badge">${badge}</span>`
-          : html`<span class="badge ${met ? 'ok' : c && c.status === 'not_met' ? '' : 'warn'}">${met ? `${c.category} · ${c.notation}` : STATUS_TEXT[c ? c.status : 'skipped']}</span>`}
+          : html`<span class="badge ${met ? 'ok' : c && c.status === 'not_met' ? '' : 'warn'}">${met ? `${c.category} · ${c.notation}` : STATUS_TEXT[c ? c.status : 'skipped'] || c.status}</span>`}
       </header>
       ${pending ? html`<p class="hint">${pending}</p>` : ''}
       ${body}
@@ -209,7 +274,11 @@ export function mountSpeciesIucn(el, { species, catalog, goToParam }) {
     if (!FACTS.decline.some(([k]) => factValue(k) === 'yes') && !FACTS.fluct.some(([k]) => factValue(k) === 'yes')) {
       needs.push(html`Algún ${gotoFact('decline_b_i', 'hecho de disminución continua (b) o de fluctuaciones extremas (c)')}.`);
     }
+    const bq = (view.inputs.B && view.inputs.B.quality) || {};
+    const rg = suffGroup('range');
+    if (rg && !rg.met && (m.eooKm2 !== null || m.aooKm2 !== null)) needs.push(html`Más muestreo de la distribución (ver «Requisitos mínimos de datos»): con la AOO inferida, B2 no cuenta.`);
     return criterionCard('B', 'Distribución geográfica', html`
+      ${qualityLine([['EOO', bq.eoo, 'estimated'], ['AOO', bq.aoo, 'estimated']])}
       <dl class="crit-data">
         <dt>EOO</dt><dd>${fmtKm2(m.eooKm2)}</dd>
         <dt>AOO</dt><dd>${fmtKm2(m.aooKm2)}${m.aooRange ? html` <span class="muted">(${fmtN(m.aooRange.min)}–${fmtN(m.aooRange.max)} km² según la rejilla)</span>` : ''}</dd>
@@ -244,9 +313,10 @@ export function mountSpeciesIucn(el, { species, catalog, goToParam }) {
       <dt>Maduros · mínimo</dt><dd>${fmtN(m.min)} <span class="badge">${QUALITY_LABELS[q.min] || '—'}</span></dd>
       <dt>Maduros · mejor</dt><dd>${fmtN(m.best)} <span class="badge">${QUALITY_LABELS[q.best] || '—'}</span></dd>
       <dt>Maduros · máximo</dt><dd>${m.method === 'observed' && m.min !== null ? html`desconocido <span class="muted">(solo hay recuentos: sin parcelas
-        con superficie, el total no se puede acotar)</span>` : html`${fmtN(m.max)} <span class="badge">${QUALITY_LABELS[q.max] || '—'}</span>${
+        con superficie ni censo completo, el total no se puede acotar)</span>` : html`${fmtN(m.max)} <span class="badge">${QUALITY_LABELS[q.max] || '—'}</span>${
         m.areaSource === 'aoo' ? html` <span class="muted">(AOO como cota)</span>` : ''}`}</dd>
-      ${m.density ? html`<dt>Densidad (${m.density.plots} parcelas)</dt><dd>${fmtN(m.density.mean)} /km² <span class="muted">(IC 95 %: ${fmtN(m.density.low)}–${fmtN(m.density.high)})</span></dd>` : ''}
+      ${m.density ? html`<dt>Densidad (${m.density.plots} parcelas)</dt><dd>${fmtN(m.density.mean)} /km² <span class="muted">(${m.density.method === 'bca' ? 'BCa, ' : ''}IC ${Math.round((m.density.level || 0.95) * 100)} %: ${fmtN(m.density.low)}–${fmtN(m.density.high)}${
+        m.density.cv !== null && m.density.cv !== undefined ? html`; CV ${fmtN(m.density.cv)}` : ''})</span></dd>` : ''}
     </dl>
     ${(m.warnings || []).length ? html`<p class="hint">${m.warnings.join(' ')}</p>` : ''}`;
   }
@@ -259,13 +329,18 @@ export function mountSpeciesIucn(el, { species, catalog, goToParam }) {
     if (factValue('decline_b_v') === null) needs.push(html`${gotoFact('decline_b_v', 'Disminución continua de maduros (b(v))')}: C2 la exige.`);
     if (!param('occupied_habitat_km2') && m.density) needs.push(html`${gotoParam('occupied_habitat_km2')} para estimar el total con las parcelas.`);
     if (!param('separation_distance')) needs.push(html`${gotoParam('separation_distance')} confirmada (subpoblaciones de C2a).`);
-    return criterionCard('C', 'Población pequeña y en disminución', html`${matureHtml()}
+    if (m.totalQuality === 'inferred') needs.push(html`Que el total de maduros sea estimado u observado: ${gotoFact('census_complete', 'censo completo')} o
+      ${fmtN(m.plotsRequired || 10)} parcelas con ${gotoParam('occupied_habitat_km2')} (ver «Requisitos mínimos de datos»).`);
+    const cq = (view.inputs.C && view.inputs.C.quality) || {};
+    return criterionCard('C', 'Población pequeña y en disminución', html`
+      ${qualityLine([['Maduros', cq.mature, 'estimated'], ['Tasa de C1', cq.c1, 'estimated'], ['Disminución continua', cq.continuingDecline, 'inferred']])}
+      ${matureHtml()}
+      <ul class="facts">${FACTS.census.map(([k, l]) => factRow(k, l))}</ul>
       ${subpopsTable()}
       <dl class="crit-data">
         <dt>C2a(i) · máx. por subpoblación</dt><dd>${c2a ? `${fmtN(c2a.maxPerSubpop.best)} (${fmtN(c2a.maxPerSubpop.min)}–${fmtN(c2a.maxPerSubpop.max)})` : '—'}</dd>
         <dt>C2a(ii) · % en la mayor</dt><dd>${c2a && c2a.pctInLargest.best !== null ? `${fmtN(c2a.pctInLargest.best)} % (${fmtN(c2a.pctInLargest.min)}–${fmtN(c2a.pctInLargest.max)})` : '—'}</dd>
-        <dt>C1 · disminución continua</dt><dd>${seriesOk() ? html`tasa anual ${fmtPct(data.series.trend.annualChangePct)} (IC 95 %:
-          ${fmtPct(data.series.trend.annualChangeLo)} a ${fmtPct(data.series.trend.annualChangeHi)}); el motor la lleva a la ventana de cada categoría
+        <dt>C1 · disminución continua</dt><dd>${seriesOk() ? html`tasa anual ${fmtPct(data.series.trend.annualChangePct)} (${ciText(data.series.trend)}); el motor la lleva a la ventana de cada categoría
           (3 años o 1 generación, 5 o 2, 10 o 3)` : html`<span class="muted">Sin serie temporal: ${seriesReason()}</span>`}</dd>
       </dl>`, needs);
   }
@@ -274,9 +349,14 @@ export function mountSpeciesIucn(el, { species, catalog, goToParam }) {
   const seriesOk = () => !!(data.series && data.series.status === 'ok');
   const seriesReason = () => (data.series ? data.series.reason : 'sin visitas a sitios.') || '';
   const fmtPct = (n) => (n === null || n === undefined ? '—' : `${n > 0 ? '+' : ''}${fmtN(n)} %`);
+  /** IC de la tasa: el del 90 % (rango plausible del motor) si lo hay; si no (datos guardados antes), el del 95 %. */
+  const ciText = (t) => (t.annualChangeLo90 !== undefined ? `IC 90 %: ${fmtPct(t.annualChangeLo90)} a ${fmtPct(t.annualChangeHi90)}`
+    : `IC 95 %: ${fmtPct(t.annualChangeLo)} a ${fmtPct(t.annualChangeHi)}`);
 
   function cardA() {
     const s = data.series;
+    const red = s && (s.reduction90 || s.reduction);
+    const aq = ((view.inputs.A && view.inputs.A.items) || [])[0];
     const items = (view.inputs.A && view.inputs.A.items) || [];
     const needs = [];
     if (!seriesOk()) needs.push(html`Visitas a sitios con recuentos en al menos 3 años (Mapa › «Empezar visita»; sitios en Catálogo › Sitios).`);
@@ -288,15 +368,16 @@ export function mountSpeciesIucn(el, { species, catalog, goToParam }) {
       : s.status !== 'ok' ? html`<p class="guard-band warn">No evaluable: ${s.reason}</p>`
         : html`<dl class="crit-data">
           <dt>Serie</dt><dd>${s.nSites} ${s.nSites === 1 ? 'sitio' : 'sitios'} · ${s.firstYear}–${s.lastYear} (${s.nYears} años con recuentos)</dd>
-          <dt>Tendencia</dt><dd><strong>${fmtPct(s.trend.annualChangePct)} al año</strong> <span class="muted">(IC 95 %: ${fmtPct(s.trend.annualChangeLo)} a
-            ${fmtPct(s.trend.annualChangeHi)}${s.trend.phi > 1 ? `; sobredispersión φ = ${fmtN(s.trend.phi)}` : ''})</span></dd>
-          <dt>Reducción en ${fmtN(s.window.years)} años</dt><dd><strong>${fmtN(s.reduction.best)} %</strong> <span class="muted">(${fmtN(s.reduction.min)}–${fmtN(s.reduction.max)} %,
+          <dt>Tendencia</dt><dd><strong>${fmtPct(s.trend.annualChangePct)} al año</strong> <span class="muted">(${ciText(s.trend)}${s.trend.phi > 1 ? `; sobredispersión φ = ${fmtN(s.trend.phi)}` : ''})</span></dd>
+          <dt>Reducción en ${fmtN(s.window.years)} años</dt><dd><strong>${fmtN(red.best)} %</strong> <span class="muted">(${fmtN(red.min)}–${fmtN(red.max)} %,
             ventana ${s.window.from}–${s.window.to})</span></dd>
+          ${s.power ? html`<dt>Potencia</dt><dd>${fmtN(Math.round(s.power.power * 100))} % para detectar una reducción del ${s.power.targetPct} % <span class="muted">(mínima
+            detectable: ${fmtN(s.power.mdrPct)} %)</span></dd>` : ''}
           <dt>Observado</dt><dd>${fmtN(s.window.observedPct)} % de la ventana${s.window.projected ? html` · <span class="badge warn">el resto (${fmtN(100 - s.window.observedPct)} %) es proyectado</span>` : ''}</dd>
           <dt>Subcriterios</dt><dd>${items.map((it) => it.subcriterion).join(', ') || '—'} <span class="muted">(misma tasa: cambian el umbral y las bases admitidas)</span></dd>
         </dl>
         <p class="hint">El gráfico y la tabla de la serie están en la pestaña Registros.</p>`;
-    return criterionCard('A', 'Reducción del tamaño poblacional', html`${body}
+    return criterionCard('A', 'Reducción del tamaño poblacional', html`${qualityLine([['Reducción', aq && aq.quality, 'suspected']])}${body}
       <h6>Causas: A1 (las tres «sí») o A2</h6><ul class="facts">${FACTS.aCauses.map(([k, l]) => factRow(k, l))}</ul>
       <h6>Futuro: A3 y A4</h6><ul class="facts">${FACTS.aFuture.map(([k, l]) => factRow(k, l))}</ul>
       <h6>Bases de la reducción</h6><ul class="facts">${FACTS.aBasis.map(([k, l]) => factRow(k, l))}</ul>`, needs);
@@ -307,7 +388,8 @@ export function mountSpeciesIucn(el, { species, catalog, goToParam }) {
     const needs = [];
     if ((m.min === null || m.min === undefined) && factValue('plausible_threat') !== 'yes') needs.push(html`Recuentos de maduros (D1) o la ${gotoFact('plausible_threat', 'amenaza plausible')} (D2).`);
     if (factValue('plausible_threat') === null) needs.push(html`Decidir la ${gotoFact('plausible_threat', 'amenaza plausible')} de D2 (solo VU).`);
-    return criterionCard('D', 'Población muy pequeña o restringida', html`<dl class="crit-data">
+    const dq = (view.inputs.D && view.inputs.D.quality) || {};
+    return criterionCard('D', 'Población muy pequeña o restringida', html`${qualityLine([['Maduros (D1)', dq.mature, 'estimated']])}<dl class="crit-data">
         <dt>Maduros (mejor)</dt><dd>${fmtN(m.best)} <span class="muted">(${fmtN(m.min)}–${fmtN(m.max)})</span></dd>
         <dt>D2 · AOO y localidades</dt><dd>${fmtKm2((data.metrics || {}).aooKm2)} · ${data.locations ? `${data.locations.count} localidades` : 'localidades sin confirmar'}</dd>
       </dl><ul class="facts">${FACTS.d2.map(([k, l]) => factRow(k, l))}</ul>`, needs);
@@ -432,6 +514,7 @@ export function mountSpeciesIucn(el, { species, catalog, goToParam }) {
       ${head()}
       <p class="sr-only" role="status" aria-live="polite">${status}</p>
       ${(r.warnings || []).length ? html`<ul class="wz-warnings">${r.warnings.map((w) => html`<li>${w}</li>`)}</ul>` : ''}
+      ${sufficiencyHtml()}
       ${cardA()}
       ${cardB()}
       ${cardC()}
