@@ -1,6 +1,6 @@
-# Limitaciones conocidas (1.8.0)
+# Limitaciones conocidas (1.9.0)
 
-Puesta al día con la versión 1.8.0 (2026-11-11). Recoge lo que BioDex **no hace**, lo que hace de forma
+Puesta al día con la versión 1.9.0 (2026-11-12). Recoge lo que BioDex **no hace**, lo que hace de forma
 **orientativa** y lo que **no se ha podido probar** en esta máquina.
 
 ## Alcance del prototipo
@@ -52,7 +52,20 @@ Puesta al día con la versión 1.8.0 (2026-11-11). Recoge lo que BioDex **no hac
   propuestas: las decide quien evalúa. El orden de las preguntas del ajuste regional está escrito a partir de las
   Directrices v4.0 sin cotejarlo con su figura 2; y la versión 16 de las Guidelines solo se ha visto en una copia de
   Artsdatabanken. Con datos inciertos la propuesta es la del mejor valor (actitud ante el riesgo neutra), sin opción
-  de cambiarla.
+  de cambiarla; las Directrices v16 (§3.2.3) recomiendan para listas globales una tolerancia algo precautoria
+  (0,40–0,49): pendiente de decidir si se ofrece por catálogo.
+- **Suficiencia de los datos** (`docs/iucn.md` › «Calidad mínima»; `bibliografia/suficiencia-de-datos.md`):
+  · Algunos umbrales son **convenciones de BioDex** documentadas, no de la UICN: completitud Chao2 ≥ 90 % con ≥ 5 días,
+    ≥ 5 grados de libertad, CV > 1 para pedir 15 parcelas. Están por revisar con quien evalúe para la Lista Roja.
+  · Chao2 supone que cada día de muestreo explora el área al azar. Volver una y otra vez a los núcleos conocidos sin
+    buscar fuera **infla la completitud**; las ausencias registradas se cuentan, pero no corrigen esto.
+  · La completitud se calcula con las marcas del catálogo (no con GBIF), y la comparación con GBIF conserva la calidad
+    de los datos de BioDex.
+  · La potencia de la serie usa el error típico actual (análisis retrospectivo, como White 2019), no simula series
+    con autocorrelación ni dependencia de la densidad.
+  · El censo completo es una declaración de quien evalúa (hecho `census_complete`): BioDex no lo puede comprobar.
+  · Desde 1.9.0 una especie que antes salía amenazada con un solo día de campo puede salir **«Calidad insuficiente»**
+    o DD: es lo que pide la tabla 3.1. Las instantáneas guardadas antes conservan su resultado.
 - **Sin red, la evaluación es provisional**: el dispositivo solo cuenta las marcas exactas que tiene; a un editor de
   una especie sensible le salen menos subpoblaciones y maduros que al servidor (lo rotula).
 - **Comparación con GBIF**: busca en el recuadro de las marcas del catálogo, no en un polígono del área de estudio, y
@@ -93,6 +106,15 @@ parado de verdad), no en un teléfono:
   la API simulada) cubre marcar contando desde el buscador, el estado de las pestañas, «atrás», un parámetro visto sin
   red y la auditoría de objetivos táctiles.
 - `navigator.storage.persist()`: en headless lo deniega el navegador; instalada, Edge y Chrome suelen concederlo.
+- F11i (suficiencia de datos), probado el 2026-11-12 con Docker: `bin/test-all.php` entero en verde (con
+  `test-sufficiency`, `test-f11g` y `test-f11h`; `test-f10b` ajustado a las 126 marcas del seed), Playwright (15 pasan,
+  5 omitidas por diseño), pruebas de Node y `check-sw`. Demo recién sembrada, calculada en el servidor: *Rothmaleria*
+  EN B1ab(iii)+2ab(iii) (distribución con el mínimo: 6 días, completitud 100 %; maduros sin él: 9 de 10 parcelas),
+  *Odontites* VU D2, *Plantago nivalis* EN A2ab. El hecho «Censo completo» fijado por la owner pasa el total a
+  observado (mínimo = mejor = máximo) y D1 cuenta. Pestaña en Chromium a 390×844 y 1280×900, claro y oscuro: barras
+  ≥ 3,2:1 con el carril en los dos temas y sin desbordamiento horizontal. El SW v23 precachea
+  `/shared/iucn-sufficiency.js` (200 en local). **Sin probar**: que responda 200 en Railway tras el despliegue (si no,
+  la evaluación sin red falla al importar el módulo) y la pestaña en un teléfono real.
 
 ## Comportamientos conocidos
 - Con nginx parado la vuelta se detecta por `/health` cada 30 s: la sincronización tarda hasta ~30 s (21–29 s medidos).

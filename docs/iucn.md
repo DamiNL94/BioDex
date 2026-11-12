@@ -103,7 +103,10 @@ Cada dato numérico del motor es `{best, min, max}` y lleva su calidad (observad
 extremo **menos** amenazante de cada intervalo y con el **más** amenazante; esos dos dan el **rango plausible**
 («VU–EN»), como piden las Guidelines para datos inciertos (actitud ante el riesgo neutra: la propuesta es la del
 mejor valor). Si los extremos caen en categorías distintas, se avisa.
-- **DD**: si ningún criterio tiene los datos mínimos para evaluarse (todos «sin datos» o «incompletos»), sale DD;
+- **Rango plausible al 90 %** (Directrices v16 §3.2): la densidad de las parcelas (BCa) y la tasa y la reducción de la
+  serie entran en el motor con su intervalo del 90 %. El del 95 % de la serie se sigue calculando (gráfico, sugerencia de b(v)).
+- **DD**: si ningún criterio tiene los datos mínimos para evaluarse (todos «sin datos», «incompletos» o con «calidad
+  insuficiente»), sale DD;
   NT o LC a juicio experto solo se aceptan cuando algún criterio se ha evaluado y no alcanza umbrales.
 - **CR(PE)**: nunca lo propone BioDex; solo si el usuario marca «posiblemente extinta» y la categoría es CR.
 - La categoría final es la más alta de los criterios cumplidos; la cadena se normaliza («EN B1ab(iii)+2ab(iii)»,
@@ -115,10 +118,15 @@ mejor valor). Si los extremos caen en categorías distintas, se avisa.
   reciente (el conteo por casillas de F11e guarda una marca por categoría en el mismo punto): sus maduros se suman.
   Aviso de posible doble conteo: dos recuentos a menos de 50 m en días distintos.
 - **Mejor y máximo (estimados)**: con **parcelas** (marcas con superficie contada, DwC `sampleSizeValue` en m²; la
-  más reciente por celda de 50 m), densidad media D = media(maduros / superficie), en maduros por km², con IC 95 %
-  por bootstrap (1000 remuestreos, semilla 20261107, generador MINSTD de Park–Miller idéntico en JS y PHP; percentiles
-  2,5 y 97,5). Mejor = máx(mínimo, D × H); máximo = máx(mejor, D(97,5) × H), con H = `occupied_habitat_km2`. Sin H,
-  la AOO como cota superior: solo el máximo (D(97,5) × AOO), y se dice.
+  más reciente por celda de 50 m), densidad media D = media(maduros / superficie), en maduros por km², con intervalo
+  del 90 % por **bootstrap BCa** (1000 remuestreos, semilla 20261107, generador MINSTD de Park–Miller idéntico en JS y PHP;
+  sesgo z₀ por la proporción de medias remuestreadas bajo la media, aceleración por navaja; DiCiccio y Efron 1996: el de
+  percentiles se queda corto con pocas parcelas, Hesterberg 2015). Mejor = máx(mínimo, D × H); máximo = máx(mejor,
+  D(sup) × H), con H = `occupied_habitat_km2`. Sin H, la AOO como cota superior: solo el máximo (D(sup) × AOO), y se dice.
+- **Calidad del total** (`totalQuality`, la que mira la tabla 3.1): **observado** con el hecho `census_complete` = sí
+  (censo completo: el total es el contado y el rango se cierra); **estimado** con ≥ 10 parcelas (≥ 15 si el CV de la
+  densidad es > 1; Elzinga et al. 1998) y superficie de hábitat; si no, **inferido**: el mínimo contado es solo una
+  cota inferior y C y D no se pueden cumplir con él (abajo, «Calidad mínima y suficiencia de los datos»).
 - Por subpoblación: el mínimo es el suyo; mejor y máximo, la estimación total repartida por su parte de celdas de la AOO.
 
 ### Subpoblaciones (`subpopulations`)
@@ -153,6 +161,44 @@ b(i)–(v), c(i)–(iv) y la amenaza plausible de D2 son **hechos** sí · no ·
 justificación (parámetros de tipo `fact`). BioDex **sugiere** b(iii) cuando hay impactos en curso sobre el hábitat de la
 especie, pero la sugerencia nunca cuenta sola: alguien tiene que fijar el hecho. C2 usa b(v) como disminución continua y
 c(iv) como fluctuación extrema. Desde F11h la serie temporal sugiere también b(v) y c(iv) (abajo).
+
+## Calidad mínima y suficiencia de los datos (F11i, 1.9.0)
+Código: `shared/iucn-sufficiency.js` (dispositivo) y su port `backend/Lib/sufficiency.php`; la tabla de calidades mínimas
+en `shared/iucn-criteria.json › dataQuality`; casos compartidos en `shared/sufficiency-cases.json` (`node
+shared/iucn-engine.test.js` y `php backend/bin/test-sufficiency.php`, este sin base de datos y en CI). Bibliografía,
+cifras y razonamiento de cada regla: `bibliografia/suficiencia-de-datos.md`.
+
+**Tabla 3.1 en el motor.** Cada paso lleva la calidad de sus datos (`B.quality {eoo, aoo, decline}`, `C.quality {mature,
+c1, continuingDecline, maxPerSubpop}`, `D.quality {mature}`, `A.items[].quality`). Si la calidad es inferior a la mínima
+(observado > estimado = proyectado > inferido > sospechado), ese dato no cuenta aunque supere el umbral: B1/B2, C1, C2a(i),
+D1 o el criterio entero. Si eso es lo único que lo impide, el criterio sale **«Calidad insuficiente»** (`low_quality`), que
+no cuenta como evaluado (puede dar DD). Los hechos (b) y la disminución continua de C2 con calidad *sospechada* no cuentan.
+Sin calidad indicada no se comprueba (instantáneas antiguas, asistente de F8b).
+
+**De qué depende la calidad de lo que BioDex calcula:**
+
+| Dato | Observado | Estimado | Si no |
+|---|---|---|---|
+| Maduros (C, D) | censo completo declarado | ≥ 10 parcelas (≥ 15 con CV > 1) + superficie de hábitat | inferido (cota inferior) |
+| AOO (B2) | — | ≥ 5 días de muestreo y completitud Chao2 ≥ 90 % | inferida (cota inferior) |
+| EOO (B1) | — | lo mismo, o ≥ 20 celdas de 2 km con presencia | inferido |
+| Tasa de C1 | — | serie evaluable con ≥ 5 grados de libertad | inferida |
+| Reducción (A) | — | ídem (proyectada si la serie no cubre la ventana) | inferida (A admite sospechada: sigue contando) |
+
+- **Completitud del muestreo** (`samplingCompleteness`): ocasiones = días UTC con alguna marca de la especie (presente o
+  ausente); para cada celda de 2 km con presencia, en cuántos días se detectó. Chao2 con corrección de sesgo:
+  S = S_obs + ((T − 1)/T)·Q1(Q1 − 1)/(2(Q2 + 1)) y completitud = S_obs/S (Colwell y Coddington 1994). Mismo filtro que
+  la AOO (fuera borradas y precisión peor que 2 km). Ausencia **confirmada** en una celda: ≥ 3 días sin detección
+  (MacKenzie y Royle 2005); se informa, no decide la calidad.
+- **Series**: además de los 3 años, `df` (recuentos sitio-año menos parámetros) y la **potencia** para detectar la
+  reducción del umbral de VU de A2 (30 %) en la ventana con el EE actual: Φ(|r_VU|/EE − 1,96), r_VU = −ln(0,7)/T, y la
+  reducción mínima detectable con potencia 0,8: 1 − e^(−(1,96 + 0,84)·EE·T) (Gerrodette 1987; White 2019). La potencia
+  no decide la calidad: con menos de 0,8 la pestaña avisa de que «no se cumple A» no demuestra que no haya reducción, y de
+  que una reducción grande en una serie corta puede ser una falsa alarma (Connors et al. 2014).
+- **Requisitos mínimos** (`requirements`): tres grupos (distribución, maduros, serie) con sus requisitos, el valor, el
+  objetivo, el progreso 0–1 y la fuente. La pestaña Evaluación UICN los pinta como barras que pasan del rojo al verde.
+- Los umbrales marcados «BioDex» en la bibliografía (90 % de completitud, 5 días, 5 g. l., CV > 1) son convenciones de
+  trabajo documentadas, no cifras de la UICN: se revisan con quien evalúe para la Lista Roja.
 
 ## Series temporales: criterios A y C1
 Código: `shared/iucn-series.js` (dispositivo: gráfico y provisional) y `backend/Lib/series.php` (definitivo, el mismo
@@ -212,6 +258,9 @@ resultado, un resumen de los cuantificadores, autor y fecha; sin red también. A
 dos se comparan en una tabla. En la exportación: hojas «Evaluación por especie» y «Subpoblaciones» (`docs/dwc.md`).
 
 ## Referencias
+Las de la calidad mínima y la suficiencia de los datos (Elzinga et al. 1998, Iriondo 2011, Colwell y Coddington 1994,
+Marsh et al. 2019 y 2023, MacKenzie y Royle 2005, Gerrodette 1987, White 2019, Connors et al. 2014, DiCiccio y Efron 1996,
+Hesterberg 2015…), con DOI comprobado, en `bibliografia/suficiencia-de-datos.md`.
 - IUCN (2012). *IUCN Red List Categories and Criteria: Version 3.1*. Segunda edición. Gland y Cambridge: IUCN.
 - IUCN Standards and Petitions Committee (2024). *Guidelines for Using the IUCN Red List Categories and Criteria.
   Version 16* (marzo de 2024). Confirmada en una copia de Artsdatabanken; falta verla en la biblioteca de la UICN.

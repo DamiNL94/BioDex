@@ -25,9 +25,13 @@ móvil real pendientes).
 
 ### Cuantificadores UICN (2–3 minutos más si hay tiempo; sin capturas aún)
 El seed añade dos especies con datos ficticios: *Rothmaleria granatensis* (tres núcleos con parcelas y recuentos,
-tres impactos en curso de pisoteo, pastoreo y obras, b(iii) fijado y **3 localidades confirmadas** → **EN
-B1ab(iii)+2ab(iii)**) y *Odontites viscosus* subsp. *granatensis* (una sola mancha junto a la pista, amenaza
-plausible por el ensanche previsto → **VU D2**).
+vueltos a visitar tres días más, tres impactos en curso de pisoteo, pastoreo y obras, b(iii) fijado y **3 localidades
+confirmadas** → **EN B1ab(iii)+2ab(iii)**) y *Odontites viscosus* subsp. *granatensis* (una sola mancha junto a la pista,
+amenaza plausible por el ensanche previsto → **VU D2**).
+- Desde 1.9.0, arriba de las tarjetas: **«Requisitos mínimos de datos»**. En *Rothmaleria* la distribución está en verde
+  (6 días de campo, completitud del 100 %: EOO y AOO estimadas) y los maduros en rojo (9 parcelas de 10 y sin censo
+  completo: total inferido, por eso C y D no cuentan). Es el mensaje: con un solo día de campo la misma especie saldría
+  «Calidad insuficiente» en B, porque la AOO sería solo una cota inferior (tabla 3.1 de la UICN).
 - Móvil: botón «Impacto» → «Pisoteo» → Alta → Guardar, sin red (sigue con `docker compose stop nginx`).
 - Escritorio: Especies › *Rothmaleria* › «Evaluación UICN»: categoría, rango plausible, tarjetas A–E con lo que falta,
   subpoblaciones y localidades por amenaza. Mapa › Filtros › *Rothmaleria* › «Subpoblaciones». «Añadir registros de

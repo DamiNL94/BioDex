@@ -20,9 +20,12 @@ Pruebas: `bin/test-f11f.php` y `frontend/tests/e2e/f11f.spec.mjs`.
 | `life_form` | — | lista: `perennial` perenne · `annual` anual · `biennial` bianual · `monocarpic` monocárpica · `other` otra | orienta la generación y cómo contar | — |
 | `occupied_habitat_km2` | km² | número | maduros estimados = densidad de las parcelas × superficie | C, D (maduros estimados) |
 | `decline_b_i` … `decline_b_v`, `fluct_c_i` … `fluct_c_iv`, `plausible_threat` | — | hecho: `yes` · `no` · `unknown` | disminución continua (b), fluctuaciones extremas (c), amenaza plausible de D2 | B, C2, D2 |
+| `census_complete` | — | hecho | los recuentos del último año cubren TODOS los maduros: el total es observado (si no, solo estimado con parcelas suficientes; `docs/iucn.md` › «Calidad mínima») | C, D |
 | `regional_endemic`, `regional_immigration`, `regional_immigration_decrease`, `regional_sink` | — | hecho | ajuste regional, paso 2 de las Directrices v4.0 | ajuste regional |
 
-Los hechos llevan además `justification` (≤ 4000). Se fijan en la pestaña Evaluación UICN, no en Parámetros.
+Los hechos llevan además `justification` (≤ 4000). Se fijan en la pestaña Evaluación UICN, no en Parámetros. Su
+calidad cuenta: un hecho de disminución continua (b) o el b(v) de C2 con calidad *sospechada* no llega al mínimo de la
+tabla 3.1 (*inferida*) y el motor no lo tiene en cuenta; sin calidad indicada, sí.
 
 Cada valor guarda `value`, `value_min` y `value_max` (intervalo opcional: los dos o ninguno, y `value` dentro;
 un número admite solo el intervalo), `quality` (vocabulario de las Directrices UICN: `observed` observado ·
