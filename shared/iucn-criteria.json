@@ -215,6 +215,28 @@
       "D"
     ]
   },
+  "dataQuality": {
+    "source": "IUCN SPC (2024), Guidelines v16, §3.1 y tabla 3.1: si la calidad del dato es inferior a la mínima, el criterio no se cumple aunque se supere el umbral.",
+    "rank": {
+      "observed": 4,
+      "estimated": 3,
+      "projected": 3,
+      "inferred": 2,
+      "suspected": 1
+    },
+    "minimum": {
+      "A.reduction": "suspected",
+      "B.eoo": "estimated",
+      "B.aoo": "estimated",
+      "B.decline": "inferred",
+      "C.mature": "estimated",
+      "C.c1": "estimated",
+      "C.continuingDecline": "inferred",
+      "C.maxPerSubpop": "estimated",
+      "D.mature": "estimated",
+      "E.probability": "estimated"
+    }
+  },
   "outcomes": {
     "order": [
       "CR",

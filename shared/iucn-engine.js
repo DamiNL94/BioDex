@@ -27,6 +27,12 @@
 //   D  {skip, mature, plausibleThreat, aoo, locations}   (D2: aoo y localidades de B si aquí faltan)
 //   E  {skip, probabilityPct, horizonYears}
 //   dataDeficient, expertCategory: NT|LC, regional {direction: down|up, justification}
+// Calidad del dato (opcional, Directrices v16 §3.1 y tabla 3.1, `criteria.dataQuality`): observed · estimated ·
+// projected · inferred · suspected. Si la calidad es INFERIOR a la mínima, el criterio no se cumple aunque se supere el
+// umbral; si eso es lo único que impide cumplirlo, el criterio queda «calidad insuficiente» (status low_quality, no
+// cuenta como evaluado para DD). Sin calidad indicada no se comprueba (evaluaciones antiguas y asistente de F8b).
+//   A  item.quality · B  quality {eoo, aoo, decline: {i…v}} · C  quality {mature, c1, continuingDecline, maxPerSubpop}
+//   D  quality {mature} · E  quality {probability}
 // ================================================================================================
 
 const isMissing = (v) => v === null || v === undefined || v === '';
@@ -45,6 +51,24 @@ function signedNum(v) {
   const n = typeof v === 'number' ? v : Number(String(v).replace(',', '.'));
   return Number.isFinite(n) ? { value: n } : { invalid: true };
 }
+
+export const QUALITY_ES = { observed: 'observado', estimated: 'estimado', projected: 'proyectado', inferred: 'inferido', suspected: 'sospechado' };
+
+/**
+ * ¿Llega la calidad `q` al mínimo de la tabla 3.1 para `key` («B.eoo», «C.mature»…)? → null si vale o no se puede
+ * comprobar (sin calidad, sin tabla); si no, el texto del fallo («dato inferido; la tabla 3.1 pide al menos estimado»).
+ */
+function qualityShort(ctx, key, q) {
+  const dq = ctx.criteria.dataQuality;
+  if (!dq || !q || !dq.minimum || !dq.minimum[key]) return null;
+  const got = dq.rank[q];
+  const min = dq.minimum[key];
+  if (got === undefined || got >= dq.rank[min]) return null;
+  return `dato ${QUALITY_ES[q] || q}; la tabla 3.1 pide al menos ${QUALITY_ES[min] || min}`;
+}
+
+/** Calidad de un campo dentro del objeto `quality` de un paso (puede faltar). */
+const qOf = (inp, field) => (inp && inp.quality && typeof inp.quality === 'object' ? inp.quality[field] : null);
 
 const fmt = (n) => (Number.isInteger(n) ? String(n) : String(Math.round(n * 100) / 100).replace('.', ','));
 
@@ -71,12 +95,27 @@ function emptyLevels(cats) {
   return out;
 }
 
+/** Anota que la categoría `c` se cumpliría por el umbral pero la calidad del dato no llega (tabla 3.1). */
+function block(res, c, why) {
+  if (!res.blocked) res.blocked = [];
+  if (!res.blocked.includes(c)) res.blocked.push(c);
+  res.levels[c].reasons.push(`✗ ${why}`);
+}
+
+const ctxCats = (res) => Object.keys(res.levels);
+
 /** Resultado de un criterio: la categoría más alta cumplida y su notación. */
 function finish(res, cats) {
   const best = cats.find((c) => res.levels[c].met) || null;
   res.category = best;
   res.notation = best ? res.levels[best].notation : null;
-  if (res.status !== 'skipped' && res.status !== 'incomplete') res.status = best ? 'met' : 'not_met';
+  if (res.status !== 'skipped' && res.status !== 'incomplete') {
+    res.status = best ? 'met' : (res.blocked && res.blocked.length ? 'low_quality' : 'not_met');
+  }
+  if (res.status === 'low_quality') {
+    const first = ctxCats(res).find((c) => res.blocked.includes(c));
+    res.notes.push(`Cumpliría ${first} por el umbral, pero la calidad del dato no llega al mínimo de la UICN (tabla 3.1).`);
+  }
   return res;
 }
 
@@ -97,6 +136,7 @@ function evalA(inp, ctx) {
   for (const p of parts) for (const n of p.notes) if (!res.notes.includes(n)) res.notes.push(n);
   res.periodYears = Math.max(...parts.map((p) => p.periodYears || 0));
   if (parts.every((p) => p.status === 'incomplete' || p.status === 'skipped')) res.status = 'incomplete';
+  for (const p of parts) for (const c of p.blocked || []) { if (!res.blocked) res.blocked = []; if (!res.blocked.includes(c)) res.blocked.push(c); }
   for (const c of cats) {
     const met = parts.filter((p) => p.levels[c].met);
     for (const p of parts) res.levels[c].reasons.push(...p.levels[c].reasons);
@@ -137,10 +177,12 @@ function evalAItem(inp, ctx) {
   if (res.status === 'incomplete') return finish(res, cats);
 
   const thr = sub === 'A1' ? A.thresholdsPct.A1 : A.thresholdsPct.A2_A3_A4;
+  const qFail = qualityShort(ctx, 'A.reduction', inp.quality);
   for (const c of cats) {
     const ok = pct.value >= thr[c];
-    res.levels[c].met = ok;
     res.levels[c].reasons.push(`Reducción ${fmt(pct.value)} % ${ok ? '≥' : '<'} ${thr[c]} % (${sub})`);
+    if (ok && qFail) { block(res, c, `A: ${qFail}`); continue; }
+    res.levels[c].met = ok;
     if (ok) res.levels[c].notation = `${sub}${basis.join('')}`;
   }
   return finish(res, cats);
@@ -172,8 +214,16 @@ function evalB(inp, ctx) {
   res.eoo = hasEoo ? eoo.value : null;
   res.aoo = hasAoo ? aoo.value : null;
 
-  const decline = pick(inp.decline, B.conditions.b.items);
+  // (b) con calidad inferior a «inferida» no cuenta (tabla 3.1: B1b y B2b).
+  const declineQ = (inp.quality && inp.quality.decline) || {};
+  const decline = pick(inp.decline, B.conditions.b.items).filter((it) => {
+    const fail = qualityShort(ctx, 'B.decline', declineQ[it]);
+    if (fail) warnings.push(`B b(${it}): ${fail}; no cuenta.`);
+    return !fail;
+  });
   const fluct = pick(inp.fluctuation, B.conditions.c.items);
+  const eooFail = qualityShort(ctx, 'B.eoo', qOf(inp, 'eoo'));
+  const aooFail = qualityShort(ctx, 'B.aoo', qOf(inp, 'aoo'));
   const fragmented = inp.severelyFragmented === true;
   const need = B.requireAtLeast;
 
@@ -198,13 +248,15 @@ function evalB(inp, ctx) {
       const t = B.thresholdsKm2.B1_EOO[c];
       const inRange = eoo.value < t;
       lv.reasons.push(`B1: EOO ${fmt(eoo.value)} km² ${inRange ? '<' : '≥'} ${t} ${inRange ? '✓' : '✗'}`);
-      if (inRange && enough) parts.push(`1${subs.join('')}`);
+      if (inRange && enough && eooFail) block(res, c, `B1: EOO, ${eooFail}`);
+      else if (inRange && enough) parts.push(`1${subs.join('')}`);
     }
     if (hasAoo) {
       const t = B.thresholdsKm2.B2_AOO[c];
       const inRange = aoo.value < t;
       lv.reasons.push(`B2: AOO ${fmt(aoo.value)} km² ${inRange ? '<' : '≥'} ${t} ${inRange ? '✓' : '✗'}`);
-      if (inRange && enough) parts.push(`2${subs.join('')}`);
+      if (inRange && enough && aooFail) block(res, c, `B2: AOO, ${aooFail}`);
+      else if (inRange && enough) parts.push(`2${subs.join('')}`);
     }
     if (parts.length) {
       lv.met = true;
@@ -235,8 +287,13 @@ function evalC(inp, ctx) {
   const pctOne = num(inp.pctInOneSubpop, { max: 100 });
   if (maxSub.invalid) warnings.push('C2a(i): el máximo por subpoblación debe ser un entero ≥ 0.');
   if (pctOne.invalid) warnings.push('C2a(ii): el porcentaje debe estar entre 0 y 100.');
-  const decline = inp.continuingDecline === true;
+  const declineFail = inp.continuingDecline === true ? qualityShort(ctx, 'C.continuingDecline', qOf(inp, 'continuingDecline')) : null;
+  if (declineFail) warnings.push(`C2: disminución continua, ${declineFail}; no cuenta.`);
+  const decline = inp.continuingDecline === true && !declineFail;
   const fluct = inp.extremeFluctuation === true;
+  const matureFail = qualityShort(ctx, 'C.mature', qOf(inp, 'mature'));
+  const c1Fail = qualityShort(ctx, 'C.c1', qOf(inp, 'c1'));
+  const maxSubFail = qualityShort(ctx, 'C.maxPerSubpop', qOf(inp, 'maxPerSubpop'));
 
   for (const c of cats) {
     const lv = res.levels[c];
@@ -260,13 +317,17 @@ function evalC(inp, ctx) {
       c1 = c1Pct.value >= th.pct && c1Years.value <= w;
       lv.reasons.push(`C1: ${fmt(c1Pct.value)} % en ${fmt(c1Years.value)} años; exige ≥ ${th.pct} % en ≤ ${fmt(w)} años ${c1 ? '✓' : '✗'}`);
     }
+    let c1Blocked = false;
+    if (c1 && c1Fail) { c1 = false; c1Blocked = true; lv.reasons.push(`C1: ${c1Fail} ✗`); }
 
     // C2: disminución continua y al menos una de a(i), a(ii), b.
     const c2 = [];
     const aItems = [];
+    let aiBlocked = false;
     if (maxSub.value !== undefined) {
       const th = C.C2.a_i_maxMaturePerSubpop[c];
-      if (maxSub.value <= th) aItems.push('i');
+      if (maxSub.value <= th && maxSubFail) { aiBlocked = true; lv.reasons.push(`C2a(i): ${maxSubFail} ✗`); }
+      else if (maxSub.value <= th) aItems.push('i');
       lv.reasons.push(`C2a(i): máx. ${maxSub.value} maduros por subpoblación ${maxSub.value <= th ? '≤' : '>'} ${th}`);
     }
     if (pctOne.value !== undefined) {
@@ -281,6 +342,9 @@ function evalC(inp, ctx) {
       lv.reasons.push(`C2: ${decline ? 'disminución continua ✓' : 'sin disminución continua ✗'}; ${c2.length ? c2.join('') : 'ni a(i), a(ii) ni b'} ${c2ok ? '✓' : '✗'}`);
     }
 
+    const wouldC2 = decline && (c2.length > 0 || aiBlocked);
+    if (small && matureFail && (c1 || c2ok || c1Blocked || wouldC2)) { block(res, c, `C: maduros, ${matureFail}`); continue; }
+    if (small && !c1 && !c2ok && (c1Blocked || wouldC2)) block(res, c, 'C: la calidad del dato de C1 o de C2a(i) no llega al mínimo');
     if (small && (c1 || c2ok)) {
       lv.met = true;
       const parts = [];
@@ -318,6 +382,7 @@ function evalD(inp, ctx, bInp) {
   const d2Loc = loc.value !== undefined && loc.value <= d2c.maxLocations;
   const d2 = threat && (d2Aoo || d2Loc);
 
+  const matureFail = qualityShort(ctx, 'D.mature', qOf(inp, 'mature'));
   for (const c of cats) {
     const lv = res.levels[c];
     let d1 = false;
@@ -325,6 +390,7 @@ function evalD(inp, ctx, bInp) {
       const t = D.matureIndividualsLessThan[c];
       d1 = mature.value < t;
       lv.reasons.push(`Maduros ${mature.value} ${d1 ? '<' : '≥'} ${t} ${d1 ? '✓' : '✗'}`);
+      if (d1 && matureFail) { d1 = false; block(res, c, `D1: maduros, ${matureFail}`); }
     }
     const d2Here = d2 && d2c.categories.includes(c);
     if (threat) {
@@ -362,7 +428,9 @@ function evalE(inp, ctx) {
     // Una probabilidad a un horizonte más corto es al menos la misma a uno más largo.
     const ok = p.value >= th.pct && h.value <= w;
     res.levels[c].reasons.push(`${fmt(p.value)} % en ${fmt(h.value)} años; exige ≥ ${th.pct} % en ≤ ${fmt(w)} años ${ok ? '✓' : '✗'}`);
-    if (ok) { res.levels[c].met = true; res.levels[c].notation = 'E'; }
+    const eFail = ok ? qualityShort(ctx, 'E.probability', qOf(inp, 'probability')) : null;
+    if (eFail) block(res, c, `E: ${eFail}`);
+    else if (ok) { res.levels[c].met = true; res.levels[c].notation = 'E'; }
   }
   return finish(res, cats);
 }
@@ -454,6 +522,7 @@ export function evaluateIucn(inputs, criteria) {
 export function criterionSummary(res) {
   if (res.status === 'skipped') return 'Sin datos';
   if (res.status === 'incomplete') return 'Datos incompletos';
+  if (res.status === 'low_quality') return 'Calidad del dato insuficiente';
   return res.category ? `${res.category} · ${res.notation}` : 'No alcanza umbrales';
 }
 

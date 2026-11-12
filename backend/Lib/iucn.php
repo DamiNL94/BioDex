@@ -89,6 +89,29 @@ function iucnPick(mixed $list, array $allowed): array {
     return array_values(array_filter($allowed, fn($x) => in_array($x, $list, true)));
 }
 
+const IUCN_QUALITY_ES = ["observed" => "observado", "estimated" => "estimado", "projected" => "proyectado", "inferred" => "inferido", "suspected" => "sospechado"];
+
+/** Como qualityShort() de JS: null si la calidad llega al mínimo de la tabla 3.1 (o no se puede comprobar); si no, el texto. */
+function iucnQualityShort(array $ctx, string $key, mixed $q): ?string {
+    $dq = $ctx["criteria"]["dataQuality"] ?? null;
+    if (!$dq || !is_string($q) || $q === "" || empty($dq["minimum"][$key])) return null;
+    $min = $dq["minimum"][$key];
+    if (!isset($dq["rank"][$q]) || $dq["rank"][$q] >= $dq["rank"][$min]) return null;
+    return "dato " . (IUCN_QUALITY_ES[$q] ?? $q) . "; la tabla 3.1 pide al menos " . (IUCN_QUALITY_ES[$min] ?? $min);
+}
+
+/** Calidad de un campo dentro de `quality` de un paso. */
+function iucnQOf(?array $inp, string $field): mixed {
+    return is_array($inp["quality"] ?? null) ? ($inp["quality"][$field] ?? null) : null;
+}
+
+/** Como block() de JS: la categoría se cumpliría por el umbral, pero la calidad no llega. */
+function iucnBlock(array &$res, string $c, string $why): void {
+    $res["blocked"] ??= [];
+    if (!in_array($c, $res["blocked"], true)) $res["blocked"][] = $c;
+    $res["levels"][$c]["reasons"][] = "✗ {$why}";
+}
+
 function iucnWithItems(string $letter, array $items): string { return "{$letter}(" . implode(",", $items) . ")"; }
 
 function iucnWindowYears(array $t, ?float $gen): float {
@@ -109,7 +132,14 @@ function iucnFinish(array $res, array $cats): array {
     foreach ($cats as $c) if ($res["levels"][$c]["met"]) { $best = $c; break; }
     $res["category"] = $best;
     $res["notation"] = $best ? $res["levels"][$best]["notation"] : null;
-    if ($res["status"] !== "skipped" && $res["status"] !== "incomplete") $res["status"] = $best ? "met" : "not_met";
+    if ($res["status"] !== "skipped" && $res["status"] !== "incomplete") {
+        $res["status"] = $best ? "met" : (!empty($res["blocked"]) ? "low_quality" : "not_met");
+    }
+    if ($res["status"] === "low_quality") {
+        $first = null;
+        foreach (array_keys($res["levels"]) as $c) if (in_array($c, $res["blocked"], true)) { $first = $c; break; }
+        $res["notes"][] = "Cumpliría {$first} por el umbral, pero la calidad del dato no llega al mínimo de la UICN (tabla 3.1).";
+    }
     return $res;
 }
 
@@ -130,6 +160,7 @@ function iucnEvalA(?array $inp, array &$ctx): array {
     foreach ($parts as $p) foreach ($p["notes"] as $n) if (!in_array($n, $res["notes"], true)) $res["notes"][] = $n;
     $res["periodYears"] = max(array_map(fn($p) => $p["periodYears"] ?? 0, $parts));
     if (!array_filter($parts, fn($p) => $p["status"] !== "incomplete" && $p["status"] !== "skipped")) $res["status"] = "incomplete";
+    foreach ($parts as $p) foreach ($p["blocked"] ?? [] as $c) { $res["blocked"] ??= []; if (!in_array($c, $res["blocked"], true)) $res["blocked"][] = $c; }
     foreach ($cats as $c) {
         foreach ($parts as $p) array_push($res["levels"][$c]["reasons"], ...$p["levels"][$c]["reasons"]);
         $met = array_values(array_filter($parts, fn($p) => $p["levels"][$c]["met"]));
@@ -169,10 +200,12 @@ function iucnEvalAItem(?array $inp, array &$ctx): array {
     $res["notes"][] = "Periodo de referencia: " . iucnFmt($period) . " años" . ($gen ? "" : " (sin duración de generación, solo los 10 años)") . ".";
     if ($res["status"] === "incomplete") return iucnFinish($res, $cats);
     $thr = $sub === "A1" ? $A["thresholdsPct"]["A1"] : $A["thresholdsPct"]["A2_A3_A4"];
+    $qFail = iucnQualityShort($ctx, "A.reduction", $inp["quality"] ?? null);
     foreach ($cats as $c) {
         $ok = $pct["value"] >= $thr[$c];
-        $res["levels"][$c]["met"] = $ok;
         $res["levels"][$c]["reasons"][] = "Reducción " . iucnFmt($pct["value"]) . " % " . ($ok ? "≥" : "<") . " {$thr[$c]} % ({$sub})";
+        if ($ok && $qFail) { iucnBlock($res, $c, "A: {$qFail}"); continue; }
+        $res["levels"][$c]["met"] = $ok;
         if ($ok) $res["levels"][$c]["notation"] = $sub . implode("", $basis);
     }
     return iucnFinish($res, $cats);
@@ -202,8 +235,17 @@ function iucnEvalB(?array $inp, array &$ctx): array {
     }
     $res["eoo"] = $hasEoo ? $eoo["value"] : null;
     $res["aoo"] = $hasAoo ? $aoo["value"] : null;
-    $decline = iucnPick($inp["decline"] ?? null, $B["conditions"]["b"]["items"]);
+    $declineQ = is_array($inp["quality"]["decline"] ?? null) ? $inp["quality"]["decline"] : [];
+    $decline = array_values(array_filter(iucnPick($inp["decline"] ?? null, $B["conditions"]["b"]["items"]), function ($it) use ($ctx, $declineQ) {
+        return iucnQualityShort($ctx, "B.decline", $declineQ[$it] ?? null) === null;
+    }));
+    foreach (iucnPick($inp["decline"] ?? null, $B["conditions"]["b"]["items"]) as $it) {
+        $fail = iucnQualityShort($ctx, "B.decline", $declineQ[$it] ?? null);
+        if ($fail) $ctx["warnings"][] = "B b({$it}): {$fail}; no cuenta.";
+    }
     $fluct = iucnPick($inp["fluctuation"] ?? null, $B["conditions"]["c"]["items"]);
+    $eooFail = iucnQualityShort($ctx, "B.eoo", iucnQOf($inp, "eoo"));
+    $aooFail = iucnQualityShort($ctx, "B.aoo", iucnQOf($inp, "aoo"));
     $fragmented = ($inp["severelyFragmented"] ?? null) === true;
     $need = $B["requireAtLeast"];
     foreach ($cats as $c) {
@@ -225,13 +267,15 @@ function iucnEvalB(?array $inp, array &$ctx): array {
             $t = $B["thresholdsKm2"]["B1_EOO"][$c];
             $in = $eoo["value"] < $t;
             $lv["reasons"][] = "B1: EOO " . iucnFmt($eoo["value"]) . " km² " . ($in ? "<" : "≥") . " {$t} " . ($in ? "✓" : "✗");
-            if ($in && $enough) $parts[] = "1" . implode("", $subs);
+            if ($in && $enough && $eooFail) iucnBlock($res, $c, "B1: EOO, {$eooFail}");
+            elseif ($in && $enough) $parts[] = "1" . implode("", $subs);
         }
         if ($hasAoo) {
             $t = $B["thresholdsKm2"]["B2_AOO"][$c];
             $in = $aoo["value"] < $t;
             $lv["reasons"][] = "B2: AOO " . iucnFmt($aoo["value"]) . " km² " . ($in ? "<" : "≥") . " {$t} " . ($in ? "✓" : "✗");
-            if ($in && $enough) $parts[] = "2" . implode("", $subs);
+            if ($in && $enough && $aooFail) iucnBlock($res, $c, "B2: AOO, {$aooFail}");
+            elseif ($in && $enough) $parts[] = "2" . implode("", $subs);
         }
         if ($parts) { $lv["met"] = true; $lv["notation"] = "B" . implode("+", $parts); }
         unset($lv);
@@ -259,8 +303,13 @@ function iucnEvalC(?array $inp, array &$ctx): array {
     $pctOne = iucnNum($inp["pctInOneSubpop"] ?? null, 100);
     if (isset($maxSub["invalid"])) $ctx["warnings"][] = "C2a(i): el máximo por subpoblación debe ser un entero ≥ 0.";
     if (isset($pctOne["invalid"])) $ctx["warnings"][] = "C2a(ii): el porcentaje debe estar entre 0 y 100.";
-    $decline = ($inp["continuingDecline"] ?? null) === true;
+    $declineFail = ($inp["continuingDecline"] ?? null) === true ? iucnQualityShort($ctx, "C.continuingDecline", iucnQOf($inp, "continuingDecline")) : null;
+    if ($declineFail) $ctx["warnings"][] = "C2: disminución continua, {$declineFail}; no cuenta.";
+    $decline = ($inp["continuingDecline"] ?? null) === true && !$declineFail;
     $fluct = ($inp["extremeFluctuation"] ?? null) === true;
+    $matureFail = iucnQualityShort($ctx, "C.mature", iucnQOf($inp, "mature"));
+    $c1Fail = iucnQualityShort($ctx, "C.c1", iucnQOf($inp, "c1"));
+    $maxSubFail = iucnQualityShort($ctx, "C.maxPerSubpop", iucnQOf($inp, "maxPerSubpop"));
     foreach ($cats as $c) {
         $lv = &$res["levels"][$c];
         $t = $C["matureIndividualsLessThan"][$c];
@@ -282,11 +331,15 @@ function iucnEvalC(?array $inp, array &$ctx): array {
             $c1 = $c1Pct["value"] >= $th["pct"] && $c1Years["value"] <= $w;
             $lv["reasons"][] = "C1: " . iucnFmt($c1Pct["value"]) . " % en " . iucnFmt($c1Years["value"]) . " años; exige ≥ {$th["pct"]} % en ≤ " . iucnFmt($w) . " años " . ($c1 ? "✓" : "✗");
         }
+        $c1Blocked = false;
+        if ($c1 && $c1Fail) { $c1 = false; $c1Blocked = true; $lv["reasons"][] = "C1: {$c1Fail} ✗"; }
         $c2 = [];
         $aItems = [];
+        $aiBlocked = false;
         if (isset($maxSub["value"])) {
             $th = $C["C2"]["a_i_maxMaturePerSubpop"][$c];
-            if ($maxSub["value"] <= $th) $aItems[] = "i";
+            if ($maxSub["value"] <= $th && $maxSubFail) { $aiBlocked = true; $lv["reasons"][] = "C2a(i): {$maxSubFail} ✗"; }
+            elseif ($maxSub["value"] <= $th) $aItems[] = "i";
             $lv["reasons"][] = "C2a(i): máx. {$maxSub["value"]} maduros por subpoblación " . ($maxSub["value"] <= $th ? "≤" : ">") . " {$th}";
         }
         if (isset($pctOne["value"])) {
@@ -301,6 +354,9 @@ function iucnEvalC(?array $inp, array &$ctx): array {
             $lv["reasons"][] = "C2: " . ($decline ? "disminución continua ✓" : "sin disminución continua ✗") . "; "
                 . ($c2 ? implode("", $c2) : "ni a(i), a(ii) ni b") . " " . ($c2ok ? "✓" : "✗");
         }
+        $wouldC2 = $decline && (count($c2) > 0 || $aiBlocked);
+        if ($small && $matureFail && ($c1 || $c2ok || $c1Blocked || $wouldC2)) { unset($lv); iucnBlock($res, $c, "C: maduros, {$matureFail}"); continue; }
+        if ($small && !$c1 && !$c2ok && ($c1Blocked || $wouldC2)) iucnBlock($res, $c, "C: la calidad del dato de C1 o de C2a(i) no llega al mínimo");
         if ($small && ($c1 || $c2ok)) {
             $lv["met"] = true;
             $parts = [];
@@ -334,6 +390,7 @@ function iucnEvalD(?array $inp, array &$ctx, ?array $bInp): array {
     $d2Aoo = isset($aoo["value"]) && $aoo["value"] < $d2c["aooLessThanKm2"];
     $d2Loc = isset($loc["value"]) && $loc["value"] <= $d2c["maxLocations"];
     $d2 = $threat && ($d2Aoo || $d2Loc);
+    $matureFail = iucnQualityShort($ctx, "D.mature", iucnQOf($inp, "mature"));
     foreach ($cats as $c) {
         $lv = &$res["levels"][$c];
         $d1 = false;
@@ -341,6 +398,7 @@ function iucnEvalD(?array $inp, array &$ctx, ?array $bInp): array {
             $t = $D["matureIndividualsLessThan"][$c];
             $d1 = $mature["value"] < $t;
             $lv["reasons"][] = "Maduros {$mature["value"]} " . ($d1 ? "<" : "≥") . " {$t} " . ($d1 ? "✓" : "✗");
+            if ($d1 && $matureFail) { $d1 = false; iucnBlock($res, $c, "D1: maduros, {$matureFail}"); }
         }
         $here = $d2 && in_array($c, $d2c["categories"], true);
         if ($threat) {
@@ -379,7 +437,9 @@ function iucnEvalE(?array $inp, array &$ctx): array {
         $w = iucnWindowYears($th, $gen);
         $ok = $p["value"] >= $th["pct"] && $h["value"] <= $w;
         $res["levels"][$c]["reasons"][] = iucnFmt($p["value"]) . " % en " . iucnFmt($h["value"]) . " años; exige ≥ {$th["pct"]} % en ≤ " . iucnFmt($w) . " años " . ($ok ? "✓" : "✗");
-        if ($ok) { $res["levels"][$c]["met"] = true; $res["levels"][$c]["notation"] = "E"; }
+        $eFail = $ok ? iucnQualityShort($ctx, "E.probability", iucnQOf($inp, "probability")) : null;
+        if ($eFail) iucnBlock($res, $c, "E: {$eFail}");
+        elseif ($ok) { $res["levels"][$c]["met"] = true; $res["levels"][$c]["notation"] = "E"; }
     }
     return iucnFinish($res, $cats);
 }
