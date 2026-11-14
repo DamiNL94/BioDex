@@ -17,6 +17,11 @@ const SUFF_EOO_CELLS = 20;
 const SUFF_COMPLETENESS_PCT = 90;
 const SUFF_MIN_OCCASIONS = 5;
 const SUFF_ABSENCE_OCCASIONS = 3;
+const SUFF_FRONTIER_PCT = 50;
+const SUFF_EFFORT_RANGE = [0.5, 2];
+const SUFF_RANGE_MIN_OCCASIONS = 3;
+const SUFF_EXCLUSIONS = ["free", "notBlind", "effort", "track", "protocol", "range"];
+const SUFF_PROTOCOL_LABEL = ["timed" => "búsqueda con tiempo fijo", "transect" => "transecto"];
 const SUFF_SERIES_YEARS = 3;
 const SUFF_SERIES_DF = 5;
 const SUFF_POWER = 0.8;
@@ -59,13 +64,58 @@ function suffNormInv(float $p): float {
     return ((((($a[0] * $r + $a[1]) * $r + $a[2]) * $r + $a[3]) * $r + $a[4]) * $r + $a[5]) * $q / ((((($b[0] * $r + $b[1]) * $r + $b[2]) * $r + $b[3]) * $r + $b[4]) * $r + 1);
 }
 
-/** Como samplingCompleteness() de JS: ocasiones (días UTC), celdas de 2 km con presencia, Chao2 y ausencias. */
-function suffSamplingCompleteness(array $records): array {
-    $days = [];
+/** Esfuerzo de una visita en la unidad de su protocolo (minutos o metros), como effortValue() de JS. */
+function suffEffortValue(array $v): ?float {
+    $p = $v["effortProtocol"] ?? null;
+    if ($p === "timed") { $s = iucnToNum($v["activeSeconds"] ?? null); return $s === null ? null : $s / 60; }
+    if ($p === "transect") return iucnToNum($v["distanceM"] ?? null);
+    return null;
+}
+
+/** Como validOccasions() de JS → valid, protocol, medianEffort, considered, excluded. */
+function suffValidOccasions(?array $visits, mixed $taxonID): array {
+    $excluded = array_fill_keys(SUFF_EXCLUSIONS, 0);
+    $by = ["timed" => [], "transect" => []];
+    $considered = 0;
+    foreach ($visits ?? [] as $v) {
+        if (!is_array($v) || !empty($v["deletedAt"]) || !empty($v["deleted"]) || ($v["visitStatus"] ?? $v["status"] ?? null) !== "closed") continue;
+        $targets = array_map("strval", is_array($v["species"] ?? null) ? $v["species"] : []);
+        if ($targets && $taxonID !== null && !in_array((string) $taxonID, $targets, true)) continue;
+        $considered++;
+        $p = $v["effortProtocol"] ?? null;
+        if ($p !== "timed" && $p !== "transect") { $excluded["free"]++; continue; }
+        if (($v["blind"] ?? null) !== true) { $excluded["notBlind"]++; continue; }
+        if (($v["targetMet"] ?? null) !== true || suffEffortValue($v) === null) { $excluded["effort"]++; continue; }
+        if (($v["trackComplete"] ?? null) !== true || !is_array($v["coveredCells"] ?? null)) { $excluded["track"]++; continue; }
+        $by[$p][] = $v;
+    }
+    $protocol = !$by["timed"] && !$by["transect"] ? null : (count($by["transect"]) > count($by["timed"]) ? "transect" : "timed");
+    if ($protocol === null) return ["valid" => [], "protocol" => null, "medianEffort" => null, "considered" => $considered, "excluded" => $excluded];
+    $excluded["protocol"] = count($by[$protocol === "timed" ? "transect" : "timed"]);
+    $pool = $by[$protocol];
+    $values = array_map("suffEffortValue", $pool);
+    sort($values);
+    $n = count($values);
+    $med = $n % 2 ? $values[($n - 1) / 2] : ($values[$n / 2 - 1] + $values[$n / 2]) / 2;
+    $valid = array_values(array_filter($pool, fn($v) => $n < SUFF_RANGE_MIN_OCCASIONS
+        || (suffEffortValue($v) >= SUFF_EFFORT_RANGE[0] * $med && suffEffortValue($v) <= SUFF_EFFORT_RANGE[1] * $med)));
+    $excluded["range"] = $n - count($valid);
+    return ["valid" => $valid, "protocol" => $protocol, "medianEffort" => suffRound($med, 1), "considered" => $considered, "excluded" => $excluded];
+}
+
+/**
+ * Como samplingCompleteness() de JS: ocasiones = visitas válidas y comparables; celdas de 2 km cubiertas por ellas,
+ * Chao2, ausencias (celdas cubiertas sin detección) y frontera prospectada.
+ */
+function suffSamplingCompleteness(array $records, ?array $visits = null, mixed $taxonID = null): array {
+    $occ = suffValidOccasions($visits, $taxonID);
+    $covered = [];
+    foreach ($occ["valid"] as $v) foreach ($v["coveredCells"] as $cell) $covered[(string) $cell][$v["visitID"]] = true;
+    $validIds = array_flip(array_column($occ["valid"], "visitID"));
+    $all = [];
     $presence = [];
-    $absence = [];
     foreach ($records as $r) {
-        if (!is_array($r) || !empty($r["deletedAt"])) continue;
+        if (!is_array($r) || !empty($r["deletedAt"]) || ($r["occurrenceStatus"] ?? null) === "absent") continue;
         $u = iucnToNum($r["coordinateUncertaintyInMeters"] ?? null);
         if ($u !== null && $u > SUFF_AOO_CELL_M) continue;
         $x = iucnToNum($r["x"] ?? null);
@@ -78,33 +128,69 @@ function suffSamplingCompleteness(array $records): array {
             $x = (float) $p["easting"];
             $y = (float) $p["northing"];
         }
-        $w = iucnWhen($r["eventDate"] ?? null);
-        if (!$w) continue;
-        $day = $w["day"];
-        $days[$day] = true;
         $cell = (int) floor($x / SUFF_AOO_CELL_M) . "," . (int) floor($y / SUFF_AOO_CELL_M);
-        if (($r["occurrenceStatus"] ?? null) === "absent") $absence[$cell][$day] = true;
-        else $presence[$cell][$day] = true;
+        $all[$cell] = true;
+        $visit = $r["visitID"] ?? null;
+        if (!$visit || !isset($validIds[$visit])) continue;
+        $presence[$cell][$visit] = true;
+        $covered[$cell][$visit] = true;
     }
-    $T = count($days);
+    $T = count($occ["valid"]);
     $sObs = count($presence);
     $q1 = $q2 = 0;
     foreach ($presence as $set) { $n = count($set); if ($n === 1) $q1++; elseif ($n === 2) $q2++; }
     $chao2 = $sObs && $T ? $sObs + (($T - 1) / $T) * ($q1 * ($q1 - 1)) / (2 * ($q2 + 1)) : null;
     $absentCells = $confirmed = 0;
-    foreach ($absence as $cell => $set) {
-        if (isset($presence[$cell])) continue;
+    foreach ($covered as $cell => $set) {
+        if (isset($all[$cell])) continue;
         $absentCells++;
         if (count($set) >= SUFF_ABSENCE_OCCASIONS) $confirmed++;
     }
+    $frontier = [];
+    foreach (array_keys($all) as $cell) {
+        [$i, $j] = array_map("intval", explode(",", (string) $cell));
+        for ($di = -1; $di <= 1; $di++) for ($dj = -1; $dj <= 1; $dj++) {
+            $k = ($i + $di) . "," . ($j + $dj);
+            if (!isset($all[$k])) $frontier[$k] = true;
+        }
+    }
+    $frontierCovered = count(array_intersect_key($frontier, $covered));
     return ["occasions" => $T, "cellsPresent" => $sObs, "q1" => $q1, "q2" => $q2, "chao2" => $chao2 === null ? null : suffRound($chao2, 3),
-            "completenessPct" => $chao2 ? suffRound(100 * $sObs / $chao2, 1) : null, "absentCells" => $absentCells, "confirmedAbsentCells" => $confirmed];
+            "completenessPct" => $chao2 ? suffRound(100 * $sObs / $chao2, 1) : null, "absentCells" => $absentCells, "confirmedAbsentCells" => $confirmed,
+            "coveredCells" => count($covered), "frontierCells" => count($frontier), "frontierCovered" => $frontierCovered,
+            "frontierPct" => $frontier ? suffRound(100 * $frontierCovered / count($frontier), 1) : null, "cellsAll" => count($all),
+            "protocol" => $occ["protocol"], "medianEffort" => $occ["medianEffort"], "considered" => $occ["considered"], "excluded" => $occ["excluded"]];
+}
+
+/** Celdas con presencia de cualquier registro (las evaluaciones anteriores a F11j solo traen cellsPresent). */
+function suffCellsAll(array $c): int {
+    return (int) ($c["cellsAll"] ?? $c["cellsPresent"] ?? 0);
 }
 
 function suffRangeQuality(?array $c): array {
-    if (!$c || empty($c["cellsPresent"])) return ["eoo" => null, "aoo" => null, "completenessOk" => false];
-    $ok = $c["occasions"] >= SUFF_MIN_OCCASIONS && $c["completenessPct"] !== null && $c["completenessPct"] >= SUFF_COMPLETENESS_PCT;
-    return ["eoo" => $ok || $c["cellsPresent"] >= SUFF_EOO_CELLS ? "estimated" : "inferred", "aoo" => $ok ? "estimated" : "inferred", "completenessOk" => $ok];
+    if (!$c || !suffCellsAll($c)) return ["eoo" => null, "aoo" => null, "completenessOk" => false];
+    $frontierOk = !array_key_exists("frontierPct", $c) || ($c["frontierPct"] !== null && $c["frontierPct"] >= SUFF_FRONTIER_PCT);
+    $ok = $c["occasions"] >= SUFF_MIN_OCCASIONS && $c["completenessPct"] !== null && $c["completenessPct"] >= SUFF_COMPLETENESS_PCT && $frontierOk;
+    return ["eoo" => $ok || suffCellsAll($c) >= SUFF_EOO_CELLS ? "estimated" : "inferred", "aoo" => $ok ? "estimated" : "inferred", "completenessOk" => $ok];
+}
+
+/** Como occasionsDetail() de JS: ocasiones usadas, excluidas por motivo y celdas cubiertas. */
+function suffOccasionsDetail(?array $c): string {
+    if (!$c || !isset($c["excluded"])) return "";
+    $e = $c["excluded"];
+    $n1 = fn($n, $one, $many) => "{$n} " . ($n === 1 ? $one : $many);
+    $parts = array_values(array_filter([
+        $e["notBlind"] ? $n1($e["notBlind"], "no ciega", "no ciegas") : "",
+        $e["free"] ? "{$e["free"]} de protocolo libre" : "",
+        $e["effort"] ? "{$e["effort"]} con esfuerzo insuficiente" : "",
+        $e["range"] ? "{$e["range"]} con esfuerzo fuera de rango" : "",
+        $e["track"] ? "{$e["track"]} con recorrido incompleto" : "",
+        $e["protocol"] ? "{$e["protocol"]} de otro protocolo" : "",
+    ]));
+    $used = $c["occasions"]
+        ? $n1($c["occasions"], "ocasión usada", "ocasiones usadas") . " (" . SUFF_PROTOCOL_LABEL[$c["protocol"]] . ", mediana " . suffTxt($c["medianEffort"]) . " " . ($c["protocol"] === "timed" ? "min" : "m") . ")"
+        : "Ninguna ocasión válida";
+    return "{$used} de " . $n1($c["considered"], "visita", "visitas") . " · excluidas: " . ($parts ? implode(", ", $parts) : "ninguna") . " · " . $n1($c["coveredCells"], "celda cubierta", "celdas cubiertas") . ".";
 }
 
 function suffSeriesQuality(?array $s): array {
@@ -135,19 +221,24 @@ function suffRequirements(array $q, ?array $series = null): array {
     $c = $q["completeness"] ?? null;
     $rq = suffRangeQuality($c);
     $groups = [];
-    $note = !$c || empty($c["cellsPresent"]) ? "Sin presencias: no hay EOO ni AOO."
+    $note = !$c || !suffCellsAll($c) ? "Sin presencias: no hay EOO ni AOO."
         : "Calidad: EOO " . SUFF_QLABEL[$rq["eoo"]] . "; AOO " . SUFF_QLABEL[$rq["aoo"]] . "."
           . ($rq["aoo"] === "inferred" ? " Mientras la AOO sea inferida es solo una cota inferior: B2 no se puede cumplir (tabla 3.1 pide estimada)." : "")
-          . ($c["absentCells"] ? " Ausencias: {$c["absentCells"]} " . ($c["absentCells"] === 1 ? "celda" : "celdas") . " sin detección, {$c["confirmedAbsentCells"]} confirmadas (≥ " . SUFF_ABSENCE_OCCASIONS . " días)." : "");
+          . ($c["absentCells"] ? " Ausencias: {$c["absentCells"]} " . ($c["absentCells"] === 1 ? "celda cubierta" : "celdas cubiertas") . " sin detección, {$c["confirmedAbsentCells"]} confirmadas (≥ " . SUFF_ABSENCE_OCCASIONS . " ocasiones)." : "");
     $groups[] = ["id" => "range", "title" => "Distribución: EOO y AOO", "criteria" => ["B"], "quality" => ["eoo" => $rq["eoo"], "aoo" => $rq["aoo"]],
         "items" => [
-            suffItem("occasions", "Días de muestreo de la especie", $c ? $c["occasions"] : 0, SUFF_MIN_OCCASIONS,
-                ["unit" => "días", "ref" => "BioDex (Chao2: Colwell y Coddington 1994)", "hint" => "Cada día con alguna marca de la especie, presente o ausente."]),
-            suffItem("completeness", "Completitud del muestreo (Chao2 sobre celdas de 2 km)", $c ? $c["completenessPct"] : 0, SUFF_COMPLETENESS_PCT,
-                ["unit" => "%", "ref" => "Colwell y Coddington 1994; Marsh et al. 2023", "hint" => "Sube cuando las celdas ocupadas se vuelven a encontrar en días distintos y deja de aparecer ocupación nueva."]),
-            suffItem("eooCells", "Celdas de 2 km con presencia (EOO estable)", $c ? $c["cellsPresent"] : 0, SUFF_EOO_CELLS,
+            suffItem("occasions", "Esfuerzo estandarizado: ocasiones válidas", $c ? $c["occasions"] : 0, SUFF_MIN_OCCASIONS,
+                ["unit" => "ocasiones", "ref" => "BioDex (Chao 1987; Goff et al. 1982)",
+                 "hint" => "Visitas en modo búsqueda, con tiempo fijo o transecto, que alcanzaron el esfuerzo objetivo con el recorrido completo y un esfuerzo comparable."]),
+            suffItem("completeness", "Completitud del muestreo (Chao2 sobre celdas de 2 km cubiertas)", $c ? $c["completenessPct"] : 0, SUFF_COMPLETENESS_PCT,
+                ["unit" => "%", "ref" => "Chao 1987; Colwell y Coddington 1994; Marsh et al. 2023", "hint" => "Sube cuando las celdas ocupadas se vuelven a encontrar en ocasiones distintas y deja de aparecer ocupación nueva."]),
+            suffItem("frontier", "Frontera prospectada (celdas vecinas a las ocupadas, cubiertas)", $c && array_key_exists("frontierPct", $c) ? $c["frontierPct"] : 0, SUFF_FRONTIER_PCT,
+                ["unit" => "%", "ref" => "BioDex", "hint" => $c && !empty($c["frontierCells"])
+                    ? "{$c["frontierCovered"]} de {$c["frontierCells"]} celdas vecinas cubiertas por una ocasión válida. Volver siempre a las mismas celdas no demuestra que no haya más."
+                    : "Celdas vecinas a las ocupadas que ha cubierto alguna ocasión válida."]),
+            suffItem("eooCells", "Celdas de 2 km con presencia (EOO estable)", $c ? suffCellsAll($c) : 0, SUFF_EOO_CELLS,
                 ["unit" => "celdas", "ref" => "Syfert et al. 2014 (vía Marsh et al. 2023)", "hint" => "Con 20 o más, el EOO es estimado aunque falte completitud."]),
-        ], "note" => $note];
+        ], "note" => $note, "detail" => suffOccasionsDetail($c)];
 
     $plotsTarget = $m["plotsRequired"] ?? SUFF_PLOTS_BASE;
     $cv = $m["density"]["cv"] ?? null;

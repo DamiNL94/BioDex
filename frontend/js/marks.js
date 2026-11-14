@@ -12,6 +12,7 @@
 // ================================================================================================
 
 import { state } from './state.js';
+import { blindFilter } from './blind.js';
 import { tx, getAll, byIndex, get, getMeta, setMeta } from './db.js';
 import { sitePayload, visitPayload, visitFromPayload } from './visit-records.js';
 
@@ -372,8 +373,9 @@ export async function notesFor(catalogId, taxonID) {
 
 /** Marcas visibles de una especie en un catálogo, más recientes primero: {own, others}. */
 export async function marksFor(catalogId, taxonID) {
-  const all = (await byIndex('occurrences', 'taxonID', taxonID))
-    .filter((o) => o.catalogId === catalogId && !o.deletedAt)
+  // En modo búsqueda, sin las marcas anteriores de las especies objetivo (js/blind.js).
+  const all = blindFilter((await byIndex('occurrences', 'taxonID', taxonID))
+    .filter((o) => o.catalogId === catalogId && !o.deletedAt))
     .sort((a, b) => Date.parse(b.eventDate) - Date.parse(a.eventDate));   // zonas distintas: por instante
   const me = state.user && state.user.id;
   return { own: all.filter((o) => o.authorId === me), others: all.filter((o) => o.authorId !== me) };

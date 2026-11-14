@@ -111,7 +111,7 @@ function assessmentImpacts(PDO $pdo, string $catalogId, string $taxonID): array 
 /** Marcas de la especie en el catálogo con lo que necesitan los cuantificadores (EXACTAS: no salen). */
 function assessmentRecords(PDO $pdo, string $catalogId, string $taxonID): array {
     $stmt = $pdo->prepare("SELECT occurrenceID, user_id, decimalLatitude, decimalLongitude, coordinateUncertaintyInMeters, occurrenceStatus,
-                                  eventDate, mature_count, sampleSizeValue
+                                  eventDate, mature_count, sampleSizeValue, visit_id AS visitID
                              FROM occurrences WHERE catalog_id = ? AND taxonID = ? AND deleted_at IS NULL");
     $stmt->execute([$catalogId, $taxonID]);
     return array_map(function ($r) {
@@ -119,6 +119,27 @@ function assessmentRecords(PDO $pdo, string $catalogId, string $taxonID): array 
         $r["eventDate"] = $r["eventDate"] . "Z";
         return $r;
     }, $stmt->fetchAll());
+}
+
+/**
+ * Visitas cerradas del catálogo con lo que hace falta para decidir si son ocasiones de Chao2 (Lib/sufficiency.php):
+ * especies objetivo, protocolo de búsqueda, modo búsqueda, esfuerzo y celdas cubiertas. Exactas, sin generalizar: de
+ * aquí solo salen recuentos (ocasiones, celdas), nunca posiciones.
+ */
+function assessmentVisits(PDO $pdo, string $catalogId): array {
+    $stmt = $pdo->prepare("SELECT visitID, status, effort_protocol, blind, target_met, track_complete, active_seconds, distance_m, covered_cells
+                             FROM visits WHERE catalog_id = ? AND deleted_at IS NULL AND status = 'closed'");
+    $stmt->execute([$catalogId]);
+    $rows = $stmt->fetchAll();
+    $targets = childTaxa($pdo, "visit_species", "visitID", array_column($rows, "visitID"));
+    return array_map(fn($r) => [
+        "visitID" => $r["visitID"], "status" => $r["status"], "species" => $targets[$r["visitID"]] ?? [],
+        "effortProtocol" => $r["effort_protocol"], "blind" => (int) $r["blind"] === 1, "targetMet" => (int) $r["target_met"] === 1,
+        "trackComplete" => (int) $r["track_complete"] === 1,
+        "activeSeconds" => $r["active_seconds"] === null ? null : (int) $r["active_seconds"],
+        "distanceM" => $r["distance_m"] === null ? null : (float) $r["distance_m"],
+        "coveredCells" => $r["covered_cells"] === null ? null : (json_decode($r["covered_cells"], true) ?: []),
+    ], $rows);
 }
 
 /**
@@ -207,7 +228,8 @@ function speciesAssessment(PDO $pdo, string $catalogId, string $taxonID, int $us
     $locations = $locRow ? locationsOut($locRow) : null;
     $impacts = assessmentImpacts($pdo, $catalogId, $taxonID);
     $q = iucnQuantify(assessmentRecords($pdo, $catalogId, $taxonID), ["params" => $params, "defaults" => $defaults, "impacts" => $impacts,
-        "metrics" => $metrics, "habitatCodes" => iucnThreats()["habitat_codes"]]);
+        "metrics" => $metrics, "habitatCodes" => iucnThreats()["habitat_codes"],
+        "visits" => assessmentVisits($pdo, $catalogId), "taxonID" => $taxonID]);
     $series = assessmentSeries($pdo, $catalogId, $taxonID, $params);
     $inputs = iucnEngineInputs($q, $params, $metrics, $locations, [], $series);
     $result = assessIucn($inputs);
@@ -235,6 +257,7 @@ function speciesAssessment(PDO $pdo, string $catalogId, string $taxonID, int $us
         "fragmentation" => $q["fragmentation"],
         "completeness"  => $q["completeness"],
         "sufficiency"   => suffRequirements($q, $series),
+        "sampling"      => samplingConfig($pdo, $catalogId, $taxonID, $params),
         "locationsProposal" => $q["locations"],
         "locations"     => $locations,
         "suggestions"   => array_merge($q["suggestions"], $series["suggestions"] ?? []),

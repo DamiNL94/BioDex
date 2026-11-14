@@ -41,7 +41,20 @@ export const PARAMETERS = [
   { key: 'occupied_habitat_km2', label: 'Superficie de hábitat ocupado', type: 'number', unit: 'km²', step: 'any',
     help: 'Superficie de hábitat donde vive la especie en el área. Con las parcelas (marcas con superficie contada) estima el total de maduros; sin ella, la AOO es solo una cota superior.',
     criteria: ['C, D (maduros estimados)'] },
+  // Diseño de muestreo y método de la suficiencia espacial (F11j). Los fija quien configura el catálogo; en el campo se
+  // ven al empezar la visita. Cada cambio queda registrado (fecha, usuario, valor anterior y motivo) y se ve en la
+  // pestaña Evaluación UICN.
+  { key: 'sampling_design', label: 'Diseño de muestreo', type: 'choice', unit: null, config: true,
+    choices: { exploratory: 'Exploratorio (cada visita busca en sitio nuevo)', repeated: 'Sitios repetidos (se vuelve a los mismos sitios)', mixed: 'Mixto' },
+    help: 'Cómo se muestrea la especie. Cada visita se etiqueta como exploratoria o como repetición de un sitio según este diseño. Los modelos de ocupación necesitan sitios repetidos; Chao2, que se explore.',
+    criteria: [] },
+  { key: 'sufficiency_method', label: 'Método de referencia de la suficiencia espacial', type: 'choice', unit: null, config: true,
+    choices: { chao2: 'Chao2 (completitud por incidencia)' }, soon: { occupancy: 'Ocupación de una temporada (próximamente)' },
+    help: 'Qué método usa el motor para decidir si la distribución está bien muestreada. Sin fijar, Chao2. La pestaña Evaluación UICN enseña todos los que los datos permiten calcular.',
+    criteria: [] },
 ];
+export const DESIGN_LABELS = { exploratory: 'Exploratorio', repeated: 'Sitios repetidos', mixed: 'Mixto' };
+export const METHOD_LABELS = { chao2: 'Chao2', occupancy: 'Ocupación de una temporada' };
 export const QUALITY_LABELS = { observed: 'Observado', estimated: 'Estimado', inferred: 'Inferido', suspected: 'Sospechado', projected: 'Proyectado' };
 const EDIT_ROLES = ['owner', 'custodian'];
 
@@ -166,6 +179,7 @@ export function mountParameters(el, { species, catalog }) {
     const valueField = d.type === 'choice'
       ? html`<label class="field"><span>Valor</span><select name="value" required>
           <option value="">—</option>${Object.entries(d.choices).map(([k, label]) => html`<option value="${k}" ${v.value === k ? html`selected` : ''}>${label}</option>`)}
+          ${Object.entries(d.soon || {}).map(([k, label]) => html`<option value="${k}" disabled>${label}</option>`)}
         </select></label>`
       : d.type === 'text'
         ? html`<label class="field"><span>Valor</span><textarea name="value" rows="3" maxlength="2000" required>${v.value || ''}</textarea></label>`
@@ -177,12 +191,12 @@ export function mountParameters(el, { species, catalog }) {
           </div>`;
     return html`<form class="form param-form" data-key="${d.key}" novalidate aria-labelledby="pl-${d.key}">
       ${valueField}
-      <label class="field"><span>Calidad del dato</span><select name="quality">
+      ${d.config ? '' : html`<label class="field"><span>Calidad del dato</span><select name="quality">
         <option value="" ${q ? '' : html`selected`}>Sin indicar</option>
         ${Object.entries(QUALITY_LABELS).map(([k, label]) => html`<option value="${k}" ${q === k ? html`selected` : ''}>${label}</option>`)}
-      </select></label>
-      <label class="field"><span>Fuente <em>(texto libre o referencia)</em></span>
-        <textarea name="source" rows="2" maxlength="1000">${v.source || ''}</textarea></label>
+      </select></label>`}
+      <label class="field"><span>${d.config ? html`Motivo del cambio <em>(opcional; queda en el registro)</em>` : html`Fuente <em>(texto libre o referencia)</em>`}</span>
+        <textarea name="source" rows="2" maxlength="1000">${d.config ? '' : (v.source || '')}</textarea></label>
       <p class="form-error" role="alert" hidden></p>
       <div class="form-actions">
         <button type="submit" class="btn-primary">Guardar</button>
@@ -251,7 +265,8 @@ export function mountParameters(el, { species, catalog }) {
     err.hidden = true;
     const field = (name) => form.elements.namedItem(name);
     const orNull = (name) => (field(name).value === '' ? null : field(name).value);
-    const body = { value: field('value').value, quality: field('quality').value || null, source: field('source').value };
+    // Diseño de muestreo y método no llevan calidad; su «fuente» es el motivo del cambio.
+    const body = { value: field('value').value, quality: field('quality') ? field('quality').value || null : null, source: field('source').value };
     if (d.type === 'number') Object.assign(body, { value: orNull('value'), valueMin: orNull('valueMin'), valueMax: orNull('valueMax') });
     const btn = $('button[type="submit"]', form);
     btn.disabled = true;

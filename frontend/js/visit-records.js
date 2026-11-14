@@ -5,9 +5,9 @@
 // ================================================================================================
 
 const SITE_PUSH_FIELDS = ['siteID', 'name', 'siteType', 'decimalLatitude', 'decimalLongitude', 'radiusM', 'footprintWKT', 'bandM',
-  'areaM2', 'protocol', 'clientUpdatedAt'];
+  'areaM2', 'protocol', 'effortProtocol', 'effortTarget', 'clientUpdatedAt'];
 const VISIT_PUSH_FIELDS = ['visitID', 'protocol', 'bandM', 'effortMinutes', 'observers', 'eventStart', 'eventEnd', 'conditions',
-  'decimalLatitude', 'decimalLongitude', 'clientUpdatedAt'];
+  'decimalLatitude', 'decimalLongitude', 'effortProtocol', 'effortTarget', 'visitKind', 'clientUpdatedAt'];
 
 const pick = (rec, fields) => {
   const out = {};
@@ -25,10 +25,22 @@ export function sitePayload(s) {
   return out;
 }
 
-/** Visita del almacén → cuerpo del push. */
+/**
+ * Visita del almacén → cuerpo del push. Modo búsqueda y esfuerzo solo si la visita los tiene (las anteriores a F11j no
+ * los mandan y el servidor no los toca). El recorrido y las pausas van al cerrarla: distancia, huecos, celdas cubiertas
+ * y objetivo alcanzado los calcula el servidor del recorrido, no se le mandan.
+ */
 export function visitPayload(v) {
-  return { ...pick(v, VISIT_PUSH_FIELDS), siteID: v.siteID || null, status: v.visitStatus || 'open',
+  const out = { ...pick(v, VISIT_PUSH_FIELDS), siteID: v.siteID || null, status: v.visitStatus || 'open',
     species: Array.isArray(v.species) ? v.species : [] };
+  if (out.effortProtocol) {
+    out.blind = v.blind === true;
+    if (v.visitStatus === 'closed' && out.effortProtocol !== 'free' && Array.isArray(v.track)) {
+      out.track = v.track;
+      out.pauses = (v.pauses || []).filter((p) => p[1] !== null && p[1] !== undefined);
+    }
+  }
+  return out;
 }
 
 /** Visita como va en el push o en un respaldo → registro local (status → visitStatus). */

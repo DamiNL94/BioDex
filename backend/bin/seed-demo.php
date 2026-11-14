@@ -17,6 +17,7 @@
 require_once __DIR__ . "/demo/demo-lib.php";
 require_once __DIR__ . "/../Lib/api.php";        // uuidV4()
 require_once __DIR__ . "/test-lib.php";          // http()
+require_once __DIR__ . "/../Lib/track.php";      // trackDistance(), toUtm(): recorridos sintéticos de las visitas de F11j
 
 demoRequireDev();
 $pdo = db();
@@ -247,17 +248,76 @@ foreach (DEMO_EN_B_CORES as $c => [$lat, $lon]) {
             "habitat" => "Matorral almohadillado sobre micaesquistos"];
     }
 }
-// Seguimiento de los tres núcleos en tres días más (presencia sin recuento): 6 días de campo y cada celda reencontrada,
-// así la completitud del muestreo llega al 90 % y EOO y AOO son ESTIMADAS (shared/iucn-sufficiency.js, tabla 3.1).
+// F11j · Seis visitas con PROTOCOLO de la editora (búsqueda con tiempo fijo de 180 min, en modo búsqueda y con su
+// recorrido GPS), que son las ocasiones de Chao2 (shared/iucn-sufficiency.js):
+//   · tres de REPETICIÓN: los tres núcleos en el día, una hora de búsqueda en cada uno y una pausa de 40 min para ir de
+//     uno a otro (la pausa no cuenta ni graba recorrido). En cada una se reencuentra la especie en sus tres celdas.
+//   · tres EXPLORATORIAS: una vuelta de ~9 km alrededor de la celda de cada núcleo, sin encontrar nada: cubren las
+//     celdas vecinas (frontera prospectada) con resultado negativo.
+// Así hay 6 ocasiones válidas, la completitud llega al 100 % con la frontera cubierta, y EOO y AOO son ESTIMADAS (tabla
+// 3.1). Las marcas de julio (recuentos en parcelas) siguen sueltas: cuentan para la distribución, no para Chao2.
+$demoDeg = fn(float $lat, float $dx, float $dy) => [$dy / 111195, $dx / (111195 * cos(deg2rad($lat)))];
+$demoTrack = function (array $waypoints, int $t0, float $speed = 0.84): array {
+    $pts = [];
+    $t = (float) $t0;
+    foreach ($waypoints as $i => [$lat, $lon]) {
+        if ($i === 0) { $pts[] = [round($lat, 6), round($lon, 6), (int) $t, 5, (int) $t]; continue; }
+        [$la0, $lo0] = $waypoints[$i - 1];
+        $d = trackDistance($la0, $lo0, $lat, $lon);
+        $n = max(1, (int) ceil($d / 40));
+        for ($j = 1; $j <= $n; $j++) {
+            $t += ($d / $n) / $speed;
+            $pts[] = [round($la0 + ($lat - $la0) * $j / $n, 6), round($lo0 + ($lon - $lo0) * $j / $n, 6), (int) round($t), 5, (int) round($t)];
+        }
+    }
+    return [$pts, (int) round($t)];
+};
+/** Cuadrado de lado 2·$half m centrado en ($lat, $lon) desplazado ($dx, $dy) m → 5 vértices (cerrado). */
+$demoSquare = function (float $lat, float $lon, float $dx, float $dy, float $half) use ($demoDeg): array {
+    $out = [];
+    foreach ([[-1, -1], [1, -1], [1, 1], [-1, 1], [-1, -1]] as [$sx, $sy]) {
+        [$dLat, $dLon] = $demoDeg($lat, $dx + $sx * $half, $dy + $sy * $half);
+        $out[] = [$lat + $dLat, $lon + $dLon];
+    }
+    return $out;
+};
+$f11jVisits = [];
+$iso = fn(int $t) => gmdate("Y-m-d\TH:i:s", $t) . ".000Z";
+$f11jVisit = fn(string $id, int $t0, int $t1, array $track, array $pauses, string $kind, array $pos) => [
+    "visitID" => $id, "siteID" => null, "protocol" => "timed_search", "status" => "closed", "eventStart" => $iso($t0), "eventEnd" => $iso($t1),
+    "effortMinutes" => (int) round(($t1 - $t0 - array_sum(array_map(fn($p) => $p[1] - $p[0], $pauses))) / 60),
+    "observers" => DEMO_USERS["editor"]["name"], "species" => [DEMO_EN_B], "conditions" => DEMO_NOTICE, "clientUpdatedAt" => $iso($t1),
+    "decimalLatitude" => $pos[0], "decimalLongitude" => $pos[1],
+    "effortProtocol" => "timed", "effortTarget" => 180, "blind" => true, "visitKind" => $kind, "track" => $track, "pauses" => $pauses];
 foreach (["2026-08-01", "2026-08-16", "2026-09-02"] as $d) {
+    $visitID = uuidV4();
+    $t0 = $t = strtotime("{$d}T07:00:00Z");
+    $track = [];
+    $pauses = [];
     foreach (DEMO_EN_B_CORES as $c => [$lat, $lon]) {
-        $day = "{$d}T10:" . sprintf("%02d", 10 + $c) . ":00+02:00";
-        $f11gMarks["editor"][] = ["occurrenceID" => uuidV4(), "taxonID" => DEMO_EN_B, "eventDate" => $day,
-            "clientUpdatedAt" => (new DateTimeImmutable($day))->setTimezone(new DateTimeZone("UTC"))->format("Y-m-d\TH:i:s.000\Z"),
+        if ($c) { $pauses[] = [$t, $t + 2400]; $t += 2400; }
+        [$pts, $end] = $demoTrack($demoSquare($lat, $lon, 0, 0, 380), $t);
+        $day = $iso($t + 900);
+        $f11gMarks["editor"][] = ["occurrenceID" => uuidV4(), "taxonID" => DEMO_EN_B, "visitID" => $visitID, "eventDate" => $day, "clientUpdatedAt" => $day,
             "decimalLatitude" => $lat, "decimalLongitude" => $lon, "coordinateUncertaintyInMeters" => 5, "individualCount" => 30 + 5 * $c,
             "habitat" => "Matorral almohadillado sobre micaesquistos (seguimiento, sin recuento de maduros)"];
+        $track = array_merge($track, $pts);
+        $t = $end;
     }
+    $f11jVisits[] = $f11jVisit($visitID, $t0, $t, $track, $pauses, "repeat", DEMO_EN_B_CORES[0]);
 }
+foreach (["2026-08-05", "2026-08-20", "2026-09-05"] as $c => $d) {
+    [$lat, $lon] = DEMO_EN_B_CORES[$c];
+    $u = toUtm($lat, $lon);
+    // Vuelta alrededor de la celda de 2 km del núcleo, 150 m por fuera: pisa sus ocho vecinas.
+    $loop = $demoSquare($lat, $lon, (floor($u["easting"] / 2000) + 0.5) * 2000 - $u["easting"], (floor($u["northing"] / 2000) + 0.5) * 2000 - $u["northing"], 1150);
+    $t0 = strtotime("{$d}T07:00:00Z");
+    [$pts, $end] = $demoTrack($loop, $t0);
+    $f11jVisits[] = $f11jVisit(uuidV4(), $t0, $end, $pts, [], "exploratory", $loop[0]);
+}
+[$code, $r] = http("POST", "/api/sync/push", ["catalogId" => $cat, "deviceId" => $device["editor"], "visits" => $f11jVisits], $jar["editor"]);
+expect($code, [200], "subir las visitas con protocolo de F11j", $r);
+if (array_filter($r["visitResults"], fn($x) => $x["status"] !== "accepted")) fail("visitas F11j rechazadas: " . json_encode($r["visitResults"], JSON_UNESCAPED_UNICODE));
 foreach ([[37.1560, -3.4210], [37.1566, -3.4202], [37.1552, -3.4215], [37.1571, -3.4220]] as $i => [$lat, $lon]) {
     $day = sprintf("2026-08-%02dT11:00:00+02:00", 3 + $i);
     $f11gMarks["editor"][] = ["occurrenceID" => uuidV4(), "taxonID" => DEMO_VU_D2, "eventDate" => $day,
@@ -293,6 +353,10 @@ $put(DEMO_EN_B, "separation_distance", ["value" => 1, "quality" => "estimated", 
 $put(DEMO_EN_B, "occupied_habitat_km2", ["value" => 0.05, "valueMin" => 0.03, "valueMax" => 0.08, "quality" => "estimated", "source" => "Cartografía de hábitat (ficticia)"]);
 $put(DEMO_EN_B, "decline_b_iii", ["value" => "yes", "quality" => "inferred",
     "justification" => "Pisoteo, pastoreo y obras en curso en los tres núcleos reducen la calidad del hábitat. " . DEMO_NOTICE]);
+// F11j · Diseño de muestreo y método de referencia (con su rastro en el registro: primero exploratorio, luego mixto).
+$put(DEMO_EN_B, "sampling_design", ["value" => "exploratory", "source" => "Primera campaña: localizar los núcleos. " . DEMO_NOTICE]);
+$put(DEMO_EN_B, "sampling_design", ["value" => "mixed", "source" => "Se añaden visitas de repetición a los tres núcleos conocidos. " . DEMO_NOTICE]);
+$put(DEMO_EN_B, "sufficiency_method", ["value" => "chao2", "source" => "Único método disponible. " . DEMO_NOTICE]);
 $put(DEMO_VU_D2, "plausible_threat", ["value" => "yes", "quality" => "projected",
     "justification" => "Una única mancha en el talud de la pista: el ensanche previsto la eliminaría en muy poco tiempo. " . DEMO_NOTICE]);
 [$code, $a] = http("GET", "/api/catalogs/{$cat}/species/" . DEMO_EN_B . "/assessment", null, $jar["custodian"]);

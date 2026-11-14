@@ -162,7 +162,7 @@ justificación (parámetros de tipo `fact`). BioDex **sugiere** b(iii) cuando ha
 especie, pero la sugerencia nunca cuenta sola: alguien tiene que fijar el hecho. C2 usa b(v) como disminución continua y
 c(iv) como fluctuación extrema. Desde F11h la serie temporal sugiere también b(v) y c(iv) (abajo).
 
-## Calidad mínima y suficiencia de los datos (F11i, 1.9.0)
+## Calidad mínima y suficiencia de los datos (F11i, 1.9.0; ocasiones de F11j, 1.10.0)
 Código: `shared/iucn-sufficiency.js` (dispositivo) y su port `backend/Lib/sufficiency.php`; la tabla de calidades mínimas
 en `shared/iucn-criteria.json › dataQuality`; casos compartidos en `shared/sufficiency-cases.json` (`node
 shared/iucn-engine.test.js` y `php backend/bin/test-sufficiency.php`, este sin base de datos y en CI). Bibliografía,
@@ -180,16 +180,21 @@ Sin calidad indicada no se comprueba (instantáneas antiguas, asistente de F8b).
 | Dato | Observado | Estimado | Si no |
 |---|---|---|---|
 | Maduros (C, D) | censo completo declarado | ≥ 10 parcelas (≥ 15 con CV > 1) + superficie de hábitat | inferido (cota inferior) |
-| AOO (B2) | — | ≥ 5 días de muestreo y completitud Chao2 ≥ 90 % | inferida (cota inferior) |
+| AOO (B2) | — | ≥ 5 ocasiones válidas, completitud Chao2 ≥ 90 % y frontera prospectada ≥ 50 % | inferida (cota inferior) |
 | EOO (B1) | — | lo mismo, o ≥ 20 celdas de 2 km con presencia | inferido |
 | Tasa de C1 | — | serie evaluable con ≥ 5 grados de libertad | inferida |
 | Reducción (A) | — | ídem (proyectada si la serie no cubre la ventana) | inferida (A admite sospechada: sigue contando) |
 
-- **Completitud del muestreo** (`samplingCompleteness`): ocasiones = días UTC con alguna marca de la especie (presente o
-  ausente); para cada celda de 2 km con presencia, en cuántos días se detectó. Chao2 con corrección de sesgo:
-  S = S_obs + ((T − 1)/T)·Q1(Q1 − 1)/(2(Q2 + 1)) y completitud = S_obs/S (Colwell y Coddington 1994). Mismo filtro que
-  la AOO (fuera borradas y precisión peor que 2 km). Ausencia **confirmada** en una celda: ≥ 3 días sin detección
-  (MacKenzie y Royle 2005); se informa, no decide la calidad.
+- **Completitud del muestreo** (`samplingCompleteness`; desde la 1.10.0, `docs/esfuerzo.md`): ocasiones = **visitas
+  válidas y comparables** (`validOccasions`): en modo búsqueda, con protocolo de tiempo fijo o transecto, objetivo
+  alcanzado, recorrido GPS completo, del mismo protocolo y con esfuerzo entre 0,5× y 2× la mediana. Las celdas del
+  cálculo son las de 2 km **cubiertas** por el recorrido de alguna ocasión válida; la incidencia de una celda es en
+  cuántas ocasiones se detectó la especie. Chao2 con corrección de sesgo: S = S_obs + ((T − 1)/T)·Q1(Q1 − 1)/(2(Q2 + 1))
+  y completitud = S_obs/S (Chao 1987; Colwell y Coddington 1994). Mismo filtro de registros que la AOO (fuera borrados y
+  precisión peor que 2 km). Una celda cubierta sin detección es un resultado negativo; ausencia **confirmada** con ≥ 3
+  ocasiones (MacKenzie y Royle 2005). **Frontera prospectada**: porcentaje de las celdas vecinas a las ocupadas que está
+  cubierto; con menos del 50 % la completitud no vale (volver siempre a las mismas celdas daría un 100 %). Hasta la
+  1.9.0 la ocasión era un día UTC con alguna marca: ya no.
 - **Series**: además de los 3 años, `df` (recuentos sitio-año menos parámetros) y la **potencia** para detectar la
   reducción del umbral de VU de A2 (30 %) en la ventana con el EE actual: Φ(|r_VU|/EE − 1,96), r_VU = −ln(0,7)/T, y la
   reducción mínima detectable con potencia 0,8: 1 − e^(−(1,96 + 0,84)·EE·T) (Gerrodette 1987; White 2019). La potencia
@@ -197,7 +202,8 @@ Sin calidad indicada no se comprueba (instantáneas antiguas, asistente de F8b).
   que una reducción grande en una serie corta puede ser una falsa alarma (Connors et al. 2014).
 - **Requisitos mínimos** (`requirements`): tres grupos (distribución, maduros, serie) con sus requisitos, el valor, el
   objetivo, el progreso 0–1 y la fuente. La pestaña Evaluación UICN los pinta como barras que pasan del rojo al verde.
-- Los umbrales marcados «BioDex» en la bibliografía (90 % de completitud, 5 días, 5 g. l., CV > 1) son convenciones de
+- Los umbrales marcados «BioDex» en la bibliografía (90 % de completitud, 5 ocasiones, 50 % de frontera, esfuerzo entre
+  0,5× y 2× la mediana, 5 g. l., CV > 1) son convenciones de
   trabajo documentadas, no cifras de la UICN: se revisan con quien evalúe para la Lista Roja.
 
 ## Series temporales: criterios A y C1

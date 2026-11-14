@@ -76,3 +76,14 @@ el resto, generalizada según `species_sensitivity.level`).
 - `species_photos` se borra en cascada con su especie, y `species_photo_files` con su `species_photos`.
 - Tokens, verificaciones, miembros, invitaciones, intentos de invitación y métricas se borran en cascada con su usuario o catálogo.
 - Salir o ser expulsado borra la fila de `catalog_members` (no hay rol «ex-miembro»); sus marcas se quedan.
+
+## Migración 017: esfuerzo y modo búsqueda de las visitas (F11j)
+
+| Tabla | Cambio |
+|---|---|
+| `visits` | `effort_protocol` ENUM free·timed·transect (por defecto free), `effort_target` (min o m), `blind` (0/1; una vez 0 no vuelve a 1), `visit_kind` ENUM exploratory·repeat, y lo que el servidor calcula del recorrido: `active_seconds`, `distance_m`, `tracked_seconds`, `track_gaps`, `target_met`, `track_complete`, `covered_cells` (JSON de celdas de 2 km) |
+| `sites` | `effort_protocol`, `effort_target`: búsqueda por defecto del sitio (la de su última visita) |
+| `visit_tracks` (nueva) | PK `visitID` → `visits` (cascada), `points` JSON `[[lat, lon, t, precisión, tÚltimo], …]`, `pauses` JSON, `n_points`. Aparte de `visits` para que el pull no lo arrastre; solo lo lee la exportación |
+
+Las visitas anteriores quedan con `effort_protocol = free` y `blind = 0`. El diseño de muestreo y el método de
+referencia no tienen tabla: son claves de `species_parameters` y su historial está en `access_log` (`docs/parametros.md`).

@@ -175,7 +175,8 @@ export function mountMarks(el, { species, catalog, levels = [], sensitivity = nu
     refresh();
   });
 
-  const unsubscribe = subscribe((key) => { if (key === 'sync' && !state.sync.running) refresh(); });
+  // 'visit': entrar o salir del modo búsqueda cambia qué marcas se ven (js/blind.js).
+  const unsubscribe = subscribe((key) => { if ((key === 'sync' && !state.sync.running) || key === 'visit') refresh(); });
   refresh();
   return { refresh, destroy: () => { alive = false; unsubscribe(); } };
 }

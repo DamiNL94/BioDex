@@ -105,7 +105,7 @@ const ARTEMISIA = "9918";
 
 function cleanup(PDO $pdo): void {
     $in = "SELECT id FROM catalogs WHERE name LIKE 'test-f11g %'";
-    foreach (["species_parameters", "species_locations", "species_assessments", "species_metrics", "access_log", "occurrences", "impacts"] as $t) {
+    foreach (["species_parameters", "species_locations", "species_assessments", "species_metrics", "access_log", "occurrences", "impacts", "visits"] as $t) {
         $pdo->exec("DELETE FROM {$t} WHERE catalog_id IN ({$in})");
     }
     $pdo->exec("DELETE FROM catalogs WHERE name LIKE 'test-f11g %'");
@@ -247,20 +247,38 @@ check("un hecho solo admite yes/no/unknown → 400", $code === 400, "HTTP {$code
 [, $a] = http("GET", "{$base}/assessment", null, $o);
 check("un solo día de campo: AOO inferida (cota inferior) y B «calidad insuficiente» (tabla 3.1)",
     ($a["result"]["byCriterion"]["B"]["status"] ?? null) === "low_quality" && ($a["inputs"]["B"]["quality"]["aoo"] ?? null) === "inferred"
-    && ($a["sufficiency"][0]["id"] ?? null) === "range" && ($a["sufficiency"][0]["items"][0]["value"] ?? null) === 1,
+    && ($a["sufficiency"][0]["id"] ?? null) === "range" && ($a["sufficiency"][0]["items"][0]["value"] ?? null) === 0,
     json_encode([$a["result"]["byCriterion"]["B"]["status"] ?? null, $a["inputs"]["B"]["quality"] ?? null, $a["completeness"] ?? null]));
-// Seguimiento: cuatro días más volviendo a los dos núcleos (presencia sin recuento) → 5 días y cada celda reencontrada.
+// Seguimiento (F11j): cinco visitas con protocolo (tiempo fijo de 30 min, modo búsqueda, recorrido GPS) que vuelven a los
+// dos núcleos y rodean la celda del primero → 5 ocasiones válidas, cada celda reencontrada y la frontera prospectada.
+// Recorrido sintético: la vuelta a la celda (150 m por fuera), de un núcleo al otro y 25 min de búsqueda parado.
+$cores = [[37.0950, -3.3970], [37.1200, -3.3700]];
+$u = toUtm(...$cores[0]);
+$corner = fn(int $sx, int $sy) => [round($cores[0][0] + ((floor($u["northing"] / 2000) + 0.5) * 2000 - $u["northing"] + $sy * 1150) / 111195, 6),
+    round($cores[0][1] + ((floor($u["easting"] / 2000) + 0.5) * 2000 - $u["easting"] + $sx * 1150) / (111195 * cos(deg2rad($cores[0][0]))), 6)];
+$route = [$cores[0], $corner(-1, -1), $corner(1, -1), $corner(1, 1), $corner(-1, 1), $corner(-1, -1), $cores[0], $cores[1]];
 $revisits = [];
-foreach (["2026-09-01", "2026-09-10", "2026-09-20", "2026-10-01"] as $d) {
-    foreach ([[37.0950, -3.3970], [37.1200, -3.3700]] as [$lat, $lon]) {
-        $revisits[] = ["occurrenceID" => uuidV4(), "taxonID" => ARTEMISIA, "eventDate" => "{$d}T10:00:00+02:00", "decimalLatitude" => $lat,
+$protoVisits = [];
+foreach (["2026-09-01", "2026-09-10", "2026-09-20", "2026-10-01", "2026-10-08"] as $d) {
+    $vid = uuidV4();
+    $t0 = strtotime("{$d}T08:00:00Z");
+    $track = [];
+    foreach ($route as $i => [$lat, $lon]) $track[] = [$lat, $lon, $t0 + 100 * $i, 5, $t0 + 100 * $i + ($i === count($route) - 1 ? 1500 : 0)];
+    $end = gmdate("Y-m-d\TH:i:s", $t0 + 100 * (count($route) - 1) + 1500) . ".000Z";
+    $protoVisits[] = ["visitID" => $vid, "siteID" => null, "protocol" => "timed_search", "status" => "closed", "eventStart" => "{$d}T08:00:00.000Z", "eventEnd" => $end,
+        "species" => [ARTEMISIA], "effortProtocol" => "timed", "effortTarget" => 30, "blind" => true, "visitKind" => "repeat", "track" => $track, "pauses" => [],
+        "clientUpdatedAt" => $now()];
+    foreach ($cores as [$lat, $lon]) {
+        $revisits[] = ["occurrenceID" => uuidV4(), "taxonID" => ARTEMISIA, "visitID" => $vid, "eventDate" => "{$d}T10:00:00+02:00", "decimalLatitude" => $lat,
             "decimalLongitude" => $lon, "coordinateUncertaintyInMeters" => 10, "individualCount" => 5, "clientUpdatedAt" => $now()];
     }
 }
-[$code, $r] = $push($o, ["occurrences" => $revisits]);
-check("8 marcas de seguimiento en 4 días más → accepted", $code === 200 && count(array_filter($r["results"] ?? [], fn($x) => $x["status"] === "accepted")) === 8, json_encode($r));
+[$code, $r] = $push($o, ["visits" => $protoVisits, "occurrences" => $revisits]);
+check("5 visitas con protocolo y sus 10 marcas de seguimiento → accepted", $code === 200 && count(array_filter($r["results"] ?? [], fn($x) => $x["status"] === "accepted")) === 10
+    && count(array_filter($r["visitResults"] ?? [], fn($x) => $x["status"] === "accepted")) === 5, json_encode($r));
 [, $a] = http("GET", "{$base}/assessment", null, $o);
-check("5 días y completitud del 100 %: EOO y AOO estimadas", ($a["completeness"]["occasions"] ?? null) === 5 && ($a["completeness"]["completenessPct"] ?? null) == 100
+check("5 ocasiones válidas, completitud del 100 % y frontera prospectada: EOO y AOO estimadas", ($a["completeness"]["occasions"] ?? null) === 5
+    && ($a["completeness"]["completenessPct"] ?? null) == 100 && ($a["completeness"]["frontierPct"] ?? 0) >= 50
     && ($a["inputs"]["B"]["quality"]["aoo"] ?? null) === "estimated" && ($a["inputs"]["B"]["quality"]["eoo"] ?? null) === "estimated", json_encode($a["completeness"] ?? null));
 check("maduros con 5 parcelas (< 10): el total es inferido", ($a["mature"]["totalQuality"] ?? null) === "inferred" && ($a["inputs"]["C"]["quality"]["mature"] ?? null) === "inferred",
     json_encode($a["mature"] ?? null));
@@ -288,7 +306,7 @@ $row = $pdo->query("SELECT category, inputs, result FROM species_assessments WHE
 $res = json_decode($row["result"] ?? "{}", true);
 $inp = json_decode($row["inputs"] ?? "{}", true);
 check("…con la categoría y los cuantificadores del servidor, no los del dispositivo", ($row["category"] ?? null) === "EN" && ($res["computedBy"] ?? null) === "server"
-    && ($res["quantifiers"]["nPoints"] ?? null) === 13 && ($inp["B"]["locations"] ?? null) === 2 && ($inp["C"]["mature"]["min"] ?? null) === 50,
+    && ($res["quantifiers"]["nPoints"] ?? null) === 15 && ($inp["B"]["locations"] ?? null) === 2 && ($inp["C"]["mature"]["min"] ?? null) === 50,
     json_encode([$row["category"] ?? null, $res["criteriaString"] ?? null, $inp["B"]["locations"] ?? null]));
 
 section("Exportación: evaluación por especie, subpoblaciones e impactos");

@@ -1,101 +1,213 @@
 {
- "description": "Casos compartidos de la suficiencia de datos (shared/iucn-sufficiency.js · backend/Lib/sufficiency.php) y de la calidad mínima de la tabla 3.1 en el motor. Los ejecutan node shared/iucn-engine.test.js y php backend/bin/test-sufficiency.php: mismos resultados en JS y PHP. Las cifras de Chao2 están comprobadas a mano en el nombre de cada caso.",
+ "description": "Casos compartidos de la suficiencia de datos (shared/iucn-sufficiency.js · backend/Lib/sufficiency.php) y de la calidad mínima de la tabla 3.1 en el motor. Los ejecutan node shared/iucn-engine.test.js y php backend/bin/test-sufficiency.php: mismos resultados en JS y PHP. Las cifras de Chao2, de la frontera y de las exclusiones están comprobadas a mano en el nombre de cada caso (F11j: las ocasiones son visitas válidas y comparables, `visits`; `x`, `y` en metros UTM).",
  "completeness": [
   {
-   "name": "5 días, 4 celdas (incidencias 4, 2, 1, 1): Chao2 = 4 + (4/5)·2·1/(2·2) = 4,4 → 90,9 %; una celda con 3 ausencias; fuera la imprecisa y la borrada",
+   "name": "5 ocasiones válidas, 4 celdas (incidencias 4, 2, 1, 1): Chao2 = 4 + (4/5)·2·1/(2·2) = 4,4 → 90,9 %; frontera 10 de 14 = 71,4 %; 13 celdas cubiertas sin detección, 1 confirmada (3 ocasiones); fuera la imprecisa, la borrada y la ausencia; la suelta de (0,0) no cambia la incidencia",
+   "taxonID": "sp1",
    "records": [
     {
-     "occurrenceID": "a1",
-     "x": 100,
-     "y": 100,
-     "eventDate": "2024-05-01T10:00:00Z",
-     "occurrenceStatus": "present"
-    },
-    {
-     "occurrenceID": "b1",
-     "x": 2500,
-     "y": 100,
-     "eventDate": "2024-05-01T10:00:00Z",
-     "occurrenceStatus": "present"
-    },
-    {
-     "occurrenceID": "a2",
-     "x": 120,
-     "y": 100,
-     "eventDate": "2024-05-10T10:00:00Z",
-     "occurrenceStatus": "present"
-    },
-    {
-     "occurrenceID": "c1",
-     "x": 4500,
-     "y": 100,
-     "eventDate": "2024-05-10T10:00:00Z",
-     "occurrenceStatus": "present"
-    },
-    {
-     "occurrenceID": "a3",
-     "x": 130,
-     "y": 100,
-     "eventDate": "2024-06-01T10:00:00Z",
-     "occurrenceStatus": "present"
-    },
-    {
-     "occurrenceID": "b2",
-     "x": 2600,
-     "y": 100,
-     "eventDate": "2024-06-01T10:00:00Z",
-     "occurrenceStatus": "present"
-    },
-    {
-     "occurrenceID": "e1",
-     "x": 8000,
-     "y": 100,
-     "eventDate": "2024-06-01T10:00:00Z",
-     "occurrenceStatus": "absent"
-    },
-    {
-     "occurrenceID": "d1",
-     "x": 100,
-     "y": 2500,
-     "eventDate": "2024-06-15T10:00:00Z",
-     "occurrenceStatus": "present"
-    },
-    {
-     "occurrenceID": "e2",
-     "x": 8000,
-     "y": 100,
-     "eventDate": "2024-06-15T10:00:00Z",
-     "occurrenceStatus": "absent"
-    },
-    {
-     "occurrenceID": "a4",
-     "x": 140,
-     "y": 100,
-     "eventDate": "2024-07-01T10:00:00Z",
-     "occurrenceStatus": "present"
-    },
-    {
-     "occurrenceID": "e3",
-     "x": 8000,
-     "y": 100,
-     "eventDate": "2024-07-01T10:00:00Z",
-     "occurrenceStatus": "absent"
-    },
-    {
-     "occurrenceID": "z1",
-     "x": 9000,
-     "y": 9000,
-     "eventDate": "2024-07-01T10:00:00Z",
+     "occurrenceID": "o1",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
      "occurrenceStatus": "present",
+     "visitID": "v1"
+    },
+    {
+     "occurrenceID": "o2",
+     "x": 3000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "v1"
+    },
+    {
+     "occurrenceID": "o3",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "v2"
+    },
+    {
+     "occurrenceID": "o4",
+     "x": 5000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "v2"
+    },
+    {
+     "occurrenceID": "o5",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "v3"
+    },
+    {
+     "occurrenceID": "o6",
+     "x": 3000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "v3"
+    },
+    {
+     "occurrenceID": "o7",
+     "x": 1000,
+     "y": 3000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "v4"
+    },
+    {
+     "occurrenceID": "o8",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "v5"
+    },
+    {
+     "occurrenceID": "o9",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present"
+    },
+    {
+     "occurrenceID": "o10",
+     "x": 11000,
+     "y": 11000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "v1",
      "coordinateUncertaintyInMeters": 5000
     },
     {
-     "occurrenceID": "z2",
-     "x": 9000,
-     "y": 9000,
-     "eventDate": "2024-07-02T10:00:00Z",
+     "occurrenceID": "o11",
+     "x": 13000,
+     "y": 13000,
+     "eventDate": "2025-05-01T10:00:00Z",
      "occurrenceStatus": "present",
-     "deletedAt": "2024-07-03T00:00:00Z"
+     "visitID": "v1",
+     "deletedAt": "2025-06-01T00:00:00Z"
+    },
+    {
+     "occurrenceID": "o12",
+     "x": 15000,
+     "y": 15000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "absent",
+     "visitID": "v2"
+    }
+   ],
+   "visits": [
+    {
+     "visitID": "v1",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "0,0",
+      "1,0",
+      "0,-1",
+      "1,-1",
+      "-1,0"
+     ]
+    },
+    {
+     "visitID": "v2",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "0,0",
+      "2,0",
+      "2,-1",
+      "3,0",
+      "1,1"
+     ]
+    },
+    {
+     "visitID": "v3",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "0,0",
+      "1,0",
+      "2,1",
+      "1,-1",
+      "4,0"
+     ]
+    },
+    {
+     "visitID": "v4",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "0,1",
+      "0,2",
+      "-1,1",
+      "1,1",
+      "4,0"
+     ]
+    },
+    {
+     "visitID": "v5",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "0,0",
+      "-1,-1",
+      "4,0",
+      "4,1",
+      "4,2"
+     ]
     }
    ],
    "expect": {
@@ -105,8 +217,24 @@
     "q2": 1,
     "chao2": 4.4,
     "completenessPct": 90.9,
-    "absentCells": 1,
-    "confirmedAbsentCells": 1
+    "absentCells": 13,
+    "confirmedAbsentCells": 1,
+    "coveredCells": 17,
+    "frontierCells": 14,
+    "frontierCovered": 10,
+    "frontierPct": 71.4,
+    "cellsAll": 4,
+    "protocol": "timed",
+    "medianEffort": 30,
+    "considered": 5,
+    "excluded": {
+     "free": 0,
+     "notBlind": 0,
+     "effort": 0,
+     "track": 0,
+     "protocol": 0,
+     "range": 0
+    }
    },
    "expectQuality": {
     "eoo": "estimated",
@@ -114,67 +242,413 @@
    }
   },
   {
-   "name": "3 días: Chao2 = 3 (Q1 = 1) → 100 %, pero menos de 5 días: inferidas",
+   "name": "Visita no ciega excluida: su presencia en una celda nueva (3,1) no entra en Chao2 (sigue 4,4 → 90,9 %) pero sí en las celdas con presencia (5) y en la frontera (13 de 18 = 72,2 %)",
+   "taxonID": "sp1",
    "records": [
     {
-     "occurrenceID": "a1",
-     "x": 100,
-     "y": 100,
-     "eventDate": "2024-05-01T10:00:00Z",
-     "occurrenceStatus": "present"
+     "occurrenceID": "o13",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "v1"
     },
     {
-     "occurrenceID": "b1",
-     "x": 2500,
-     "y": 100,
-     "eventDate": "2024-05-01T10:00:00Z",
-     "occurrenceStatus": "present"
+     "occurrenceID": "o14",
+     "x": 3000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "v1"
     },
     {
-     "occurrenceID": "a2",
-     "x": 120,
-     "y": 100,
-     "eventDate": "2024-05-10T10:00:00Z",
-     "occurrenceStatus": "present"
+     "occurrenceID": "o15",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "v2"
     },
     {
-     "occurrenceID": "c1",
-     "x": 4500,
-     "y": 100,
-     "eventDate": "2024-05-10T10:00:00Z",
-     "occurrenceStatus": "present"
+     "occurrenceID": "o16",
+     "x": 5000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "v2"
     },
     {
-     "occurrenceID": "a3",
-     "x": 130,
-     "y": 100,
-     "eventDate": "2024-06-01T10:00:00Z",
-     "occurrenceStatus": "present"
+     "occurrenceID": "o17",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "v3"
     },
     {
-     "occurrenceID": "b2",
-     "x": 2600,
-     "y": 100,
-     "eventDate": "2024-06-01T10:00:00Z",
-     "occurrenceStatus": "present"
+     "occurrenceID": "o18",
+     "x": 3000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "v3"
     },
     {
-     "occurrenceID": "e1",
-     "x": 8000,
-     "y": 100,
-     "eventDate": "2024-06-01T10:00:00Z",
-     "occurrenceStatus": "absent"
+     "occurrenceID": "o19",
+     "x": 1000,
+     "y": 3000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "v4"
+    },
+    {
+     "occurrenceID": "o20",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "v5"
+    },
+    {
+     "occurrenceID": "o21",
+     "x": 7000,
+     "y": 3000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "v6"
+    }
+   ],
+   "visits": [
+    {
+     "visitID": "v1",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "0,0",
+      "1,0",
+      "0,-1",
+      "1,-1",
+      "-1,0"
+     ]
+    },
+    {
+     "visitID": "v2",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "0,0",
+      "2,0",
+      "2,-1",
+      "3,0",
+      "1,1"
+     ]
+    },
+    {
+     "visitID": "v3",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "0,0",
+      "1,0",
+      "2,1",
+      "1,-1",
+      "4,0"
+     ]
+    },
+    {
+     "visitID": "v4",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "0,1",
+      "0,2",
+      "-1,1",
+      "1,1",
+      "4,0"
+     ]
+    },
+    {
+     "visitID": "v5",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "0,0",
+      "-1,-1",
+      "4,0",
+      "4,1",
+      "4,2"
+     ]
+    },
+    {
+     "visitID": "v6",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": false,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "3,1",
+      "3,2"
+     ]
+    }
+   ],
+   "expect": {
+    "occasions": 5,
+    "cellsPresent": 4,
+    "q1": 2,
+    "q2": 1,
+    "chao2": 4.4,
+    "completenessPct": 90.9,
+    "absentCells": 13,
+    "confirmedAbsentCells": 1,
+    "coveredCells": 17,
+    "frontierCells": 18,
+    "frontierCovered": 13,
+    "frontierPct": 72.2,
+    "cellsAll": 5,
+    "protocol": "timed",
+    "medianEffort": 30,
+    "considered": 6,
+    "excluded": {
+     "free": 0,
+     "notBlind": 1,
+     "effort": 0,
+     "track": 0,
+     "protocol": 0,
+     "range": 0
+    }
+   },
+   "expectQuality": {
+    "eoo": "estimated",
+    "aoo": "estimated"
+   }
+  },
+  {
+   "name": "Protocolo libre excluido: 3 ocasiones válidas y 2 libres (las visitas anteriores a F11j) → menos de 5 ocasiones: inferidas",
+   "taxonID": "sp1",
+   "records": [
+    {
+     "occurrenceID": "o22",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "v1"
+    },
+    {
+     "occurrenceID": "o23",
+     "x": 3000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "v1"
+    },
+    {
+     "occurrenceID": "o24",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "v2"
+    },
+    {
+     "occurrenceID": "o25",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "v3"
+    },
+    {
+     "occurrenceID": "o26",
+     "x": 3000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "v3"
+    },
+    {
+     "occurrenceID": "o27",
+     "x": 5000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "old1"
+    },
+    {
+     "occurrenceID": "o28",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "old2"
+    }
+   ],
+   "visits": [
+    {
+     "visitID": "v1",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "0,0",
+      "1,0",
+      "0,-1",
+      "1,-1",
+      "-1,0"
+     ]
+    },
+    {
+     "visitID": "v2",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "0,0",
+      "2,0",
+      "2,-1",
+      "3,0",
+      "1,1"
+     ]
+    },
+    {
+     "visitID": "v3",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "0,0",
+      "1,0",
+      "2,1",
+      "1,-1",
+      "4,0"
+     ]
+    },
+    {
+     "visitID": "old1",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ]
+    },
+    {
+     "visitID": "old2",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "free",
+     "effortTarget": null,
+     "blind": false,
+     "targetMet": false,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "0,0"
+     ]
     }
    ],
    "expect": {
     "occasions": 3,
-    "cellsPresent": 3,
-    "q1": 1,
+    "cellsPresent": 2,
+    "q1": 0,
     "q2": 1,
-    "chao2": 3,
+    "chao2": 2,
     "completenessPct": 100,
-    "absentCells": 1,
-    "confirmedAbsentCells": 0
+    "absentCells": 8,
+    "confirmedAbsentCells": 0,
+    "coveredCells": 11,
+    "frontierCells": 12,
+    "frontierCovered": 7,
+    "frontierPct": 58.3,
+    "cellsAll": 3,
+    "protocol": "timed",
+    "medianEffort": 30,
+    "considered": 5,
+    "excluded": {
+     "free": 2,
+     "notBlind": 0,
+     "effort": 0,
+     "track": 0,
+     "protocol": 0,
+     "range": 0
+    }
    },
    "expectQuality": {
     "eoo": "inferred",
@@ -182,8 +656,1380 @@
    }
   },
   {
-   "name": "Sin registros",
-   "records": [],
+   "name": "Esfuerzo: una visita sin alcanzar el objetivo (excluida por esfuerzo) y, con mediana de 30 min, una de 5 min y otra de 120 min fuera de 15–60 min (fuera de rango); quedan 5",
+   "taxonID": "sp1",
+   "records": [
+    {
+     "occurrenceID": "o29",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "v1"
+    },
+    {
+     "occurrenceID": "o30",
+     "x": 3000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "v1"
+    },
+    {
+     "occurrenceID": "o31",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "v2"
+    },
+    {
+     "occurrenceID": "o32",
+     "x": 5000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "v2"
+    },
+    {
+     "occurrenceID": "o33",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "v3"
+    },
+    {
+     "occurrenceID": "o34",
+     "x": 3000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "v3"
+    },
+    {
+     "occurrenceID": "o35",
+     "x": 1000,
+     "y": 3000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "v4"
+    },
+    {
+     "occurrenceID": "o36",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "v5"
+    },
+    {
+     "occurrenceID": "o37",
+     "x": 7000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "short"
+    },
+    {
+     "occurrenceID": "o38",
+     "x": 7000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "long"
+    },
+    {
+     "occurrenceID": "o39",
+     "x": 7000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "unmet"
+    }
+   ],
+   "visits": [
+    {
+     "visitID": "v1",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "0,0",
+      "1,0",
+      "0,-1",
+      "1,-1",
+      "-1,0"
+     ]
+    },
+    {
+     "visitID": "v2",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "0,0",
+      "2,0",
+      "2,-1",
+      "3,0",
+      "1,1"
+     ]
+    },
+    {
+     "visitID": "v3",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "0,0",
+      "1,0",
+      "2,1",
+      "1,-1",
+      "4,0"
+     ]
+    },
+    {
+     "visitID": "v4",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "0,1",
+      "0,2",
+      "-1,1",
+      "1,1",
+      "4,0"
+     ]
+    },
+    {
+     "visitID": "v5",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "0,0",
+      "-1,-1",
+      "4,0",
+      "4,1",
+      "4,2"
+     ]
+    },
+    {
+     "visitID": "short",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 5,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 300,
+     "distanceM": 900,
+     "coveredCells": [
+      "3,0"
+     ]
+    },
+    {
+     "visitID": "long",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 120,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 7200,
+     "distanceM": 900,
+     "coveredCells": [
+      "3,0"
+     ]
+    },
+    {
+     "visitID": "unmet",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": false,
+     "trackComplete": true,
+     "activeSeconds": 600,
+     "distanceM": 900,
+     "coveredCells": [
+      "3,0"
+     ]
+    }
+   ],
+   "expect": {
+    "occasions": 5,
+    "cellsPresent": 4,
+    "q1": 2,
+    "q2": 1,
+    "chao2": 4.4,
+    "completenessPct": 90.9,
+    "absentCells": 12,
+    "confirmedAbsentCells": 1,
+    "coveredCells": 17,
+    "frontierCells": 16,
+    "frontierCovered": 11,
+    "frontierPct": 68.8,
+    "cellsAll": 5,
+    "protocol": "timed",
+    "medianEffort": 30,
+    "considered": 8,
+    "excluded": {
+     "free": 0,
+     "notBlind": 0,
+     "effort": 1,
+     "track": 0,
+     "protocol": 0,
+     "range": 2
+    }
+   },
+   "expectQuality": {
+    "eoo": "estimated",
+    "aoo": "estimated"
+   }
+  },
+  {
+   "name": "Mezcla de protocolos: 5 de tiempo fijo y 2 transectos → se usa el tiempo fijo y los 2 transectos quedan fuera (otro protocolo)",
+   "taxonID": "sp1",
+   "records": [
+    {
+     "occurrenceID": "o40",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "v1"
+    },
+    {
+     "occurrenceID": "o41",
+     "x": 3000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "v1"
+    },
+    {
+     "occurrenceID": "o42",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "v2"
+    },
+    {
+     "occurrenceID": "o43",
+     "x": 5000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "v2"
+    },
+    {
+     "occurrenceID": "o44",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "v3"
+    },
+    {
+     "occurrenceID": "o45",
+     "x": 3000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "v3"
+    },
+    {
+     "occurrenceID": "o46",
+     "x": 1000,
+     "y": 3000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "v4"
+    },
+    {
+     "occurrenceID": "o47",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "v5"
+    },
+    {
+     "occurrenceID": "o48",
+     "x": 7000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "t1"
+    }
+   ],
+   "visits": [
+    {
+     "visitID": "v1",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "0,0",
+      "1,0",
+      "0,-1",
+      "1,-1",
+      "-1,0"
+     ]
+    },
+    {
+     "visitID": "v2",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "0,0",
+      "2,0",
+      "2,-1",
+      "3,0",
+      "1,1"
+     ]
+    },
+    {
+     "visitID": "v3",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "0,0",
+      "1,0",
+      "2,1",
+      "1,-1",
+      "4,0"
+     ]
+    },
+    {
+     "visitID": "v4",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "0,1",
+      "0,2",
+      "-1,1",
+      "1,1",
+      "4,0"
+     ]
+    },
+    {
+     "visitID": "v5",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "0,0",
+      "-1,-1",
+      "4,0",
+      "4,1",
+      "4,2"
+     ]
+    },
+    {
+     "visitID": "t1",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "transect",
+     "effortTarget": 1000,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 1200,
+     "coveredCells": [
+      "3,0"
+     ]
+    },
+    {
+     "visitID": "t2",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "transect",
+     "effortTarget": 1000,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 1100,
+     "coveredCells": [
+      "3,1"
+     ]
+    }
+   ],
+   "expect": {
+    "occasions": 5,
+    "cellsPresent": 4,
+    "q1": 2,
+    "q2": 1,
+    "chao2": 4.4,
+    "completenessPct": 90.9,
+    "absentCells": 12,
+    "confirmedAbsentCells": 1,
+    "coveredCells": 17,
+    "frontierCells": 16,
+    "frontierCovered": 11,
+    "frontierPct": 68.8,
+    "cellsAll": 5,
+    "protocol": "timed",
+    "medianEffort": 30,
+    "considered": 7,
+    "excluded": {
+     "free": 0,
+     "notBlind": 0,
+     "effort": 0,
+     "track": 0,
+     "protocol": 2,
+     "range": 0
+    }
+   },
+   "expectQuality": {
+    "eoo": "estimated",
+    "aoo": "estimated"
+   }
+  },
+  {
+   "name": "Mezcla con más transectos (3) que búsquedas con tiempo (2): se usan los transectos, mediana 1100 m; a igualdad ganaría el tiempo fijo",
+   "taxonID": "sp1",
+   "records": [
+    {
+     "occurrenceID": "o49",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "t1"
+    },
+    {
+     "occurrenceID": "o50",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "t2"
+    },
+    {
+     "occurrenceID": "o51",
+     "x": 3000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "t3"
+    },
+    {
+     "occurrenceID": "o52",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "v1"
+    }
+   ],
+   "visits": [
+    {
+     "visitID": "t1",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "transect",
+     "effortTarget": 1000,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 1000,
+     "coveredCells": [
+      "0,0"
+     ]
+    },
+    {
+     "visitID": "t2",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "transect",
+     "effortTarget": 1000,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 1100,
+     "coveredCells": [
+      "0,0",
+      "1,0"
+     ]
+    },
+    {
+     "visitID": "t3",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "transect",
+     "effortTarget": 1000,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 1500,
+     "coveredCells": [
+      "1,0",
+      "2,0"
+     ]
+    },
+    {
+     "visitID": "v1",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "0,0"
+     ]
+    },
+    {
+     "visitID": "v2",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "0,0"
+     ]
+    }
+   ],
+   "expect": {
+    "occasions": 3,
+    "cellsPresent": 2,
+    "q1": 1,
+    "q2": 1,
+    "chao2": 2,
+    "completenessPct": 100,
+    "absentCells": 1,
+    "confirmedAbsentCells": 0,
+    "coveredCells": 3,
+    "frontierCells": 10,
+    "frontierCovered": 1,
+    "frontierPct": 10,
+    "cellsAll": 2,
+    "protocol": "transect",
+    "medianEffort": 1100,
+    "considered": 5,
+    "excluded": {
+     "free": 0,
+     "notBlind": 0,
+     "effort": 0,
+     "track": 0,
+     "protocol": 2,
+     "range": 0
+    }
+   },
+   "expectQuality": {
+    "eoo": "inferred",
+    "aoo": "inferred"
+   }
+  },
+  {
+   "name": "Celdas cubiertas sin detección: 5 ocasiones que cubren 3×3 celdas alrededor de la única ocupada, cada una 3 o más veces → Chao2 = 1 (100 %), frontera 8 de 8, 8 ausencias confirmadas",
+   "taxonID": "sp1",
+   "records": [
+    {
+     "occurrenceID": "o53",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "a"
+    },
+    {
+     "occurrenceID": "o54",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "b"
+    },
+    {
+     "occurrenceID": "o55",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "c"
+    },
+    {
+     "occurrenceID": "o56",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "d"
+    },
+    {
+     "occurrenceID": "o57",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "e"
+    }
+   ],
+   "visits": [
+    {
+     "visitID": "a",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "-1,-1",
+      "0,-1",
+      "1,-1",
+      "-1,0",
+      "0,0",
+      "1,0",
+      "-1,1",
+      "0,1",
+      "1,1"
+     ]
+    },
+    {
+     "visitID": "b",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "-1,-1",
+      "0,-1",
+      "1,-1",
+      "-1,0",
+      "0,0",
+      "1,0",
+      "-1,1",
+      "0,1",
+      "1,1"
+     ]
+    },
+    {
+     "visitID": "c",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "-1,-1",
+      "0,-1",
+      "1,-1",
+      "-1,0",
+      "0,0",
+      "1,0",
+      "-1,1",
+      "0,1",
+      "1,1"
+     ]
+    },
+    {
+     "visitID": "d",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "-1,-1",
+      "0,-1",
+      "1,-1",
+      "-1,0",
+      "0,0",
+      "1,0",
+      "-1,1",
+      "0,1",
+      "1,1"
+     ]
+    },
+    {
+     "visitID": "e",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "-1,-1",
+      "0,-1",
+      "1,-1",
+      "-1,0",
+      "0,0",
+      "1,0",
+      "-1,1",
+      "0,1",
+      "1,1"
+     ]
+    }
+   ],
+   "expect": {
+    "occasions": 5,
+    "cellsPresent": 1,
+    "q1": 0,
+    "q2": 0,
+    "chao2": 1,
+    "completenessPct": 100,
+    "absentCells": 8,
+    "confirmedAbsentCells": 8,
+    "coveredCells": 9,
+    "frontierCells": 8,
+    "frontierCovered": 8,
+    "frontierPct": 100,
+    "cellsAll": 1,
+    "protocol": "timed",
+    "medianEffort": 30,
+    "considered": 5,
+    "excluded": {
+     "free": 0,
+     "notBlind": 0,
+     "effort": 0,
+     "track": 0,
+     "protocol": 0,
+     "range": 0
+    }
+   },
+   "expectQuality": {
+    "eoo": "estimated",
+    "aoo": "estimated"
+   }
+  },
+  {
+   "name": "Caso trampa: 6 ocasiones que vuelven siempre a las mismas 3 celdas ocupadas → Chao2 = 3 (100 %) pero frontera 0 de 12: la completitud no vale y la AOO sigue inferida",
+   "taxonID": "sp1",
+   "records": [
+    {
+     "occurrenceID": "o58",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "a"
+    },
+    {
+     "occurrenceID": "o59",
+     "x": 3000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "a"
+    },
+    {
+     "occurrenceID": "o60",
+     "x": 5000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "a"
+    },
+    {
+     "occurrenceID": "o61",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "b"
+    },
+    {
+     "occurrenceID": "o62",
+     "x": 3000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "b"
+    },
+    {
+     "occurrenceID": "o63",
+     "x": 5000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "b"
+    },
+    {
+     "occurrenceID": "o64",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "c"
+    },
+    {
+     "occurrenceID": "o65",
+     "x": 3000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "c"
+    },
+    {
+     "occurrenceID": "o66",
+     "x": 5000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "c"
+    },
+    {
+     "occurrenceID": "o67",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "d"
+    },
+    {
+     "occurrenceID": "o68",
+     "x": 3000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "d"
+    },
+    {
+     "occurrenceID": "o69",
+     "x": 5000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "d"
+    },
+    {
+     "occurrenceID": "o70",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "e"
+    },
+    {
+     "occurrenceID": "o71",
+     "x": 3000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "e"
+    },
+    {
+     "occurrenceID": "o72",
+     "x": 5000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "e"
+    },
+    {
+     "occurrenceID": "o73",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "f"
+    },
+    {
+     "occurrenceID": "o74",
+     "x": 3000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "f"
+    },
+    {
+     "occurrenceID": "o75",
+     "x": 5000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "f"
+    }
+   ],
+   "visits": [
+    {
+     "visitID": "a",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "0,0",
+      "1,0",
+      "2,0"
+     ]
+    },
+    {
+     "visitID": "b",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "0,0",
+      "1,0",
+      "2,0"
+     ]
+    },
+    {
+     "visitID": "c",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "0,0",
+      "1,0",
+      "2,0"
+     ]
+    },
+    {
+     "visitID": "d",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "0,0",
+      "1,0",
+      "2,0"
+     ]
+    },
+    {
+     "visitID": "e",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "0,0",
+      "1,0",
+      "2,0"
+     ]
+    },
+    {
+     "visitID": "f",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "0,0",
+      "1,0",
+      "2,0"
+     ]
+    }
+   ],
+   "expect": {
+    "occasions": 6,
+    "cellsPresent": 3,
+    "q1": 0,
+    "q2": 0,
+    "chao2": 3,
+    "completenessPct": 100,
+    "absentCells": 0,
+    "confirmedAbsentCells": 0,
+    "coveredCells": 3,
+    "frontierCells": 12,
+    "frontierCovered": 0,
+    "frontierPct": 0,
+    "cellsAll": 3,
+    "protocol": "timed",
+    "medianEffort": 30,
+    "considered": 6,
+    "excluded": {
+     "free": 0,
+     "notBlind": 0,
+     "effort": 0,
+     "track": 0,
+     "protocol": 0,
+     "range": 0
+    }
+   },
+   "expectQuality": {
+    "eoo": "inferred",
+    "aoo": "inferred"
+   }
+  },
+  {
+   "name": "Recorrido incompleto o sin celdas (visita generalizada en el dispositivo), visita abierta, borrada y de otra especie: 2 excluidas por recorrido, las otras tres ni se consideran; una visita sin especies objetivo sí cuenta",
+   "taxonID": "sp1",
+   "records": [
+    {
+     "occurrenceID": "o76",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "ok"
+    },
+    {
+     "occurrenceID": "o77",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "gaps"
+    },
+    {
+     "occurrenceID": "o78",
+     "x": 3000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present",
+     "visitID": "open"
+    }
+   ],
+   "visits": [
+    {
+     "visitID": "ok",
+     "status": "closed",
+     "species": [],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "0,0"
+     ]
+    },
+    {
+     "visitID": "gaps",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": false,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "0,0"
+     ]
+    },
+    {
+     "visitID": "gen",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": null
+    },
+    {
+     "visitID": "open",
+     "status": "open",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "1,0"
+     ]
+    },
+    {
+     "visitID": "del",
+     "status": "closed",
+     "species": [
+      "sp1"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "1,0"
+     ],
+     "deletedAt": "2025-06-01T00:00:00Z"
+    },
+    {
+     "visitID": "other",
+     "status": "closed",
+     "species": [
+      "sp2"
+     ],
+     "effortProtocol": "timed",
+     "effortTarget": 30,
+     "blind": true,
+     "targetMet": true,
+     "trackComplete": true,
+     "activeSeconds": 1800,
+     "distanceM": 900,
+     "coveredCells": [
+      "1,0"
+     ]
+    }
+   ],
+   "expect": {
+    "occasions": 1,
+    "cellsPresent": 1,
+    "q1": 1,
+    "q2": 0,
+    "chao2": 1,
+    "completenessPct": 100,
+    "absentCells": 0,
+    "confirmedAbsentCells": 0,
+    "coveredCells": 1,
+    "frontierCells": 10,
+    "frontierCovered": 0,
+    "frontierPct": 0,
+    "cellsAll": 2,
+    "protocol": "timed",
+    "medianEffort": 30,
+    "considered": 3,
+    "excluded": {
+     "free": 0,
+     "notBlind": 0,
+     "effort": 0,
+     "track": 2,
+     "protocol": 0,
+     "range": 0
+    }
+   },
+   "expectQuality": {
+    "eoo": "inferred",
+    "aoo": "inferred"
+   }
+  },
+  {
+   "name": "Marcas sueltas sin ninguna visita: hay presencias (3 celdas) pero ninguna ocasión → sin completitud, inferidas",
+   "taxonID": "sp1",
+   "records": [
+    {
+     "occurrenceID": "o79",
+     "x": 1000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present"
+    },
+    {
+     "occurrenceID": "o80",
+     "x": 3000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present"
+    },
+    {
+     "occurrenceID": "o81",
+     "x": 5000,
+     "y": 1000,
+     "eventDate": "2025-05-01T10:00:00Z",
+     "occurrenceStatus": "present"
+    }
+   ],
+   "visits": [],
    "expect": {
     "occasions": 0,
     "cellsPresent": 0,
@@ -192,7 +2038,59 @@
     "chao2": null,
     "completenessPct": null,
     "absentCells": 0,
-    "confirmedAbsentCells": 0
+    "confirmedAbsentCells": 0,
+    "coveredCells": 0,
+    "frontierCells": 12,
+    "frontierCovered": 0,
+    "frontierPct": 0,
+    "cellsAll": 3,
+    "protocol": null,
+    "medianEffort": null,
+    "considered": 0,
+    "excluded": {
+     "free": 0,
+     "notBlind": 0,
+     "effort": 0,
+     "track": 0,
+     "protocol": 0,
+     "range": 0
+    }
+   },
+   "expectQuality": {
+    "eoo": "inferred",
+    "aoo": "inferred"
+   }
+  },
+  {
+   "name": "Sin registros",
+   "taxonID": "sp1",
+   "records": [],
+   "visits": null,
+   "expect": {
+    "occasions": 0,
+    "cellsPresent": 0,
+    "q1": 0,
+    "q2": 0,
+    "chao2": null,
+    "completenessPct": null,
+    "absentCells": 0,
+    "confirmedAbsentCells": 0,
+    "coveredCells": 0,
+    "frontierCells": 0,
+    "frontierCovered": 0,
+    "frontierPct": null,
+    "cellsAll": 0,
+    "protocol": null,
+    "medianEffort": null,
+    "considered": 0,
+    "excluded": {
+     "free": 0,
+     "notBlind": 0,
+     "effort": 0,
+     "track": 0,
+     "protocol": 0,
+     "range": 0
+    }
    },
    "expectQuality": {
     "eoo": null,
@@ -1611,8 +3509,24 @@
      "q2": 1,
      "chao2": 4.4,
      "completenessPct": 90.9,
-     "absentCells": 1,
-     "confirmedAbsentCells": 1
+     "absentCells": 13,
+     "confirmedAbsentCells": 1,
+     "coveredCells": 17,
+     "frontierCells": 14,
+     "frontierCovered": 10,
+     "frontierPct": 71.4,
+     "cellsAll": 4,
+     "protocol": "timed",
+     "medianEffort": 30,
+     "considered": 5,
+     "excluded": {
+      "free": 0,
+      "notBlind": 0,
+      "effort": 0,
+      "track": 0,
+      "protocol": 0,
+      "range": 0
+     }
     }
    },
    "series": {
@@ -1866,27 +3780,39 @@
      "items": [
       {
        "id": "occasions",
-       "label": "Días de muestreo de la especie",
+       "label": "Esfuerzo estandarizado: ocasiones válidas",
        "value": 5,
        "target": 5,
-       "unit": "días",
+       "unit": "ocasiones",
        "boolean": false,
        "met": true,
        "progress": 1,
-       "ref": "BioDex (Chao2: Colwell y Coddington 1994)",
-       "hint": "Cada día con alguna marca de la especie, presente o ausente."
+       "ref": "BioDex (Chao 1987; Goff et al. 1982)",
+       "hint": "Visitas en modo búsqueda, con tiempo fijo o transecto, que alcanzaron el esfuerzo objetivo con el recorrido completo y un esfuerzo comparable."
       },
       {
        "id": "completeness",
-       "label": "Completitud del muestreo (Chao2 sobre celdas de 2 km)",
+       "label": "Completitud del muestreo (Chao2 sobre celdas de 2 km cubiertas)",
        "value": 90.9,
        "target": 90,
        "unit": "%",
        "boolean": false,
        "met": true,
        "progress": 1,
-       "ref": "Colwell y Coddington 1994; Marsh et al. 2023",
-       "hint": "Sube cuando las celdas ocupadas se vuelven a encontrar en días distintos y deja de aparecer ocupación nueva."
+       "ref": "Chao 1987; Colwell y Coddington 1994; Marsh et al. 2023",
+       "hint": "Sube cuando las celdas ocupadas se vuelven a encontrar en ocasiones distintas y deja de aparecer ocupación nueva."
+      },
+      {
+       "id": "frontier",
+       "label": "Frontera prospectada (celdas vecinas a las ocupadas, cubiertas)",
+       "value": 71.4,
+       "target": 50,
+       "unit": "%",
+       "boolean": false,
+       "met": true,
+       "progress": 1,
+       "ref": "BioDex",
+       "hint": "10 de 14 celdas vecinas cubiertas por una ocasión válida. Volver siempre a las mismas celdas no demuestra que no haya más."
       },
       {
        "id": "eooCells",
@@ -1901,7 +3827,8 @@
        "hint": "Con 20 o más, el EOO es estimado aunque falte completitud."
       }
      ],
-     "note": "Calidad: EOO estimado; AOO estimado. Ausencias: 1 celda sin detección, 1 confirmadas (≥ 3 días).",
+     "note": "Calidad: EOO estimado; AOO estimado. Ausencias: 13 celdas cubiertas sin detección, 1 confirmadas (≥ 3 ocasiones).",
+     "detail": "5 ocasiones usadas (búsqueda con tiempo fijo, mediana 30 min) de 5 visitas · excluidas: ninguna · 17 celdas cubiertas.",
      "met": true
     },
     {
@@ -2049,13 +3976,29 @@
     },
     "completeness": {
      "occasions": 3,
-     "cellsPresent": 3,
-     "q1": 1,
+     "cellsPresent": 2,
+     "q1": 0,
      "q2": 1,
-     "chao2": 3,
+     "chao2": 2,
      "completenessPct": 100,
-     "absentCells": 1,
-     "confirmedAbsentCells": 0
+     "absentCells": 8,
+     "confirmedAbsentCells": 0,
+     "coveredCells": 11,
+     "frontierCells": 12,
+     "frontierCovered": 7,
+     "frontierPct": 58.3,
+     "cellsAll": 3,
+     "protocol": "timed",
+     "medianEffort": 30,
+     "considered": 5,
+     "excluded": {
+      "free": 2,
+      "notBlind": 0,
+      "effort": 0,
+      "track": 0,
+      "protocol": 0,
+      "range": 0
+     }
     }
    },
    "series": null,
@@ -2073,27 +4016,39 @@
      "items": [
       {
        "id": "occasions",
-       "label": "Días de muestreo de la especie",
+       "label": "Esfuerzo estandarizado: ocasiones válidas",
        "value": 3,
        "target": 5,
-       "unit": "días",
+       "unit": "ocasiones",
        "boolean": false,
        "met": false,
        "progress": 0.6,
-       "ref": "BioDex (Chao2: Colwell y Coddington 1994)",
-       "hint": "Cada día con alguna marca de la especie, presente o ausente."
+       "ref": "BioDex (Chao 1987; Goff et al. 1982)",
+       "hint": "Visitas en modo búsqueda, con tiempo fijo o transecto, que alcanzaron el esfuerzo objetivo con el recorrido completo y un esfuerzo comparable."
       },
       {
        "id": "completeness",
-       "label": "Completitud del muestreo (Chao2 sobre celdas de 2 km)",
+       "label": "Completitud del muestreo (Chao2 sobre celdas de 2 km cubiertas)",
        "value": 100,
        "target": 90,
        "unit": "%",
        "boolean": false,
        "met": true,
        "progress": 1,
-       "ref": "Colwell y Coddington 1994; Marsh et al. 2023",
-       "hint": "Sube cuando las celdas ocupadas se vuelven a encontrar en días distintos y deja de aparecer ocupación nueva."
+       "ref": "Chao 1987; Colwell y Coddington 1994; Marsh et al. 2023",
+       "hint": "Sube cuando las celdas ocupadas se vuelven a encontrar en ocasiones distintas y deja de aparecer ocupación nueva."
+      },
+      {
+       "id": "frontier",
+       "label": "Frontera prospectada (celdas vecinas a las ocupadas, cubiertas)",
+       "value": 58.3,
+       "target": 50,
+       "unit": "%",
+       "boolean": false,
+       "met": true,
+       "progress": 1,
+       "ref": "BioDex",
+       "hint": "7 de 12 celdas vecinas cubiertas por una ocasión válida. Volver siempre a las mismas celdas no demuestra que no haya más."
       },
       {
        "id": "eooCells",
@@ -2108,7 +4063,8 @@
        "hint": "Con 20 o más, el EOO es estimado aunque falte completitud."
       }
      ],
-     "note": "Calidad: EOO inferido (cota o indicio); AOO inferido (cota o indicio). Mientras la AOO sea inferida es solo una cota inferior: B2 no se puede cumplir (tabla 3.1 pide estimada). Ausencias: 1 celda sin detección, 0 confirmadas (≥ 3 días).",
+     "note": "Calidad: EOO inferido (cota o indicio); AOO inferido (cota o indicio). Mientras la AOO sea inferida es solo una cota inferior: B2 no se puede cumplir (tabla 3.1 pide estimada). Ausencias: 8 celdas cubiertas sin detección, 0 confirmadas (≥ 3 ocasiones).",
+     "detail": "3 ocasiones usadas (búsqueda con tiempo fijo, mediana 30 min) de 5 visitas · excluidas: 2 de protocolo libre · 11 celdas cubiertas.",
      "met": false
     },
     {
@@ -2213,6 +4169,476 @@
      ],
      "note": "Sin series temporales.",
      "met": false
+    }
+   ]
+  },
+  {
+   "name": "Caso trampa: completitud del 100 % con la frontera sin prospectar → el grupo de distribución no se cumple",
+   "q": {
+    "mature": {
+     "min": 63,
+     "best": 31500,
+     "max": 35500,
+     "quality": {
+      "min": "observed",
+      "best": "estimated",
+      "max": "estimated"
+     },
+     "totalQuality": "estimated",
+     "method": "density",
+     "density": {
+      "mean": 63000,
+      "low": 56000,
+      "high": 71000,
+      "reps": 1000,
+      "plots": 10,
+      "level": 0.9,
+      "method": "bca",
+      "cv": 0.237
+     },
+     "areaKm2": 0.5,
+     "areaSource": "habitat",
+     "nCounted": 10,
+     "nPlots": 10,
+     "plotsRequired": 10,
+     "window": {
+      "from": "2024-05-01T10:00:00.000Z",
+      "to": "2025-05-01T10:00:00.000Z"
+     },
+     "doubleCountPairs": 0,
+     "warnings": []
+    },
+    "completeness": {
+     "occasions": 6,
+     "cellsPresent": 3,
+     "q1": 0,
+     "q2": 0,
+     "chao2": 3,
+     "completenessPct": 100,
+     "absentCells": 0,
+     "confirmedAbsentCells": 0,
+     "coveredCells": 3,
+     "frontierCells": 12,
+     "frontierCovered": 0,
+     "frontierPct": 0,
+     "cellsAll": 3,
+     "protocol": "timed",
+     "medianEffort": 30,
+     "considered": 6,
+     "excluded": {
+      "free": 0,
+      "notBlind": 0,
+      "effort": 0,
+      "track": 0,
+      "protocol": 0,
+      "range": 0
+     }
+    }
+   },
+   "series": {
+    "sites": [
+     {
+      "site": "S1",
+      "name": null,
+      "counts": {
+       "2014": 52,
+       "2015": 50,
+       "2016": 41,
+       "2017": 44,
+       "2018": 37,
+       "2020": 30,
+       "2021": 27,
+       "2022": 26,
+       "2024": 21,
+       "2025": 18,
+       "2026": 17
+      },
+      "included": true,
+      "excluded": null
+     },
+     {
+      "site": "S2",
+      "name": null,
+      "counts": {
+       "2014": 31,
+       "2015": 26,
+       "2016": 29,
+       "2017": 22,
+       "2018": 23,
+       "2020": 17,
+       "2021": 18,
+       "2022": 14,
+       "2024": 11,
+       "2025": 12,
+       "2026": 9
+      },
+      "included": true,
+      "excluded": null
+     },
+     {
+      "site": "S3",
+      "name": null,
+      "counts": {
+       "2014": 18,
+       "2015": 17,
+       "2016": 15,
+       "2017": 16,
+       "2018": 12,
+       "2020": 11,
+       "2021": 9,
+       "2022": 10,
+       "2024": 7,
+       "2025": 6,
+       "2026": 6
+      },
+      "included": true,
+      "excluded": null
+     },
+     {
+      "site": "S4",
+      "name": null,
+      "counts": {
+       "2014": 75,
+       "2015": 71,
+       "2016": 62,
+       "2017": 64,
+       "2018": 55,
+       "2020": 47,
+       "2021": 40,
+       "2022": 41,
+       "2024": 31,
+       "2025": 30,
+       "2026": 26
+      },
+      "included": true,
+      "excluded": null
+     }
+    ],
+    "windowYears": 10,
+    "generationLength": 2,
+    "status": "ok",
+    "reason": null,
+    "years": [
+     {
+      "year": 2014,
+      "visited": true,
+      "total": 176,
+      "sitesVisited": 4,
+      "index": 176
+     },
+     {
+      "year": 2015,
+      "visited": true,
+      "total": 164,
+      "sitesVisited": 4,
+      "index": 164
+     },
+     {
+      "year": 2016,
+      "visited": true,
+      "total": 147,
+      "sitesVisited": 4,
+      "index": 147
+     },
+     {
+      "year": 2017,
+      "visited": true,
+      "total": 146,
+      "sitesVisited": 4,
+      "index": 146
+     },
+     {
+      "year": 2018,
+      "visited": true,
+      "total": 127,
+      "sitesVisited": 4,
+      "index": 127
+     },
+     {
+      "year": 2019,
+      "visited": false,
+      "total": null,
+      "sitesVisited": 0,
+      "index": null
+     },
+     {
+      "year": 2020,
+      "visited": true,
+      "total": 105,
+      "sitesVisited": 4,
+      "index": 105
+     },
+     {
+      "year": 2021,
+      "visited": true,
+      "total": 94,
+      "sitesVisited": 4,
+      "index": 94
+     },
+     {
+      "year": 2022,
+      "visited": true,
+      "total": 91,
+      "sitesVisited": 4,
+      "index": 91
+     },
+     {
+      "year": 2023,
+      "visited": false,
+      "total": null,
+      "sitesVisited": 0,
+      "index": null
+     },
+     {
+      "year": 2024,
+      "visited": true,
+      "total": 70,
+      "sitesVisited": 4,
+      "index": 70
+     },
+     {
+      "year": 2025,
+      "visited": true,
+      "total": 66,
+      "sitesVisited": 4,
+      "index": 66
+     },
+     {
+      "year": 2026,
+      "visited": true,
+      "total": 58,
+      "sitesVisited": 4,
+      "index": 58
+     }
+    ],
+    "nSites": 4,
+    "nYears": 11,
+    "nObs": 44,
+    "firstYear": 2014,
+    "lastYear": 2026,
+    "trend": {
+     "r": -0.091443,
+     "se": 0.007619,
+     "lo": -0.106377,
+     "hi": -0.07651,
+     "phi": 1,
+     "phiRaw": 0.1029,
+     "deviance": 3.9792,
+     "iterations": 4,
+     "converged": true,
+     "annualChangePct": -8.74,
+     "annualChangeLo": -10.09,
+     "annualChangeHi": -7.37,
+     "lo90": -0.103976,
+     "hi90": -0.078911,
+     "annualChangeLo90": -9.88,
+     "annualChangeHi90": -7.59
+    },
+    "df": 39,
+    "power": {
+     "targetPct": 30,
+     "power": 0.9967,
+     "mdrPct": 19.2
+    },
+    "window": {
+     "years": 10,
+     "from": 2016,
+     "to": 2026,
+     "observedYears": 10,
+     "observedPct": 100,
+     "projected": false
+    },
+    "reduction": {
+     "best": 59.93,
+     "min": 53.47,
+     "max": 65.48
+    },
+    "reduction90": {
+     "best": 59.93,
+     "min": 54.57,
+     "max": 64.65
+    },
+    "fluctuation": {
+     "ratio": 2.53,
+     "zeroYear": false,
+     "extreme": false,
+     "nYears": 9
+    },
+    "suggestions": [
+     {
+      "key": "decline_b_v",
+      "value": "yes",
+      "reason": "El IC 95 % de la tasa anual queda por debajo de 0 (-10,1 % a -7,4 % al año): declive continuo de maduros."
+     }
+    ]
+   },
+   "expect": [
+    {
+     "id": "range",
+     "title": "Distribución: EOO y AOO",
+     "criteria": [
+      "B"
+     ],
+     "quality": {
+      "eoo": "inferred",
+      "aoo": "inferred"
+     },
+     "items": [
+      {
+       "id": "occasions",
+       "label": "Esfuerzo estandarizado: ocasiones válidas",
+       "value": 6,
+       "target": 5,
+       "unit": "ocasiones",
+       "boolean": false,
+       "met": true,
+       "progress": 1,
+       "ref": "BioDex (Chao 1987; Goff et al. 1982)",
+       "hint": "Visitas en modo búsqueda, con tiempo fijo o transecto, que alcanzaron el esfuerzo objetivo con el recorrido completo y un esfuerzo comparable."
+      },
+      {
+       "id": "completeness",
+       "label": "Completitud del muestreo (Chao2 sobre celdas de 2 km cubiertas)",
+       "value": 100,
+       "target": 90,
+       "unit": "%",
+       "boolean": false,
+       "met": true,
+       "progress": 1,
+       "ref": "Chao 1987; Colwell y Coddington 1994; Marsh et al. 2023",
+       "hint": "Sube cuando las celdas ocupadas se vuelven a encontrar en ocasiones distintas y deja de aparecer ocupación nueva."
+      },
+      {
+       "id": "frontier",
+       "label": "Frontera prospectada (celdas vecinas a las ocupadas, cubiertas)",
+       "value": 0,
+       "target": 50,
+       "unit": "%",
+       "boolean": false,
+       "met": false,
+       "progress": 0,
+       "ref": "BioDex",
+       "hint": "0 de 12 celdas vecinas cubiertas por una ocasión válida. Volver siempre a las mismas celdas no demuestra que no haya más."
+      },
+      {
+       "id": "eooCells",
+       "label": "Celdas de 2 km con presencia (EOO estable)",
+       "value": 3,
+       "target": 20,
+       "unit": "celdas",
+       "boolean": false,
+       "met": false,
+       "progress": 0.15,
+       "ref": "Syfert et al. 2014 (vía Marsh et al. 2023)",
+       "hint": "Con 20 o más, el EOO es estimado aunque falte completitud."
+      }
+     ],
+     "note": "Calidad: EOO inferido (cota o indicio); AOO inferido (cota o indicio). Mientras la AOO sea inferida es solo una cota inferior: B2 no se puede cumplir (tabla 3.1 pide estimada).",
+     "detail": "6 ocasiones usadas (búsqueda con tiempo fijo, mediana 30 min) de 6 visitas · excluidas: ninguna · 3 celdas cubiertas.",
+     "met": false
+    },
+    {
+     "id": "mature",
+     "title": "Individuos maduros",
+     "criteria": [
+      "C",
+      "D"
+     ],
+     "quality": {
+      "mature": "estimated"
+     },
+     "items": [
+      {
+       "id": "census",
+       "label": "Censo completo declarado (hecho «censo completo» = sí)",
+       "value": 0,
+       "target": 1,
+       "unit": "",
+       "boolean": true,
+       "met": false,
+       "progress": 0,
+       "ref": "Iriondo 2011 (AFA)",
+       "hint": "Si se han contado todos los individuos de la población, el total es observado. Es una vía; las parcelas son la otra."
+      },
+      {
+       "id": "plots",
+       "label": "Parcelas con superficie contada",
+       "value": 10,
+       "target": 10,
+       "unit": "parcelas",
+       "boolean": false,
+       "met": true,
+       "progress": 1,
+       "ref": "Elzinga et al. 1998",
+       "hint": "CV de la densidad 0,237: se piden 10 parcelas (15 si el CV es > 1)."
+      },
+      {
+       "id": "habitat",
+       "label": "Superficie de hábitat ocupado (parámetro)",
+       "value": 1,
+       "target": 1,
+       "unit": "",
+       "boolean": true,
+       "met": true,
+       "progress": 1,
+       "ref": "Directrices v16 §4.3",
+       "hint": "Densidad × superficie; la proporción ocupada debe salir del conocimiento del taxón."
+      }
+     ],
+     "note": "Calidad del total: estimado.",
+     "met": true
+    },
+    {
+     "id": "series",
+     "title": "Serie temporal: reducción y tasa",
+     "criteria": [
+      "A",
+      "C1"
+     ],
+     "quality": {
+      "a": "estimated",
+      "c1": "estimated"
+     },
+     "items": [
+      {
+       "id": "years",
+       "label": "Años con recuentos en sitios",
+       "value": 11,
+       "target": 3,
+       "unit": "años",
+       "boolean": false,
+       "met": true,
+       "progress": 1,
+       "ref": "Directrices v16 §4.5.1",
+       "hint": "La reducción se mide repitiendo el mismo muestreo en los mismos sitios."
+      },
+      {
+       "id": "df",
+       "label": "Grados de libertad para la sobredispersión",
+       "value": 39,
+       "target": 5,
+       "unit": "g. l.",
+       "boolean": false,
+       "met": true,
+       "progress": 1,
+       "ref": "BioDex (Ver Hoef y Boveng 2007)",
+       "hint": "Recuentos sitio-año menos parámetros del modelo. Más sitios o más años."
+      },
+      {
+       "id": "power",
+       "label": "Potencia para detectar la reducción de VU en la ventana",
+       "value": 99.7,
+       "target": 80,
+       "unit": "%",
+       "boolean": false,
+       "met": true,
+       "progress": 1,
+       "ref": "Gerrodette 1987; White 2019; Connors et al. 2014",
+       "hint": "Reducción mínima detectable: 19,2 % en 10 años (objetivo: 30 %)."
+      }
+     ],
+     "note": "Calidad: reducción (A) estimado; tasa de C1 estimado.",
+     "met": true
     }
    ]
   }

@@ -19,10 +19,14 @@
 
 require_once __DIR__ . "/sync.php";
 require_once __DIR__ . "/utm.php";
+require_once __DIR__ . "/track.php";      // recorrido GPS y esfuerzo de la visita
 
 const SITE_TYPES        = ["plot", "transect", "point"];
 const VISIT_PROTOCOLS   = ["target_census", "plot_count", "transect", "timed_search"];
 const VISIT_STATUSES    = ["open", "closed"];
+const VISIT_EFFORT_PROTOCOLS = ["free", "timed", "transect"];   // cómo se buscó (independiente de cómo se cuenta)
+const VISIT_KINDS       = ["exploratory", "repeat"];
+const VISIT_EFFORT_TARGET_MAX = 100000;   // minutos o metros
 const SITE_NAME_MAX     = 120;
 const SITE_RADIUS_MAX   = 100000;      // m
 const SITE_VERTICES_MAX = 5000;        // una traza GPS de transecto puede tener muchos puntos
@@ -40,6 +44,13 @@ const VISIT_PROTOCOL_ES = [
     "transect"      => "transecto con banda",
     "timed_search"  => "búsqueda por tiempo",
 ];
+/** Protocolo de búsqueda (DwC samplingProtocol, hojas). */
+const VISIT_EFFORT_ES = [
+    "free"     => "búsqueda libre",
+    "timed"    => "búsqueda con tiempo fijo (Goff et al. 1982)",
+    "transect" => "transecto de longitud fija",
+];
+const VISIT_KIND_ES = ["exploratory" => "exploratoria", "repeat" => "repetición de sitio"];
 const SITE_TYPE_ES = ["plot" => "parcela", "transect" => "transecto", "point" => "punto de conteo"];
 
 // --- Geometría -------------------------------------------------------------------------------------
@@ -175,7 +186,59 @@ function syncValidateSite(mixed $s): array {
         "protocol"          => syncEnum($s, "protocol", VISIT_PROTOCOLS),
         "client_updated_at" => syncClientUpdatedAt($s["clientUpdatedAt"] ?? null),
         "_species"          => syncTaxonList($s),
-    ];
+    ] + (array_key_exists("effortProtocol", $s) ? visitEffortFields($s, false) : []);
+}
+
+/**
+ * Protocolo de búsqueda y objetivo de un sitio o de una visita → columnas effort_protocol y effort_target. «Libre» no
+ * lleva objetivo; los otros dos lo exigen en una visita ($required) y lo admiten vacío en un sitio.
+ */
+function visitEffortFields(array $o, bool $required): array {
+    $protocol = syncEnum($o, "effortProtocol", VISIT_EFFORT_PROTOCOLS, $required ? "free" : null);
+    $target = syncUint($o, "effortTarget", false);
+    if ($target !== null && ($target < 1 || $target > VISIT_EFFORT_TARGET_MAX)) {
+        syncReject("invalid_field", "«effortTarget» va de 1 a " . VISIT_EFFORT_TARGET_MAX . " (minutos o metros).");
+    }
+    if ($protocol === null || $protocol === "free") $target = null;
+    elseif ($required && $target === null) syncReject("missing_field", "Una búsqueda con tiempo fijo o un transecto necesitan «effortTarget» (minutos o metros).");
+    return ["effort_protocol" => $protocol, "effort_target" => $target];
+}
+
+/**
+ * Recorrido y pausas del push → [puntos [lat, lon, t, precisión, tÚltimo], pausas [[t0, t1]]]. El cliente ya filtró
+ * los fixes (shared/track.js); aquí solo se comprueba la forma: números, en rango y en orden.
+ */
+function syncValidateTrack(mixed $track, mixed $pauses): array {
+    if (!is_array($track) || !array_is_list($track) || count($track) > TRACK_MAX_POINTS) {
+        syncReject("invalid_field", "«track» debe ser una lista de como mucho " . TRACK_MAX_POINTS . " puntos [lat, lon, t, precisión, tÚltimo].");
+    }
+    $num = fn($x) => is_int($x) || is_float($x);
+    $points = [];
+    $prev = null;
+    foreach ($track as $p) {
+        if (!is_array($p) || !array_is_list($p) || count($p) < 4 || count($p) > 5 || array_filter($p, fn($x) => !$num($x))) {
+            syncReject("invalid_field", "Cada punto de «track» es [lat, lon, t, precisión, tÚltimo].");
+        }
+        [$lat, $lon, $t, $acc] = $p;
+        $last = $p[4] ?? $t;
+        if (abs($lat) > 90 || abs($lon) > 180 || $t <= 0 || $last < $t || $acc < 0 || $acc > TRACK_MAX_ACCURACY_M || ($prev !== null && $t < $prev)) {
+            syncReject("invalid_field", "«track»: coordenadas fuera de rango, precisión peor de " . TRACK_MAX_ACCURACY_M . " m o puntos desordenados.");
+        }
+        $prev = $last;
+        $points[] = [round((float) $lat, 6), round((float) $lon, 6), (int) $t, (int) round($acc), (int) $last];
+    }
+    $pauses = $pauses ?? [];
+    if (!is_array($pauses) || !array_is_list($pauses) || count($pauses) > TRACK_MAX_PAUSES) {
+        syncReject("invalid_field", "«pauses» debe ser una lista de [inicio, fin] en segundos.");
+    }
+    $out = [];
+    foreach ($pauses as $p) {
+        if (!is_array($p) || !array_is_list($p) || count($p) !== 2 || !$num($p[0]) || !$num($p[1]) || $p[1] < $p[0] || $p[0] <= 0) {
+            syncReject("invalid_field", "Cada pausa de «pauses» es [inicio, fin] en segundos Unix, cerrada.");
+        }
+        $out[] = [(int) $p[0], (int) $p[1]];
+    }
+    return [$points, $out];
 }
 
 /** Visita del cuerpo de un push → columnas de visits + `_species` (objetivo). Una cerrada lleva fin. */
@@ -193,7 +256,24 @@ function syncValidateVisit(mixed $v): array {
     $effort = syncUint($v, "effortMinutes", false);
     if ($effort !== null && $effort > VISIT_EFFORT_MAX) syncReject("invalid_field", "«effortMinutes» como mucho " . VISIT_EFFORT_MAX . ".");
     $hasPos = ($v["decimalLatitude"] ?? null) !== null || ($v["decimalLongitude"] ?? null) !== null;
-    return [
+    // Esfuerzo y modo búsqueda: solo si el cliente los manda (una edición desde una versión anterior de la app no los
+    // trae y no debe borrarlos). Lo derivado del recorrido lo calcula el servidor: no se acepta del cliente.
+    $extra = [];
+    if (array_key_exists("effortProtocol", $v)) {
+        $extra = visitEffortFields($v, true);
+        $extra["blind"] = ($v["blind"] ?? false) === true && $extra["effort_protocol"] !== "free" ? 1 : 0;
+        $extra["visit_kind"] = syncEnum($v, "visitKind", VISIT_KINDS);
+        if (array_key_exists("track", $v)) {
+            [$points, $pauses] = syncValidateTrack($v["track"], $v["pauses"] ?? null);
+            $a = trackAnalyze($points, $pauses);
+            $e = trackVisitEffort(["effortProtocol" => $extra["effort_protocol"], "effortTarget" => $extra["effort_target"],
+                "start" => $start->getTimestamp(), "end" => $end?->getTimestamp(), "pauses" => $pauses], $a);
+            $extra += ["active_seconds" => $e["activeSeconds"], "distance_m" => $a["distanceM"], "tracked_seconds" => $a["trackedSeconds"],
+                "track_gaps" => $a["gaps"], "target_met" => $e["targetMet"] ? 1 : 0, "track_complete" => $e["trackComplete"] ? 1 : 0,
+                "covered_cells" => json_encode($a["cells"]), "_track" => [$points, $pauses]];
+        }
+    }
+    return $extra + [
         "visitID"           => $v["visitID"],
         "site_id"           => $site,
         "protocol"          => $protocol,
@@ -381,6 +461,8 @@ function siteOut(array $row, array $species, int $level, string $role, int $view
         "areaGiven"        => (int) $row["area_given"] === 1,
         "lengthM"          => $num($row["length_m"]),
         "protocol"         => $row["protocol"],
+        "effortProtocol"   => $row["effort_protocol"] ?? null,
+        "effortTarget"     => ($row["effort_target"] ?? null) === null ? null : (int) $row["effort_target"],
         "species"          => array_values($species),
         "generalized"      => $generalized,
     ] + ($generalized ? ["dataGeneralizations" => $v["dataGeneralizations"], "informationWithheld" => $v["informationWithheld"]] : []);
@@ -413,7 +495,62 @@ function visitOut(array $row, array $species, int $level, string $role, int $vie
         "decimalLongitude" => $hasPos && $v["decimalLongitude"] !== null ? (float) $v["decimalLongitude"] : null,
         "species"          => array_values($species),
         "generalized"      => $generalized,
+    ] + visitEffortOut($row, $generalized);
+}
+
+/**
+ * Esfuerzo y modo búsqueda de una visita. Las celdas cubiertas son de 2 km: más finas que la generalización del nivel
+ * 2 (y el nivel 1 no da posición), así que en una visita generalizada solo sale cuántas son, no cuáles. El recorrido no
+ * sale nunca por aquí (solo en la exportación, y nunca generalizado).
+ */
+function visitEffortOut(array $row, bool $generalized): array {
+    $cells = ($row["covered_cells"] ?? null) === null ? null : (json_decode($row["covered_cells"], true) ?: []);
+    $int = fn($k) => ($row[$k] ?? null) === null ? null : (int) $row[$k];
+    return [
+        "effortProtocol" => $row["effort_protocol"] ?? "free",
+        "effortTarget"   => $int("effort_target"),
+        "blind"          => (int) ($row["blind"] ?? 0) === 1,
+        "visitKind"      => $row["visit_kind"] ?? null,
+        "activeSeconds"  => $int("active_seconds"),
+        "distanceM"      => ($row["distance_m"] ?? null) === null ? null : (float) $row["distance_m"],
+        "trackedSeconds" => $int("tracked_seconds"),
+        "trackGaps"      => $int("track_gaps"),
+        "targetMet"      => (int) ($row["target_met"] ?? 0) === 1,
+        "trackComplete"  => (int) ($row["track_complete"] ?? 0) === 1,
+        "nCoveredCells"  => $cells === null ? null : count($cells),
+        "coveredCells"   => $generalized ? null : $cells,
     ];
+}
+
+/**
+ * Antes de escribir una visita que ya existe: salir del modo búsqueda es irreversible. Si la visita guardada ya no era
+ * ciega, la que llega tampoco lo es, diga lo que diga el cliente.
+ */
+function visitGuardBlind(PDO $pdo, string $visitId, array $c): array {
+    if (empty($c["blind"])) return $c;
+    $stmt = $pdo->prepare("SELECT blind FROM visits WHERE visitID = ?");
+    $stmt->execute([$visitId]);
+    $blind = $stmt->fetchColumn();
+    if ($blind !== false && (int) $blind !== 1) $c["blind"] = 0;
+    return $c;
+}
+
+/** Guarda (o sustituye) el recorrido de una visita. Dentro de la transacción del push. */
+function visitWriteTrack(PDO $pdo, string $visitId, array $track): void {
+    [$points, $pauses] = $track;
+    $pdo->prepare("INSERT INTO visit_tracks (visitID, points, pauses, n_points) VALUES (?, ?, ?, ?)
+                   ON DUPLICATE KEY UPDATE points = VALUES(points), pauses = VALUES(pauses), n_points = VALUES(n_points)")
+        ->execute([$visitId, json_encode($points), json_encode($pauses), count($points)]);
+}
+
+/** Recorridos de varias visitas → [visitID => [puntos, pausas]]. */
+function visitTracks(PDO $pdo, array $visitIds): array {
+    if (!$visitIds) return [];
+    $stmt = $pdo->prepare("SELECT visitID, points, pauses FROM visit_tracks WHERE visitID IN (" . implode(",", array_fill(0, count($visitIds), "?")) . ")");
+    $stmt->execute(array_values($visitIds));
+    $out = [];
+    foreach ($stmt->fetchAll() as $r) $out[$r["visitID"]] = [json_decode($r["points"], true) ?: [], json_decode((string) $r["pauses"], true) ?: []];
+    return $out;
 }
 
 /** Sitios con autor, especies objetivo y nivel → [[row, species[], level]]. $where sobre el alias s. */

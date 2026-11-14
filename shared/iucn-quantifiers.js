@@ -475,7 +475,7 @@ export function quantify(records, opts = {}) {
   const frag = fragmentation(sp.subpops, { minViable: paramValue(params, 'min_viable_subpop'), dispersalKm: paramValue(params, 'dispersal_distance') });
   const locations = proposeLocations(sp.subpops, opts.impacts || []);
   return { nPoints: points.length, mature, subpops: sp, fragmentation: frag, locations,
-    completeness: samplingCompleteness(records, opts.project),
+    completeness: samplingCompleteness(records, opts.project, opts.visits || null, opts.taxonID ?? null),
     suggestions: suggestDecline(opts.impacts || [], opts.habitatCodes), separation: { km: sepKm, fromDefault } };
 }
 

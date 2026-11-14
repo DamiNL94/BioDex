@@ -247,9 +247,11 @@ function syncPushItem(PDO $pdo, array $ent, string $catalogId, int $userId, ?str
     $table = $ent["table"];
     $id = $c[$idField];
     $children = $c["_species"] ?? null;
-    unset($c["_species"]);
+    $track = $c["_track"] ?? null;     // recorrido de una visita: va a visit_tracks (Lib/visits.php)
+    unset($c["_species"], $c["_track"]);
     $pdo->beginTransaction();
     $existing = syncLockRow($pdo, $ent, $id);
+    if ($existing !== null && $table === "visits") $c = visitGuardBlind($pdo, $id, $c);
     $scope = syncRelevelScope($pdo, $ent, $catalogId, $c + [$idField => $id]);
 
     if ($existing === null) {
@@ -258,6 +260,7 @@ function syncPushItem(PDO $pdo, array $ent, string $catalogId, int $userId, ?str
         $pdo->prepare("INSERT INTO `{$table}` (`" . implode("`, `", $cols) . "`) VALUES (" . rtrim(str_repeat("?, ", count($cols)), ", ") . ")")
             ->execute(array_values($c));
         syncWriteChildren($pdo, $ent, $id, $children);
+        if ($track !== null) visitWriteTrack($pdo, $id, $track);
         if ($scope) visitsRelevel($pdo, $catalogId, ...$scope);
         $pdo->commit();
         return [$idField => $id, "status" => "accepted", "serverSeq" => $c["server_seq"]];
@@ -284,6 +287,7 @@ function syncPushItem(PDO $pdo, array $ent, string $catalogId, int $userId, ?str
     $pdo->prepare("UPDATE `{$table}` SET {$sets}, deleted_at = NULL WHERE `{$idField}` = ?")
         ->execute([...array_values($c), $id]);
     syncWriteChildren($pdo, $ent, $id, $children);
+    if ($track !== null) visitWriteTrack($pdo, $id, $track);
     if ($scope) visitsRelevel($pdo, $catalogId, ...$scope);
     $pdo->commit();
     return [$idField => $id, "status" => "accepted", "serverSeq" => $c["server_seq"]];

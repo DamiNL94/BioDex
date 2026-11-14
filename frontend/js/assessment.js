@@ -13,6 +13,7 @@
 
 import { apiGetJson } from './api.js';
 import { state } from './state.js';
+import { blindHidesTaxon, BLIND_NOTICE } from './blind.js';
 import { byIndex, get, getMeta, setMeta, hasDb } from './db.js';
 import { remoteOrLocal } from './offline.js';
 import { toUtm } from './geo/utm.js';
@@ -73,7 +74,9 @@ export async function provisionalAssessment(catalog, species) {
   const defaults = await localParameterDefaults(species);
   const loc = hasDb() ? await get('locations', [catalog.id, taxonID]) : null;
   const impacts = await localImpacts(catalog.id, taxonID);
-  const q = quantify(records, { project: toUtm, params, defaults, impacts, metrics, habitatCodes: threats.habitat_codes });
+  // Visitas del dispositivo: deciden qué ocasiones cuentan para Chao2 (las ajenas generalizadas llegan sin celdas).
+  const visits = hasDb() ? await byIndex('visits', 'catalogId', catalog.id) : [];
+  const q = quantify(records, { project: toUtm, params, defaults, impacts, metrics, habitatCodes: threats.habitat_codes, visits, taxonID });
   // Serie temporal con las visitas y marcas del dispositivo (A y C1).
   const series = await localSeries(catalog.id, taxonID, { generationLength: params.generation_length ? params.generation_length.value : null, criteria })
     .catch(() => null);
@@ -84,6 +87,10 @@ export async function provisionalAssessment(catalog, species) {
   return {
     taxonID, computedAt: new Date().toISOString(), origin: 'device', geometry: 'full', nExact: records.length, metrics, nPoints: q.nPoints,
     mature, subpopulations: subpops, fragmentation: q.fragmentation, completeness: q.completeness, sufficiency: requirements(q, { series }),
+    // Diseño de muestreo y método de referencia (parámetros). El historial de cambios solo lo tiene el servidor.
+    sampling: { design: params.sampling_design ? params.sampling_design.value : null,
+      method: params.sufficiency_method ? params.sufficiency_method.value : 'chao2', methodSet: !!params.sufficiency_method,
+      methods: [{ id: 'chao2', available: true }, { id: 'occupancy', available: false }], history: null },
     locationsProposal: q.locations,
     locations: loc || null, suggestions: [...q.suggestions, ...((series && series.suggestions) || [])], separation: q.separation, parameters: params,
     defaults, inputs, result, series,
@@ -96,6 +103,8 @@ export async function provisionalAssessment(catalog, species) {
  * definitiva (y se guarda); sin él, la provisional y la última definitiva guardada. `gbif`: añade la comparación.
  */
 export async function speciesAssessment(catalog, species, { gbif = false } = {}) {
+  // Modo búsqueda: las subpoblaciones, sus centros y la comparación con GBIF delatan las marcas anteriores (js/blind.js).
+  if (blindHidesTaxon(species.taxonID, catalog.id)) throw new Error(BLIND_NOTICE);
   const k = key(catalog.id, species.taxonID);
   const res = await remoteOrLocal(async () => {
     const data = await apiGetJson(`/catalogs/${encodeURIComponent(catalog.id)}/species/${encodeURIComponent(species.taxonID)}/assessment`

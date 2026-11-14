@@ -122,3 +122,19 @@ Botón grande **«Empezar visita»** en el Mapa (encima de «Impacto» y «Marca
 ## Funciones ocultas tras un flag
 `js/flags.js`, por dispositivo (`localStorage biodex.flags`). Ahora mismo no hay ninguna: `impact` se activó para
 todos en F11g.
+
+## Modo búsqueda y esfuerzo (F11j)
+Detalle en `docs/esfuerzo.md`.
+- **Empezar visita** gana dos bloques. *Búsqueda y esfuerzo*: «Tiempo fijo», «Transecto» o «Libre», el objetivo (minutos
+  o metros) y la casilla **Modo búsqueda**, marcada por defecto si la búsqueda no es libre (y deshabilitada si lo es).
+  *Tipo de visita*: exploratoria o repetición de sitio, según el diseño de muestreo de las especies objetivo.
+- **Barra de la visita**: distintivo «Modo búsqueda» con «Salir del modo búsqueda» (confirmación; irreversible), progreso
+  del esfuerzo con barra («12 de 30 min · Tiempo fijo · 340 m · 2 celdas»), estado del recorrido (puntos, huecos, señal
+  débil), aviso de pantalla encendida y «Pausar» / «Reanudar».
+- **Mapa y fichas** en modo búsqueda: sin las marcas anteriores de las especies objetivo; donde algo queda oculto
+  (nota del mapa, Distribución, Evaluación, Exportar) hay un aviso que dice por qué y cómo salir.
+- **Cerrar visita**: bloque «Esfuerzo» con tiempo activo, distancia, celdas, porcentaje del tiempo con GPS y huecos, y
+  una línea que dice si la visita contará como ocasión de Chao2 y, si no, por qué.
+- **Pestaña Evaluación UICN**: barras «Esfuerzo estandarizado» y «Frontera prospectada», la línea de ocasiones bajo
+  Chao2 y el bloque «Suficiencia espacial: diseño y métodos» con el registro de cambios.
+- **Pestaña Parámetros**: «Diseño de muestreo» y «Método de referencia de la suficiencia espacial» (owner y custodio).

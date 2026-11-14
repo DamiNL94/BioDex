@@ -102,6 +102,16 @@ cualquier nº de parcelas ≥ 2.
 - Distancia de separación de 1 km entre poblaciones de plantas: la usa el AFA (Iriondo 2011); subpoblaciones y
   localidades desde datos de herbario en Rivers et al. (2010).
 
+- **Supuestos de Chao2** (añadido en F11j). El estimador de incidencia de Chao (1987), en la forma con corrección de
+  sesgo que recogen Colwell y Coddington (1994), parte de unidades de muestreo que son **réplicas**: búsquedas
+  independientes y de esfuerzo comparable. Dos cosas lo rompen en un cuaderno de campo: (a) volver a una planta ya
+  geolocalizada (una «redetección» convierte un único, Q1, en un duplicado, Q2, y sube la completitud sin decir nada de
+  la detectabilidad), y (b) mezclar visitas de cinco minutos con visitas de tres horas.
+- **Búsqueda con tiempo fijo** (*timed meander search*): Goff, Dawson y Rochow (1982) proponen recorrer el área de forma
+  dirigida anotando lo que aparece durante un tiempo fijado, como forma de dar un esfuerzo declarado y repetible a la
+  búsqueda de flora amenazada. BioDex toma de ahí el protocolo «tiempo fijo»; el transecto de longitud fija es el
+  protocolo clásico de esfuerzo por distancia (Elzinga et al. 1998).
+
 **BioDex hoy.** EOO/AOO desde las marcas del catálogo, siempre «mínimo» implícito; sin medida de completitud.
 
 **Reglas propuestas.**
@@ -178,6 +188,27 @@ el 2024-02-28, basada en Guralnick, Walls y Jetz (2018).
 Pruebas: `shared/sufficiency-cases.json` (mismos resultados en JS y PHP: `node shared/iucn-engine.test.js`,
 `php backend/bin/test-sufficiency.php`, este también en CI).
 
+## Qué cambia en BioDex 1.10.0 (fase F11j): ocasiones de muestreo comparables
+
+La regla 4.1 se endurece: la ocasión de Chao2 deja de ser «un día con alguna marca» y pasa a ser una **visita válida**
+(detalle en `docs/esfuerzo.md`).
+
+| Regla | Dónde | Fuente |
+|---|---|---|
+| Ocasión = visita en **modo búsqueda** (marcas anteriores ocultas), con protocolo de tiempo fijo o transecto, objetivo alcanzado y recorrido GPS completo | `validOccasions` (`iucn-sufficiency.js`, `Lib/sufficiency.php`) | Chao 1987 (réplicas independientes); Goff et al. 1982 (tiempo fijo) |
+| Comparabilidad: un solo protocolo (el de más ocasiones; a igualdad, tiempo fijo) y esfuerzo entre 0,5× y 2× la mediana (con ≥ 3 ocasiones) | `validOccasions` | **BioDex** (convención de trabajo) |
+| Solo entran las celdas **cubiertas** por el recorrido de una ocasión válida; cubierta sin detección = resultado negativo; ausencia confirmada con ≥ 3 ocasiones | `samplingCompleteness` | MacKenzie y Royle 2005 |
+| **Frontera prospectada** ≥ 50 % de las celdas vecinas a las ocupadas, para que volver siempre a las mismas celdas no dé una completitud alta | `samplingCompleteness`, `rangeQuality` | **BioDex** (convención de trabajo; no está en la bibliografía) |
+| Recorrido: precisión ≤ 30 m, sin saltos imposibles, paso mínimo, huecos > 2 min sin distancia ni celdas, ≥ 80 % del tiempo activo vigilado | `shared/track.js`, `Lib/track.php` | **BioDex** |
+| Diseño de muestreo y método de referencia por especie, con registro de cambios; ocupación de una temporada anunciada, sin calcular | parámetros `sampling_design`, `sufficiency_method` | MacKenzie et al. 2002 (pendiente) |
+
+Los umbrales marcados **BioDex** (0,5×–2×, 50 % de frontera, 30 m, 2 min, 80 %) son decisiones de diseño razonadas, no
+valores tomados de un artículo: conviene revisarlos con datos reales de campo.
+
+Pruebas: los casos nuevos de `completeness` en `shared/sufficiency-cases.json` (visita no ciega, protocolo libre,
+esfuerzo fuera de rango, mezcla de protocolos, celdas cubiertas sin detección y el caso trampa) y
+`shared/track-cases.json` (`node shared/track.test.js`, `php backend/bin/test-track.php`, los dos en CI).
+
 ## Referencias
 
 **UICN y metodología española**
@@ -206,8 +237,10 @@ Pruebas: `shared/sufficiency-cases.json` (mismos resultados en JS y PHP: `node s
 - Syfert, M. M. et al. (2014). Using species distribution models to inform IUCN Red List assessments. *Biological Conservation* 177: 174–184. https://doi.org/10.1016/j.biocon.2014.06.012
 
 **Completitud del muestreo**
+- Chao, A. (1987). Estimating the population size for capture-recapture data with unequal catchability. *Biometrics* 43: 783–791. https://doi.org/10.2307/2531532 (DOI comprobado en doi.org el 2026-11-14)
 - Chao, A. y Jost, L. (2012). Coverage-based rarefaction and extrapolation. *Ecology* 93: 2533–2547. https://doi.org/10.1890/11-1952.1
 - Colwell, R. K. y Coddington, J. A. (1994). Estimating terrestrial biodiversity through extrapolation. *Phil. Trans. R. Soc. B* 345: 101–118. https://doi.org/10.1098/rstb.1994.0091
+- Goff, F. G., Dawson, G. A. y Rochow, J. J. (1982). Site examination for threatened and endangered plant species. *Environmental Management* 6: 307–316. https://doi.org/10.1007/BF01875062 (DOI comprobado en doi.org el 2026-11-14)
 - Gotelli, N. J. y Colwell, R. K. (2001). Quantifying biodiversity: procedures and pitfalls. *Ecology Letters* 4: 379–391. https://doi.org/10.1046/j.1461-0248.2001.00230.x
 - Hortal, J., Lobo, J. M. y Jiménez-Valverde, A. (2007). Limitations of biodiversity databases: case study on seed-plant diversity in Tenerife. *Conservation Biology* 21: 853–863. https://doi.org/10.1111/j.1523-1739.2007.00686.x
 - Lobo, J. M. et al. (2018). KnowBR: an application to map the geographical variation of survey effort and identify well-surveyed areas. *Ecological Indicators* 91: 241–248. https://doi.org/10.1016/j.ecolind.2018.03.077
@@ -247,3 +280,7 @@ Pruebas: `shared/sufficiency-cases.json` (mismos resultados en JS y PHP: `node s
 - Syfert et al. (2014): el dato de ~20 puntos se toma de Marsh et al. (2023).
 - Umbrales concretos de KnowBR para «celda bien muestreada».
 - Tabla 1 de MacKenzie y Royle (2005): nº óptimo de visitas por combinación de ocupación y detección.
+- Goff, Dawson y Rochow (1982) y Chao (1987): añadidos en F11j con la referencia y el DOI comprobados, pero **sin leer
+  el texto completo**. Lo que se dice de ellos (tiempo fijo como esfuerzo declarado; réplicas independientes como
+  supuesto del estimador) es lo que recoge la bibliografía posterior: conviene contrastarlo con el original, sobre
+  todo si se quiere justificar un tiempo de búsqueda concreto.

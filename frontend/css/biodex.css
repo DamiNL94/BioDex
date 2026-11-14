@@ -1595,6 +1595,43 @@ path.gbif-pt.is-biodex{stroke:var(--brass-ink);fill:var(--brass);fill-opacity:.9
 .visit-bar-ok{color:var(--leaf);font-weight:700}
 .visit-bar-pending{color:var(--warn-ink);font-weight:700}
 .visit-bar-track{color:var(--danger-ink);font-weight:700}
+/* F11j: esfuerzo, pausas y modo búsqueda en la barra de visita. Sin style="" (CSP estricta): el ancho de la barra de
+   progreso va en las clases vp-0…vp-10. */
+.visit-bar.is-blind{border-left-color:var(--leaf)}
+.visit-blind{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin:6px 0 0 20px;font-size:var(--fs-sm)}
+.visit-blind .link-btn{min-height:var(--tap-min)}
+.visit-blind-badge{padding:2px 8px;border-radius:999px;background:var(--leaf-fill);color:var(--cream)}
+.visit-blind.is-off .badge{color:var(--warn-ink)}
+.visit-effort{margin:6px 0 0 20px}
+.visit-effort-text{margin:0;font-size:var(--fs-sm)}
+.visit-progress{height:10px;margin-top:4px;background:var(--surface-alt);border:1px solid var(--line-strong);border-radius:999px;overflow:hidden}
+.visit-progress-fill{display:block;height:100%;border-radius:999px;background:var(--sea)}
+.visit-effort.is-met .visit-progress-fill{background:var(--leaf)}
+.vp-0{width:2%} .vp-1{width:10%} .vp-2{width:20%} .vp-3{width:30%} .vp-4{width:40%} .vp-5{width:50%}
+.vp-6{width:60%} .vp-7{width:70%} .vp-8{width:80%} .vp-9{width:90%} .vp-10{width:100%}
+.visit-bar-trackrow{display:flex;align-items:center;gap:10px;margin:4px 0 0 20px}
+.visit-bar-trackrow .visit-bar-track{flex:1;margin:0;color:var(--ink-soft);font-weight:600}
+.visit-bar-trackrow .visit-bar-track.is-warn{color:var(--danger-ink)}
+.visit-bar-trackrow .visit-bar-track.is-paused{color:var(--warn-ink)}
+.visit-screen-hint{font-weight:400;color:var(--muted)}
+.visit-pause{flex:none;min-height:var(--tap-min)}
+/* Hojas de visita: búsqueda y esfuerzo, tipo de visita y resumen al cerrar */
+.visit-blind-check{align-items:flex-start;margin-top:8px}
+.visit-blind-check.is-disabled{opacity:.6}
+.visit-kinds button:disabled{opacity:.5}
+.visit-effort-counts{margin:6px 0}
+.visit-occasion{margin-top:8px}
+/* Pestaña Evaluación UICN: línea de ocasiones bajo Chao2, métodos de suficiencia y trazabilidad del diseño */
+.suff-detail{margin:8px 0 0;font-size:var(--fs-sm)}
+.suff-methods{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));margin:8px 0}
+.suff-method{border:1px solid var(--line);border-radius:var(--radius-sm);padding:8px 10px;background:var(--panel)}
+.suff-method.is-reference{border-color:var(--leaf)}
+.suff-method.is-disabled{opacity:.65}
+.suff-method h6{margin:0 0 4px}
+.suff-method-value{margin:0;font-size:var(--fs-lg);font-weight:700;font-variant-numeric:tabular-nums}
+.suff-design{margin:8px 0 0;font-size:var(--fs-sm)}
+.suff-history{margin:8px 0 0}
+.suff-history table{font-size:var(--fs-sm)}
 /* Hojas de empezar y cerrar visita */
 .visit-sites{display:flex;flex-direction:column;gap:var(--tap-gap)}
 .visit-site{min-height:var(--tap-main);text-align:left;padding:8px 12px;border:1px solid var(--line-strong);border-radius:var(--radius-md);

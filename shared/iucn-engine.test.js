@@ -183,7 +183,7 @@ check('Los umbrales salen del JSON (CR con EOO < 50 y ≤ 3 localidades → EN; 
       : a && b && typeof a === 'object' && typeof b === 'object' ? same(Object.keys(a), Object.keys(b)) && Object.keys(a).every((k) => sameNum(a[k], b[k]))
         : a === b);
   for (const c of SC.completeness) {
-    const got = samplingCompleteness(c.records);
+    const got = samplingCompleteness(c.records, null, c.visits, c.taxonID);
     const q = rangeQuality(got);
     check(`Completitud: ${c.name}`, sameNum(got, c.expect) && q.eoo === c.expectQuality.eoo && q.aoo === c.expectQuality.aoo,
       JSON.stringify([got, q]));

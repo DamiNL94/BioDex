@@ -552,8 +552,7 @@ if ($paramsPath) {
     $stmt = $pdo->prepare(parameterSelect("p.catalog_id = ? AND p.taxonID = ? AND p.param_key = ?"));
     $stmt->execute([$catalogId, $taxonID, $paramKey]);
     $new = $stmt->fetch();
-    logAccess($pdo, $userId, "set_parameter", $catalogId,
-        "{$taxonID}: {$paramKey} " . parameterDescribe($live ? $old : null) . " → " . parameterDescribe($new));
+    logAccess($pdo, $userId, "set_parameter", $catalogId, parameterLogTarget($taxonID, $paramKey, $live ? $old : null, $new));
     $pdo->commit();
     respond(["taxonID" => $taxonID, "parameter" => $new["deleted_at"] === null ? parameterOut($new) : null, "changed" => true]);
 }

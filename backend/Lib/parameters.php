@@ -69,7 +69,18 @@ const SPECIES_PARAMETERS = [
     "regional_immigration"          => ["type" => "fact", "unit" => null, "criteria" => ["Ajuste regional"]],
     "regional_immigration_decrease" => ["type" => "fact", "unit" => null, "criteria" => ["Ajuste regional"]],
     "regional_sink"                 => ["type" => "fact", "unit" => null, "criteria" => ["Ajuste regional"]],
+    // Diseño de muestreo y método de referencia de la suficiencia espacial (F11j; docs/esfuerzo.md). Los fija quien
+    // configura el catálogo (owner y custodio, como el resto); en el campo solo se ven. Cambiarlos es libre, pero
+    // cada cambio queda en access_log con el valor anterior y el motivo (`source`): parameterHistory().
+    //   sampling_design     exploratorio (cada visita busca en sitio nuevo) · sitios repetidos · mixto
+    //   sufficiency_method  método que usa el motor. Solo Chao2; la ocupación de una temporada (MacKenzie et al. 2002)
+    //                       llegará en otra fase: mientras, no es un valor admitido.
+    "sampling_design"    => ["type" => "choice", "unit" => null, "choices" => ["exploratory", "repeated", "mixed"], "criteria" => [], "history" => true],
+    "sufficiency_method" => ["type" => "choice", "unit" => null, "choices" => ["chao2"], "criteria" => [], "history" => true],
 ];
+const SAMPLING_DESIGN_ES = ["exploratory" => "exploratorio", "repeated" => "sitios repetidos", "mixed" => "mixto"];
+const SUFFICIENCY_METHOD_ES = ["chao2" => "Chao2 (completitud por incidencia)", "occupancy" => "ocupación de una temporada"];
+const SUFFICIENCY_METHOD_DEFAULT = "chao2";
 const PARAMETER_FACT_CHOICES = ["yes", "no", "unknown"];
 const PARAMETER_JUSTIFICATION_MAX = 4000;
 const PARAMETER_QUALITIES = ["observed", "estimated", "inferred", "suspected", "projected"];
@@ -176,6 +187,49 @@ function parameterFields(string $key, array $b): array {
     }
     return ["value" => $value, "value_min" => $min, "value_max" => $max, "quality" => $quality,
             "source" => $source === "" ? null : $source, "justification" => $justification === "" ? null : $justification];
+}
+
+/**
+ * Texto de access_log para un cambio de parámetro: «<taxonID>: <clave> <antes> → <después>». En los parámetros con
+ * historial (diseño de muestreo, método de referencia) se añade el motivo, que es la «fuente» del formulario.
+ */
+function parameterLogTarget(string $taxonID, string $key, ?array $old, ?array $new): string {
+    $s = "{$taxonID}: {$key} " . parameterDescribe($old) . " → " . parameterDescribe($new);
+    $reason = !empty(SPECIES_PARAMETERS[$key]["history"]) && $new !== null && $new["deleted_at"] === null ? trim((string) ($new["source"] ?? "")) : "";
+    return $reason === "" ? $s : $s . " · motivo: " . $reason;
+}
+
+/**
+ * Historial de los parámetros con trazabilidad de una especie (access_log) → [{key, at, by, from, to, reason}], lo más
+ * reciente primero. `from` y `to` son los valores («vacío» si no había).
+ */
+function parameterHistory(PDO $pdo, string $catalogId, string $taxonID): array {
+    $keys = array_keys(array_filter(SPECIES_PARAMETERS, fn($d) => !empty($d["history"])));
+    $stmt = $pdo->prepare("SELECT l.target, l.created_at, u.name FROM access_log l LEFT JOIN users u ON u.id = l.user_id
+                            WHERE l.catalog_id = ? AND l.action = 'set_parameter' AND l.target LIKE ? ORDER BY l.id DESC LIMIT 200");
+    $stmt->execute([$catalogId, addcslashes($taxonID, "%_\\") . ": %"]);
+    $out = [];
+    foreach ($stmt->fetchAll() as $r) {
+        if (!preg_match('/^.+?: (' . implode("|", $keys) . ') (.+?) → (.+?)(?: · motivo: (.*))?$/su', (string) $r["target"], $m)) continue;
+        $out[] = ["key" => $m[1], "at" => syncIsoUtc($r["created_at"]), "by" => $r["name"], "from" => $m[2] === "vacío" ? null : $m[2],
+                  "to" => $m[3] === "vacío" ? null : $m[3], "reason" => ($m[4] ?? "") === "" ? null : $m[4]];
+    }
+    return $out;
+}
+
+/**
+ * Diseño de muestreo y método de referencia de la especie, con su historial → design, method (el fijado o Chao2 por
+ * defecto), methodSet (¿lo fijó alguien?), methods (los que BioDex conoce, con si están disponibles) y history.
+ */
+function samplingConfig(PDO $pdo, string $catalogId, string $taxonID, array $params): array {
+    $method = $params["sufficiency_method"]["value"] ?? null;
+    return [
+        "design"    => $params["sampling_design"]["value"] ?? null,
+        "method"    => $method ?? SUFFICIENCY_METHOD_DEFAULT,
+        "methodSet" => $method !== null,
+        "methods"   => [["id" => "chao2", "available" => true], ["id" => "occupancy", "available" => false]],
+        "history"   => parameterHistory($pdo, $catalogId, $taxonID),
+    ];
 }
 
 /** Texto corto de un valor para access_log: «3 años (2–4) · estimado». */

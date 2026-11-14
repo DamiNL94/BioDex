@@ -36,6 +36,7 @@ import { fabStack } from '../components/fab.js';
 import { openImpactSheet } from './impact-sheet.js';
 import { openStartVisit } from './visit-sheet.js';
 import { sitesFor, activeVisitFor } from '../visits.js';
+import { blindFilter, blindVisit, BLIND_NOTICE } from '../blind.js';
 import { parseWkt } from '../site-geom.js';
 import { openSpeciesDetail } from './species-detail.js';
 import { toUtm, formatUtm } from '../geo/utm.js';
@@ -418,7 +419,9 @@ export function mount(el, { go = () => {}, isStudio = () => false } = {}) {
       const [occ, species, local] = await Promise.all([
         byIndex('occurrences', 'catalogId', cat.id), localSpeciesOf(cat.id), localCatalog(cat.id),
       ]);
-      marks = occ.filter((o) => !o.deletedAt);
+      // Modo búsqueda: las marcas anteriores de las especies objetivo no entran en el mapa (ni en clústeres, filtros,
+      // leyenda o lista lateral, que salen todos de `marks`). Regla única: js/blind.js.
+      marks = blindFilter(occ.filter((o) => !o.deletedAt));
       catalogLocal = local || null;
       speciesById = new Map(species.map((s) => [s.taxonID, s]));
       catalogSensitivity = new Map(species.map((s) => [s.taxonID, s.sensitivity && s.sensitivity.level]));
@@ -455,7 +458,9 @@ export function mount(el, { go = () => {}, isStudio = () => false } = {}) {
     const cells = shapes.filter((s) => s === 'cell').length;
     const withheld = shapes.filter((s) => s === 'withheld').length;
     const n = activeFilterCount(filters);
+    const blind = blindVisit();
     render(note, html`
+      ${blind && blind.catalogId === cat.id ? html`<p class="guard-band info map-blind">${BLIND_NOTICE}</p>` : ''}
       ${catalogLocal && catalogLocal.downloadedAt ? '' : html`<p class="guard-band info">«${cat.name}» no está descargado:
         el mapa solo muestra las marcas hechas en este dispositivo. Llévalo al campo (pestaña Catálogo) para ver las del equipo sin conexión.</p>`}
       <p class="hint map-count">${plural(visible.length - withheld, 'marca', 'marcas')} en el mapa${n ? ` (${plural(n, 'filtro', 'filtros')})` : ''}
@@ -789,6 +794,8 @@ export function mount(el, { go = () => {}, isStudio = () => false } = {}) {
     // Descarga del catálogo terminada: ya hay fichas y marcas del equipo en el dispositivo.
     if (key === 'activeCatalog' || key === 'user' || key === 'download') loadMarks();
     if (key === 'visit' || key === 'activeCatalog') paintVisitFab();
+    // Empezar, cerrar o salir del modo búsqueda cambia qué marcas se ven: se recarga todo lo que las dibuja.
+    if (key === 'visit') { loadMarks(); metrics = null; subpops = null; refreshMetrics(); refreshSubpops(); }
     if ((key === 'sync' && !state.sync.running) || key === 'activeCatalog' || key === 'download' || key === 'visit') loadSites();
   });
 

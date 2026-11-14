@@ -211,3 +211,28 @@ cola, respaldo) y `sync.js` (motor).
   `sites` y `visits`. Código: `js/visits.js`, `js/visit-records.js` (forma en la API) y `views/visit-sheet.js`.
 - **Editar una marca** («Mis marcas»): cambia los datos, nunca la posición ni `eventDate`; sube
   `clientUpdatedAt` y el push la acepta por ser la más reciente.
+
+## Esfuerzo y modo búsqueda de las visitas (F11j)
+
+Campos nuevos de la **visita** en el push (todos opcionales: una visita de una versión anterior de la app no los manda
+y el servidor no los toca). Detalle y umbrales en `docs/esfuerzo.md`.
+
+| Campo | Push | Pull | Notas |
+|---|---|---|---|
+| `effortProtocol` | `free` · `timed` · `transect` | sí | protocolo de búsqueda; por defecto `free` |
+| `effortTarget` | entero 1–100 000 (min o m) | sí | obligatorio con `timed` y `transect` (`missing_field`); nulo en `free` |
+| `blind` | booleano | sí | modo búsqueda. Con `free` es siempre falso. **Irreversible**: si la visita guardada ya no era ciega, se guarda como no ciega diga lo que diga el push |
+| `visitKind` | `exploratory` · `repeat` | sí | según el diseño de muestreo de la especie |
+| `track` | `[[lat, lon, t, precisión, tÚltimo], …]` (≤ 5000; precisión ≤ 30 m; en orden) | **nunca** | recorrido ya filtrado por el móvil (`shared/track.js`); va a `visit_tracks`. Se manda al cerrar la visita |
+| `pauses` | `[[inicio, fin], …]` en segundos Unix | no | con `track` |
+| `activeSeconds`, `distanceM`, `trackedSeconds`, `trackGaps`, `targetMet`, `trackComplete` | **no se aceptan** | sí | los calcula el servidor del recorrido (`Lib/track.php`) |
+| `coveredCells`, `nCoveredCells` | no se aceptan | `coveredCells` solo si la visita **no** se generaliza para quien la pide; `nCoveredCells` siempre | celdas de 2 km (`"i,j"` en UTM 30N). Son más finas que la generalización del nivel 2: a quien no ve exacto le llega solo cuántas |
+
+El **sitio** admite `effortProtocol` y `effortTarget` (los de su última visita: los propone la siguiente).
+
+En el dispositivo: la versión de IndexedDB no cambia (los campos nuevos van en el registro de `visits`). El recorrido en
+grabación sigue en meta `track:<visitID>`, ahora para toda visita con protocolo y con el formato de cinco valores; al
+cerrar se copia a la visita (`track`, `pauses`) para subirlo. El modo búsqueda, las pausas y el protocolo viven en el
+registro de la visita; `state.visit` es una copia que `checkActiveVisit()` corrige al arrancar. Meta
+`effortDefault:<catalogId>` recuerda la última búsqueda del catálogo en ese dispositivo. La regla de qué marcas se
+ocultan está en `js/blind.js`.

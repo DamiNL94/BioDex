@@ -12,6 +12,7 @@
 
 import { apiFetch, apiPostJson, ApiError } from '../api.js';
 import { state } from '../state.js';
+import { blindVisit, BLIND_NOTICE } from '../blind.js';
 import { html, render, $, plural, debounce } from '../util.js';
 import { openOverlay } from '../components/overlay.js';
 
@@ -66,6 +67,13 @@ export function mountExport(el, catalog) {
   const opts = { mode: 'public', dateFrom: '', dateTo: '', speciesAll: true, taxonIDs: new Set(), observersAll: true,
     observers: new Set(), includeAbsences: true, license: null, title: '', description: '',
     formats: new Set(FORMATS.filter((f) => f[2]).map((f) => f[0])) };
+
+  // Modo búsqueda: una exportación trae las coordenadas de las marcas anteriores (js/blind.js).
+  const blind = blindVisit();
+  if (blind && blind.catalogId === catalog.id) {
+    render(el, html`<p class="guard-band info">${BLIND_NOTICE} La exportación del catálogo incluye sus coordenadas: descárgala al terminar.</p>`);
+    return () => { alive = false; };
+  }
 
   if (!state.online) {
     render(el, html`<div class="export-offline">

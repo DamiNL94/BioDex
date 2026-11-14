@@ -116,6 +116,9 @@ docker compose exec php php bin/test-f11d.php   # fotos de respaldo de GBIF y Co
 docker compose exec php php bin/test-f11f.php   # parámetros de especie (permisos, access_log y pull)
 docker compose exec php php bin/test-f11g.php   # cuantificadores UICN (casos compartidos), impactos, localidades, exportación
 docker compose exec php php bin/test-f11h.php   # series (casos compartidos), sitios y visitas, A y C1, DwC con núcleo Event
+docker compose exec php php bin/test-f11j.php   # modo búsqueda y esfuerzo de las visitas, ocasiones de Chao2, diseño y método, recorrido en DwC
+php backend/bin/test-sufficiency.php && php backend/bin/test-track.php   # suficiencia y recorrido GPS (sin base de datos; mismos casos que JS)
+node shared/track.test.js                     # recorrido GPS de las visitas (filtrado, distancia, huecos, celdas)
 node shared/iucn-engine.test.js && node shared/geo-metrics.test.js && node frontend/tests/utm.test.mjs
 node frontend/tests/tally.test.mjs && node frontend/tests/qr.test.mjs   # conteo rápido y QR de invitación
 node frontend/tests/species-search.test.mjs   # buscador de especies

@@ -116,3 +116,32 @@ lo observado (`docs/iucn.md`). Solo cifras.
 ## Pendiente para publicar en GBIF
 Pasar el `dwca/` de una exportación «para publicar» por el validador de GBIF (a mano; con núcleo Event desde F11h),
 un `datasetID` registrado (GBIF.ES) y `scientificNameID` (no lo da EIDOS).
+
+## Protocolo de búsqueda, esfuerzo y recorrido (F11j)
+
+En las visitas con protocolo de búsqueda (`effort_protocol` distinto de «libre»; `docs/esfuerzo.md`) el evento lleva
+además:
+
+| Término | Valor | Ejemplo |
+|---|---|---|
+| `samplingProtocol` | protocolo de conteo ` | ` protocolo de búsqueda, objetivo y si fue ciega | `búsqueda por tiempo | búsqueda con tiempo fijo (Goff et al. 1982), objetivo 30 min, búsqueda ciega (registros anteriores ocultos)` |
+| `samplingEffort` | minutos de búsqueda activa (sin pausas), metros recorridos, «recorrido GPS incompleto» si lo está, y los observadores | `33,3 minutos de búsqueda activa; 1000 m recorridos; 1 observador: …` |
+| `sampleSizeValue` · `sampleSizeUnit` | la superficie del sitio si la hay (como antes); si no, los minutos activos (`minute`, tiempo fijo) o los metros recorridos (`metre`, transecto) | `33.3` · `minute` |
+| `eventDate` | intervalo ISO `inicio/fin` (UTC), como en F11h | `2026-10-20T08:00:00Z/2026-10-20T08:33:20Z` |
+| `footprintWKT` · `footprintSRS` | el **recorrido GPS** de la visita: `LINESTRING` o, si hay huecos o pausas, `MULTILINESTRING` con un tramo por trozo continuo; `EPSG:4326`. Sustituye a la geometría del sitio en el evento de la visita (el sitio, como evento padre, conserva la suya) | `LINESTRING(-3.36 37.06, -3.359438 37.06, …)` |
+
+En `measurementorfact.txt` se añade la distancia recorrida (`<visitID>:distance`, en m, solo con `eventID`). La hoja
+«Visitas» gana las columnas Búsqueda, Objetivo, Tiempo activo, Distancia, Celdas de 2 km cubiertas (recuento), Modo
+búsqueda, Recorrido completo y Tipo de visita; la hoja «Evaluación por especie», Diseño de muestreo, Método de
+suficiencia espacial, Suficiencia espacial (Chao2) y Cambios de diseño y de método.
+
+**Generalización del recorrido.** El recorrido pasa por `exportEventLocation()` igual que la geometría de un sitio, con
+el nivel más restrictivo de las especies de la visita y de su sitio. Un recorrido es más fino que cualquier celda de
+generalización, así que no se «difumina»: si el evento se generaliza (exportación para publicar con alguna especie de
+nivel 1–3 en la visita), `footprintWKT` y `footprintSRS` salen **vacíos** y la posición es el centro de la celda, como
+el resto del evento. El esfuerzo (minutos, metros) sí sale: no dice dónde. En la exportación completa (owner y
+custodio) sale exacto. `bin/test-f11j.php` comprueba que ninguna coordenada del recorrido de una visita con especie
+sensible aparece en ningún fichero del ZIP para publicar.
+
+**Plinian Core** (`docs/plinian.md`): son fichas de especie, sin eventos, visitas ni geometría; el recorrido no llega a
+ellas (comprobado en la misma batería).

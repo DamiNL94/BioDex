@@ -8,8 +8,9 @@
 // (node shared/iucn-engine.test.js · bin/test-sufficiency.php). Bibliografía y reglas: bibliografia/suficiencia-de-datos.md.
 //
 //   normCdf(x), normInv(p)                      → normal estándar (BCa del bootstrap y potencia de las series)
-//   samplingCompleteness(records, project)      → completitud del muestreo de la distribución (Chao2 sobre celdas
-//                                                 de 2 km y días de muestreo) y ausencias confirmadas
+//   validOccasions(visits, taxonID)             → visitas que son ocasiones de muestreo comparables, y las excluidas
+//   samplingCompleteness(records, project,      → completitud del muestreo de la distribución (Chao2 sobre las celdas
+//                        visits, taxonID)         de 2 km cubiertas por ocasiones válidas), frontera y ausencias
 //   rangeQuality(completeness)                  → calidad de EOO y AOO
 //   seriesQuality(series)                       → calidad de la reducción (A) y de la tasa de C1
 //   requirements(q, {series})                   → requisitos mínimos por grupo con su progreso (0–1), para las barras
@@ -19,10 +20,15 @@
 //   · Maduros OBSERVADOS: solo con censo completo declarado (hecho census_complete = sí; Iriondo 2011, AFA). ESTIMADOS:
 //     densidad de ≥ 10 parcelas (≥ 15 si el coeficiente de variación de la densidad es > 1) × superficie de hábitat
 //     ocupado (Elzinga et al. 1998, cap. 7). Lo demás es un mínimo: INFERIDO.
-//   · AOO ESTIMADA: ≥ 5 días de muestreo y completitud Chao2 ≥ 90 % (BioDex; Colwell y Coddington 1994; la AOO por
-//     recuento de celdas mide sobre todo el esfuerzo: Marsh et al. 2023). EOO ESTIMADA: además, con ≥ 20 celdas con
-//     presencia basta (Syfert et al. 2014, citado por Marsh et al. 2023). Si no, INFERIDAS (cota inferior).
-//   · Ausencia confirmada en una celda: ≥ 3 días de muestreo sin detectar la especie (MacKenzie y Royle 2005).
+//   · Ocasión de muestreo (F11j): una visita en modo búsqueda (las marcas anteriores ocultas), con protocolo de tiempo
+//     fijo (Goff et al. 1982) o transecto, que alcanzó su esfuerzo objetivo con el recorrido GPS completo, y comparable
+//     con las demás (mismo protocolo, esfuerzo entre 0,5× y 2× la mediana). Chao2 supone ocasiones independientes y de
+//     esfuerzo parecido (Chao 1987): una visita que va derecha a una marca conocida no lo es.
+//   · AOO ESTIMADA: ≥ 5 ocasiones válidas, completitud Chao2 ≥ 90 % y ≥ 50 % de la frontera prospectada (BioDex;
+//     Colwell y Coddington 1994; la AOO por recuento de celdas mide sobre todo el esfuerzo: Marsh et al. 2023). EOO
+//     ESTIMADA: además, con ≥ 20 celdas con presencia basta (Syfert et al. 2014, citado por Marsh et al. 2023). Si no,
+//     INFERIDAS (cota inferior).
+//   · Ausencia confirmada en una celda: cubierta por ≥ 3 ocasiones válidas sin detectar la especie (MacKenzie y Royle 2005).
 //   · Series: ≥ 3 años (ya en iucn-series.js); ≥ 5 grados de libertad para estimar la sobredispersión φ (BioDex) para
 //     que la tasa sea ESTIMADA (si no, INFERIDA); potencia ≥ 0,8 para detectar la reducción del umbral de VU en la
 //     ventana (Gerrodette 1987; White 2019): no decide la calidad, avisa (Connors et al. 2014).
@@ -35,8 +41,11 @@ export const SUFFICIENCY = {
   cvHigh: 1,                  // CV de la densidad por encima del cual se piden plotsHighCv
   eooCells: 20,               // celdas con presencia para un EOO estable
   completenessPct: 90,        // completitud Chao2 para una AOO estimada
-  minOccasions: 5,            // días de muestreo para que Chao2 signifique algo
-  absenceOccasions: 3,        // días sin detección para una ausencia confirmada
+  minOccasions: 5,            // ocasiones válidas para que Chao2 signifique algo
+  absenceOccasions: 3,        // ocasiones sin detección para una ausencia confirmada
+  frontierPct: 50,            // % de celdas vecinas a las ocupadas que deben estar cubiertas
+  effortRange: [0.5, 2],      // esfuerzo comparable: entre 0,5× y 2× la mediana del protocolo
+  rangeMinOccasions: 3,       // con menos ocasiones no hay mediana que valga: no se filtra por rango
   seriesYears: 3,             // = MIN_YEARS de iucn-series.js
   seriesDf: 5,                // grados de libertad para φ
   power: 0.8,                 // potencia objetivo
@@ -76,20 +85,87 @@ export function normInv(p) {
   return (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q / (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1);
 }
 
+/** Motivos por los que una visita no es ocasión de Chao2, en el orden en que se comprueban. */
+export const EXCLUSIONS = ['free', 'notBlind', 'effort', 'track', 'protocol', 'range'];
+
+/** Esfuerzo de una visita en la unidad de su protocolo: minutos de búsqueda activa (timed) o metros (transect). */
+const effortValue = (v) => (v.effortProtocol === 'timed' ? (toNum(v.activeSeconds) === null ? null : toNum(v.activeSeconds) / 60)
+  : v.effortProtocol === 'transect' ? toNum(v.distanceM) : null);
+
+function median(values) {
+  const s = [...values].sort((a, b) => a - b);
+  const n = s.length;
+  return n ? (n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2) : null;
+}
+
 /**
- * Completitud del muestreo de la distribución de una especie en el catálogo (presencias Y ausencias).
- * Ocasiones de muestreo = días UTC con algún registro de la especie (presente o ausente). Para cada celda de 2 km con
- * presencia, en cuántas ocasiones se detectó (incidencia). Chao2 con corrección de sesgo (Colwell y Coddington 1994):
- *   S = S_obs + ((T − 1) / T) · Q1 (Q1 − 1) / (2 (Q2 + 1)),  completitud = S_obs / S.
- * Mismo filtro que la AOO: fuera las borradas y las de precisión peor que la celda.
- * → {occasions, cellsPresent, q1, q2, chao2, completenessPct, absentCells, confirmedAbsentCells}
+ * Qué visitas son ocasiones de muestreo COMPARABLES para una especie (F11j; docs/esfuerzo.md).
+ * Cuentan las visitas cerradas que buscaban la especie (es una de sus especies objetivo, o la visita no tiene
+ * especies objetivo: se buscaba todo). De ellas, es ocasión válida la que:
+ *   · tiene protocolo de búsqueda (no «libre»)                               → si no, excluida por `free`
+ *   · se hizo entera en modo búsqueda (blind)                                → `notBlind`
+ *   · alcanzó el esfuerzo objetivo                                           → `effort`
+ *   · tiene el recorrido completo (y sus celdas cubiertas)                   → `track`
+ *   · es del protocolo con más ocasiones válidas (a igualdad, tiempo fijo)   → `protocol`
+ *   · tiene un esfuerzo entre 0,5× y 2× la mediana de ese protocolo (con ≥ 3) → `range`
+ * → {valid: [visita…], protocol, medianEffort, considered, excluded: {motivo: n}}
  */
-export function samplingCompleteness(records, project = null) {
-  const days = new Set();
-  const presence = new Map();     // celda → Set(días)
-  const absence = new Map();      // celda → Set(días)
+export function validOccasions(visits, taxonID) {
+  const S = SUFFICIENCY;
+  const excluded = Object.fromEntries(EXCLUSIONS.map((k) => [k, 0]));
+  const byProtocol = { timed: [], transect: [] };
+  let considered = 0;
+  for (const v of visits || []) {
+    if (!v || v.deletedAt || v.deleted || (v.visitStatus || v.status) !== 'closed') continue;
+    const targets = Array.isArray(v.species) ? v.species.map(String) : [];
+    if (targets.length && taxonID !== null && taxonID !== undefined && !targets.includes(String(taxonID))) continue;
+    considered++;
+    if (v.effortProtocol !== 'timed' && v.effortProtocol !== 'transect') { excluded.free++; continue; }
+    if (v.blind !== true) { excluded.notBlind++; continue; }
+    if (v.targetMet !== true || effortValue(v) === null) { excluded.effort++; continue; }
+    if (v.trackComplete !== true || !Array.isArray(v.coveredCells)) { excluded.track++; continue; }
+    byProtocol[v.effortProtocol].push(v);
+  }
+  const protocol = !byProtocol.timed.length && !byProtocol.transect.length ? null
+    : byProtocol.transect.length > byProtocol.timed.length ? 'transect' : 'timed';
+  if (!protocol) return { valid: [], protocol: null, medianEffort: null, considered, excluded };
+  excluded.protocol = byProtocol[protocol === 'timed' ? 'transect' : 'timed'].length;
+  const pool = byProtocol[protocol];
+  const med = median(pool.map(effortValue));
+  const inRange = (v) => pool.length < S.rangeMinOccasions || (effortValue(v) >= S.effortRange[0] * med && effortValue(v) <= S.effortRange[1] * med);
+  const valid = pool.filter(inRange);
+  excluded.range = pool.length - valid.length;
+  return { valid, protocol, medianEffort: round(med, 1), considered, excluded };
+}
+
+/**
+ * Completitud del muestreo de la distribución de una especie en el catálogo.
+ * Ocasiones de muestreo = visitas válidas y comparables (validOccasions). Las celdas del cálculo son las de 2 km
+ * CUBIERTAS por el recorrido de alguna ocasión válida (más la de cada presencia registrada en ella); la incidencia de
+ * una celda es en cuántas ocasiones válidas se detectó la especie en ella. Chao2 con corrección de sesgo (Chao 1987;
+ * Colwell y Coddington 1994):
+ *   S = S_obs + ((T − 1) / T) · Q1 (Q1 − 1) / (2 (Q2 + 1)),  completitud = S_obs / S.
+ * Una celda cubierta sin detección es un resultado negativo; con ≥ 3 ocasiones, una ausencia confirmada.
+ * Frontera prospectada: de las celdas vecinas (8) a las ocupadas —por cualquier registro, no solo los de las
+ * ocasiones—, cuántas están cubiertas. Sin ella, volver siempre a las mismas celdas daría una completitud del 100 %.
+ * Mismo filtro de registros que la AOO: fuera los borrados y los de precisión peor que la celda.
+ * → {occasions, cellsPresent, q1, q2, chao2, completenessPct, absentCells, confirmedAbsentCells, coveredCells,
+ *    frontierCells, frontierCovered, frontierPct, cellsAll, protocol, medianEffort, considered, excluded}
+ */
+export function samplingCompleteness(records, project = null, visits = null, taxonID = null) {
+  const occ = validOccasions(visits, taxonID);
+  const covered = new Map();      // celda → Set(visitas válidas que la cubren)
+  for (const v of occ.valid) {
+    for (const cell of v.coveredCells) {
+      if (!covered.has(cell)) covered.set(cell, new Set());
+      covered.get(cell).add(v.visitID);
+    }
+  }
+  const validIds = new Set(occ.valid.map((v) => v.visitID));
+  const all = new Set();          // celdas con presencia, de cualquier registro
+  const presence = new Map();     // celda → Set(visitas válidas con presencia)
   for (const r of records || []) {
-    if (!r || r.deletedAt) continue;
+    if (!r || r.deletedAt || r.occurrenceStatus === 'absent') continue;
     const u = toNum(r.coordinateUncertaintyInMeters);
     if (u !== null && u > AOO_CELL_M) continue;
     let x = toNum(r.x);
@@ -102,16 +178,16 @@ export function samplingCompleteness(records, project = null) {
       x = p.easting;
       y = p.northing;
     }
-    const t = Date.parse(r.eventDate);
-    if (!Number.isFinite(t)) continue;
-    const day = new Date(t).toISOString().slice(0, 10);
-    days.add(day);
     const cell = `${Math.floor(x / AOO_CELL_M)},${Math.floor(y / AOO_CELL_M)}`;
-    const target = r.occurrenceStatus === 'absent' ? absence : presence;
-    if (!target.has(cell)) target.set(cell, new Set());
-    target.get(cell).add(day);
+    all.add(cell);
+    const visit = r.visitID || null;
+    if (!visit || !validIds.has(visit)) continue;
+    if (!presence.has(cell)) presence.set(cell, new Set());
+    presence.get(cell).add(visit);
+    if (!covered.has(cell)) covered.set(cell, new Set());
+    covered.get(cell).add(visit);
   }
-  const T = days.size;
+  const T = occ.valid.length;
   const sObs = presence.size;
   let q1 = 0;
   let q2 = 0;
@@ -119,20 +195,58 @@ export function samplingCompleteness(records, project = null) {
   const chao2 = sObs && T ? sObs + ((T - 1) / T) * (q1 * (q1 - 1)) / (2 * (q2 + 1)) : null;
   let absentCells = 0;
   let confirmed = 0;
-  for (const [cell, set] of absence) {
-    if (presence.has(cell)) continue;
+  for (const [cell, set] of covered) {
+    if (all.has(cell)) continue;
     absentCells++;
     if (set.size >= SUFFICIENCY.absenceOccasions) confirmed++;
   }
+  const frontier = new Set();
+  for (const cell of all) {
+    const [i, j] = cell.split(',').map(Number);
+    for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) {
+      const k = `${i + di},${j + dj}`;
+      if (!all.has(k)) frontier.add(k);
+    }
+  }
+  let frontierCovered = 0;
+  for (const k of frontier) if (covered.has(k)) frontierCovered++;
   return { occasions: T, cellsPresent: sObs, q1, q2, chao2: chao2 === null ? null : round(chao2, 3),
-    completenessPct: chao2 ? round((100 * sObs) / chao2, 1) : null, absentCells, confirmedAbsentCells: confirmed };
+    completenessPct: chao2 ? round((100 * sObs) / chao2, 1) : null, absentCells, confirmedAbsentCells: confirmed,
+    coveredCells: covered.size, frontierCells: frontier.size, frontierCovered,
+    frontierPct: frontier.size ? round((100 * frontierCovered) / frontier.size, 1) : null, cellsAll: all.size,
+    protocol: occ.protocol, medianEffort: occ.medianEffort, considered: occ.considered, excluded: occ.excluded };
 }
+
+/** Celdas con presencia de cualquier registro (las evaluaciones guardadas antes de F11j solo traen cellsPresent). */
+const cellsAllOf = (c) => (c.cellsAll === undefined || c.cellsAll === null ? c.cellsPresent : c.cellsAll);
 
 /** Calidad de EOO y AOO según la completitud. → {eoo, aoo, completenessOk} (null sin presencias). */
 export function rangeQuality(c) {
-  if (!c || !c.cellsPresent) return { eoo: null, aoo: null, completenessOk: false };
-  const ok = c.occasions >= SUFFICIENCY.minOccasions && c.completenessPct !== null && c.completenessPct >= SUFFICIENCY.completenessPct;
-  return { eoo: ok || c.cellsPresent >= SUFFICIENCY.eooCells ? 'estimated' : 'inferred', aoo: ok ? 'estimated' : 'inferred', completenessOk: ok };
+  if (!c || !cellsAllOf(c)) return { eoo: null, aoo: null, completenessOk: false };
+  const frontierOk = c.frontierPct === undefined || (c.frontierPct !== null && c.frontierPct >= SUFFICIENCY.frontierPct);
+  const ok = c.occasions >= SUFFICIENCY.minOccasions && c.completenessPct !== null && c.completenessPct >= SUFFICIENCY.completenessPct && frontierOk;
+  return { eoo: ok || cellsAllOf(c) >= SUFFICIENCY.eooCells ? 'estimated' : 'inferred', aoo: ok ? 'estimated' : 'inferred', completenessOk: ok };
+}
+
+const PROTOCOL_LABEL = { timed: 'búsqueda con tiempo fijo', transect: 'transecto' };
+const n1 = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+
+/** Línea bajo Chao2: ocasiones usadas, excluidas por motivo y celdas cubiertas. '' en una evaluación anterior a F11j. */
+export function occasionsDetail(c) {
+  if (!c || !c.excluded) return '';
+  const e = c.excluded;
+  const parts = [
+    e.notBlind ? n1(e.notBlind, 'no ciega', 'no ciegas') : '',
+    e.free ? `${e.free} de protocolo libre` : '',
+    e.effort ? `${e.effort} con esfuerzo insuficiente` : '',
+    e.range ? `${e.range} con esfuerzo fuera de rango` : '',
+    e.track ? `${e.track} con recorrido incompleto` : '',
+    e.protocol ? `${e.protocol} de otro protocolo` : '',
+  ].filter(Boolean);
+  const used = c.occasions
+    ? `${n1(c.occasions, 'ocasión usada', 'ocasiones usadas')} (${PROTOCOL_LABEL[c.protocol]}, mediana ${String(c.medianEffort).replace('.', ',')} ${c.protocol === 'timed' ? 'min' : 'm'})`
+    : 'Ninguna ocasión válida';
+  return `${used} de ${n1(c.considered, 'visita', 'visitas')} · excluidas: ${parts.length ? parts.join(', ') : 'ninguna'} · ${n1(c.coveredCells, 'celda cubierta', 'celdas cubiertas')}.`;
 }
 
 /** Calidad de la reducción (A) y de la tasa de C1 según la serie. → {a, c1} (null sin serie evaluable). */
@@ -170,16 +284,22 @@ export function requirements(q, { series = null } = {}) {
     id: 'range', title: 'Distribución: EOO y AOO', criteria: ['B'],
     quality: { eoo: rq.eoo, aoo: rq.aoo },
     items: [
-      item('occasions', 'Días de muestreo de la especie', c ? c.occasions : 0, S.minOccasions,
-        { unit: 'días', ref: 'BioDex (Chao2: Colwell y Coddington 1994)', hint: 'Cada día con alguna marca de la especie, presente o ausente.' }),
-      item('completeness', 'Completitud del muestreo (Chao2 sobre celdas de 2 km)', c ? c.completenessPct : 0, S.completenessPct,
-        { unit: '%', ref: 'Colwell y Coddington 1994; Marsh et al. 2023', hint: 'Sube cuando las celdas ocupadas se vuelven a encontrar en días distintos y deja de aparecer ocupación nueva.' }),
-      item('eooCells', 'Celdas de 2 km con presencia (EOO estable)', c ? c.cellsPresent : 0, S.eooCells,
+      item('occasions', 'Esfuerzo estandarizado: ocasiones válidas', c ? c.occasions : 0, S.minOccasions,
+        { unit: 'ocasiones', ref: 'BioDex (Chao 1987; Goff et al. 1982)',
+          hint: 'Visitas en modo búsqueda, con tiempo fijo o transecto, que alcanzaron el esfuerzo objetivo con el recorrido completo y un esfuerzo comparable.' }),
+      item('completeness', 'Completitud del muestreo (Chao2 sobre celdas de 2 km cubiertas)', c ? c.completenessPct : 0, S.completenessPct,
+        { unit: '%', ref: 'Chao 1987; Colwell y Coddington 1994; Marsh et al. 2023', hint: 'Sube cuando las celdas ocupadas se vuelven a encontrar en ocasiones distintas y deja de aparecer ocupación nueva.' }),
+      item('frontier', 'Frontera prospectada (celdas vecinas a las ocupadas, cubiertas)', c && c.frontierPct !== undefined ? c.frontierPct : 0, S.frontierPct,
+        { unit: '%', ref: 'BioDex', hint: c && c.frontierCells
+          ? `${c.frontierCovered} de ${c.frontierCells} celdas vecinas cubiertas por una ocasión válida. Volver siempre a las mismas celdas no demuestra que no haya más.`
+          : 'Celdas vecinas a las ocupadas que ha cubierto alguna ocasión válida.' }),
+      item('eooCells', 'Celdas de 2 km con presencia (EOO estable)', c ? cellsAllOf(c) : 0, S.eooCells,
         { unit: 'celdas', ref: 'Syfert et al. 2014 (vía Marsh et al. 2023)', hint: 'Con 20 o más, el EOO es estimado aunque falte completitud.' }),
     ],
-    note: !c || !c.cellsPresent ? 'Sin presencias: no hay EOO ni AOO.'
+    note: !c || !cellsAllOf(c) ? 'Sin presencias: no hay EOO ni AOO.'
       : `Calidad: EOO ${QLABEL[rq.eoo]}; AOO ${QLABEL[rq.aoo]}.${rq.aoo === 'inferred' ? ' Mientras la AOO sea inferida es solo una cota inferior: B2 no se puede cumplir (tabla 3.1 pide estimada).' : ''}${
-        c.absentCells ? ` Ausencias: ${c.absentCells} ${c.absentCells === 1 ? 'celda' : 'celdas'} sin detección, ${c.confirmedAbsentCells} confirmadas (≥ ${S.absenceOccasions} días).` : ''}`,
+        c.absentCells ? ` Ausencias: ${c.absentCells} ${c.absentCells === 1 ? 'celda cubierta' : 'celdas cubiertas'} sin detección, ${c.confirmedAbsentCells} confirmadas (≥ ${S.absenceOccasions} ocasiones).` : ''}`,
+    detail: occasionsDetail(c),
   });
 
   // Individuos maduros (C y D): censo completo O parcelas suficientes con superficie de hábitat.

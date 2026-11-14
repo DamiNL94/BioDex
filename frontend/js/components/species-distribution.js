@@ -92,7 +92,7 @@ export function mountDistribution(el, { species, catalog }) {
 
   // Tras sincronizar (marcas nuevas) o al volver la red, otra vez: el servidor solo recalcula si cambió algo.
   const unsubscribe = subscribe((key) => {
-    if ((key === 'sync' && !state.sync.running) || key === 'online') refresh();
+    if ((key === 'sync' && !state.sync.running) || key === 'online' || key === 'visit') refresh();   // 'visit': modo búsqueda
   });
   refresh();
   return { refresh, destroy: () => { alive = false; unsubscribe(); } };

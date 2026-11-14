@@ -14,6 +14,7 @@
 // ================================================================================================
 
 import { state } from '../state.js';
+import { blindFilter } from '../blind.js';
 import { html, render, $, $$, sciName, sciNameText, plural } from '../util.js';
 import { hasDb, byIndex } from '../db.js';
 import { silhouette, silhouetteData, swapToSilhouette } from './species-card.js';
@@ -114,7 +115,8 @@ export function mountSpeciesPicker(el, { species = [], catalogId, keep = {}, pos
   /** Recientes y «cerca» desde las marcas del dispositivo (sin red también). */
   async function loadMarks() {
     if (!catalogId || !hasDb()) return;
-    try { marks = await byIndex('occurrences', 'catalogId', catalogId); } catch (e) { marks = []; }
+    // En modo búsqueda, «cerca de aquí» no puede delatar una marca anterior de una especie objetivo (js/blind.js).
+    try { marks = blindFilter(await byIndex('occurrences', 'catalogId', catalogId)); } catch (e) { marks = []; }
     if (!alive) return;
     recent = recentFromMarks(marks, state.user && state.user.id);
     near = nearFromMarks(marks, position());

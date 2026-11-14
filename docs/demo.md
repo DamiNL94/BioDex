@@ -29,9 +29,17 @@ vueltos a visitar tres días más, tres impactos en curso de pisoteo, pastoreo y
 confirmadas** → **EN B1ab(iii)+2ab(iii)**) y *Odontites viscosus* subsp. *granatensis* (una sola mancha junto a la pista,
 amenaza plausible por el ensanche previsto → **VU D2**).
 - Desde 1.9.0, arriba de las tarjetas: **«Requisitos mínimos de datos»**. En *Rothmaleria* la distribución está en verde
-  (6 días de campo, completitud del 100 %: EOO y AOO estimadas) y los maduros en rojo (9 parcelas de 10 y sin censo
-  completo: total inferido, por eso C y D no cuentan). Es el mensaje: con un solo día de campo la misma especie saldría
-  «Calidad insuficiente» en B, porque la AOO sería solo una cota inferior (tabla 3.1 de la UICN).
+  y los maduros en rojo (9 parcelas de 10 y sin censo completo: total inferido, por eso C y D no cuentan).
+- Desde 1.10.0 la distribución está en verde por **seis visitas con protocolo** de la editora (tiempo fijo de 180 min,
+  en modo búsqueda, con su recorrido GPS): tres de repetición a los tres núcleos (con pausas entre uno y otro) y tres
+  exploratorias que rodean la celda de cada núcleo sin encontrar nada. Resultado: 6 ocasiones válidas, completitud del
+  100 %, frontera prospectada cubierta, EOO y AOO estimadas → sigue **EN B1ab(iii)+2ab(iii)**. La línea «Chao2.» lo
+  cuenta, y debajo está el diseño de muestreo (mixto, con su registro: primero exploratorio) y la tarjeta de ocupación
+  «próximamente». Es el mensaje: las marcas sueltas de julio cuentan para la distribución, pero sin visitas con protocolo
+  la AOO sería solo una cota inferior y B saldría «Calidad insuficiente» (tabla 3.1 de la UICN).
+- Para enseñar el modo búsqueda en el móvil: «Empezar visita» › sin sitio › tiempo fijo, con la *Rothmaleria* como
+  objetivo. Sus marcas desaparecen del mapa y de la ficha; «Salir del modo búsqueda» las devuelve y deja la visita como
+  no ciega.
 - Móvil: botón «Impacto» → «Pisoteo» → Alta → Guardar, sin red (sigue con `docker compose stop nginx`).
 - Escritorio: Especies › *Rothmaleria* › «Evaluación UICN»: categoría, rango plausible, tarjetas A–E con lo que falta,
   subpoblaciones y localidades por amenaza. Mapa › Filtros › *Rothmaleria* › «Subpoblaciones». «Añadir registros de

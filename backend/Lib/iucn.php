@@ -1013,7 +1013,7 @@ function iucnQuantify(array $records, array $opts = []): array {
     $frag = iucnFragmentation($sp["subpops"], iucnParamValue($params, "min_viable_subpop"), iucnParamValue($params, "dispersal_distance"));
     $impacts = $opts["impacts"] ?? [];
     return ["nPoints" => count($points), "mature" => $mature, "subpops" => $sp, "fragmentation" => $frag,
-            "locations" => iucnProposeLocations($sp["subpops"], $impacts), "completeness" => suffSamplingCompleteness($records),
+            "locations" => iucnProposeLocations($sp["subpops"], $impacts), "completeness" => suffSamplingCompleteness($records, $opts["visits"] ?? null, $opts["taxonID"] ?? null),
             "suggestions" => iucnSuggestDecline($impacts, $opts["habitatCodes"] ?? []), "separation" => ["km" => $sepKm, "fromDefault" => $fromDefault]];
 }
 

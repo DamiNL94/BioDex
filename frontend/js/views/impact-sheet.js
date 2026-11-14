@@ -16,6 +16,7 @@ import { apiGetJson } from '../api.js';
 import { openOverlay, confirmDialog } from '../components/overlay.js';
 import { createImpact, updateImpact, MARK_ROLES, IMPACT_INTENSITIES, IMPACT_TIMINGS, IMPACT_RADIUS_DEFAULT, isoNow } from '../marks.js';
 import { byIndex } from '../db.js';
+import { blindFilter } from '../blind.js';
 import { requestSync } from '../sync.js';
 import { remoteOrLocal, localCatalogData } from '../offline.js';
 import { inPolygon } from '../site-geom.js';
@@ -51,7 +52,8 @@ const metersBetween = (a, b) => distanceM(a.lat, a.lng, b.lat, b.lng);
 /** taxonIDs del catálogo con marcas (presencias) del dispositivo dentro del radio o del polígono. */
 async function speciesInside(catalogId, where) {
   // Solo marcas con posición exacta: las generalizadas están en el centro de su celda (de 1 a 10 km), no donde se vieron.
-  const marks = (await byIndex('occurrences', 'catalogId', catalogId)).filter((o) => !o.deletedAt && !o.generalized && o.occurrenceStatus !== 'absent'
+  // En modo búsqueda no se proponen las especies por sus marcas anteriores: diría que hay una dentro del radio (js/blind.js).
+  const marks = blindFilter(await byIndex('occurrences', 'catalogId', catalogId)).filter((o) => !o.deletedAt && !o.generalized && o.occurrenceStatus !== 'absent'
     && Number.isFinite(o.decimalLatitude) && Number.isFinite(o.decimalLongitude));
   const ids = new Set();
   for (const o of marks) {

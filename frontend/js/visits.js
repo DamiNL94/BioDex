@@ -21,6 +21,7 @@ import { siteMetrics, lineWkt } from './site-geom.js';
 import { distanceM } from './species-search.js';
 import { toUtm } from './geo/utm.js';
 import { seriesFromVisits, analyzeSeries } from '../shared/iucn-series.js';
+import { appendFix, analyzeTrack, visitEffort } from '../shared/track.js';
 
 export const PROTOCOLS = {
   target_census: 'Censo completo de especies objetivo',
@@ -31,12 +32,27 @@ export const PROTOCOLS = {
 export const SITE_TYPES = { plot: 'Parcela', transect: 'Transecto', point: 'Punto de conteo' };
 export const SITE_RADIUS_DEFAULT = 25;
 export const BAND_DEFAULT = 10;
-const TRACK_MIN_STEP_M = 5;
-const TRACK_MAX_ACCURACY_M = 50;
-const TRACK_MAX_POINTS = 5000;
+
+// Protocolo de BÚSQUEDA (cómo se buscó; `protocol` dice cómo se cuenta). Solo las visitas con tiempo fijo o transecto,
+// en modo búsqueda y con el esfuerzo objetivo alcanzado, son ocasiones de Chao2 (docs/esfuerzo.md).
+export const EFFORT_PROTOCOLS = {
+  timed: 'Tiempo fijo',
+  transect: 'Transecto',
+  free: 'Libre',
+};
+export const EFFORT_UNITS = { timed: 'min', transect: 'm' };
+export const EFFORT_DEFAULT_TARGET = { timed: 30, transect: 1000 };
+export const VISIT_KINDS = { exploratory: 'Exploratoria', repeat: 'Repetición de sitio' };
+/** Protocolo de búsqueda que se propone para un protocolo de conteo. */
+export const defaultEffortProtocol = (protocol) => (protocol === 'timed_search' ? 'timed' : protocol === 'transect' ? 'transect' : 'free');
 
 export const defaultProtocol = (siteType) => (siteType === 'transect' ? 'transect' : siteType === 'plot' ? 'plot_count' : 'target_census');
 const me = () => state.user && state.user.id;
+const sec = (iso) => Math.round(Date.parse(iso) / 1000);
+const nowSec = () => Math.round(Date.now() / 1000);
+
+// Modo búsqueda: qué marcas se ocultan durante la visita lo decide js/blind.js (una sola regla para todos los caminos).
+export { blindVisit, blindHidesTaxon, hiddenByBlind, blindFilter } from './blind.js';
 const myName = () => (state.user && (state.user.name || state.user.email)) || '';
 
 /** Cifras locales de un sitio (superficie, longitud, centro y extensión), las mismas que calcula el servidor. */
@@ -162,9 +178,15 @@ export function activeVisitFor(catalogId) {
  * Devuelve la visita.
  */
 export async function startVisit({ catalog, site = null, newSite = null, transect = null, protocol, bandM = null, species = [],
-  observers = '', conditions = '', pos = null }) {
+  observers = '', conditions = '', pos = null, effortProtocol = 'free', effortTarget = null, blind = false, visitKind = null }) {
   if (activeVisitFor(catalog.id)) throw new Error('Ya hay una visita en curso en este catálogo: ciérrala antes de empezar otra.');
   if (!PROTOCOLS[protocol]) throw new Error('Elige el protocolo.');
+  if (!EFFORT_PROTOCOLS[effortProtocol]) throw new Error('Elige cómo vas a buscar: tiempo fijo, transecto o libre.');
+  const goal = effortProtocol === 'free' ? null : Math.round(Number(String(effortTarget ?? '').replace(',', '.')));
+  if (goal !== null && (!Number.isFinite(goal) || goal < 1 || goal > 100000)) {
+    throw new Error(effortProtocol === 'timed' ? 'Pon los minutos de búsqueda (1–100 000).' : 'Pon los metros del transecto (1–100 000).');
+  }
+  const isBlind = blind === true && effortProtocol !== 'free';
   const targets = [...new Set(species)];
   if (protocol === 'target_census' && !targets.length) throw new Error('Un censo de especies objetivo necesita al menos una especie objetivo.');
   if ((newSite || transect) && !pos) throw new Error('Sin posición no se puede crear el sitio aquí: espera al GPS.');
@@ -184,39 +206,114 @@ export async function startVisit({ catalog, site = null, newSite = null, transec
     effortMinutes: null, observers: String(observers || '').trim().slice(0, 500) || myName(),
     eventStart: now, eventEnd: null, conditions: String(conditions || '').trim().slice(0, 2000) || null, visitStatus: 'open',
     species: targets, decimalLatitude: pos ? pos.lat : null, decimalLongitude: pos ? pos.lng : null,
+    effortProtocol, effortTarget: goal, blind: isBlind, visitKind: VISIT_KINDS[visitKind] ? visitKind : null, pauses: [],
     clientUpdatedAt: now, authorId: me(), recordedBy: myName(), generalized: false, status: 'pending', reason: null,
     serverSeq: null, deletedAt: null,
   };
+  const tracking = effortProtocol !== 'free' || !!transect;
+  const firstTrack = [];
+  if (tracking && pos) appendFix(firstTrack, { lat: pos.lat, lon: pos.lng, t: sec(now), acc: pos.accuracy });
   await tx(['sites', 'visits', 'outbox', 'meta'], 'readwrite', async (t) => {
-    if (newSite || transect) await putSite(t, siteRec);
+    if (newSite || transect) await putSite(t, { ...siteRec, effortProtocol, effortTarget: goal });
     else if (siteRec && siteRec.authorId === me()) {
-      // Sitio propio: recuerda las especies objetivo y el protocolo de esta visita.
-      const same = JSON.stringify([...(siteRec.species || [])].sort()) === JSON.stringify([...targets].sort()) && siteRec.protocol === protocol;
-      if (!same) await putSite(t, { ...siteRec, species: targets, protocol, clientUpdatedAt: now, status: 'pending', reason: null });
+      // Sitio propio: recuerda las especies objetivo, el protocolo y la búsqueda de esta visita.
+      const same = JSON.stringify([...(siteRec.species || [])].sort()) === JSON.stringify([...targets].sort()) && siteRec.protocol === protocol
+        && (siteRec.effortProtocol || null) === effortProtocol && (siteRec.effortTarget ?? null) === goal;
+      if (!same) await putSite(t, { ...siteRec, species: targets, protocol, effortProtocol, effortTarget: goal, clientUpdatedAt: now, status: 'pending', reason: null });
     }
     if (siteRec) await t.put('meta', { key: 'siteTargets:' + siteRec.siteID, value: targets });
-    if (transect) await t.put('meta', { key: 'track:' + visit.visitID, value: pos ? [[pos.lat, pos.lng]] : [] });
+    // Búsqueda por defecto del catálogo en este dispositivo (la de un sitio se recuerda en el propio sitio).
+    await t.put('meta', { key: 'effortDefault:' + catalog.id, value: { effortProtocol, effortTarget: goal } });
+    if (tracking) await t.put('meta', { key: 'track:' + visit.visitID, value: firstTrack });
     await t.put('visits', visit);
     await enqueue(t, { kind: 'visit', ref: visit.visitID, catalogId: catalog.id });
   });
   setVisit({ userId: me(), visitID: visit.visitID, catalogId: catalog.id, catalogName: catalog.name, siteID: visit.siteID,
-    siteName: siteRec ? siteRec.name : null, startedAt: now, species: targets, recording: !!transect, protocol });
+    siteName: siteRec ? siteRec.name : null, startedAt: now, species: targets, recording: !!transect, protocol,
+    tracking, effortProtocol, effortTarget: goal, blind: isBlind, visitKind: visit.visitKind, pausedAt: null });
   return visit;
 }
 
-/** Añade un punto a la traza del transecto en grabación (si se ha movido y la precisión vale). → nº de puntos. */
+/** Búsqueda por defecto para una visita: la del sitio; si no, la última de este catálogo en el dispositivo. */
+export async function effortDefaults(catalogId, site = null) {
+  if (site && site.effortProtocol) return { effortProtocol: site.effortProtocol, effortTarget: site.effortTarget ?? null };
+  return (await getMeta('effortDefault:' + catalogId, null)) || null;
+}
+
+/**
+ * Añade un fix al recorrido de la visita en curso (filtrado por shared/track.js). `pos`: {lat, lng, accuracy, t (s)}.
+ * En pausa no se graba. → {n, reason} (reason: added · still · accuracy · jump · time · full · paused).
+ */
 export async function appendTrack(visitID, pos) {
-  if (!pos || !(pos.accuracy <= TRACK_MAX_ACCURACY_M)) return null;
+  if (!pos) return null;
+  if (state.visit && state.visit.visitID === visitID && state.visit.pausedAt) return { n: null, reason: 'paused' };
   const track = (await getMeta('track:' + visitID, [])) || [];
-  const last = track[track.length - 1];
-  if (last && distanceM(last[0], last[1], pos.lat, pos.lng) < TRACK_MIN_STEP_M) return track.length;
-  if (track.length >= TRACK_MAX_POINTS) return track.length;
-  track.push([Math.round(pos.lat * 1e6) / 1e6, Math.round(pos.lng * 1e6) / 1e6]);
-  await setMeta('track:' + visitID, track);
-  return track.length;
+  const reason = appendFix(track, { lat: pos.lat, lon: pos.lng, t: pos.t || nowSec(), acc: pos.accuracy });
+  if (reason === 'added' || reason === 'still' || reason === 'full') await setMeta('track:' + visitID, track);
+  return { n: track.length, reason };
 }
 
 export const trackOf = async (visitID) => (await getMeta('track:' + visitID, [])) || [];
+
+/** Pausas cerradas en `end` (segundos): [[t0, t1]…]. */
+const closedPauses = (pauses, end) => (pauses || []).map(([a, b]) => [a, b === null || b === undefined ? end : b]).filter(([a, b]) => b >= a);
+
+/**
+ * Esfuerzo de una visita con lo que hay en el dispositivo → {analysis (shared/track.js), effort, track, pauses}.
+ * `end`: segundos Unix (ahora, mientras está abierta).
+ */
+export async function visitProgress(visit, end = nowSec()) {
+  const track = visit.track || await trackOf(visit.visitID);
+  const pauses = closedPauses(visit.pauses, end);
+  const analysis = analyzeTrack(track, pauses, toUtm);
+  const effort = visitEffort({ effortProtocol: visit.effortProtocol || 'free', effortTarget: visit.effortTarget ?? null,
+    start: sec(visit.eventStart), end, pauses }, analysis);
+  return { analysis, effort, track, pauses };
+}
+
+async function patchOpenVisit(visitID, fn, { push = false } = {}) {
+  const next = await tx(['visits', 'outbox'], 'readwrite', async (t) => {
+    const v = await t.get('visits', visitID);
+    if (!v || v.authorId !== me() || v.visitStatus !== 'open') return null;
+    const out = fn(v);
+    if (!out) return null;
+    if (push) {
+      out.clientUpdatedAt = isoNow();
+      out.status = 'pending';
+      out.reason = null;
+      await enqueue(t, { kind: 'visit', ref: visitID, catalogId: v.catalogId });
+    }
+    await t.put('visits', out);
+    return out;
+  });
+  return next;
+}
+
+/** Pausa (descanso, desplazamiento entre zonas): el tiempo no cuenta como búsqueda y el recorrido no se graba. */
+export async function pauseVisit(visitID) {
+  const t0 = nowSec();
+  const v = await patchOpenVisit(visitID, (rec) => ((rec.pauses || []).some((p) => p[1] === null) ? null : { ...rec, pauses: [...(rec.pauses || []), [t0, null]] }));
+  if (v && state.visit && state.visit.visitID === visitID) setVisit({ ...state.visit, pausedAt: t0 });
+  return v;
+}
+
+/** Reanuda la búsqueda tras una pausa. */
+export async function resumeVisit(visitID) {
+  const t1 = nowSec();
+  const v = await patchOpenVisit(visitID, (rec) => ({ ...rec, pauses: (rec.pauses || []).map((p) => (p[1] === null ? [p[0], Math.max(p[0], t1)] : p)) }));
+  if (state.visit && state.visit.visitID === visitID) setVisit({ ...state.visit, pausedAt: null });
+  return v;
+}
+
+/**
+ * Sale del modo búsqueda: las marcas anteriores vuelven a verse y la visita queda como búsqueda NO CIEGA, sin vuelta
+ * atrás (deja de contar para Chao2). Se guarda en IndexedDB y va a la cola: el servidor tampoco deja volver.
+ */
+export async function leaveBlind(visitID) {
+  const v = await patchOpenVisit(visitID, (rec) => (rec.blind ? { ...rec, blind: false, blindEndedAt: isoNow() } : null), { push: true });
+  if (state.visit && state.visit.visitID === visitID) setVisit({ ...state.visit, blind: false });
+  return v;
+}
 
 /** Marcas de una visita (del dispositivo), sin borradas. */
 export async function visitMarks(visitID) {
@@ -251,9 +348,14 @@ export async function closeVisit({ visitID, absences = [], effortMinutes = null,
   if (!visit || visit.authorId !== me()) throw new Error('Esa visita no es tuya o ya no está en el dispositivo.');
   const site = visit.siteID ? await get('sites', visit.siteID) : null;
   const end = isoNow();
-  const effort = effortMinutes === null || effortMinutes === '' ? minutesBetween(visit.eventStart, end) : Math.round(Number(effortMinutes));
+  // Recorrido y esfuerzo (el servidor los recalcula al sincronizar: Lib/track.php). Una pausa abierta se cierra aquí.
+  const tracked = (visit.effortProtocol || 'free') !== 'free';
+  const progress = await visitProgress(visit, sec(end));
+  const track = progress.track;
+  const e = progress.effort;
+  const effort = effortMinutes === null || effortMinutes === ''
+    ? (tracked && e.activeSeconds !== null ? Math.round(e.activeSeconds / 60) : minutesBetween(visit.eventStart, end)) : Math.round(Number(effortMinutes));
   if (!Number.isFinite(effort) || effort < 0 || effort > 100000) throw new Error('El esfuerzo va en minutos (0–100 000).');
-  const track = await trackOf(visitID);
   const recording = state.visit && state.visit.visitID === visitID && state.visit.recording;
 
   // Dónde se guardan las ausencias: el centro del sitio con su extensión como precisión (o la posición, sin sitio).
@@ -275,6 +377,9 @@ export async function closeVisit({ visitID, absences = [], effortMinutes = null,
   const now = isoNow();
   const next = { ...visit, visitStatus: 'closed', eventEnd: end, effortMinutes: effort,
     conditions: conditions === null ? visit.conditions : (String(conditions).trim().slice(0, 2000) || null),
+    ...(tracked ? { track, pauses: progress.pauses, activeSeconds: e.activeSeconds, distanceM: progress.analysis.distanceM,
+      trackedSeconds: progress.analysis.trackedSeconds, trackGaps: progress.analysis.gaps, targetMet: e.targetMet, trackComplete: e.trackComplete,
+      coveredCells: progress.analysis.cells, nCoveredCells: progress.analysis.cells.length } : {}),
     clientUpdatedAt: now, status: 'pending', reason: null };
   await tx(['occurrences', 'sites', 'visits', 'outbox', 'meta'], 'readwrite', async (t) => {
     for (const taxonID of [...new Set(absences)]) {
@@ -353,6 +458,13 @@ export async function checkActiveVisit() {
   if (!v) return;
   if (v.userId !== me()) return;   // es de otra cuenta de este dispositivo: activeVisitFor() ya la ignora
   const rec = await get('visits', v.visitID).catch(() => null);
-  if (!rec || rec.visitStatus === 'closed' || rec.deletedAt) setVisit(null);
+  if (!rec || rec.visitStatus === 'closed' || rec.deletedAt) { setVisit(null); return; }
+  // El modo búsqueda, la pausa y el protocolo viven en IndexedDB (el registro de la visita): si lo guardado en
+  // localStorage no coincide (recarga, cierre de la app, otra pestaña), manda el registro.
+  const open = (rec.pauses || []).find((p) => p[1] === null);
+  const truth = { blind: rec.blind === true, pausedAt: open ? open[0] : null, effortProtocol: rec.effortProtocol || 'free',
+    effortTarget: rec.effortTarget ?? null, visitKind: rec.visitKind || null,
+    tracking: (rec.effortProtocol || 'free') !== 'free' || v.recording === true };
+  if (Object.keys(truth).some((k) => (v[k] ?? null) !== truth[k])) setVisit({ ...v, ...truth });
 }
 

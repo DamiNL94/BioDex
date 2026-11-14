@@ -13,6 +13,7 @@ import { apiGetJson } from './api.js';
 import { formatDateTime } from './util.js';
 import { state } from './state.js';
 import { byIndex, getMeta, setMeta } from './db.js';
+import { blindHidesTaxon, BLIND_NOTICE } from './blind.js';
 import { remoteOrLocal } from './offline.js';
 import { toUtm, fromUtm } from './geo/utm.js';
 import { computeMetrics, DEFAULT_CELL_KM } from '../shared/geo-metrics.js';
@@ -45,6 +46,8 @@ export async function provisionalMetrics(catalogId, taxonID, { scope = 'team', c
  * el último definitivo guardado (si lo hay).
  */
 export async function speciesMetrics(catalogId, taxonID, { scope = 'team', cellKm = DEFAULT_CELL_KM } = {}) {
+  // Modo búsqueda: el casco y las celdas de EOO/AOO dicen dónde están las marcas anteriores (js/blind.js).
+  if (blindHidesTaxon(taxonID, catalogId)) throw new Error(BLIND_NOTICE);
   const key = metricsKey(catalogId, taxonID, scope, cellKm);
   const res = await remoteOrLocal(async () => {
     const data = await apiGetJson(`/catalogs/${encodeURIComponent(catalogId)}/species/${encodeURIComponent(taxonID)}/metrics`

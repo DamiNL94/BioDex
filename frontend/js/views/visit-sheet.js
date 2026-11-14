@@ -18,10 +18,19 @@ import { apiGetJson } from '../api.js';
 import { openOverlay, confirmDialog } from '../components/overlay.js';
 import { requestSync } from '../sync.js';
 import { remoteOrLocal, localCatalogData } from '../offline.js';
-import { get } from '../db.js';
+import { get, byIndex, hasDb } from '../db.js';
 import { MARK_ROLES } from '../marks.js';
 import { PROTOCOLS, SITE_TYPES, SITE_RADIUS_DEFAULT, BAND_DEFAULT, defaultProtocol, nearestSites, rememberedTargets, startVisit,
-  closeVisit, discardVisit, visitTally, minutesBetween, trackOf } from '../visits.js';
+  closeVisit, discardVisit, visitTally, minutesBetween, EFFORT_PROTOCOLS, EFFORT_UNITS, EFFORT_DEFAULT_TARGET, VISIT_KINDS,
+  defaultEffortProtocol, effortDefaults, visitProgress } from '../visits.js';
+
+const DESIGN_LABELS = { exploratory: 'exploratorio', repeated: 'sitios repetidos', mixed: 'mixto' };
+const EFFORT_TARGET_LABEL = { timed: 'Minutos de búsqueda activa (objetivo)', transect: 'Metros de transecto (objetivo)' };
+const EFFORT_HINTS = {
+  timed: 'Búsqueda con tiempo fijo: recorre la zona el tiempo fijado. Las pausas no cuentan. Se graba tu recorrido GPS.',
+  transect: 'Transecto: camina la longitud fijada. Se graba tu recorrido GPS y la distancia sale de él.',
+  free: 'Libre: sin objetivo de esfuerzo ni recorrido. La visita no cuenta para la completitud del muestreo (Chao2).',
+};
 import { formatArea, formatLength, lineWkt, siteMetrics } from '../site-geom.js';
 import { toUtm } from '../geo/utm.js';
 import { fold } from '../species-search.js';
@@ -86,6 +95,12 @@ export function openStartVisit({ catalog, initialPos = null, onStarted } = {}) {
   let protocolTouched = false;
   const selected = new Set();
   let picker = null;
+  let effort = null;                  // protocolo de búsqueda: timed · transect · free
+  let effortTouched = false;
+  let blindTouched = false;
+  let kind = null;                    // exploratory · repeat
+  let kindTouched = false;
+  const designs = new Map();          // taxonID → diseño de muestreo (parámetro sampling_design)
 
   render(ov.body, html`<form class="form visit-form" novalidate>
     <p class="visit-gps hint" role="status" aria-live="polite"></p>
@@ -102,6 +117,21 @@ export function openStartVisit({ catalog, initialPos = null, onStarted } = {}) {
       ${Object.entries(PROTOCOLS).map(([k, label]) => html`<button type="button" role="radio" data-protocol="${k}">${label}</button>`)}</div>
       <label class="field visit-band" hidden><span>Banda del transecto, ancho total (m)</span>
         <input name="visitBand" type="number" inputmode="decimal" min="0.1" max="1000" step="any"></label></fieldset>
+    <fieldset class="field visit-effort-set"><legend>Búsqueda y esfuerzo</legend>
+      <div class="chip-pick visit-efforts" role="radiogroup" aria-label="Cómo vas a buscar">
+        ${Object.entries(EFFORT_PROTOCOLS).map(([k, label]) => html`<button type="button" role="radio" data-effort="${k}">${label}</button>`)}</div>
+      <label class="field visit-effort-target" hidden><span class="vet-label"></span>
+        <input name="effortTarget" type="number" inputmode="numeric" min="1" max="100000"></label>
+      <p class="hint visit-effort-hint"></p>
+      <label class="check visit-blind-check"><input type="checkbox" name="blind">
+        <span><strong>Modo búsqueda</strong>: oculta las marcas anteriores de las especies objetivo mientras dura la visita, para que
+          cada hallazgo sea independiente. Solo estas visitas cuentan para la completitud (Chao2).</span></label>
+    </fieldset>
+    <fieldset class="field visit-kind-set"><legend>Tipo de visita</legend>
+      <div class="chip-pick visit-kinds" role="radiogroup" aria-label="Tipo de visita">
+        ${Object.entries(VISIT_KINDS).map(([k, label]) => html`<button type="button" role="radio" data-kind="${k}">${label}</button>`)}</div>
+      <p class="hint visit-kind-hint"></p>
+    </fieldset>
     <fieldset class="field"><legend>Especies objetivo <em>(lo que no cuentes quedará como ausente al cerrar)</em></legend>
       <div class="visit-targets"><p class="muted">Cargando especies…</p></div></fieldset>
     <label class="field"><span>Observadores</span><input name="observers" maxlength="500" value="${state.user.name || state.user.email || ''}"></label>
@@ -149,6 +179,56 @@ export function openStartVisit({ catalog, initialPos = null, onStarted } = {}) {
     $('.visit-band', form).hidden = protocol !== 'transect';
   }
 
+  // --- Búsqueda y esfuerzo (F11j) ----------------------------------------------------------------
+  function setEffort(next, target = null) {
+    const changed = next !== effort;
+    effort = next;
+    if (effort !== 'free' && (changed || target !== null)) form.effortTarget.value = String(target || EFFORT_DEFAULT_TARGET[effort]);
+    // Con protocolo, modo búsqueda por defecto; «libre» no puede ser ciega.
+    if (!blindTouched || effort === 'free') form.blind.checked = effort !== 'free';
+    paintEffort();
+  }
+
+  function paintEffort() {
+    $$('[data-effort]', form).forEach((b) => { const on = b.dataset.effort === effort; b.classList.toggle('active', on); b.setAttribute('aria-checked', String(on)); });
+    const free = !effort || effort === 'free';
+    $('.visit-effort-target', form).hidden = free;
+    if (!free) $('.vet-label', form).textContent = EFFORT_TARGET_LABEL[effort];
+    $('.visit-effort-hint', form).textContent = effort ? EFFORT_HINTS[effort] : '';
+    form.blind.disabled = free;
+    $('.visit-blind-check', form).classList.toggle('is-disabled', free);
+  }
+
+  /** Búsqueda por defecto: la del sitio o la última del catálogo; si no, la que corresponde al protocolo de conteo. */
+  async function defaultEffort() {
+    if (effortTouched) return;
+    const d = await effortDefaults(catalog.id, choice && choice.kind === 'site' ? choice.site : null).catch(() => null);
+    if (effortTouched || !ov.isOpen()) return;
+    if (d && EFFORT_PROTOCOLS[d.effortProtocol]) setEffort(d.effortProtocol, d.effortTarget);
+    else setEffort(defaultEffortProtocol(protocol));
+  }
+
+  /**
+   * Tipo de visita según el diseño de muestreo de las especies objetivo (parámetro `sampling_design`, lo fija quien
+   * configura el catálogo): exploratorio → exploratoria; sitios repetidos → repetición; mixto o sin definir → se elige
+   * aquí (por defecto, repetición si se visita un sitio que ya existe).
+   */
+  function paintKind() {
+    const set = new Set([...selected].map((t) => designs.get(String(t))).filter(Boolean));
+    const fixed = set.size === 1 && !set.has('mixed') ? (set.has('exploratory') ? 'exploratory' : 'repeat') : null;
+    if (fixed) kind = fixed;
+    else if (!kindTouched) kind = choice && choice.kind === 'site' ? 'repeat' : 'exploratory';
+    $$('[data-kind]', form).forEach((b) => {
+      const on = b.dataset.kind === kind;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-checked', String(on));
+      b.disabled = !!fixed && !on;
+    });
+    $('.visit-kind-hint', form).textContent = !set.size ? 'Sin diseño de muestreo definido para las especies objetivo (se fija en Parámetros de la especie).'
+      : fixed ? `Diseño de muestreo de las especies objetivo: ${DESIGN_LABELS[[...set][0]]}.`
+        : `Diseño de muestreo: ${[...set].map((d) => DESIGN_LABELS[d]).join(' y ')}. Elige qué es esta visita.`;
+  }
+
   async function choose(key) {
     if (key.startsWith('site:')) choice = { kind: 'site', site: near.find((n) => 'site:' + n.site.siteID === key).site };
     else choice = { kind: key };
@@ -164,6 +244,8 @@ export function openStartVisit({ catalog, initialPos = null, onStarted } = {}) {
     }
     paintSites();
     paintProtocol();
+    paintKind();
+    await defaultEffort();
   }
 
   form.addEventListener('click', (ev) => {
@@ -172,10 +254,15 @@ export function openStartVisit({ catalog, initialPos = null, onStarted } = {}) {
     const t = ev.target.closest('[data-type]');
     if (t) { newType = t.dataset.type; if (!protocolTouched) protocol = defaultProtocol(newType); paintSites(); paintProtocol(); return; }
     const p = ev.target.closest('[data-protocol]');
-    if (p) { protocol = p.dataset.protocol; protocolTouched = true; paintProtocol(); return; }
+    if (p) { protocol = p.dataset.protocol; protocolTouched = true; paintProtocol(); if (!effortTouched) setEffort(defaultEffortProtocol(protocol)); return; }
+    const e = ev.target.closest('[data-effort]');
+    if (e) { effortTouched = true; setEffort(e.dataset.effort); return; }
+    const k = ev.target.closest('[data-kind]');
+    if (k && !k.disabled) { kind = k.dataset.kind; kindTouched = true; paintKind(); return; }
     if (ev.target.closest('[data-cancel]')) ov.close();
   });
   form.radius.addEventListener('input', paintSites);
+  form.blind.addEventListener('change', () => { blindTouched = true; });
 
   form.addEventListener('submit', async (ev) => {
     ev.preventDefault();
@@ -183,8 +270,11 @@ export function openStartVisit({ catalog, initialPos = null, onStarted } = {}) {
     const fail = (m) => { err.textContent = m; err.hidden = false; $('.visit-start', form).focus(); };
     if (!choice) { fail('Elige el sitio (o «Sin sitio»).'); return; }
     if (!protocol) { fail('Elige el protocolo.'); return; }
+    if (!effort) { fail('Elige cómo vas a buscar: tiempo fijo, transecto o libre.'); return; }
     const args = { catalog, protocol, species: [...selected], observers: form.observers.value, conditions: form.conditions.value, pos,
-      bandM: protocol === 'transect' ? form.visitBand.value : null };
+      bandM: protocol === 'transect' ? form.visitBand.value : null,
+      effortProtocol: effort, effortTarget: effort === 'free' ? null : form.effortTarget.value, blind: effort !== 'free' && form.blind.checked,
+      visitKind: kind };
     if (choice.kind === 'site') args.site = choice.site;
     if (choice.kind === 'new') args.newSite = { name: form.siteName.value, siteType: newType, radiusM: form.radius.value };
     if (choice.kind === 'transect') args.transect = { name: form.siteName.value, bandM: form.band.value };
@@ -211,10 +301,19 @@ export function openStartVisit({ catalog, initialPos = null, onStarted } = {}) {
   paintGps();
   paintSites();
   paintProtocol();
+  paintEffort();
+  paintKind();
   loadSites();
+  // Diseño de muestreo de cada especie (parámetros del catálogo en el dispositivo).
+  if (hasDb()) {
+    byIndex('parameters', 'catalogId', catalog.id).then((list) => {
+      for (const p of list) if (p.key === 'sampling_design' && p.value) designs.set(String(p.taxonID), p.value);
+      if (ov.isOpen()) paintKind();
+    }).catch(() => {});
+  }
   catalogSpecies(catalog).then((list) => {
     species = list;
-    if (ov.isOpen()) picker = targetPicker($('.visit-targets', form), species, selected, () => {});
+    if (ov.isOpen()) picker = targetPicker($('.visit-targets', form), species, selected, paintKind);
   }).catch(() => {
     if (ov.isOpen()) render($('.visit-targets', form), html`<p class="guard-band warn">Sin conexión y sin el catálogo descargado no hay especies que elegir.</p>`);
   });
@@ -242,12 +341,42 @@ export async function openCloseVisit({ visitID, onClosed } = {}) {
   const name = (t) => { const sp = species.find((s) => s.taxonID === t); return sp ? html`${sp.vernacularName ? html`<strong>${sp.vernacularName}</strong> · ` : ''}${sciName(sp)}` : t; };
   const nameText = (t) => { const sp = species.find((s) => s.taxonID === t); return sp ? (sp.vernacularName || sciNameText(sp)) : t; };
   const recording = state.visit && state.visit.visitID === visitID && state.visit.recording;
-  const track = recording ? await trackOf(visitID) : [];
+  const hasEffort = (visit.effortProtocol || 'free') !== 'free';
+  const progress = recording || hasEffort ? await visitProgress(visit).catch(() => null) : null;
+  const track = progress ? progress.track : [];
   const trackLen = track.length >= 2 ? siteMetrics({ wkt: lineWkt(track) }, toUtm).lengthM : null;
   const absences = new Set(pending);
   const ov = openOverlay({ key: 'cerrar-visita', title: 'Cerrar visita', variant: 'side', className: 'visit-sheet' });
   const counted = [...byTaxon.entries()];
-  const effort0 = minutesBetween(visit.eventStart, new Date().toISOString());
+  const effort0 = hasEffort && progress && progress.effort.activeSeconds !== null ? Math.round(progress.effort.activeSeconds / 60)
+    : minutesBetween(visit.eventStart, new Date().toISOString());
+
+  /** Resumen del esfuerzo y si la visita contará como ocasión de Chao2 (mismos criterios que shared/iucn-sufficiency.js). */
+  function effortSummary() {
+    if (!hasEffort || !progress) return '';
+    const { effort: e, analysis: a } = progress;
+    const unit = EFFORT_UNITS[visit.effortProtocol];
+    const why = [
+      visit.blind === true ? '' : 'no se hizo entera en modo búsqueda',
+      e.targetMet ? '' : `no alcanza el esfuerzo objetivo (${visit.effortTarget} ${unit})`,
+      e.trackComplete ? '' : 'el recorrido GPS está incompleto',
+    ].filter(Boolean);
+    const num = (n) => Number(n).toLocaleString('es-ES', { maximumFractionDigits: 1 });
+    return html`<section class="visit-effort-summary" aria-label="Esfuerzo de la visita"><h3 class="visit-h">Esfuerzo</h3>
+      <dl class="counts visit-effort-counts">
+        <div><dt>Búsqueda</dt><dd>${EFFORT_PROTOCOLS[visit.effortProtocol]}<span class="dd-sub">objetivo: ${visit.effortTarget} ${unit}</span></dd></div>
+        <div><dt>Tiempo activo</dt><dd>${num((e.activeSeconds || 0) / 60)} min</dd></div>
+        <div><dt>Distancia</dt><dd>${num(a.distanceM)} m</dd></div>
+        <div><dt>Celdas de 2 km</dt><dd>${a.cells.length}</dd></div>
+        <div><dt>Recorrido</dt><dd>${e.trackComplete ? 'Completo' : 'Incompleto'}<span class="dd-sub">${Math.round(e.coverage * 100)} % del tiempo con GPS${
+          a.gaps ? ` · ${plural(a.gaps, 'hueco', 'huecos')}` : ''}</span></dd></div>
+        <div><dt>Modo búsqueda</dt><dd>${visit.blind === true ? 'Sí' : 'No'}</dd></div>
+      </dl>
+      ${why.length ? html`<p class="guard-band warn visit-occasion">No contará para la completitud del muestreo (Chao2): ${why.join('; ')}.
+          Las marcas se guardan igual y cuentan para la distribución.</p>`
+        : html`<p class="guard-band info visit-occasion">Cuenta como ocasión de muestreo para la completitud (Chao2), si su esfuerzo es comparable con el de las demás.</p>`}
+    </section>`;
+  }
   render(ov.body, html`<form class="form visit-form" novalidate>
     <p class="visit-summary-head"><strong>${site ? site.name : 'Visita sin sitio'}</strong>
       <span class="muted"> · ${PROTOCOLS[visit.protocol]}${site && site.areaM2 ? ` · ${formatArea(site.areaM2)}` : ''}</span></p>
@@ -263,8 +392,10 @@ export async function openCloseVisit({ visitID, onClosed } = {}) {
       <p class="hint">Quita la marca de las que no buscaste de verdad: una ausencia dice que la buscaste y no estaba.</p>
       <ul class="vt-list" role="list">${pending.map((t) => html`<li><label class="check vt-row"><input type="checkbox" data-absent="${t}" checked>
         <span>${name(t)}</span></label></li>`)}</ul></fieldset>` : targets.length ? html`<p class="hint">Todas las especies objetivo están contadas.</p>` : ''}
+    ${effortSummary()}
     <label class="field"><span>Esfuerzo (minutos)</span><input name="effort" type="number" inputmode="numeric" min="0" max="100000" value="${effort0}">
-      <span class="hint">Calculado entre el inicio y ahora; corrígelo si paraste.</span></label>
+      <span class="hint">${hasEffort ? 'Tiempo activo de la búsqueda, sin las pausas. Para Chao2 cuenta el que sale del recorrido, no este campo.'
+        : 'Calculado entre el inicio y ahora; corrígelo si paraste.'}</span></label>
     <label class="field"><span>Condiciones <em>(opcional)</em></span><textarea name="conditions" rows="2" maxlength="2000">${visit.conditions || ''}</textarea></label>
     <p class="form-error" role="alert" hidden></p>
     <div class="sheet-actions"><button type="submit" class="btn-primary visit-close">Cerrar visita</button>

@@ -55,3 +55,19 @@ pull de `/api/sync` (`parameters`, con los borrados como tombstone, `docs/sync.m
 IndexedDB. El cliente guarda además la respuesta del PUT en el dispositivo, así que se ve sin red aunque aún no haya
 pasado el pull. Sin red, la pestaña dice «Copia del dispositivo: se editan con red» y no ofrece «Cambiar».
 El valor por defecto del grupo sale entonces de `/shared/species-groups.json`, precacheado por el SW.
+
+## Diseño de muestreo y método de referencia (F11j)
+Dos claves de configuración, del tipo «choice», que no bloquean ningún criterio (`docs/esfuerzo.md`):
+
+| Clave | Valores | Qué decide |
+|---|---|---|
+| `sampling_design` | `exploratory` · `repeated` · `mixed` | cómo se etiqueta cada visita (exploratoria o repetición de sitio) al empezarla |
+| `sufficiency_method` | `chao2` | método que usa el motor para la suficiencia espacial; sin fijar, Chao2. La ocupación de una temporada se anuncia en la interfaz («próximamente») pero el servidor aún no la admite (400) |
+
+- Mismos permisos que el resto: los fijan **owner y custodio**; editor y lector los ven (al empezar la visita y en la
+  pestaña Evaluación UICN) y no los cambian.
+- No llevan calidad. Su campo «fuente» es el **motivo del cambio** (opcional).
+- **Trazabilidad**: cambiarlos es libre, pero el registro de `access_log` guarda, además del antes y el después, el
+  motivo: `«taxonID»: «clave» antes → después · motivo: …`. `parameterHistory()` (`Lib/parameters.php`) lo lee y sale en
+  `GET …/assessment` (`sampling.history`: fecha, usuario, valor anterior, valor nuevo y motivo), en la pestaña Evaluación
+  UICN y en la hoja «Evaluación por especie» de la exportación. Sin conexión se ven el diseño y el método, no el historial.

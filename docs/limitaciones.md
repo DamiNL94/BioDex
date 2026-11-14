@@ -1,6 +1,6 @@
-# Limitaciones conocidas (1.9.0)
+# Limitaciones conocidas (1.10.0)
 
-Puesta al día con la versión 1.9.0 (2026-11-12). Recoge lo que BioDex **no hace**, lo que hace de forma
+Puesta al día con la versión 1.10.0 (2026-11-14). Recoge lo que BioDex **no hace**, lo que hace de forma
 **orientativa** y lo que **no se ha podido probar** en esta máquina.
 
 ## Alcance del prototipo
@@ -80,8 +80,25 @@ Puesta al día con la versión 1.9.0 (2026-11-12). Recoge lo que BioDex **no hac
 - **DwC-A con núcleo Event sin pasar por el validador de GBIF** (se pasa a mano): `meta.xml` valida contra el XSD de DwC y
   las pruebas comprueban que cada fichero coincide con él. Las medidas van en la extensión eMoF de OBIS (la que admite
   `occurrenceID` con núcleo Event).
-- **Visitas en el campo, sin probar en un teléfono**: la traza de un transecto se graba solo con la página visible
-  (el navegador para el GPS en segundo plano) y con precisión ≤ 50 m; con la pantalla apagada se pierden tramos.
+- **Visitas en el campo, sin probar en un teléfono**: el recorrido de una visita se graba solo con la página visible
+  (el navegador para el GPS en segundo plano) y con precisión ≤ 30 m; con la pantalla apagada se pierden tramos. Desde
+  la 1.10.0 se pide un Wake Lock de pantalla, se avisa al usuario y los tramos perdidos quedan como **huecos** (no suman
+  distancia ni celdas; con menos del 80 % del tiempo vigilado la visita no cuenta para Chao2). Probado con recorridos
+  sintéticos y con la geolocalización simulada de Playwright, no en una salida real (`docs/esfuerzo.md`).
+- **Modo búsqueda (1.10.0): declarativo.** Oculta las marcas anteriores en ese dispositivo y por todos los caminos de la
+  app, pero no puede impedir que se consulten en otro dispositivo, en papel o de memoria. `blind` dice que el protocolo
+  se siguió en la app, no que la búsqueda fuera ciega de verdad.
+- **Ocasiones de Chao2 (1.10.0): convenciones propias.** El rango de 0,5×–2× la mediana, el 50 % de frontera
+  prospectada, y los umbrales del recorrido (30 m, 2 min de hueco, 80 % de cobertura) son decisiones de diseño, no
+  valores de la bibliografía; Goff et al. (1982) y Chao (1987) están citados con el DOI comprobado pero sin leer el
+  texto completo (`bibliografia/suficiencia-de-datos.md`). Una visita con tiempo fijo que busca quieta no cubre más
+  celdas que la suya: la frontera solo se llena caminando.
+- **Datos anteriores a la 1.10.0.** Sus visitas son «libres» y no ciegas: ninguna es ocasión de Chao2. Una especie sin
+  visitas con protocolo queda con la AOO **inferida** y B2 no puede cumplirse hasta que se muestree con protocolo; la
+  que salía amenazada por B2 puede pasar a «Calidad insuficiente».
+- **Ocupación (1.10.0): solo anunciada.** El método de referencia admite únicamente Chao2; el modelo de ocupación de una
+  temporada aparece deshabilitado («próximamente»). El diseño de muestreo etiqueta las visitas, pero todavía no cambia
+  ningún cálculo.
 - **Referencia independiente sin pasar.** No hay Python en el anfitrión: `backend/bin/metrics-reference.py` (pyproj +
   shapely) está escrito pero no ejecutado; los casos se contrastaron con PROJ. (Las series de F11h sí se generaron con
   Python, en el contenedor `python:3.12-slim`; el mismo camino serviría para este script.)

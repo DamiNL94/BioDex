@@ -22,7 +22,7 @@
 // Todo el HTML pasa por html`` (las justificaciones y los nombres vienen de usuarios).
 // ================================================================================================
 
-import { state } from '../state.js';
+import { state, subscribe } from '../state.js';
 import { html, render, $, $$, formatDateTime } from '../util.js';
 import { apiPutJson, apiDeleteJson } from '../api.js';
 import { put, del, hasDb } from '../db.js';
@@ -32,7 +32,7 @@ import { speciesAssessment, recompute, quantifierSummary } from '../assessment.j
 import { loadIucnCriteria, DISCLAIMER } from '../views/iucn-wizard.js';
 import { loadThreats, threatLabel } from '../views/impact-sheet.js';
 import { fmtKm2 } from '../metrics.js';
-import { QUALITY_LABELS, PARAMETERS } from './species-parameters.js';
+import { QUALITY_LABELS, PARAMETERS, DESIGN_LABELS, METHOD_LABELS } from './species-parameters.js';
 import { mountAssessments } from './species-assessments.js';
 import { mountGbifMap } from './gbif-compare-map.js';
 import { categoryLabel, rangeLabel, criterionSummary } from '../../shared/iucn-engine.js';
@@ -210,6 +210,7 @@ export function mountSpeciesIucn(el, { species, catalog, goToParam }) {
       ${q.length ? html`<p class="suff-quality">${q.map(([k, v], i) => html`${i ? ' · ' : ''}${names[k] || k}: <strong>${qualityText(v)}</strong>`)}</p>` : ''}
       ${g.id === 'mature' ? html`<p class="hint">Basta una de las dos vías: censo completo, o parcelas suficientes con la superficie de hábitat.</p>` : ''}
       <ul class="suff-items">${g.items.map(suffItemHtml)}</ul>
+      ${g.detail ? html`<p class="suff-detail"><strong>Chao2.</strong> ${g.detail}</p>` : ''}
       ${g.note ? html`<p class="hint suff-note">${g.note}</p>` : ''}
     </section>`;
   }
@@ -225,6 +226,43 @@ export function mountSpeciesIucn(el, { species, catalog, goToParam }) {
         maduros estimados u observados; B, EOO y AOO estimadas; C1, una tasa estimada. Las barras se llenan al marcar en el mapa, visitar sitios y
         fijar parámetros. Fuentes: <span class="muted">bibliografia/suficiencia-de-datos.md</span>.</p>
       <div class="suff-groups">${groups.map(suffGroupHtml)}</div>
+      ${samplingHtml()}
+    </section>`;
+  }
+
+  /**
+   * Diseño de muestreo y métodos de suficiencia espacial, uno al lado del otro (F11j): el de referencia es el que usa el
+   * motor; la ocupación está anunciada pero aún no se calcula. Debajo, quién cambió el diseño o el método, cuándo, desde
+   * qué valor y por qué (lo edita quien configura el catálogo, en Parámetros; aquí solo se ve).
+   */
+  function samplingHtml() {
+    const s = data.sampling;
+    if (!s) return '';
+    const c = data.completeness || {};
+    const pct = (v) => (v === null || v === undefined ? '—' : `${fmtN(v)} %`);
+    const card = (m) => {
+      const ref = s.method === m.id;
+      return html`<div class="suff-method${ref ? ' is-reference' : ''}${m.available ? '' : ' is-disabled'}">
+        <h6>${METHOD_LABELS[m.id] || m.id} ${ref ? html`<span class="badge ok">Referencia${s.methodSet ? '' : ' (por defecto)'}</span>` : ''}
+          ${m.available ? '' : html`<span class="badge">Próximamente</span>`}</h6>
+        ${m.id === 'chao2' ? html`<p class="suff-method-value">${pct(c.completenessPct)}</p>
+            <p class="hint">Completitud con ${c.occasions || 0} ${c.occasions === 1 ? 'ocasión válida' : 'ocasiones válidas'} · frontera prospectada ${pct(c.frontierPct)}.</p>`
+          : html`<p class="hint">Modelo de ocupación de una temporada (MacKenzie et al. 2002): necesita visitas repetidas a los mismos sitios.
+              Los datos ya se recogen (tipo de visita, celdas cubiertas con y sin detección); el cálculo llegará en una fase posterior.</p>`}
+      </div>`;
+    };
+    const label = (h) => (h.key === 'sampling_design' ? DESIGN_LABELS : METHOD_LABELS);
+    const val = (h, v) => (v === null || v === undefined ? 'vacío' : (label(h)[v] || v));
+    return html`<section class="suff-sampling" aria-labelledby="suffSampling">
+      <h6 id="suffSampling">Suficiencia espacial: diseño y métodos</h6>
+      <p class="suff-design">Diseño de muestreo: <strong>${s.design ? (DESIGN_LABELS[s.design] || s.design) : 'sin definir'}</strong> ·
+        ${gotoParam('sampling_design')} · ${gotoParam('sufficiency_method')}</p>
+      <div class="suff-methods">${(s.methods || []).map(card)}</div>
+      ${Array.isArray(s.history) && s.history.length ? html`<details class="more suff-history"><summary>Cambios de diseño y de método (${s.history.length})</summary>
+        <table class="data-table"><thead><tr><th scope="col">Fecha</th><th scope="col">Quién</th><th scope="col">Qué</th><th scope="col">Cambio</th><th scope="col">Motivo</th></tr></thead>
+          <tbody>${s.history.map((h) => html`<tr><td>${formatDateTime(h.at, 'numeric')}</td><td>${h.by || '—'}</td>
+            <td>${h.key === 'sampling_design' ? 'Diseño' : 'Método'}</td><td>${val(h, h.from)} → ${val(h, h.to)}</td><td>${h.reason || '—'}</td></tr>`)}</tbody></table></details>`
+        : html`<p class="hint">${s.history === null ? 'El registro de cambios del diseño y del método se ve con conexión.' : 'Sin cambios registrados del diseño ni del método.'}</p>`}
     </section>`;
   }
 
@@ -666,5 +704,7 @@ export function mountSpeciesIucn(el, { species, catalog, goToParam }) {
   });
 
   refresh();
-  return { refresh, destroy() { alive = false; if (snapshots) snapshots.destroy(); if (gbifMap) gbifMap.destroy(); } };
+  // Entrar o salir del modo búsqueda: la evaluación (subpoblaciones, comparación con GBIF) se oculta o vuelve (js/blind.js).
+  const unsubscribeVisit = subscribe((key) => { if (key === 'visit') refresh(); });
+  return { refresh, destroy() { alive = false; unsubscribeVisit(); if (snapshots) snapshots.destroy(); if (gbifMap) gbifMap.destroy(); } };
 }

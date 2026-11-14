@@ -9,6 +9,7 @@
 // ================================================================================================
 
 import { html, render, plural } from '../util.js';
+import { subscribe } from '../state.js';
 import { tileTemplate, attributionFor, layerByKey } from '../map/layers.js';
 import { marksFor } from '../marks.js';
 
@@ -64,5 +65,7 @@ export function mountMinimap(el, { species, catalog }) {
   }
 
   refresh();
-  return { refresh, resize, destroy() { alive = false; if (map) { map.remove(); map = null; } } };
+  // Entrar o salir del modo búsqueda cambia qué marcas se ven (js/blind.js).
+  const unsubscribe = subscribe((key) => { if (key === 'visit') refresh(); });
+  return { refresh, resize, destroy() { alive = false; unsubscribe(); if (map) { map.remove(); map = null; } } };
 }

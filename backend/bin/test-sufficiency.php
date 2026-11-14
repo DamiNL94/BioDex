@@ -27,7 +27,7 @@ $criteria = iucnCriteria();
 
 section("Completitud del muestreo");
 foreach ($sc["completeness"] as $c) {
-    $got = suffSamplingCompleteness($c["records"]);
+    $got = suffSamplingCompleteness($c["records"], $c["visits"] ?? null, $c["taxonID"] ?? null);
     $q = suffRangeQuality($got);
     check("Completitud: {$c["name"]}", numEq($got, $c["expect"]) && $q["eoo"] === $c["expectQuality"]["eoo"] && $q["aoo"] === $c["expectQuality"]["aoo"],
         json_encode([$got, $q], JSON_UNESCAPED_UNICODE));

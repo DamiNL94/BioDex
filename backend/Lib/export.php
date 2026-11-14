@@ -332,29 +332,53 @@ function exportEvents(PDO $pdo, string $catalogId, array $o, array &$prep): arra
             "coordinateUncertaintyInMeters" => $unc, "footprintWKT" => $w, "footprintSRS" => $w === null ? null : "EPSG:4326",
             "dataGeneralizations" => $dg, "informationWithheld" => $iw] + exportEventCommon($ctx, $s["client_updated_at"]);
     }
+    // Recorridos GPS de las visitas con protocolo de búsqueda (F11j): son el footprintWKT del evento.
+    $tracks = visitTracks($pdo, $visitIds);
     foreach ($visits as [$v, , $level]) {
         $site = isset($sites[$v["site_id"]]) ? $sites[$v["site_id"]][0] : null;
+        [$trackPts, $trackPauses] = $tracks[$v["visitID"]] ?? [[], []];
+        $trackWkt = $trackPts ? trackWkt($trackPts, $trackPauses) : null;
         if ($site) {
             [$lat, $lon, $ext, $wkt] = $siteGeom($site);
             $author = (int) $site["user_id"];
         } else {
             [$lat, $lon, $ext, $wkt] = [$v["decimalLatitude"] === null ? null : (float) $v["decimalLatitude"],
                 $v["decimalLongitude"] === null ? null : (float) $v["decimalLongitude"], null, null];
+            // Sin posición de inicio pero con recorrido: su primer punto (se generaliza igual).
+            if ($lat === null && $trackPts) [$lat, $lon] = [(float) $trackPts[0][0], (float) $trackPts[0][1]];
             $author = (int) $v["user_id"];
         }
+        // El recorrido es más fino que cualquier generalización: se pasa por exportEventLocation() como la geometría del
+        // sitio y, si el evento se generaliza (alguna especie sensible en la visita o en su sitio), NO sale.
+        if ($trackWkt !== null) $wkt = $trackWkt;
         [$la, $lo, $unc, $w, $dg, $iw, $gen] = exportEventLocation($lat, $lon, $ext, $wkt, $author, $level, $o, $prep);
         $band = $v["band_m"] ?? ($site["band_m"] ?? null);
         $protocol = $v["protocol"] === "transect" && $band !== null
             ? "transecto con banda de " . rtrim(rtrim(number_format((float) $band, 2, ",", ""), "0"), ",") . " m"
             : (VISIT_PROTOCOL_ES[$v["protocol"]] ?? $v["protocol"]);
+        // Protocolo de búsqueda (si no es «libre»): cómo se buscó, y si fue en modo búsqueda (marcas anteriores ocultas).
+        $ep = $v["effort_protocol"] ?? "free";
+        $searched = $ep !== "free";
+        if ($searched) {
+            $protocol .= " | " . VISIT_EFFORT_ES[$ep] . ", objetivo " . (int) $v["effort_target"] . ($ep === "timed" ? " min" : " m")
+                . ((int) $v["blind"] === 1 ? ", búsqueda ciega (registros anteriores ocultos)" : ", búsqueda no ciega");
+        }
+        $activeMin = $v["active_seconds"] === null ? null : round((int) $v["active_seconds"] / 60, 1);
+        $distance = $v["distance_m"] === null ? null : (float) $v["distance_m"];
         // Tamaño de la muestra: superficie del sitio (longitud × banda en un transecto) o, en una búsqueda por tiempo, los minutos.
+        // Con protocolo de búsqueda y sin superficie: los minutos de búsqueda activa (tiempo fijo) o los metros recorridos.
         [$size, $unit] = [null, null];
         if ($v["protocol"] === "timed_search") { if ($v["effort_minutes"] !== null) [$size, $unit] = [(int) $v["effort_minutes"], "minute"]; }
         elseif ($v["protocol"] === "transect" && $site && $site["length_m"] !== null && $band !== null) [$size, $unit] = [round((float) $site["length_m"] * (float) $band, 2), "square metre"];
         elseif ($site && $site["area_m2"] !== null) [$size, $unit] = [(float) $site["area_m2"], "square metre"];
+        if ($searched && $ep === "timed" && $activeMin !== null && ($size === null || $unit === "minute")) [$size, $unit] = [$activeMin, "minute"];
+        if ($searched && $ep === "transect" && $distance !== null && $size === null) [$size, $unit] = [$distance, "metre"];
         $observers = $v["observers"] !== null ? array_values(array_filter(array_map("trim", preg_split('/[|,;]/', $v["observers"])))) : [];
+        $num = fn($x) => rtrim(rtrim(number_format((float) $x, 1, ",", ""), "0"), ",");
         $effortText = implode("; ", array_filter([
-            $v["effort_minutes"] !== null ? "{$v["effort_minutes"]} minutos" : null,
+            $searched && $activeMin !== null ? $num($activeMin) . " minutos de búsqueda activa" : ($v["effort_minutes"] !== null ? "{$v["effort_minutes"]} minutos" : null),
+            $searched && $distance !== null ? $num($distance) . " m recorridos" : null,
+            $searched && $v["track_gaps"] !== null && (int) $v["track_complete"] !== 1 ? "recorrido GPS incompleto" : null,
             $observers ? count($observers) . " " . (count($observers) === 1 ? "observador" : "observadores") . ": " . implode(", ", $observers) : null]));
         $rows[] = ["eventID" => $v["visitID"], "parentEventID" => $site ? "biodex:site:{$site["siteID"]}" : null, "samplingProtocol" => $protocol,
             "sampleSizeValue" => $size, "sampleSizeUnit" => $unit, "samplingEffort" => $effortText ?: null,
@@ -368,6 +392,12 @@ function exportEvents(PDO $pdo, string $catalogId, array $o, array &$prep): arra
                 "measurementType" => DWC_EFFORT_TYPE, "measurementValue" => (int) $v["effort_minutes"], "measurementUnit" => "minutos",
                 "measurementDeterminedBy" => $v["recorded_by"], "measurementDeterminedDate" => syncIsoUtc($v["event_start"]),
                 "measurementMethod" => "Duración de la visita, entre inicio y fin (BioDex)"];
+        }
+        if ($searched && $distance !== null) {
+            $effort[] = ["eventID" => $v["visitID"], "occurrenceID" => null, "measurementID" => "{$v["visitID"]}:distance",
+                "measurementType" => "distancia recorrida en la búsqueda", "measurementValue" => $distance, "measurementUnit" => "m",
+                "measurementDeterminedBy" => $v["recorded_by"], "measurementDeterminedDate" => syncIsoUtc($v["event_start"]),
+                "measurementMethod" => "Recorrido GPS filtrado (precisión ≤ " . TRACK_MAX_ACCURACY_M . " m, sin saltos ni huecos; BioDex)"];
         }
     }
     // Marcas oportunistas: un evento cada una, con su posición publicable (la misma que su ocurrencia).
@@ -549,7 +579,8 @@ function exportSheets(PDO $pdo, string $catalogId, array $catalog, array $o, arr
 function exportVisitsSheet(array $prep): array {
     $head = ["ID de la visita (eventID)", "Sitio", "Tipo de sitio", "Protocolo", "Inicio (peninsular)", "Fin (peninsular)", "Esfuerzo (min)",
         "Observadores", "Especies objetivo", "Marcas", "Ausencias", "Latitud", "Longitud", "Precisión (m)", "Superficie del sitio (m²)",
-        "Geometría (WKT)", "Generalizada", "Condiciones", "Autor/a"];
+        "Geometría (WKT)", "Generalizada", "Condiciones", "Autor/a",
+        "Búsqueda", "Objetivo", "Tiempo activo (min)", "Distancia (m)", "Celdas de 2 km cubiertas", "Modo búsqueda", "Recorrido completo", "Tipo de visita"];
     $rows = [exportHeader($head)];
     $byEvent = [];
     foreach ($prep["events"]["rows"] as $e) $byEvent[$e["eventID"]] = $e;
@@ -574,9 +605,18 @@ function exportVisitsSheet(array $prep): array {
             ["v" => $e["decimalLatitude"], "s" => "coord"], ["v" => $e["decimalLongitude"], "s" => "coord"], ["v" => $e["coordinateUncertaintyInMeters"], "s" => "int"],
             ["v" => $site && $site["area_m2"] !== null ? (float) $site["area_m2"] : null, "s" => "km2"], ["v" => $e["footprintWKT"], "s" => "wrap"],
             $gen ? "Sí" : "No", ["v" => $e["eventRemarks"], "s" => "wrap"], $v["recorded_by"],
+            // Esfuerzo y modo búsqueda (F11j). Solo cifras: las celdas cubiertas salen como recuento, nunca cuáles.
+            VISIT_EFFORT_ES[$v["effort_protocol"] ?? "free"] ?? null,
+            ($v["effort_target"] ?? null) === null ? null : (int) $v["effort_target"] . ($v["effort_protocol"] === "timed" ? " min" : " m"),
+            ["v" => ($v["active_seconds"] ?? null) === null ? null : round((int) $v["active_seconds"] / 60, 1), "s" => "km2"],
+            ["v" => ($v["distance_m"] ?? null) === null ? null : (float) $v["distance_m"], "s" => "km2"],
+            ["v" => ($v["covered_cells"] ?? null) === null ? null : count(json_decode($v["covered_cells"], true) ?: []), "s" => "int"],
+            ($v["effort_protocol"] ?? "free") === "free" ? null : ((int) $v["blind"] === 1 ? "Sí" : "No"),
+            ($v["effort_protocol"] ?? "free") === "free" ? null : ((int) $v["track_complete"] === 1 ? "Sí" : "No"),
+            VISIT_KIND_ES[$v["visit_kind"] ?? ""] ?? null,
         ];
     }
-    return ["name" => "Visitas", "rows" => $rows, "widths" => [38, 28, 14, 28, 17, 17, 10, 26, 34, 8, 9, 12, 12, 10, 14, 40, 11, 40, 20],
+    return ["name" => "Visitas", "rows" => $rows, "widths" => [38, 28, 14, 28, 17, 17, 10, 26, 34, 8, 9, 12, 12, 10, 14, 40, 11, 40, 20, 26, 10, 12, 12, 12, 10, 12, 18],
             "freeze" => 1, "autofilter" => [1, count($head)], "csv" => "visitas"];
 }
 
@@ -637,6 +677,13 @@ function exportRangeText(?array $r, ?string $quality = null): ?string {
     return $s . ($quality ? " · " . (EXPORT_QUALITY_ES[$quality] ?? $quality) : "");
 }
 
+/** Suficiencia espacial en una línea: completitud Chao2, frontera y la línea de ocasiones de la pestaña Evaluación. */
+function exportCompletenessText(?array $c): ?string {
+    if (!$c) return null;
+    $pct = fn($v) => $v === null ? "—" : str_replace(".", ",", (string) $v) . " %";
+    return "Completitud " . $pct($c["completenessPct"]) . " · frontera prospectada " . $pct($c["frontierPct"] ?? null) . ". " . suffOccasionsDetail($c);
+}
+
 /**
  * «Evaluación por especie» (una fila por especie con marcas: el cálculo definitivo del servidor, el mismo
  * de la pestaña Evaluación UICN) y «Subpoblaciones» (una fila por subpoblación, con su localidad). Solo cifras:
@@ -646,7 +693,8 @@ function exportSpeciesAssessmentSheets(PDO $pdo, string $catalogId, array $prep)
     $head = ["Especie", "Categoría propuesta", "Rango plausible", "Criterios", "Base", "Ajuste regional (v4.0)", "EOO (km²)", "AOO (km²)",
         "Maduros (mejor, mín.–máx., calidad)", "Método de los maduros", "Densidad (maduros/km², IC 95 %)", "Subpoblaciones",
         "C2a(i) máx. por subpoblación", "C2a(ii) % en la mayor", "Fragmentación grave", "Localidades", "Justificación de las localidades",
-        "Hechos (valor · calidad · justificación)", "Parámetros", "Avisos", "Fecha de cálculo"];
+        "Hechos (valor · calidad · justificación)", "Parámetros", "Avisos", "Fecha de cálculo",
+        "Diseño de muestreo", "Método de suficiencia espacial", "Suficiencia espacial (Chao2)", "Cambios de diseño y de método"];
     $rows = [exportHeader($head)];
     $subRows = [exportHeader(["Especie", "Subpoblación", "Registros", "Maduros mín.", "Maduros mejor", "Maduros máx.", "Vecina más cercana",
         "Distancia (km)", "Pequeña", "Aislada", "Localidad"])];
@@ -696,6 +744,13 @@ function exportSpeciesAssessmentSheets(PDO $pdo, string $catalogId, array $prep)
             ["v" => implode("\n", $params) ?: null, "s" => "wrap"],
             ["v" => implode(" ", array_unique(array_merge($r["warnings"], $m["warnings"], $sp["warnings"]))) ?: null, "s" => "wrap"],
             exportLocal(gmdate("Y-m-d H:i:s")),
+            // Diseño de muestreo, método de referencia y su trazabilidad (F11j).
+            SAMPLING_DESIGN_ES[$a["sampling"]["design"] ?? ""] ?? "sin definir",
+            (SUFFICIENCY_METHOD_ES[$a["sampling"]["method"]] ?? $a["sampling"]["method"]) . ($a["sampling"]["methodSet"] ? "" : " (por defecto)"),
+            ["v" => exportCompletenessText($a["completeness"]), "s" => "wrap"],
+            ["v" => implode("\n", array_map(fn($h) => exportLocal(str_replace(["T", "Z"], [" ", ""], $h["at"]))->format("d/m/Y H:i") . " · " . ($h["by"] ?? "—") . " · "
+                . ($h["key"] === "sampling_design" ? "diseño" : "método") . ": " . ($h["from"] ?? "vacío") . " → " . ($h["to"] ?? "vacío")
+                . ($h["reason"] ? " · motivo: {$h["reason"]}" : ""), $a["sampling"]["history"])) ?: null, "s" => "wrap"],
         ];
         $fragBy = [];
         foreach ($frag["bySubpop"] ?? [] as $f) $fragBy[$f["label"]] = $f;
@@ -708,7 +763,7 @@ function exportSpeciesAssessmentSheets(PDO $pdo, string $catalogId, array $prep)
         }
     }
     return [
-        ["name" => "Evaluación por especie", "rows" => $rows, "widths" => [30, 10, 16, 30, 16, 40, 11, 18, 26, 22, 28, 22, 18, 18, 24, 20, 50, 60, 50, 50, 17],
+        ["name" => "Evaluación por especie", "rows" => $rows, "widths" => [30, 10, 16, 30, 16, 40, 11, 18, 26, 22, 28, 22, 18, 18, 24, 20, 50, 60, 50, 50, 17, 18, 26, 60, 60],
          "freeze" => 1, "autofilter" => [1, count($head)], "csv" => "evaluacion_especie"],
         ["name" => "Subpoblaciones", "rows" => $subRows, "widths" => [30, 10, 10, 10, 10, 10, 10, 11, 9, 9, 10],
          "freeze" => 1, "autofilter" => [1, 11], "csv" => "subpoblaciones"],
