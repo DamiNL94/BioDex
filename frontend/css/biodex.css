@@ -1507,7 +1507,19 @@ svg.qr-code{width:min(78vw,320px);height:auto;display:block;stroke:none}
 .iucn-cat-label{font-weight:700}
 .iucn-string{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:var(--fs-md);margin:4px 0}
 .iucn-range{margin:4px 0}
+.iucn-range .badge{display:block;margin-top:2px;white-space:normal} /* el aviso de que el rango cruza categorías, en su línea */
 .iucn-choices{display:grid;gap:8px;margin-top:10px}
+.iucn-string.muted{font-family:var(--font-ui)} /* un mensaje, no una cadena de criterios: sin monoespaciada */
+/* Juicio experto (NT, LC): «LC · Preocupación menor» en mayúsculas no cabe en un tercio de 375 px y el overflow:hidden
+   del conmutador lo recortaba («PRE»). Columnas que pueden encoger y, en estrecho, una opción por fila. */
+.iucn-choices fieldset{border:0;margin:0;padding:0;min-width:0}
+.iucn-choices legend{padding:0;margin:0 0 6px;font-weight:700}
+.iucn-choices .status-toggle{grid-template-columns:repeat(3,minmax(0,1fr))}
+.iucn-choices .status-toggle button{padding:6px 8px;overflow-wrap:anywhere}
+@media (max-width:519px){
+  .iucn-choices .status-toggle{grid-template-columns:minmax(0,1fr)}
+  .iucn-choices .status-toggle button+button{border-left:0;border-top:2px solid var(--line-strong)}
+}
 .crit-card{border:1px solid var(--line);border-radius:var(--radius-md);padding:10px 12px;background:var(--surface)}
 .crit-card.is-determining{border-color:var(--brass);box-shadow:inset 4px 0 0 var(--brass)}
 .crit-card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
