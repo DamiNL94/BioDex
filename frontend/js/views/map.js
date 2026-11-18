@@ -202,6 +202,9 @@ export function mount(el, { go = () => {}, isStudio = () => false } = {}) {
   }));
 
   function fit() {
+    // El requestAnimationFrame del montaje o un ResizeObserver pendiente pueden llegar con la vista ya
+    // desmontada (p. ej., sesión caducada → pantalla de entrada): el mapa ya no existe.
+    if (!alive) return;
     sizeWrap();
     map.invalidateSize();
   }
