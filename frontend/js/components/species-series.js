@@ -15,9 +15,11 @@ import { subscribe, state } from '../state.js';
 import { localSeries } from '../visits.js';
 import { loadIucnCriteria } from '../views/iucn-wizard.js';
 
-const W = 640;
-const H = 260;
-const M = { top: 16, right: 16, bottom: 30, left: 44 };
+// El lienzo se dibuja al ancho real del contenedor (1 unidad = 1 px): con un viewBox fijo de 640, en un móvil de 375 px
+// todo se reducía al 54 % (números de ~6 px) y en una ficha de 960 px se ampliaba ×1,5 (números de 18 px, líneas
+// gruesas). Así, texto y trazos miden siempre lo que dice el CSS, y el eje x enseña tantos años como quepan.
+const M = { top: 16, right: 22, bottom: 30, left: 40 };
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const fmt = (n, d = 1) => (n === null || n === undefined ? '—' : Number(n).toLocaleString('es-ES', { maximumFractionDigits: d }));
 const pct = (n) => `${n > 0 ? '+' : ''}${fmt(n, 1)} %`;
 
@@ -48,7 +50,9 @@ function segments(pts) {
 }
 
 /** SVG de la serie (string html``). */
-export function seriesSvg(series) {
+export function seriesSvg(series, { width = 640 } = {}) {
+  const W = Math.round(clamp(width, 280, 1000));
+  const H = Math.round(clamp(W * 0.45, 200, 300));
   const years = series.years || [];
   if (!years.length) return '';
   const y0 = years[0].year;
@@ -63,13 +67,14 @@ export function seriesSvg(series) {
   const x = (yr) => M.left + ((yr - y0) / span) * iw;
   const y = (v) => M.top + ih - (v / top) * ih;
   const colW = iw / (span + 1);
-  const xTicks = years.map((r) => r.year).filter((yr, i, a) => a.length <= 14 || (yr - y0) % Math.ceil(a.length / 12) === 0);
+  const maxTicks = Math.max(3, Math.floor(iw / 50)); // «2026» a 13 px ≈ 34 px: 50 deja aire entre años
+  const xTicks = years.map((r) => r.year).filter((yr, i, a) => a.length <= maxTicks + 2 || (yr - y0) % Math.ceil(a.length / maxTicks) === 0);
   const line = (pts) => pts.map(([yr, v], i) => `${i ? 'L' : 'M'}${x(yr).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
   const win = series.status === 'ok' && series.window ? series.window : null;
   return html`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Maduros por año: por sitio y total">
     ${win ? html`<rect class="series-window" x="${Math.max(M.left, x(win.from))}" y="${M.top}" width="${Math.max(0, x(win.to) - Math.max(M.left, x(win.from)))}" height="${ih}"></rect>` : ''}
     ${years.filter((r) => !r.visited).map((r) => html`<rect class="series-gap" x="${(x(r.year) - colW / 2).toFixed(1)}" y="${M.top}" width="${colW.toFixed(1)}" height="${ih}"></rect>
-      <text class="series-gap-label" x="${x(r.year)}" y="${M.top + 12}" text-anchor="middle">sin visita</text>`)}
+      ${colW >= 56 ? html`<text class="series-gap-label" x="${x(r.year)}" y="${M.top + 12}" text-anchor="middle">sin visita</text>` : ''}`)}
     ${ticks.map((t) => html`<line class="series-grid" x1="${M.left}" x2="${W - M.right}" y1="${y(t)}" y2="${y(t)}"></line>
       <text class="series-tick" x="${M.left - 6}" y="${y(t) + 4}" text-anchor="end">${fmt(t, 0)}</text>`)}
     <line class="series-axis" x1="${M.left}" x2="${W - M.right}" y1="${M.top + ih}" y2="${M.top + ih}"></line>
@@ -121,6 +126,8 @@ function seriesTable(series) {
 /** Monta la serie en `el`. → {refresh, destroy} */
 export function mountSpeciesSeries(el, { species, catalog }) {
   let alive = true;
+  let drawnW = null; // ancho al que se dibujó el lienzo (null: aún no, o con la pestaña oculta)
+  let rzTimer = null;
   async function refresh() {
     if (!hasDb()) { render(el, html`<p class="muted">Este navegador no guarda datos en el dispositivo.</p>`); return; }
     try {
@@ -129,8 +136,9 @@ export function mountSpeciesSeries(el, { species, catalog }) {
       const criteria = await loadIucnCriteria().catch(() => null);
       const series = await localSeries(catalog.id, species.taxonID, { generationLength: gen ? gen.value : null, criteria });
       if (!alive) return;
+      drawnW = el.clientWidth || null;
       render(el, html`
-        ${(series.years || []).length ? html`<div class="series-chart">${seriesSvg(series)}</div>
+        ${(series.years || []).length ? html`<div class="series-chart">${seriesSvg(series, { width: drawnW || 640 })}</div>
           <p class="series-legend"><span><span class="series-key is-total"></span>Índice (todos los sitios)</span>
             ${series.sites.map((s, i) => html`<span class="sp-c${i % 8}"><span class="series-key"></span>${s.name || 'Sitio'}${s.included ? '' : ' (fuera del modelo)'}</span>`)}
             ${series.years.some((r) => !r.visited) ? html`<span><span class="series-key is-gap"></span>Año sin visita</span>` : ''}</p>` : ''}
@@ -143,6 +151,15 @@ export function mountSpeciesSeries(el, { species, catalog }) {
     }
   }
   const unsubscribe = subscribe((key) => { if (key === 'sync' && !state.sync.running) refresh(); });
+  // Girar el móvil, cambiar el ancho de la ventana o mostrar la pestaña (antes oculta, ancho 0): se redibuja al nuevo
+  // ancho si cambia más de 24 px (el lienzo va 1:1 con el contenedor).
+  const ro = window.ResizeObserver ? new ResizeObserver(() => {
+    const w = el.clientWidth;
+    if (!w || (drawnW !== null && Math.abs(w - drawnW) <= 24)) return;
+    clearTimeout(rzTimer);
+    rzTimer = setTimeout(() => { if (alive) refresh(); }, 150);
+  }) : null;
+  if (ro) ro.observe(el);
   refresh();
-  return { refresh, destroy() { alive = false; unsubscribe(); } };
+  return { refresh, destroy() { alive = false; unsubscribe(); clearTimeout(rzTimer); if (ro) ro.disconnect(); } };
 }

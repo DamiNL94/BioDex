@@ -1662,12 +1662,15 @@ path.site-shape{stroke:#7A4FB5;fill:#7A4FB5}
 .sites-draw-tools .active{background:var(--leaf-fill);color:var(--cream)}
 /* Serie temporal (components/species-series.js) */
 .series-chart{width:100%;overflow-x:auto}
-.series-chart svg{display:block;width:100%;min-width:320px;height:auto;font-family:var(--font-ui);font-size:12px}
+/* stroke:none — sin esto hereda el trazo de 1,8 px de los iconos (svg:not(.leaflet-zoom-animated)) y los números y las bandas
+   salen contorneados */
+.series-chart svg{display:block;width:100%;min-width:0;height:auto;font-family:var(--font-ui);font-size:13px;stroke:none;stroke-width:1}
 .series-axis{stroke:var(--line-strong);stroke-width:1}
 .series-grid{stroke:var(--line);stroke-width:1}
-.series-tick{fill:var(--muted)}
+.series-tick{fill:var(--ink-soft);font-variant-numeric:tabular-nums}
 .series-line{fill:none;stroke-width:1.5;stroke-linejoin:round}
 .series-line.is-total{stroke:var(--leaf);stroke-width:3}
+.series-pt{stroke:var(--paper);stroke-width:1}
 .series-pt.is-total{fill:var(--leaf)}
 .series-line.is-trend{stroke:var(--brass);stroke-width:2;stroke-dasharray:6 4}
 .series-gap{fill:var(--warn-bg)}

@@ -13,7 +13,7 @@
 import { store } from './util.js';
 
 export const API_BASE = '/api';
-export const APP_VERSION = '1.10.2';
+export const APP_VERSION = '1.10.3';
 
 const listeners = new Set();
 
