@@ -69,6 +69,8 @@ h1,h2,h3,h4,.sign-title{font-family:var(--font-display);font-weight:700;letter-s
 h2{font-size:var(--fs-xl);margin:0}
 h3{font-size:var(--fs-lg);margin:0 0 8px}
 h4{font-size:var(--fs-md);margin:16px 0 6px}
+h5{font-size:var(--fs-md);margin:0 0 6px;line-height:1.25} /* sin esto, el .83em del navegador */
+h6{font-size:var(--fs-sm);margin:0 0 4px;line-height:1.25} /* …y el .67em: 11 px en campo, menos que el texto que encabeza */
 p{margin:0 0 10px}
 em.sci{font-style:italic}
 a{color:var(--leaf)}
@@ -623,6 +625,8 @@ svg.silhouette{display:block;width:62%;height:62%;fill:currentColor;stroke:none}
 .team h4:first-of-type{margin-top:8px}
 .table-scroll{overflow-x:auto;margin:10px 0 16px;-webkit-overflow-scrolling:touch}
 .table-scroll .data-table{min-width:640px}
+.table-scroll .subpops-table{min-width:0} /* 4 columnas cortas: caben a 375 px sin desplazar */
+.subpops-table th[scope="row"]{white-space:nowrap}
 .data-table th[scope="row"]{text-align:left;font-weight:400;padding:6px 8px 6px 0;border-bottom:1px solid var(--line);vertical-align:top;
   color:var(--ink);font-size:var(--fs-sm);letter-spacing:0;text-transform:none}
 .table-sub{display:block;font-size:var(--fs-xs)}
@@ -1421,7 +1425,9 @@ svg.qr-code{width:min(78vw,320px);height:auto;display:block;stroke:none}
 /* ===== S. página de especie (pestañas, minimapa y parámetros) ================================ */
 .detail-head .detail-common{margin:0;font-family:var(--font-display);font-size:var(--fs-lg);font-weight:700;color:var(--ink)}
 .detail-head .row-meta .badge.iucn{margin-right:8px}
-.detail-tabs{position:sticky;top:0;z-index:1;display:flex;gap:2px;margin:8px -16px 4px;padding:0 8px;overflow-x:auto;
+/* top negativo = padding-top de .sheet-body: si no, la barra se pega 16 px por debajo de la cabecera y el texto asoma
+   cortado por ese hueco al hacer scroll */
+.detail-tabs{position:sticky;top:-16px;z-index:1;display:flex;gap:2px;margin:8px -16px 4px;padding:0 8px;overflow-x:auto;
   background:var(--paper);border-bottom:1px solid var(--line);scrollbar-width:none}
 .detail-tabs::-webkit-scrollbar{display:none}
 .detail-tab{position:relative;flex:none;min-height:var(--tap-min);padding:0 14px;border:0;background:none;color:var(--muted);
@@ -1466,6 +1472,7 @@ svg.qr-code{width:min(78vw,320px);height:auto;display:block;stroke:none}
 @media (min-width:900px){
   .overlay-full.species-detail .sheet-body>.detail{max-width:960px;margin:0 auto;width:100%}
   .detail-tabs{margin-left:-32px;margin-right:-32px;padding:0 24px}
+  .overlay-full .detail-tabs{top:-20px}
   .minimap{height:320px}
 }
 /* Campo: las cuatro pestañas caben a 375 px (reparto igual, el rótulo largo en dos líneas) */
@@ -1506,12 +1513,13 @@ svg.qr-code{width:min(78vw,320px);height:auto;display:block;stroke:none}
 .crit-card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .crit-card-head h5{margin:0}
 .crit-key{display:inline-block;min-width:1.6em;text-align:center;font-weight:800;color:var(--cream);background:var(--ink-soft);border-radius:var(--radius-sm);margin-right:4px}
-.crit-data{display:grid;grid-template-columns:max-content 1fr;gap:4px 12px;margin:8px 0}
+.crit-data{display:grid;grid-template-columns:fit-content(40%) minmax(0,1fr);gap:4px 12px;margin:8px 0} /* la etiqueta no pasa del 40 %: en el móvil, el valor no queda en una columna de dos palabras */
 .crit-data dt{color:var(--muted);font-size:var(--fs-sm)}
 .crit-data dd{margin:0}
 .crit-needs{background:var(--warn-bg);color:var(--warn-ink);border-radius:var(--radius-sm);padding:6px 10px;margin-top:8px}
 .crit-needs ul{margin:4px 0 0;padding-left:18px}
-.crit-needs .link-btn{color:inherit;text-decoration:underline}
+/* 48 px de alto (regla de campo, f11f.spec), pero alineados a la izquierda como el resto de la frase */
+.crit-needs .link-btn{color:inherit;text-decoration:underline;padding:0;font:inherit;text-align:left}
 .crit-reasons{padding-left:18px;font-size:var(--fs-sm)}
 /* Requisitos mínimos de datos (shared/iucn-sufficiency.js): barra que pasa del rojo al verde en 11 pasos.
    Sin style="" (CSP): el ancho y el color van en las clases suff-p0…suff-p10. La barra no es texto: basta 3:1 con el carril. */
@@ -1543,13 +1551,13 @@ svg.qr-code{width:min(78vw,320px);height:auto;display:block;stroke:none}
 :root[data-theme="dark"] .suff-p8{background:#5D8B3C} :root[data-theme="dark"] .suff-p9{background:#488E4E}
 :root[data-theme="dark"] .suff-p10{background:#298F53}
 @media (prefers-reduced-motion: reduce){.suff-fill{transition:none}}
-.facts{list-style:none;padding:0;margin:4px 0 8px;display:grid;gap:6px}
+.facts{list-style:none;padding:0;margin:4px 0 8px;display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
 .fact{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--line)}
 .fact-label{flex:1 1 220px}
 .fact-just{flex-basis:100%}
 .fact-meta{font-size:var(--fs-xs)}
 .fact.is-editing{display:block}
-.badge.suggest{background:var(--sea-tint);color:var(--ink)}
+.badge.suggest{background:var(--sea-tint);color:var(--ink);white-space:normal;overflow-wrap:anywhere}
 .locations{margin:8px 0;padding:8px 10px;border:1px dashed var(--line-strong);border-radius:var(--radius-sm)}
 .loc-groups{margin:4px 0;padding-left:18px}
 .field-inline{display:flex;align-items:center;gap:10px}
