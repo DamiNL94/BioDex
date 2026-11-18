@@ -187,16 +187,36 @@ export function mount(el, { onLogout }) {
             <div><dt>Conexión</dt><dd>${CONNECTION_LABELS[state.connection]}</dd></div>
             <div><dt>Uso sin conexión</dt><dd>${sw ? 'Preparado' : 'No disponible en este navegador o aún instalándose'}</dd></div>
           </dl>
-          <details class="more">
-            <summary>Acerca de</summary>
-            <!-- Créditos obligatorios: el mapa no muestra atribución en pantalla -->
-            <ul class="hint">
-              <li>Mapas (IGN Base, PNOA, MTN): © <a href="https://www.ign.es" rel="noopener" target="_blank">Instituto Geográfico Nacional</a>,
-                <a href="https://creativecommons.org/licenses/by/4.0/deed.es" rel="noopener" target="_blank">CC BY 4.0</a>.</li>
-              <li>Datos de especies: Inventario Español del Patrimonio Natural y de la Biodiversidad (EIDOS, MITECO).</li>
-              <li>Visor de mapas: <a href="https://leafletjs.com" rel="noopener" target="_blank">Leaflet</a> (licencia BSD-2).</li>
-            </ul>
-          </details>
+        </section>
+        <!-- Créditos y licencias: ningún mapa muestra atribución en pantalla (attributionControl: false), así que la del
+             IGN (CC BY 4.0) y la de Leaflet viven aquí. -->
+        <p class="settings-group">Acerca de</p>
+        <section class="panel about" aria-labelledby="set-about">
+          <h3 id="set-about">BioDex ${APP_VERSION}</h3>
+          <p class="hint">Cuaderno de campo para biólogos de la conservación: catálogos de especies, marcas sin conexión,
+            evaluación orientativa según la UICN y exportación en Darwin Core y Plinian Core.</p>
+          <h4>Cartografía</h4>
+          <ul class="about-list">
+            <li>IGN Base, PNOA (ortofoto) y MTN: © <a href="https://www.ign.es" rel="noopener" target="_blank">Instituto Geográfico
+              Nacional</a> de España (<a href="https://www.scne.es" rel="noopener" target="_blank">CNIG</a>), con licencia
+              <a href="https://creativecommons.org/licenses/by/4.0/deed.es" rel="noopener" target="_blank">CC BY 4.0</a>.</li>
+          </ul>
+          <h4>Datos</h4>
+          <ul class="about-list">
+            <li>Especies, categorías y fichas: Inventario Español del Patrimonio Natural y de la Biodiversidad
+              (<a href="https://www.miteco.gob.es/es/biodiversidad/servicios/banco-datos-naturaleza/informacion-disponible/eidos.html" rel="noopener" target="_blank">EIDOS</a>, MITECO).</li>
+            <li>Registros para comparar: <a href="https://www.gbif.org" rel="noopener" target="_blank">GBIF.org</a>.</li>
+            <li>Fotos: Fototeca del MITECO, iNaturalist, GBIF y Wikimedia Commons; el autor y la licencia de cada una
+              van junto a la foto.</li>
+          </ul>
+          <h4>Software</h4>
+          <ul class="about-list">
+            <li><a href="https://leafletjs.com" rel="noopener" target="_blank">Leaflet</a> 1.9.4 · © Vladimir Agafonkin y
+              colaboradores · licencia BSD-2.</li>
+            <li>Leaflet.markercluster · © David Leaver · licencia MIT.</li>
+            <li>qrcode-generator · © Kazuhiko Arase · licencia MIT.</li>
+            <li>Tipografías Public Sans (USWDS) y Zilla Slab (Mozilla) · SIL Open Font License 1.1.</li>
+          </ul>
         </section>
       </div>`);
 

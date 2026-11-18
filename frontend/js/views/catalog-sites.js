@@ -15,7 +15,7 @@ import { requestSync } from '../sync.js';
 import { remoteOrLocal, localCatalogData } from '../offline.js';
 import { hasDb } from '../db.js';
 import { MARK_ROLES } from '../marks.js';
-import { tileTemplate, attributionFor, layerByKey } from '../map/layers.js';
+import { tileTemplate, layerByKey } from '../map/layers.js';
 import { PROTOCOLS, SITE_TYPES, SITE_RADIUS_DEFAULT, BAND_DEFAULT, defaultProtocol, sitesFor, visitsFor, createSite, updateSite,
   deleteSite, localSiteMetrics } from '../visits.js';
 import { polygonWkt, lineWkt, parseWkt, formatArea, formatLength } from '../site-geom.js';
@@ -54,8 +54,8 @@ export function mountSites(el, catalog) {
 
   if (Lf) {
     const layer = layerByKey('base');
-    map = Lf.map($('.sites-map', el), { zoomControl: true, scrollWheelZoom: false, tap: false });
-    Lf.tileLayer(tileTemplate(layer.key), { maxZoom: layer.maxZoom, attribution: attributionFor(layer) }).addTo(map);
+    map = Lf.map($('.sites-map', el), { zoomControl: true, attributionControl: false, scrollWheelZoom: false, tap: false });
+    Lf.tileLayer(tileTemplate(layer.key), { maxZoom: layer.maxZoom }).addTo(map);
     map.fitBounds(GRANADA);
     group = Lf.featureGroup().addTo(map);
   }
@@ -212,8 +212,8 @@ export function openSiteEditor({ catalog, site = null, onSaved } = {}) {
 
   if (Lf) {
     const layer = layerByKey('base');
-    map = Lf.map($('.editor-map', form), { zoomControl: true, scrollWheelZoom: true, tap: false, doubleClickZoom: false });
-    Lf.tileLayer(tileTemplate(layer.key), { maxZoom: layer.maxZoom, attribution: attributionFor(layer) }).addTo(map);
+    map = Lf.map($('.editor-map', form), { zoomControl: true, attributionControl: false, scrollWheelZoom: true, tap: false, doubleClickZoom: false });
+    Lf.tileLayer(tileTemplate(layer.key), { maxZoom: layer.maxZoom }).addTo(map);
     const startShape = site ? siteShape(Lf, site) : null;
     if (startShape) map.fitBounds(Lf.featureGroup([startShape]).getBounds().pad(0.5), { maxZoom: 17 });
     else map.fitBounds(GRANADA);

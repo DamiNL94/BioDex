@@ -5,15 +5,15 @@
 // son públicos. Sin interacción salvo el zoom.
 // ================================================================================================
 
-import { tileTemplate, attributionFor, layerByKey } from '../map/layers.js';
+import { tileTemplate, layerByKey } from '../map/layers.js';
 
 /** Monta el mapa en `el` con `g.points` {biodex: [[lat, lon]], gbif: [[lat, lon]]}. → {destroy()} */
 export function mountGbifMap(el, g) {
   const Lf = window.L;
   if (!Lf || !el) return { destroy() {} };
   const layer = layerByKey('base');
-  const map = Lf.map(el, { zoomControl: true, attributionControl: true, scrollWheelZoom: false, keyboard: false, tap: false });
-  Lf.tileLayer(tileTemplate(layer.key), { maxZoom: layer.maxZoom, attribution: attributionFor(layer) + ' · GBIF.org' }).addTo(map);
+  const map = Lf.map(el, { zoomControl: true, attributionControl: false, scrollWheelZoom: false, keyboard: false, tap: false });
+  Lf.tileLayer(tileTemplate(layer.key), { maxZoom: layer.maxZoom }).addTo(map);
   const group = Lf.featureGroup().addTo(map);
   for (const [lat, lon] of (g.points && g.points.gbif) || []) {
     Lf.circleMarker([lat, lon], { radius: 4, className: 'gbif-pt is-gbif', interactive: false }).addTo(group);

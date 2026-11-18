@@ -23,10 +23,8 @@ export const layerByKey = (key) => LAYERS.find((l) => l.key === key) || LAYERS[0
 export const tileUrl = (key, z, x, y) => `/tiles/${key}/${z}/${x}/${y}.jpg`;
 export const tileTemplate = (key) => `/tiles/${key}/{z}/{x}/{y}.jpg`;
 
-export function attributionFor(layer) {
-  return `© <a href="https://www.ign.es" rel="noopener" target="_blank">Instituto Geográfico Nacional</a> · ${layer.attribution} · ` +
-    '<a href="https://creativecommons.org/licenses/by/4.0/deed.es" rel="noopener" target="_blank">CC BY 4.0</a>';
-}
+// Ningún mapa muestra atribución en pantalla (attributionControl: false en todos): los créditos del IGN (CC BY 4.0),
+// GBIF y Leaflet están en Ajustes › Acerca de (views/settings.js).
 
 // --- Rejilla Web Mercator (GoogleMapsCompatible) -------------------------------------------------
 const clampLat = (lat) => Math.max(-85.05112878, Math.min(85.05112878, lat));

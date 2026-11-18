@@ -40,7 +40,7 @@ import { blindFilter, blindVisit, BLIND_NOTICE } from '../blind.js';
 import { parseWkt } from '../site-geom.js';
 import { openSpeciesDetail } from './species-detail.js';
 import { toUtm, formatUtm } from '../geo/utm.js';
-import { LAYERS, tileTemplate, attributionFor, MAP_MAX_ZOOM } from '../map/layers.js';
+import { LAYERS, tileTemplate, MAP_MAX_ZOOM } from '../map/layers.js';
 import { createMarksLayer, applyFilters, activeFilterCount, markShape, observerColors } from '../map/marks-layer.js';
 import { listZones, onZones, pauseZone, deleteZone } from '../map/zones.js';
 import { openZoneEditor, openZonesList, boundsOf, progressText } from '../map/zone-ui.js';
@@ -160,7 +160,7 @@ export function mount(el, { go = () => {}, isStudio = () => false } = {}) {
   const map = Lf.map(mapEl, { maxZoom: MAP_MAX_ZOOM, minZoom: 5, zoomControl: true, attributionControl: false });
   Lf.control.scale({ imperial: false, metric: true, position: 'bottomleft' }).addTo(map);
   const tileLayers = new Map(LAYERS.map((l) => [l.key, Lf.tileLayer(tileTemplate(l.key), {
-    maxNativeZoom: l.maxZoom, maxZoom: MAP_MAX_ZOOM, minZoom: 5, attribution: attributionFor(l), keepBuffer: 3,
+    maxNativeZoom: l.maxZoom, maxZoom: MAP_MAX_ZOOM, minZoom: 5, keepBuffer: 3,
     className: `tiles-${l.key}`,
   })]));
   if (saved && Number.isFinite(saved.lat) && Number.isFinite(saved.lng) && Number.isFinite(saved.zoom)) {

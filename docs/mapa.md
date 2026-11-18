@@ -19,7 +19,7 @@ Verificadas con `GetCapabilities` (WMTS 1.0.0) el 30/09/2026:
   que es z19. IGN Base es vectorial rasterizado y se ve nítido hasta z20.
 - JPEG en las tres: IGN Base en PNG pesa unas 6 veces más (90 KB frente a 15 KB en z12).
 - Leaflet usa `maxNativeZoom` = máximo de la capa y sigue ampliando hasta z20 sin pedir más teselas.
-- Atribución visible: «© Instituto Geográfico Nacional · IGN Base / PNOA / MTN · CC BY 4.0» (la de la capa activa).
+- Sin atribución en pantalla (`attributionControl: false` en todos los mapas): «© Instituto Geográfico Nacional · IGN Base, PNOA y MTN · CC BY 4.0», junto con los créditos de GBIF y Leaflet, va en Ajustes › Acerca de.
 
 ## Proxy `/tiles/`
 

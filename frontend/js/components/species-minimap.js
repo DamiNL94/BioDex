@@ -10,7 +10,7 @@
 
 import { html, render, plural } from '../util.js';
 import { subscribe } from '../state.js';
-import { tileTemplate, attributionFor, layerByKey } from '../map/layers.js';
+import { tileTemplate, layerByKey } from '../map/layers.js';
 import { marksFor } from '../marks.js';
 
 /** Monta el minimapa en `el`. → {refresh(), resize(), destroy()} */
@@ -39,9 +39,9 @@ export function mountMinimap(el, { species, catalog }) {
       render(el, html`<div class="minimap" role="img" aria-label="Mapa de las marcas de la especie"></div>
         <p class="hint minimap-note"></p>`);
       const layer = layerByKey('base');
-      map = Lf.map(el.querySelector('.minimap'), { zoomControl: true, attributionControl: true, dragging: true,
+      map = Lf.map(el.querySelector('.minimap'), { zoomControl: true, attributionControl: false, dragging: true,
         scrollWheelZoom: false, keyboard: false, tap: false });
-      Lf.tileLayer(tileTemplate(layer.key), { maxZoom: layer.maxZoom, attribution: attributionFor(layer) }).addTo(map);
+      Lf.tileLayer(tileTemplate(layer.key), { maxZoom: layer.maxZoom }).addTo(map);
       group = Lf.featureGroup().addTo(map);
     }
     group.clearLayers();
