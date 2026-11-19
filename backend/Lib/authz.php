@@ -4,7 +4,8 @@
 // ------------------------------------------------------------------------------------------------
 // Cada endpoint de catálogo resuelve el rol del usuario con catalogRole()/requireCatalogRole() y
 // decide con catalogCan(). Un catálogo con deleted_at no existe para nadie. Que una marca solo la
-// edite su autor lo comprueba el endpoint de marcas (no depende del rol).
+// edite su autor lo comprueba el endpoint de marcas (no depende del rol); la única excepción es que
+// el owner puede BORRAR cualquiera (moderate_marks, Api/marks.php).
 // ================================================================================================
 
 const CATALOG_ROLES = ["owner", "custodian", "editor", "viewer"];
@@ -23,6 +24,7 @@ const CATALOG_PERMISSIONS = [
     "set_reference"  => ["owner"],                                   // evaluación UICN de referencia
     "review_photos"  => ["owner", "custodian"],                      // fotos de respaldo por sinónimo
     "set_parameter"  => ["owner", "custodian"],                      // parámetros de especie
+    "moderate_marks" => ["owner"],                                   // ver y borrar marcas de cualquier autor
 ];
 
 /** Rol del usuario en el catálogo, o null si no es miembro o el catálogo está borrado. */

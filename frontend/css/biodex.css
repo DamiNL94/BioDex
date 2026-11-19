@@ -1701,3 +1701,12 @@ path.site-shape{stroke:#7A4FB5;fill:#7A4FB5}
 .series-table td.is-gap{color:var(--warn-ink)}
 .series-line.is-site{stroke:var(--sp)}
 .series-pt.is-site{fill:var(--sp)}
+
+/* Catálogo › Marcas (owner): filtros, barra de selección y tabla (views/catalog-marks.js). */
+.marks-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px 12px;margin:12px 0}
+.marks-filters .field{margin:0}
+.marks-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin:12px 0 0}
+.marks-bar > span{flex:1 1 auto;color:var(--muted);font-size:var(--fs-sm)}
+.marks-table input[type="checkbox"]{width:20px;height:20px;accent-color:var(--leaf-fill)}
+.marks-table tr.is-selected td{background:var(--leaf-tint)}
+.marks-table td:last-child{max-width:260px;overflow-wrap:anywhere}

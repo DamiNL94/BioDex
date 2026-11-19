@@ -24,6 +24,7 @@
 //   DELETE /api/catalogs/{id}/species/{taxonID}/locations  set_parameter: vuelve a «sin confirmar»
 // Miembros, invitaciones, salir, transferir y registro: Api/teams.php, incluido desde aquí.
 // Exportación: POST /api/catalogs/{id}/export[/preview] → Api/exports.php, incluido desde aquí.
+// Moderación de marcas (owner): GET /api/catalogs/{id}/marks y POST …/marks/delete → Api/marks.php.
 // content_seq sube con cada cambio de lo que lleva el paquete offline (especies, niveles, nombre):
 // el pull de /api/sync lo devuelve y el móvil vuelve a descargar el paquete si no coincide.
 // Dar de alta una especie de EIDOS sin foto de la Fototeca la pone en cola (species_photos pending)
@@ -54,6 +55,12 @@ $path   = parse_url($_SERVER["REQUEST_URI"] ?? "/", PHP_URL_PATH);
 if (preg_match('#^/api/catalogs/([0-9a-f-]{36})/(members|invites|leave|transfer|audit)(?:/([^/]+))?/?$#', $path, $tm)) {
     $teamRoute = [$tm[1], $tm[2], $tm[3] ?? null];
     require __DIR__ . "/teams.php";
+    exit;
+}
+// Moderación de marcas (owner): Api/marks.php.
+if (preg_match('#^/api/catalogs/([0-9a-f-]{36})/marks(?:/(delete))?/?$#', $path, $mm)) {
+    $marksRoute = [$mm[1], $mm[2] ?? null];
+    require __DIR__ . "/marks.php";
     exit;
 }
 // Exportación DwC-A + hojas: Api/exports.php.

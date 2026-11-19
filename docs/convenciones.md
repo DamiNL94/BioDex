@@ -31,7 +31,8 @@ Reglas que sigue todo el código de BioDex. El detalle de cada módulo está en 
 
 ## Permisos
 - Catálogos compartidos con cuatro roles en `catalog_members`: `owner`, `custodian`, `editor` y `viewer`.
-  Cada endpoint comprueba el rol (`Lib/authz.php`). Una marca solo la edita su autor.
+  Cada endpoint comprueba el rol (`Lib/authz.php`). Una marca solo la edita su autor; el owner puede
+  borrar cualquiera (Catálogo › Marcas, queda en `access_log`).
 - Borrados lógicos (`deleted_at`): lo borrado se sincroniza como borrado, no desaparece.
 
 ## Seguridad de las coordenadas (no negociable)

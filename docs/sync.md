@@ -50,7 +50,9 @@ exige `mark`, como las marcas: el lector solo las lee.
 - **Idempotente**: repetir un lote da el mismo resultado, no duplica filas ni consume `server_seq`.
 - **Seguridad**: toda coordenada que sale pasa por `applyVisibility()` (autor, owner y custodian ven la
   exacta; el resto, generalizada según `species_sensitivity.level`). La exacta en BD nunca se toca.
-- **Autoría**: una marca solo la edita o borra su autor, sea cual sea su rol.
+- **Autoría**: una marca solo la edita o borra su autor, sea cual sea su rol. Única excepción: el owner puede
+  **borrar** cualquiera (Catálogo › Marcas, `POST /api/catalogs/{id}/marks/delete`); ese borrado es definitivo para
+  el autor y queda en `access_log`.
 
 ## Orden en el móvil
 1. `POST /api/species` con las especies creadas sin conexión (`taxonID` = `biodex:<uuid v4>` propio). 201 o
@@ -107,7 +109,8 @@ el orden recibido. En un `stale`, la versión del servidor va en `occurrence`, `
 `reason`: `invalid_item`, `invalid_uuid`, `invalid_taxon`, `invalid_date`, `future_date` (> 24 h en el
 futuro), `missing_field`, `invalid_coordinates`, `invalid_integer`, `invalid_field`, `invalid_vocabulary` (valor
 fuera de su lista cerrada), `invalid_mature_count` (maduros > individuos, o sin individuos), `invalid_absence`
-(ausencia con individuos o maduros), `taxon_not_in_catalog`, `forbidden` (es de otro autor), `catalog_mismatch`
+(ausencia con individuos o maduros), `taxon_not_in_catalog`, `forbidden` (es de otro autor), `deleted_by_owner` (edición de
+una marca que el owner eliminó desde Catálogo › Marcas: no se resucita), `catalog_mismatch`
 (es de otro catálogo), `not_found` (borrado de algo que el servidor nunca tuvo: se puede olvidar). `detail`
 explica el motivo en castellano.
 

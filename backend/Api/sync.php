@@ -102,6 +102,8 @@ function syncWithRetry(PDO $pdo, callable $fn): array {
  *   noun                  para los mensajes («la marca es de otro autor…»)
  *   reference             la fila puede ser la «evaluación de referencia» del owner: si su autor la
  *                         borra o la pasa a borrador, deja de serlo (y queda en access_log)
+ *   moderated             el owner puede borrarla (deleted_by, Api/marks.php): una edición del autor no
+ *                         deshace ese borrado (rejected «deleted_by_owner»)
  */
 const SYNC_ENTITIES = [
     // Sitios y visitas van PRIMERO en cada lote: así una marca de visita llega cuando su visita ya existe.
@@ -112,7 +114,8 @@ const SYNC_ENTITIES = [
                      "results" => "visitResults", "pull" => "visits", "validate" => "syncValidateVisit", "noun" => "La visita",
                      "taxon" => false, "children" => "visit_species"],
     "occurrence" => ["table" => "occurrences", "id" => "occurrenceID", "list" => "occurrences", "deletes" => "deletes",
-                     "results" => "results", "pull" => "items", "validate" => "syncValidateOccurrence", "noun" => "La marca"],
+                     "results" => "results", "pull" => "items", "validate" => "syncValidateOccurrence", "noun" => "La marca",
+                     "moderated" => true],
     "note"       => ["table" => "species_notes", "id" => "noteID", "list" => "notes", "deletes" => "noteDeletes",
                      "results" => "noteResults", "pull" => "notes", "validate" => "syncValidateNote", "noun" => "La nota"],
     "assessment" => ["table" => "species_assessments", "id" => "assessmentID", "list" => "assessments",
@@ -126,7 +129,7 @@ const SYNC_ENTITIES = [
 
 /** Fila actual del elemento, bloqueada hasta el final de la transacción; null si no existe. */
 function syncLockRow(PDO $pdo, array $ent, string $id): ?array {
-    $extra = empty($ent["reference"]) ? "" : ", is_reference";
+    $extra = (empty($ent["reference"]) ? "" : ", is_reference") . (empty($ent["moderated"]) ? "" : ", deleted_by");
     $taxon = ($ent["taxon"] ?? true) ? "taxonID, " : "";
     $stmt = $pdo->prepare("SELECT `{$ent["id"]}`, catalog_id, {$taxon}user_id, client_updated_at, server_seq, deleted_at{$extra}
                              FROM `{$ent["table"]}` WHERE `{$ent["id"]}` = ? FOR UPDATE");
@@ -267,6 +270,12 @@ function syncPushItem(PDO $pdo, array $ent, string $catalogId, int $userId, ?str
     }
 
     if ($rejected = syncOwnershipRejection($pdo, $ent, $existing, $catalogId, $userId)) return $rejected;
+    // Borrada por el owner (moderación): una edición del autor no la resucita.
+    if ($existing["deleted_at"] !== null && ($existing["deleted_by"] ?? null) !== null) {
+        $pdo->rollBack();
+        return [$idField => $id, "status" => "rejected", "reason" => "deleted_by_owner",
+                "detail" => "El propietario del catálogo borró esta marca: tu cambio no se ha guardado."];
+    }
 
     $cmp = strcmp($c["client_updated_at"], $existing["client_updated_at"]);
     if ($cmp === 0) {

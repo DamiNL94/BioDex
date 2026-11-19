@@ -11,7 +11,8 @@ const AUDIT_ACTIONS = ["view_exact", "export_full", "set_level", "grant_role", "
                        "set_reference",    // Evaluación UICN de referencia del catálogo
                        "photo_review",     // Revisión de una foto de respaldo (iNaturalist o GBIF)
                        "set_parameter",    // Fijar, cambiar o borrar un parámetro de especie
-                       "set_locations"];   // Confirmar o cambiar el nº de localidades de una especie
+                       "set_locations",    // Confirmar o cambiar el nº de localidades de una especie
+                       "delete_marks"];    // El owner borra marcas de cualquier autor (Api/marks.php)
 
 /** IP del cliente tal como la ve PHP (nginx pasa REMOTE_ADDR). null en CLI. */
 function clientIp(): ?string {

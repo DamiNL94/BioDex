@@ -4,7 +4,7 @@ PWA de campo para biólogos de la conservación: catálogos de especies creados 
 geolocalizadas que funcionan sin conexión, evaluación orientativa según los criterios de la UICN y exportación en
 Darwin Core y Plinian Core para volcar los datos en bases internacionales como GBIF.
 
-**Versión 1.10.5** · prototipo. Hay un despliegue de prueba en Railway (`docs/railway.md`); el desarrollo se hace en
+**Versión 1.11.0** · prototipo. Hay un despliegue de prueba en Railway (`docs/railway.md`); el desarrollo se hace en
 local con Docker. Lo que aún no hace o no se ha probado: [`docs/limitaciones.md`](docs/limitaciones.md). Guion de la
 demostración: [`docs/demo.md`](docs/demo.md). Convenciones de código, permisos y seguridad de las coordenadas:
 [`docs/convenciones.md`](docs/convenciones.md).
@@ -26,6 +26,9 @@ demostración: [`docs/demo.md`](docs/demo.md). Convenciones de código, permisos
 - **Coordenadas sensibles protegidas.** Cada especie tiene un nivel de sensibilidad; según el rol, el servidor
   entrega las marcas de otros ya generalizadas y la coordenada exacta nunca sale hacia quien no debe.
 - **Equipos con roles** (owner, custodio, editor) e invitaciones por enlace o **código QR** para unirse en el campo.
+- **Moderación de marcas**: el propietario revisa en Catálogo › Marcas todas las del equipo (filtros por especie,
+  autor, fechas y presencia/ausencia) y elimina las erróneas o duplicadas, con motivo. El borrado llega a todos los
+  dispositivos al sincronizar, su autor no puede deshacerlo y queda en el Registro.
 - **UICN.** EOO y AOO (celdas de 2 km por defecto, 1 km opcional) calculados en UTM 30N y los
   cuantificadores de B, C y D a partir de las marcas: individuos maduros (observados y estimados con parcelas, con su
   intervalo), subpoblaciones, fragmentación grave y localidades definidas por amenaza. La pestaña Evaluación UICN

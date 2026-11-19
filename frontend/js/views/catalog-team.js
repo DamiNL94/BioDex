@@ -32,6 +32,7 @@ const AUDIT_LABELS = {
   revoke_role: 'Rol retirado', login_failed: 'Contraseña fallida', invite_created: 'Invitación',
   invite_revoked: 'Invitación revocada', member_joined: 'Alta', member_removed: 'Expulsión', member_left: 'Salida',
   set_reference: 'Evaluación de referencia', photo_review: 'Foto de respaldo', set_parameter: 'Parámetro de especie', set_locations: 'Localidades',
+  delete_marks: 'Marcas eliminadas',
 };
 const OFFLINE_ACTION = 'Necesita conexión';
 
@@ -530,7 +531,7 @@ export function mountAudit(el, catalog) {
     if (!alive) return;
     const items = data.data.items.concat(more);
     render(el, html`
-      <p class="hint">Vistas de coordenadas exactas, cambios de nivel y de rol, invitaciones y altas y bajas del equipo.</p>
+      <p class="hint">Vistas de coordenadas exactas, cambios de nivel y de rol, invitaciones, altas y bajas del equipo y marcas eliminadas por el propietario.</p>
       ${data.fromDevice || !state.online ? html`<p class="copy-note" role="status">${dataNote(data.at)}</p>` : ''}
       ${items.length ? html`<div class="table-scroll"><table class="data-table audit-table">
         <thead><tr><th scope="col">Fecha</th><th scope="col">Persona</th><th scope="col">Acción</th><th scope="col">Detalle</th></tr></thead>
